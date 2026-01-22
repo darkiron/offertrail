@@ -22,3 +22,10 @@ This document records significant decisions made during the project.
 **Decision:** Track changes using an append-only event log.  
 **Reason:** Ensure traceability and enable Git-like history.  
 **Consequence:** State reconstruction is possible, but writes are immutable.
+
+---
+
+### 2026-01-22 — Minimal Python Backend
+**Decision:** Use Python + FastAPI + Jinja2 for the initial bootstrap.  
+**Reason:** Keep it simple, avoid frontend build tooling (no SPA), and ensure fast iteration.  
+**Consequence:** Single-server architecture, local-first by default, no database yet.
