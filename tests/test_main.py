@@ -57,3 +57,28 @@ def test_application_details_and_status_change():
         assert update_res.status_code == 200
         assert "INTERVIEW" in update_res.text
         assert "STATUS_CHANGED" in update_res.text # Event log
+
+def test_add_note():
+    with TestClient(app) as client:
+        # Create an application
+        client.post("/applications", data={
+            "company": "NoteCorp",
+            "title": "Engineer",
+            "type": "CDI",
+            "status": "APPLIED"
+        })
+        
+        # Get ID from list
+        list_res = client.get("/")
+        import re
+        match = re.search(r'href="/applications/(\d+)"', list_res.text)
+        assert match
+        app_id = match.group(1)
+        
+        # Add a note
+        note_text = "This is a test note."
+        response = client.post(f"/applications/{app_id}/notes", data={"text": note_text}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "NOTE_ADDED" in response.text
+        assert note_text in response.text
+        assert "manual" in response.text
