@@ -1,7 +1,6 @@
 .idea
 .idea/
-
-.idea/
+/offertrail.db
 .env
 __pycache__/
 *.py[cod]
