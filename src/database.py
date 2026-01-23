@@ -251,6 +251,83 @@ def add_note(app_id, text):
         conn.commit()
         return True
 
+def get_distinct_sources():
+    with get_db() as conn:
+        rows = conn.execute("SELECT DISTINCT source FROM applications WHERE source IS NOT NULL AND source != '' ORDER BY source ASC").fetchall()
+        return [row["source"] for row in rows]
+
+def get_kpis(filters=None):
+    where_clauses = []
+    params = []
+    
+    if filters:
+        if filters.get("status"):
+            where_clauses.append("status = ?")
+            params.append(filters["status"])
+        if filters.get("type"):
+            where_clauses.append("type = ?")
+            params.append(filters["type"])
+        if filters.get("source"):
+            where_clauses.append("source = ?")
+            params.append(filters["source"])
+            
+    where_stmt = ""
+    if where_clauses:
+        where_stmt = " WHERE " + " AND ".join(where_clauses)
+        
+    with get_db() as conn:
+        # A) Total applications
+        total_count = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt}", params).fetchone()[0]
+        
+        # B) Active applications (Not REJECTED, Not OFFER - assuming OFFER is final and successful, REJECTED is final and lost)
+        # Based on index.html: INTERESTED, APPLIED, INTERVIEW, OFFER, REJECTED
+        # "status NOT IN ('REJECTED', 'OFFER')"
+        active_count = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} status NOT IN ('REJECTED', 'OFFER')", params).fetchone()[0]
+        
+        # C) Due follow-ups (today)
+        today = datetime.now().date().isoformat()
+        due_followups = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} next_followup_at IS NOT NULL AND next_followup_at <= ?", params + [today]).fetchone()[0]
+        
+        # D) Response rate
+        # type in (RESPONSE_RECEIVED, INTERVIEW_SCHEDULED, OFFER_RECEIVED)
+        # We need to join with events
+        response_query = f"""
+            SELECT COUNT(DISTINCT a.id) 
+            FROM applications a
+            JOIN events e ON e.entity_id = a.id AND e.entity_type = 'application'
+            {where_stmt}
+            {' AND ' if where_stmt else ' WHERE '} e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
+        """
+        responded_count = conn.execute(response_query, params).fetchone()[0]
+        
+        response_rate = (responded_count / total_count * 100) if total_count > 0 else 0
+        
+        # E) Avg time to first response (days)
+        # avg( first_response_date - applied_at )
+        avg_time_query = f"""
+            SELECT AVG(julianday(first_response_date) - julianday(applied_at))
+            FROM (
+                SELECT a.id, a.applied_at, MIN(e.ts) as first_response_date
+                FROM applications a
+                JOIN events e ON e.entity_id = a.id AND e.entity_type = 'application'
+                {where_stmt}
+                {' AND ' if where_stmt else ' WHERE '} a.applied_at IS NOT NULL 
+                AND a.applied_at != ''
+                AND e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
+                GROUP BY a.id
+            )
+        """
+        avg_response_time = conn.execute(avg_time_query, params).fetchone()[0]
+        
+        return {
+            "total_count": total_count,
+            "active_count": active_count,
+            "due_followups": due_followups,
+            "responded_count": responded_count,
+            "response_rate": round(response_rate, 1),
+            "avg_response_time": round(avg_response_time, 1) if avg_response_time is not None else None
+        }
+
 def log_event(conn, entity_type, entity_id, event_type, payload):
     ts = datetime.now(timezone.utc).isoformat()
     conn.execute(

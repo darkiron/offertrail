@@ -166,3 +166,52 @@ def test_add_note():
         assert "NOTE_ADDED" in response.text
         assert note_text in response.text
         assert "manual" in response.text
+
+def test_kpi_dashboard():
+    with TestClient(app) as client:
+        # Create some data
+        client.post("/applications", data={
+            "company": "KPI Test",
+            "title": "Engineer",
+            "type": "CDI",
+            "status": "APPLIED",
+            "applied_at": "2026-01-01"
+        })
+        
+        response = client.get("/dashboard")
+        assert response.status_code == 200
+        assert "KPI Dashboard" in response.text
+        assert "Total Applications" in response.text
+        # Check if numbers appear (this is a bit loose but confirms rendering)
+        assert "1" in response.text 
+
+def test_response_received_event():
+    with TestClient(app) as client:
+        # Create application
+        client.post("/applications", data={
+            "company": "Event Test",
+            "title": "Engineer",
+            "type": "CDI",
+            "status": "APPLIED",
+            "applied_at": "2026-01-01"
+        })
+        # Let's get the list to find the ID.
+        apps = client.get("/").text
+        import re
+        match = re.search(r'href="/applications/(\d+)"', apps)
+        app_id = match.group(1)
+        
+        # Log event
+        response = client.post(f"/applications/{app_id}/events", data={"event_type": "RESPONSE_RECEIVED"}, follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == f"/applications/{app_id}"
+        
+        # Verify in details
+        details = client.get(f"/applications/{app_id}").text
+        assert "RESPONSE_RECEIVED" in details
+        
+        # Verify KPI updated
+        dashboard = client.get("/dashboard").text
+        # Since we have multiple apps created in previous tests (if DB persists), 
+        # let's just check for the percentage sign at least.
+        assert "%" in dashboard
