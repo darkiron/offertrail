@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from . import database
 import json
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,11 +22,31 @@ def get_branch_name():
         return "dev"
 
 @app.get("/", response_class=HTMLResponse)
-async def list_applications(request: Request):
-    apps = database.list_applications()
+async def list_applications(
+    request: Request,
+    status: str = None,
+    type: str = None,
+    source: str = None,
+    has_contact: str = None,
+    followup_due: str = None,
+    search: str = None
+):
+    filters = {
+        "status": status,
+        "type": type,
+        "source": source,
+        "has_contact": has_contact,
+        "followup_due": followup_due
+    }
+    # Remove None values
+    filters = {k: v for k, v in filters.items() if v is not None and v != ""}
+    
+    apps = database.list_applications(filters=filters, search=search)
     return templates.TemplateResponse(request, "index.html", {
         "branch_name": get_branch_name(),
-        "applications": apps
+        "applications": apps,
+        "filters": filters,
+        "search": search
     })
 
 @app.post("/applications", response_class=RedirectResponse)
@@ -34,25 +55,63 @@ async def create_application(
     title: str = Form(...),
     type: str = Form(...),
     status: str = Form(...),
+    source: str = Form(None),
+    job_url: str = Form(None),
     applied_at: str = Form(None),
     next_followup_at: str = Form(None)
 ):
-    database.create_application(company, title, type, status, applied_at, next_followup_at)
+    database.create_application(company, title, type, status, applied_at, next_followup_at, source, job_url)
     return RedirectResponse(url="/", status_code=303)
 
 @app.get("/applications/{app_id}", response_class=HTMLResponse)
 async def application_details(request: Request, app_id: int):
     app_data = database.get_application(app_id)
+    if not app_data:
+        return RedirectResponse(url="/", status_code=404)
+        
     events = database.get_events_for_entity("application", app_id)
     # Parse payload_json for each event
     for event in events:
         event["payload"] = json.loads(event["payload_json"])
     
+    contacts = database.get_contacts_for_application(app_id)
+    all_contacts = database.list_contacts()
+    
+    # Also get contact events
+    for contact in contacts:
+        contact_events = database.get_events_for_entity("contact", contact["id"])
+        for ce in contact_events:
+            ce["payload"] = json.loads(ce["payload_json"])
+            # Prefix contact name to event type for clarity or just add to list
+            events.append(ce)
+    
+    # Sort events by ts again after merging
+    events.sort(key=lambda x: x["ts"], reverse=True)
+    
     return templates.TemplateResponse(request, "details.html", {
         "branch_name": get_branch_name(),
         "application": app_data,
-        "events": events
+        "events": events,
+        "contacts": contacts,
+        "all_contacts": all_contacts
     })
+
+@app.post("/applications/{app_id}/link-contact", response_class=RedirectResponse)
+async def link_contact(app_id: int, contact_id: int = Form(...)):
+    database.link_contact_to_application(app_id, contact_id)
+    return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
+
+@app.post("/applications/{app_id}/create-contact", response_class=RedirectResponse)
+async def create_and_link_contact(
+    app_id: int,
+    name: str = Form(...),
+    email: str = Form(None),
+    phone: str = Form(None),
+    company: str = Form(None)
+):
+    contact_id = database.create_contact(name, email, phone, company)
+    database.link_contact_to_application(app_id, contact_id)
+    return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
 
 @app.get("/followups", response_class=HTMLResponse)
 async def list_followups(request: Request):
@@ -80,3 +139,125 @@ async def add_note(app_id: int, text: str = Form(...)):
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+def parse_date(date_str):
+    if not date_str or not date_str.strip():
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(date_str.strip(), fmt).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+@app.get("/import", response_class=HTMLResponse)
+async def import_page(request: Request):
+    return templates.TemplateResponse(request, "import.html", {
+        "branch_name": get_branch_name(),
+        "results": None
+    })
+
+@app.post("/import", response_class=HTMLResponse)
+async def process_import(request: Request, tsv_data: str = Form(...)):
+    lines = tsv_data.strip().split("\n")
+    if not lines:
+        return RedirectResponse(url="/import", status_code=303)
+    
+    header = lines[0].split("\t")
+    rows = lines[1:]
+    
+    mapping = {
+        "Entreprise": "company",
+        "Poste": "title",
+        "Lien de l’offre": "job_url",
+        "Type": "type",
+        "Source": "source",
+        "Date candidature": "applied_at",
+        "Statut": "status",
+        "Date relance prévue": "next_followup_at",
+        "Notes": "notes",
+        "Contact RH": "contact_rh",
+        "Email RH": "email_rh",
+        "Téléphone": "phone"
+    }
+    
+    # Reverse mapping for easy lookup
+    col_map = {}
+    for i, h in enumerate(header):
+        h_clean = h.strip()
+        if h_clean in mapping:
+            col_map[mapping[h_clean]] = i
+
+    results = {"total": len(rows), "created": 0, "skipped": 0, "errors": []}
+    
+    status_map = {
+        "INTERESTED": "INTERESTED", "A CONTACTER": "INTERESTED",
+        "APPLIED": "APPLIED", "POSTULÉ": "APPLIED", "CANDIDATURE ENVOYÉE": "APPLIED",
+        "INTERVIEW": "INTERVIEW", "ENTRETIEN": "INTERVIEW",
+        "OFFER": "OFFER", "OFFRE": "OFFER",
+        "REJECTED": "REJECTED", "REFUSÉ": "REJECTED"
+    }
+
+    for idx, row_str in enumerate(rows):
+        cols = row_str.split("\t")
+        row_num = idx + 2
+        
+        try:
+            def get_val(key):
+                if key in col_map and col_map[key] < len(cols):
+                    return cols[col_map[key]].strip()
+                return None
+
+            company = get_val("company")
+            title = get_val("title")
+            
+            if not company or not title:
+                results["skipped"] += 1
+                results["errors"].append({"row": row_num, "reason": "Missing Company or Job Title"})
+                continue
+            
+            job_url = get_val("job_url")
+            app_type = get_val("type") or "CDI"
+            if "FREE" in app_type.upper():
+                app_type = "FREELANCE"
+            else:
+                app_type = "CDI"
+            
+            source = get_val("source")
+            applied_at = parse_date(get_val("applied_at"))
+            next_followup_at = parse_date(get_val("next_followup_at"))
+            
+            raw_status = (get_val("status") or "APPLIED").upper()
+            status = status_map.get(raw_status, "APPLIED")
+
+            app_id = database.create_application(
+                company=company,
+                title=title,
+                app_type=app_type,
+                status=status,
+                applied_at=applied_at,
+                next_followup_at=next_followup_at,
+                source=source,
+                job_url=job_url
+            )
+            
+            # Handle extra fields as notes
+            notes = []
+            if get_val("notes"): notes.append(f"Notes: {get_val('notes')}")
+            if get_val("contact_rh"): notes.append(f"Contact RH: {get_val('contact_rh')}")
+            if get_val("email_rh"): notes.append(f"Email RH: {get_val('email_rh')}")
+            if get_val("phone"): notes.append(f"Téléphone: {get_val('phone')}")
+            
+            if notes:
+                database.add_note(app_id, "\n".join(notes))
+                
+            results["created"] += 1
+            
+        except Exception as e:
+            results["skipped"] += 1
+            results["errors"].append({"row": row_num, "reason": str(e)})
+
+    return templates.TemplateResponse(request, "import.html", {
+        "branch_name": get_branch_name(),
+        "results": results
+    })

@@ -35,8 +35,65 @@
 <body>
     <h1>🚀 OfferTrail</h1>
     
-    <div style="margin-bottom: 1rem;">
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
         <a href="/followups" style="text-decoration: none; background: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">📅 View Follow-up Queue</a>
+        <a href="/import" style="text-decoration: none; background: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">📥 Import TSV</a>
+    </div>
+
+    <div class="card">
+        <h2>Filters & Search</h2>
+        <form action="/" method="GET">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="search">Search</label>
+                    <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="Company, title, contact...">
+                </div>
+                <div class="form-group">
+                    <label for="filter_status">Status</label>
+                    <select id="filter_status" name="status">
+                        <option value="">All</option>
+                        <option value="INTERESTED" {% if filters.status == 'INTERESTED' %}selected{% endif %}>INTERESTED</option>
+                        <option value="APPLIED" {% if filters.status == 'APPLIED' %}selected{% endif %}>APPLIED</option>
+                        <option value="INTERVIEW" {% if filters.status == 'INTERVIEW' %}selected{% endif %}>INTERVIEW</option>
+                        <option value="OFFER" {% if filters.status == 'OFFER' %}selected{% endif %}>OFFER</option>
+                        <option value="REJECTED" {% if filters.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filter_type">Type</label>
+                    <select id="filter_type" name="type">
+                        <option value="">All</option>
+                        <option value="CDI" {% if filters.type == 'CDI' %}selected{% endif %}>CDI</option>
+                        <option value="FREELANCE" {% if filters.type == 'FREELANCE' %}selected{% endif %}>FREELANCE</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="filter_source">Source</label>
+                    <input type="text" id="filter_source" name="source" value="{{ filters.source or '' }}" placeholder="e.g. LinkedIn">
+                </div>
+                <div class="form-group">
+                    <label for="filter_has_contact">Has Contact</label>
+                    <select id="filter_has_contact" name="has_contact">
+                        <option value="">Any</option>
+                        <option value="yes" {% if filters.has_contact == 'yes' %}selected{% endif %}>Yes</option>
+                        <option value="no" {% if filters.has_contact == 'no' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filter_followup_due">Followup Due</label>
+                    <select id="filter_followup_due" name="followup_due">
+                        <option value="">Any</option>
+                        <option value="yes" {% if filters.followup_due == 'yes' %}selected{% endif %}>Yes</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit">Apply Filters</button>
+                <a href="/" style="text-decoration: none; background: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">Clear</a>
+            </div>
+        </form>
     </div>
 
     <div class="card">
@@ -50,6 +107,16 @@
                 <div class="form-group">
                     <label for="title">Job Title</label>
                     <input type="text" id="title" name="title" required placeholder="e.g. Software Engineer">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="source">Source</label>
+                    <input type="text" id="source" name="source" placeholder="e.g. LinkedIn, Indeed...">
+                </div>
+                <div class="form-group">
+                    <label for="job_url">Job URL</label>
+                    <input type="url" id="job_url" name="job_url" placeholder="https://...">
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
@@ -89,6 +156,7 @@
             <tr>
                 <th>Company</th>
                 <th>Title</th>
+                <th>Source</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -99,6 +167,7 @@
             <tr>
                 <td><strong>{{ app.company }}</strong></td>
                 <td>{{ app.title }}</td>
+                <td>{{ app.source or "-" }}</td>
                 <td>{{ app.type }}</td>
                 <td><span class="status status-{{ app.status }}">{{ app.status }}</span></td>
                 <td><a href="/applications/{{ app.id }}">Details</a></td>
@@ -106,7 +175,7 @@
             {% endfor %}
             {% if not applications %}
             <tr>
-                <td colspan="5" style="text-align: center;">No applications yet. Start by adding one!</td>
+                <td colspan="6" style="text-align: center;">No applications yet. Start by adding one!</td>
             </tr>
             {% endif %}
         </tbody>
