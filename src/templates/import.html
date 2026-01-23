@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferTrail - Import</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
+        .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .back-link { display: inline-block; margin-bottom: 1rem; text-decoration: none; color: #007bff; }
+        textarea { width: 100%; min-height: 200px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 0.9rem; margin-bottom: 1rem; }
+        button { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 2rem; padding: 1rem; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error-list { margin-top: 1rem; color: #721c24; background: #f8d7da; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; list-style-type: none; padding-left: 1rem; }
+        footer { margin-top: 2rem; font-size: 0.8rem; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to list</a>
+    <h1>📥 Import Applications</h1>
+    
+    <div class="card">
+        <p>Paste your TSV content here. The first line must be the header.</p>
+        <p><small>Headers: Entreprise, Poste, Lien de l’offre, Type, Source, Date candidature, Statut, Date relance prévue, etc.</small></p>
+        
+        <form action="/import" method="POST">
+            <textarea name="tsv_data" placeholder="Entreprise	Poste	Lien de l’offre	..."></textarea>
+            <button type="submit">Import Data</button>
+        </form>
+    </div>
+
+    {% if results %}
+    <div class="result {% if results.created > 0 %}success{% endif %}">
+        <h3>Import Results</h3>
+        <p>Processed: <strong>{{ results.total }}</strong></p>
+        <p>Created: <strong>{{ results.created }}</strong></p>
+        <p>Skipped: <strong>{{ results.skipped }}</strong></p>
+    </div>
+
+    {% if results.errors %}
+    <ul class="error-list">
+        {% for error in results.errors %}
+        <li>Row {{ error.row }}: {{ error.reason }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endif %}
+
+    <footer>
+        Build info: {{ branch_name }}
+    </footer>
+</body>
+</html>
