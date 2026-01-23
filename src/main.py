@@ -72,6 +72,11 @@ async def update_status(app_id: int, status: str = Form(...)):
     database.update_application_status(app_id, status)
     return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
 
+@app.post("/applications/{app_id}/notes", response_class=RedirectResponse)
+async def add_note(app_id: int, text: str = Form(...)):
+    database.add_note(app_id, text)
+    return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
