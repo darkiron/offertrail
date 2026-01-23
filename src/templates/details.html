@@ -60,6 +60,16 @@
                 <button type="submit" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Mark as Followed Up (Relancé)</button>
             </form>
         </div>
+
+        <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+
+        <div style="margin-top: 1rem;">
+            <h3>Quick note</h3>
+            <form action="/applications/{{ application.id }}/notes" method="POST">
+                <textarea name="text" style="width: 100%; min-height: 80px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 0.5rem;" placeholder="Add a note..."></textarea>
+                <button type="submit" style="background: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Save note</button>
+            </form>
+        </div>
     </div>
 
     <div class="timeline">
@@ -73,6 +83,9 @@
                     Initial creation. Status: {{ event.payload.status }}
                 {% elif event.type == 'STATUS_CHANGED' %}
                     Changed from <strong>{{ event.payload.old_status }}</strong> to <strong>{{ event.payload.new_status }}</strong>
+                {% elif event.type == 'NOTE_ADDED' %}
+                    <div style="white-space: pre-wrap;">{{ event.payload.text }}</div>
+                    <small style="color: #888;">Source: {{ event.payload.source }}</small>
                 {% else %}
                     {{ event.payload_json }}
                 {% endif %}
