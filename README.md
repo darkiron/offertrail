@@ -85,15 +85,32 @@ Details will be documented in `docs/decisions.md`.
 ---
 ## 🛠️ Getting started
 
-> Setup instructions will appear once the first runnable version exists.
+### Prerequisites
+- Python 3.9+
+- pip
 
-Planned commands (subject to change):
-```txt
-make run     # start the app
-make test    # run tests
-make lint    # lint code
-make fmt     # format code
+### Installation
+```bash
+pip install -r requirements.txt
 ```
+
+### Running the app
+```bash
+make run
+```
+*Note: If `python` is not in your PATH (e.g., on Windows), you can specify the path:*
+```bash
+make run PYTHON=C:\Path\To\python.exe
+```
+
+Or directly with python:
+```bash
+python -m uvicorn src.main:app --reload --port 8000
+```
+The app will be available at [http://localhost:8000](http://localhost:8000).
+
+### Health check
+[http://localhost:8000/health](http://localhost:8000/health)
 ---
 ## 📜 Documentation
 
