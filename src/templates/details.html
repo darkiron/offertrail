@@ -51,6 +51,15 @@
             </select>
             <button type="submit" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Update</button>
         </form>
+
+        <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+        
+        <div style="margin-top: 1rem;">
+            <p><strong>Next Follow-up:</strong> {{ application.next_followup_at or "Not planned" }}</p>
+            <form action="/applications/{{ application.id }}/followup" method="POST">
+                <button type="submit" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Mark as Followed Up (Relancé)</button>
+            </form>
+        </div>
     </div>
 
     <div class="timeline">
