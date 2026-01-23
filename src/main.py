@@ -34,9 +34,10 @@ async def create_application(
     title: str = Form(...),
     type: str = Form(...),
     status: str = Form(...),
-    applied_at: str = Form(None)
+    applied_at: str = Form(None),
+    next_followup_at: str = Form(None)
 ):
-    database.create_application(company, title, type, status, applied_at)
+    database.create_application(company, title, type, status, applied_at, next_followup_at)
     return RedirectResponse(url="/", status_code=303)
 
 @app.get("/applications/{app_id}", response_class=HTMLResponse)
@@ -52,6 +53,19 @@ async def application_details(request: Request, app_id: int):
         "application": app_data,
         "events": events
     })
+
+@app.get("/followups", response_class=HTMLResponse)
+async def list_followups(request: Request):
+    apps = database.list_followups()
+    return templates.TemplateResponse(request, "followups.html", {
+        "branch_name": get_branch_name(),
+        "applications": apps
+    })
+
+@app.post("/applications/{app_id}/followup", response_class=RedirectResponse)
+async def mark_followup(app_id: int):
+    database.mark_as_followed_up(app_id)
+    return RedirectResponse(url="/followups", status_code=303)
 
 @app.post("/applications/{app_id}/status", response_class=RedirectResponse)
 async def update_status(app_id: int, status: str = Form(...)):
