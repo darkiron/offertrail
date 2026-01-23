@@ -117,6 +117,15 @@ def mark_as_followed_up(app_id):
         conn.commit()
         return True
 
+def add_note(app_id, text):
+    with get_db() as conn:
+        log_event(conn, "application", app_id, "NOTE_ADDED", {
+            "text": text,
+            "source": "manual"
+        })
+        conn.commit()
+        return True
+
 def log_event(conn, entity_type, entity_id, event_type, payload):
     ts = datetime.now(timezone.utc).isoformat()
     conn.execute(
