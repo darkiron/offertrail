@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferTrail - {{ application.company }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
+        .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
+        .status-INTERESTED { background: #e2e3e5; }
+        .status-APPLIED { background: #cce5ff; color: #004085; }
+        .status-INTERVIEW { background: #fff3cd; color: #856404; }
+        .status-OFFER { background: #d4edda; color: #155724; }
+        .status-REJECTED { background: #f8d7da; color: #721c24; }
+        .timeline { margin-top: 2rem; }
+        .event { border-left: 2px solid #007bff; padding-left: 1rem; margin-bottom: 1.5rem; position: relative; }
+        .event::before { content: ""; width: 10px; height: 10px; background: #007bff; border-radius: 50%; position: absolute; left: -6px; top: 4px; }
+        .event-ts { font-size: 0.8rem; color: #666; }
+        .event-type { font-weight: bold; color: #007bff; }
+        .event-payload { font-size: 0.9rem; margin-top: 0.25rem; }
+        footer { margin-top: 2rem; font-size: 0.8rem; color: #666; text-align: center; }
+        .back-link { display: inline-block; margin-bottom: 1rem; text-decoration: none; color: #007bff; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to list</a>
+    <h1>{{ application.company }} - {{ application.title }}</h1>
+    
+    <div class="card">
+        <p><strong>Type:</strong> {{ application.type }}</p>
+        <p><strong>Current Status:</strong> <span class="status status-{{ application.status }}">{{ application.status }}</span></p>
+        <p><strong>Applied At:</strong> {{ application.applied_at or "Not specified" }}</p>
+        
+        <form action="/applications/{{ application.id }}/status" method="POST" style="margin-top: 1.5rem;">
+            <label for="status" style="font-weight: bold;">Update Status:</label>
+            <select id="status" name="status" style="padding: 0.4rem; border-radius: 4px;">
+                <option value="INTERESTED" {% if application.status == 'INTERESTED' %}selected{% endif %}>INTERESTED</option>
+                <option value="APPLIED" {% if application.status == 'APPLIED' %}selected{% endif %}>APPLIED</option>
+                <option value="INTERVIEW" {% if application.status == 'INTERVIEW' %}selected{% endif %}>INTERVIEW</option>
+                <option value="OFFER" {% if application.status == 'OFFER' %}selected{% endif %}>OFFER</option>
+                <option value="REJECTED" {% if application.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+            </select>
+            <button type="submit" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Update</button>
+        </form>
+    </div>
+
+    <div class="timeline">
+        <h2>Event History</h2>
+        {% for event in events %}
+        <div class="event">
+            <div class="event-ts">{{ event.ts[:16].replace('T', ' ') }}</div>
+            <div class="event-type">{{ event.type }}</div>
+            <div class="event-payload">
+                {% if event.type == 'CREATED' %}
+                    Initial creation. Status: {{ event.payload.status }}
+                {% elif event.type == 'STATUS_CHANGED' %}
+                    Changed from <strong>{{ event.payload.old_status }}</strong> to <strong>{{ event.payload.new_status }}</strong>
+                {% else %}
+                    {{ event.payload_json }}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <footer>
+        Build info: {{ branch_name }}
+    </footer>
+</body>
+</html>
