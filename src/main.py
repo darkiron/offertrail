@@ -96,6 +96,37 @@ async def application_details(request: Request, app_id: int):
         "all_contacts": all_contacts
     })
 
+@app.post("/applications/{app_id}/events")
+async def create_app_event(app_id: int, event_type: str = Form(...)):
+    with database.get_db() as conn:
+        database.log_event(conn, "application", app_id, event_type, {"source": "manual_dashboard_lite"})
+        conn.commit()
+    return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def kpi_dashboard(
+    request: Request,
+    status: str = None,
+    type: str = None,
+    source: str = None
+):
+    filters = {
+        "status": status,
+        "type": type,
+        "source": source
+    }
+    filters = {k: v for k, v in filters.items() if v is not None and v != ""}
+    
+    kpis = database.get_kpis(filters)
+    sources = database.get_distinct_sources()
+    
+    return templates.TemplateResponse(request, "dashboard.html", {
+        "branch_name": get_branch_name(),
+        "kpis": kpis,
+        "filters": filters,
+        "sources": sources
+    })
+
 @app.post("/applications/{app_id}/link-contact", response_class=RedirectResponse)
 async def link_contact(app_id: int, contact_id: int = Form(...)):
     database.link_contact_to_application(app_id, contact_id)
