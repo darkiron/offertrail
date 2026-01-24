@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferTrail - KPI Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
+        .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+        select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .kpi-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid #007bff; }
+        .kpi-value { font-size: 2.5rem; font-weight: bold; margin: 0.5rem 0; color: #007bff; }
+        .kpi-label { font-size: 0.9rem; color: #666; font-weight: bold; text-transform: uppercase; }
+        .kpi-sub { font-size: 0.8rem; color: #888; margin-top: 0.25rem; }
+        footer { margin-top: 2rem; font-size: 0.8rem; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>📊 KPI Dashboard</h1>
+    
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+        <a href="/" style="text-decoration: none; background: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">🏠 Back to List</a>
+    </div>
+
+    <div class="card">
+        <form action="/dashboard" method="GET">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="filter_status">Status</label>
+                    <select id="filter_status" name="status">
+                        <option value="">All</option>
+                        <option value="INTERESTED" {% if filters.status == 'INTERESTED' %}selected{% endif %}>INTERESTED</option>
+                        <option value="APPLIED" {% if filters.status == 'APPLIED' %}selected{% endif %}>APPLIED</option>
+                        <option value="INTERVIEW" {% if filters.status == 'INTERVIEW' %}selected{% endif %}>INTERVIEW</option>
+                        <option value="OFFER" {% if filters.status == 'OFFER' %}selected{% endif %}>OFFER</option>
+                        <option value="REJECTED" {% if filters.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filter_type">Type</label>
+                    <select id="filter_type" name="type">
+                        <option value="">All</option>
+                        <option value="CDI" {% if filters.type == 'CDI' %}selected{% endif %}>CDI</option>
+                        <option value="FREELANCE" {% if filters.type == 'FREELANCE' %}selected{% endif %}>FREELANCE</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filter_source">Source</label>
+                    <select id="filter_source" name="source">
+                        <option value="">All</option>
+                        {% for src in sources %}
+                        <option value="{{ src }}" {% if filters.source == src %}selected{% endif %}>{{ src }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit">Update KPIs</button>
+                <a href="/dashboard" style="text-decoration: none; background: #eee; color: #333; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; border: 1px solid #ccc;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Total Applications</div>
+            <div class="kpi-value">{{ kpis.total_count }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Active Applications</div>
+            <div class="kpi-value">{{ kpis.active_count }}</div>
+            <div class="kpi-sub">Status not REJECTED or OFFER</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #dc3545;">
+            <div class="kpi-label">Due Follow-ups</div>
+            <div class="kpi-value">{{ kpis.due_followups }}</div>
+            <div class="kpi-sub">Today or earlier (excludes REJECTED/OFFER)</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #6c757d;">
+            <div class="kpi-label">Rejected Rate</div>
+            <div class="kpi-value">{{ kpis.rejected_rate }}%</div>
+            <div class="kpi-sub">{{ kpis.rejected_count }} / {{ kpis.total_count }} rejected</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #28a745;">
+            <div class="kpi-label">Response Rate</div>
+            <div class="kpi-value">{{ kpis.response_rate }}%</div>
+            <div class="kpi-sub">{{ kpis.responded_count }} / {{ kpis.total_count }} responded</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #ffc107;">
+            <div class="kpi-label">Avg Response Time</div>
+            <div class="kpi-value">
+                {% if kpis.avg_response_time is not none %}
+                {{ kpis.avg_response_time }}
+                {% else %}
+                -
+                {% endif %}
+            </div>
+            <div class="kpi-sub">Days to first response</div>
+        </div>
+    </div>
+
+    <footer>
+        Build info: {{ branch_name }}
+    </footer>
+</body>
+</html>
