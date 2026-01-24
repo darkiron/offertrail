@@ -284,11 +284,15 @@ def get_kpis(filters=None):
         # "status NOT IN ('REJECTED', 'OFFER')"
         active_count = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} status NOT IN ('REJECTED', 'OFFER')", params).fetchone()[0]
         
-        # C) Due follow-ups (today)
+        # C) Due follow-ups (today) - Exclude REJECTED and OFFER (as per definition of done/active)
         today = datetime.now().date().isoformat()
-        due_followups = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} next_followup_at IS NOT NULL AND next_followup_at <= ?", params + [today]).fetchone()[0]
+        due_followups = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} status NOT IN ('REJECTED', 'OFFER') AND next_followup_at IS NOT NULL AND next_followup_at <= ?", params + [today]).fetchone()[0]
         
-        # D) Response rate
+        # D) Rejected rate
+        rejected_count = conn.execute(f"SELECT COUNT(*) FROM applications{where_stmt} {' AND ' if where_stmt else ' WHERE '} status = 'REJECTED'", params).fetchone()[0]
+        rejected_rate = (rejected_count / total_count * 100) if total_count > 0 else 0
+
+        # E) Response rate
         # type in (RESPONSE_RECEIVED, INTERVIEW_SCHEDULED, OFFER_RECEIVED)
         # We need to join with events
         response_query = f"""
@@ -302,7 +306,7 @@ def get_kpis(filters=None):
         
         response_rate = (responded_count / total_count * 100) if total_count > 0 else 0
         
-        # E) Avg time to first response (days)
+        # F) Avg time to first response (days)
         # avg( first_response_date - applied_at )
         avg_time_query = f"""
             SELECT AVG(julianday(first_response_date) - julianday(applied_at))
@@ -323,6 +327,8 @@ def get_kpis(filters=None):
             "total_count": total_count,
             "active_count": active_count,
             "due_followups": due_followups,
+            "rejected_count": rejected_count,
+            "rejected_rate": round(rejected_rate, 1),
             "responded_count": responded_count,
             "response_rate": round(response_rate, 1),
             "avg_response_time": round(avg_response_time, 1) if avg_response_time is not None else None

@@ -87,7 +87,12 @@
         <div class="kpi-card" style="border-top-color: #dc3545;">
             <div class="kpi-label">Due Follow-ups</div>
             <div class="kpi-value">{{ kpis.due_followups }}</div>
-            <div class="kpi-sub">Today or earlier</div>
+            <div class="kpi-sub">Today or earlier (excludes REJECTED/OFFER)</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #6c757d;">
+            <div class="kpi-label">Rejected Rate</div>
+            <div class="kpi-value">{{ kpis.rejected_rate }}%</div>
+            <div class="kpi-sub">{{ kpis.rejected_count }} / {{ kpis.total_count }} rejected</div>
         </div>
         <div class="kpi-card" style="border-top-color: #28a745;">
             <div class="kpi-label">Response Rate</div>
