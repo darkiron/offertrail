@@ -82,7 +82,7 @@ def create_application(company, title, app_type, status, applied_at=None, next_f
         conn.commit()
         return app_id
 
-def list_applications(filters=None, search=None):
+def list_applications(filters=None, search=None, show_hidden=False):
     query = "SELECT a.* FROM applications a"
     params = []
     where_clauses = []
@@ -91,6 +91,9 @@ def list_applications(filters=None, search=None):
         if filters.get("status"):
             where_clauses.append("a.status = ?")
             params.append(filters["status"])
+        elif not show_hidden:
+            where_clauses.append("a.status NOT IN ('REJECTED', 'OFFER')")
+        
         if filters.get("type"):
             where_clauses.append("a.type = ?")
             params.append(filters["type"])
@@ -106,6 +109,8 @@ def list_applications(filters=None, search=None):
             today = datetime.now().date().isoformat()
             where_clauses.append("a.next_followup_at IS NOT NULL AND a.next_followup_at <= ?")
             params.append(today)
+    elif not show_hidden:
+        where_clauses.append("a.status NOT IN ('REJECTED', 'OFFER')")
 
     if search:
         search_term = f"%{search.strip()}%"
@@ -333,6 +338,73 @@ def get_kpis(filters=None):
             "response_rate": round(response_rate, 1),
             "avg_response_time": round(avg_response_time, 1) if avg_response_time is not None else None
         }
+
+def get_monthly_kpis(year=None, month=None):
+    if year is None:
+        year = datetime.now().year
+    if month is None:
+        month = datetime.now().month
+        
+    start_date = f"{year}-{month:02d}-01"
+    if month == 12:
+        end_date = f"{year+1}-01-01"
+    else:
+        end_date = f"{year}-{month+1:02d}-01"
+        
+    with get_db() as conn:
+        # 1) Applications created this month
+        created_this_month = conn.execute(
+            "SELECT COUNT(*) FROM applications WHERE applied_at >= ? AND applied_at < ?",
+            (start_date, end_date)
+        ).fetchone()[0]
+        
+        # 2) Responses this month (from events)
+        responses_this_month = conn.execute(
+            "SELECT COUNT(DISTINCT entity_id) FROM events WHERE type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED') AND ts >= ? AND ts < ?",
+            (start_date, end_date)
+        ).fetchone()[0]
+        
+        # 3) Rejected this month
+        rejected_this_month = conn.execute(
+            "SELECT COUNT(*) FROM applications a JOIN events e ON a.id = e.entity_id WHERE e.entity_type = 'application' AND e.type = 'STATUS_CHANGED' AND e.payload_json LIKE '%\"new_status\": \"REJECTED\"%' AND e.ts >= ? AND e.ts < ?",
+            (start_date, end_date)
+        ).fetchone()[0]
+        
+        # 4) Follow-ups due this month
+        followups_due_this_month = conn.execute(
+            "SELECT COUNT(*) FROM applications WHERE next_followup_at >= ? AND next_followup_at < ? AND status NOT IN ('REJECTED', 'OFFER')",
+            (start_date, end_date)
+        ).fetchone()[0]
+        
+    return {
+        "created": created_this_month,
+        "responses": responses_this_month,
+        "rejected": rejected_this_month,
+        "followups_due": followups_due_this_month
+    }
+
+def get_annual_monthly_stats(year=None):
+    if year is None:
+        year = datetime.now().year
+        
+    stats = []
+    with get_db() as conn:
+        for month in range(1, 13):
+            start_date = f"{year}-{month:02d}-01"
+            if month == 12:
+                end_date = f"{year+1}-01-01"
+            else:
+                end_date = f"{year}-{month+1:02d}-01"
+                
+            count = conn.execute(
+                "SELECT COUNT(*) FROM applications WHERE applied_at >= ? AND applied_at < ?",
+                (start_date, end_date)
+            ).fetchone()[0]
+            
+            month_name = datetime(year, month, 1).strftime("%b")
+            stats.append({"month": month_name, "count": count})
+            
+    return stats
 
 def log_event(conn, entity_type, entity_id, event_type, payload):
     ts = datetime.now(timezone.utc).isoformat()
