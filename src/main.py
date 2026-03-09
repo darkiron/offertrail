@@ -29,7 +29,8 @@ async def list_applications(
     source: str = None,
     has_contact: str = None,
     followup_due: str = None,
-    search: str = None
+    search: str = None,
+    show_hidden: str = None
 ):
     filters = {
         "status": status,
@@ -41,12 +42,27 @@ async def list_applications(
     # Remove None values
     filters = {k: v for k, v in filters.items() if v is not None and v != ""}
     
-    apps = database.list_applications(filters=filters, search=search)
+    show_hidden_bool = show_hidden == "yes"
+    apps = database.list_applications(filters=filters, search=search, show_hidden=show_hidden_bool)
+    
+    # Dashboard data
+    kpis = database.get_kpis(filters)
+    monthly_kpis = database.get_monthly_kpis()
+    annual_stats = database.get_annual_monthly_stats()
+    followups = database.list_followups()
+    sources = database.get_distinct_sources()
+    
     return templates.TemplateResponse(request, "index.html", {
         "branch_name": get_branch_name(),
         "applications": apps,
         "filters": filters,
-        "search": search
+        "search": search,
+        "show_hidden": show_hidden_bool,
+        "kpis": kpis,
+        "monthly_kpis": monthly_kpis,
+        "annual_stats": annual_stats,
+        "followups": followups,
+        "sources": sources
     })
 
 @app.post("/applications", response_class=RedirectResponse)
@@ -155,7 +171,7 @@ async def list_followups(request: Request):
 @app.post("/applications/{app_id}/followup", response_class=RedirectResponse)
 async def mark_followup(app_id: int):
     database.mark_as_followed_up(app_id)
-    return RedirectResponse(url="/followups", status_code=303)
+    return RedirectResponse(url="/#queue", status_code=303)
 
 @app.post("/applications/{app_id}/status", response_class=RedirectResponse)
 async def update_status(app_id: int, status: str = Form(...)):
