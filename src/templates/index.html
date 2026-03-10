@@ -3,117 +3,470 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OfferTrail - Applications</title>
+    <title>OfferTrail - Dashboard</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            background-color: #f4f4f9;
-            color: #333;
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
         }
-        h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
-        .card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        h1 { margin: 0; font-size: 1.875rem; font-weight: 700; color: var(--primary); }
+        
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+        .kpi-label { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; margin: 0.25rem 0; }
+        .kpi-trend { font-size: 0.75rem; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        .tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--primary); }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Forms & Cards */
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
         .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
-        input, select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #ddd; }
-        tr:hover { background-color: #f1f1f1; }
-        .status { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
-        .status-INTERESTED { background: #e2e3e5; }
-        .status-APPLIED { background: #cce5ff; color: #004085; }
-        .status-INTERVIEW { background: #fff3cd; color: #856404; }
-        .status-OFFER { background: #d4edda; color: #155724; }
-        .status-REJECTED { background: #f8d7da; color: #721c24; }
-        footer { margin-top: 2rem; font-size: 0.8rem; color: #666; text-align: center; }
+        label { display: block; margin-bottom: 0.375rem; font-size: 0.875rem; font-weight: 600; }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: var(--secondary); }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.75rem; font-size: 0.875rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        td { padding: 1rem 0.75rem; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        .status-pill {
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-INTERESTED { background: #f1f5f9; color: #475569; }
+        .status-APPLIED { background: #e0f2fe; color: #0369a1; }
+        .status-INTERVIEW { background: #fef3c7; color: #92400e; }
+        .status-OFFER { background: #dcfce7; color: #166534; }
+        .status-REJECTED { background: #fee2e2; color: #991b1b; }
+        
+        /* Chart Helper */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            height: 150px;
+            margin-top: 1rem;
+        }
+        .chart-bar {
+            flex: 1;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 2px;
+        }
+        .chart-bar:hover { background: var(--primary-hover); }
+        .chart-bar-label {
+            position: absolute;
+            bottom: -1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.625rem;
+            color: var(--text-muted);
+        }
+        .chart-bar-value {
+            position: absolute;
+            top: -1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        footer { margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+        
+        .nav-actions { display: flex; gap: 0.5rem; }
+        .nav-link { text-decoration: none; font-size: 0.875rem; font-weight: 600; padding: 0.5rem 0.75rem; border-radius: 0.375rem; color: var(--secondary); border: 1px solid var(--border); }
+        .nav-link:hover { background: #f1f5f9; }
     </style>
 </head>
 <body>
-    <h1>🚀 OfferTrail</h1>
-    
-    <div style="margin-bottom: 1rem;">
-        <a href="/followups" style="text-decoration: none; background: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">📅 View Follow-up Queue</a>
-    </div>
+    <div class="container">
+        <header>
+            <h1>🚀 OfferTrail</h1>
+            <div class="nav-actions">
+                <a href="/import" class="nav-link">📥 Import</a>
+                <button onclick="document.getElementById('add-modal').scrollIntoView({behavior:'smooth'})">+ New Application</button>
+            </div>
+        </header>
 
-    <div class="card">
-        <h2>Add New Application</h2>
-        <form action="/applications" method="POST">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="company">Company</label>
-                    <input type="text" id="company" name="company" required placeholder="e.g. Google">
+        <!-- KPI Section -->
+        <div class="kpi-grid">
+            <div class="kpi-card" style="border-left: 4px solid var(--primary);">
+                <div class="kpi-label">Active Pipeline</div>
+                <div class="kpi-value">{{ kpis.active_count }}</div>
+                <div class="kpi-trend">{{ kpis.total_count }} total applications</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--warning);">
+                <div class="kpi-label">Due Follow-ups</div>
+                <div class="kpi-value text-warning">{{ kpis.due_followups }}</div>
+                <div class="kpi-trend">Action required today</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--success);">
+                <div class="kpi-label">Response Rate</div>
+                <div class="kpi-value">{{ kpis.response_rate }}%</div>
+                <div class="kpi-trend">{{ kpis.responded_count }} responded</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--secondary);">
+                <div class="kpi-label">This Month</div>
+                <div class="kpi-value">{{ monthly_kpis.created }}</div>
+                <div class="kpi-trend">+{{ monthly_kpis.responses }} responses received</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('apps')">Applications</div>
+            <div class="tab" onclick="showTab('queue')">Follow-up Queue</div>
+            <div class="tab" onclick="showTab('insights')">KPI / Insights</div>
+        </div>
+
+        <!-- Tab: Applications -->
+        <div id="apps" class="tab-content active">
+            <div class="card">
+                <form action="/" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                    <div style="flex: 2; min-width: 200px;">
+                        <label for="search">Search</label>
+                        <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="Company, title, contact...">
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label for="filter_status">Status</label>
+                        <select id="filter_status" name="status">
+                            <option value="">All</option>
+                            <option value="INTERESTED" {% if filters.status == 'INTERESTED' %}selected{% endif %}>INTERESTED</option>
+                            <option value="APPLIED" {% if filters.status == 'APPLIED' %}selected{% endif %}>APPLIED</option>
+                            <option value="INTERVIEW" {% if filters.status == 'INTERVIEW' %}selected{% endif %}>INTERVIEW</option>
+                            <option value="OFFER" {% if filters.status == 'OFFER' %}selected{% endif %}>OFFER</option>
+                            <option value="REJECTED" {% if filters.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
+                        <input type="checkbox" id="show_hidden" name="show_hidden" value="yes" {% if show_hidden %}checked{% endif %} onchange="this.form.submit()">
+                        <label for="show_hidden" style="margin: 0;">Show Rejected/Offer</label>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit">Filter</button>
+                        <a href="/" class="nav-link" style="padding: 0.4rem 0.75rem;">Clear</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" style="padding: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Position</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Applied</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td>
+                                <strong>{{ app.company }}</strong>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ app.source or 'Direct' }}</div>
+                            </td>
+                            <td>{{ app.title }}</td>
+                            <td>{{ app.type }}</td>
+                            <td><span class="status-pill status-{{ app.status }}">{{ app.status }}</span></td>
+                            <td>{{ app.applied_at or '-' }}</td>
+                            <td style="text-align: right;"><a href="/applications/{{ app.id }}" class="nav-link">Details</a></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not applications %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                                No applications found. Try changing filters or adding a new one.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Follow-up Queue -->
+        <div id="queue" class="tab-content">
+            <div class="card" style="padding: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Position</th>
+                            <th>Next Follow-up</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in followups %}
+                        <tr>
+                            <td><strong>{{ app.company }}</strong></td>
+                            <td>{{ app.title }}</td>
+                            <td style="color: var(--danger); font-weight: 600;">{{ app.next_followup_at }}</td>
+                            <td>
+                                <form action="/applications/{{ app.id }}/followup" method="POST">
+                                    <button type="submit" class="secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Mark as Done</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not followups %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                                🎉 No follow-ups due! All caught up.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Insights -->
+        <div id="insights" class="tab-content">
+            <div class="form-grid">
+                <div class="card">
+                    <h3>Monthly Activity</h3>
+                    {% set max_count = 1 %}
+                    {% for m in annual_stats %}
+                        {% if m.count > max_count %}{% set max_count = m.count %}{% endif %}
+                    {% endfor %}
+                    <div class="chart-container">
+                        {% for m in annual_stats %}
+                        <div class="chart-bar" style="height: {{ (m.count * 100 // max_count) }}%;">
+                            <span class="chart-bar-value">{{ m.count if m.count > 0 else '' }}</span>
+                            <span class="chart-bar-label">{{ m.month }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="title">Job Title</label>
-                    <input type="text" id="title" name="title" required placeholder="e.g. Software Engineer">
+                <div class="card">
+                    <h3>Performance Stats</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <div class="kpi-label">Avg Response Time</div>
+                            <div class="kpi-value">{{ kpis.avg_response_time or '-' }} <small style="font-size: 0.75rem; color: var(--text-muted);">days</small></div>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Rejected Rate</div>
+                            <div class="kpi-value">{{ kpis.rejected_rate }}%</div>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Interviews</div>
+                            <div class="kpi-value">{{ kpis.responded_count }}</div>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Total Volume</div>
+                            <div class="kpi-value">{{ kpis.total_count }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="type">Type</label>
-                    <select id="type" name="type">
-                        <option value="CDI">CDI</option>
-                        <option value="FREELANCE">FREELANCE</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="status">Status</label>
-                    <select id="status" name="status">
-                        <option value="INTERESTED">INTERESTED</option>
-                        <option value="APPLIED">APPLIED</option>
-                        <option value="INTERVIEW">INTERVIEW</option>
-                        <option value="OFFER">OFFER</option>
-                        <option value="REJECTED">REJECTED</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="applied_at">Applied At</label>
-                    <input type="date" id="applied_at" name="applied_at">
-                </div>
-                <div class="form-group">
-                    <label for="next_followup_at">Next Follow-up At</label>
-                    <input type="date" id="next_followup_at" name="next_followup_at">
+            
+            <div class="card">
+                <h3>Monthly KPIs (Current Month)</h3>
+                <div class="kpi-grid" style="margin-bottom: 0;">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Created</div>
+                        <div class="kpi-value">{{ monthly_kpis.created }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Responses</div>
+                        <div class="kpi-value">{{ monthly_kpis.responses }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Rejected</div>
+                        <div class="kpi-value">{{ monthly_kpis.rejected }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Follow-ups Due</div>
+                        <div class="kpi-value">{{ monthly_kpis.followups_due }}</div>
+                    </div>
                 </div>
             </div>
-            <button type="submit">Add Application</button>
-        </form>
+        </div>
+
+        <!-- Add Modal/Section -->
+        <div id="add-modal" class="card">
+            <h3>Add New Application</h3>
+            <form action="/applications" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="company">Company</label>
+                        <input type="text" id="company" name="company" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Job Title</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <select id="type" name="type">
+                            <option value="CDI">CDI</option>
+                            <option value="FREELANCE">FREELANCE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="INTERESTED">INTERESTED</option>
+                            <option value="APPLIED" selected>APPLIED</option>
+                            <option value="INTERVIEW">INTERVIEW</option>
+                            <option value="OFFER">OFFER</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="source">Source</label>
+                        <input type="text" id="source" name="source" placeholder="LinkedIn, Indeed...">
+                    </div>
+                    <div class="form-group">
+                        <label for="job_url">Job URL</label>
+                        <input type="url" id="job_url" name="job_url">
+                    </div>
+                    <div class="form-group">
+                        <label for="applied_at">Applied Date</label>
+                        <input type="date" id="applied_at" name="applied_at">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button type="submit" style="width: 100%;">Create Application</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            OfferTrail 🧭 &bull; Branch: {{ branch_name }}
+        </footer>
     </div>
 
-    <h2>Applications</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Company</th>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for app in applications %}
-            <tr>
-                <td><strong>{{ app.company }}</strong></td>
-                <td>{{ app.title }}</td>
-                <td>{{ app.type }}</td>
-                <td><span class="status status-{{ app.status }}">{{ app.status }}</span></td>
-                <td><a href="/applications/{{ app.id }}">Details</a></td>
-            </tr>
-            {% endfor %}
-            {% if not applications %}
-            <tr>
-                <td colspan="5" style="text-align: center;">No applications yet. Start by adding one!</td>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
+    <script>
+        function showTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Show selected
+            document.getElementById(tabId).classList.add('active');
+            
+            // Find the tab element by ID or by text content if we don't have ID on tabs
+            const tabs = document.querySelectorAll('.tab');
+            if (tabId === 'apps') tabs[0].classList.add('active');
+            else if (tabId === 'queue') tabs[1].classList.add('active');
+            else if (tabId === 'insights') tabs[2].classList.add('active');
+            
+            // Save state in URL hash
+            history.replaceState(null, null, '#' + tabId);
+        }
 
-    <footer>
-        Build info: {{ branch_name }}
-    </footer>
+        // Restore tab from hash
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.substring(1);
+            if (hash && document.getElementById(hash)) {
+                showTab(hash);
+            }
+        });
+    </script>
 </body>
 </html>

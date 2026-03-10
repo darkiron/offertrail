@@ -1,9 +1,28 @@
 .idea
 .idea/
-/offertrail.db
 .env
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .venv/
+/saved_db/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+offertrail.db
+test_offertrail.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*

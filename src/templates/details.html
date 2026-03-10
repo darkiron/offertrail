@@ -37,6 +37,8 @@
     
     <div class="card">
         <p><strong>Type:</strong> {{ application.type }}</p>
+        <p><strong>Source:</strong> {{ application.source or "Not specified" }}</p>
+        <p><strong>Job URL:</strong> {% if application.job_url %}<a href="{{ application.job_url }}" target="_blank">{{ application.job_url }}</a>{% else %}Not specified{% endif %}</p>
         <p><strong>Current Status:</strong> <span class="status status-{{ application.status }}">{{ application.status }}</span></p>
         <p><strong>Applied At:</strong> {{ application.applied_at or "Not specified" }}</p>
         
@@ -56,9 +58,59 @@
         
         <div style="margin-top: 1rem;">
             <p><strong>Next Follow-up:</strong> {{ application.next_followup_at or "Not planned" }}</p>
-            <form action="/applications/{{ application.id }}/followup" method="POST">
-                <button type="submit" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Mark as Followed Up (Relancé)</button>
-            </form>
+            <div style="display: flex; gap: 0.5rem;">
+                <form action="/applications/{{ application.id }}/followup" method="POST">
+                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Mark as Followed Up (Relancé)</button>
+                </form>
+                <form action="/applications/{{ application.id }}/events" method="POST">
+                    <input type="hidden" name="event_type" value="RESPONSE_RECEIVED">
+                    <button type="submit" style="background: #17a2b8; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Réponse reçue</button>
+                </form>
+            </div>
+        </div>
+
+        <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+
+        <div style="margin-top: 1rem;">
+            <h3>Contacts</h3>
+            {% if contacts %}
+            <ul style="list-style: none; padding: 0;">
+                {% for contact in contacts %}
+                <li style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; border: 1px solid #dee2e6;">
+                    <strong>{{ contact.name }}</strong><br>
+                    {% if contact.company %}<small>🏢 {{ contact.company }}</small><br>{% endif %}
+                    {% if contact.email %}📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>{% endif %}
+                    {% if contact.phone %}📞 {{ contact.phone }}{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No contacts linked yet.</p>
+            {% endif %}
+
+            <div style="margin-top: 1rem; padding: 1rem; background: #e9ecef; border-radius: 4px;">
+                <h4>Link Existing Contact</h4>
+                <form action="/applications/{{ application.id }}/link-contact" method="POST" style="display: flex; gap: 0.5rem;">
+                    <select name="contact_id" required style="flex-grow: 1; padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                        <option value="">Select a contact...</option>
+                        {% for c in all_contacts %}
+                        <option value="{{ c.id }}">{{ c.name }} {% if c.company %}({{ c.company }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer;">Link</button>
+                </form>
+
+                <h4 style="margin-top: 1rem;">Or Create New</h4>
+                <form action="/applications/{{ application.id }}/create-contact" method="POST">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" name="name" placeholder="Name" required style="padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                        <input type="text" name="company" placeholder="Company" style="padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                        <input type="email" name="email" placeholder="Email" style="padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                        <input type="text" name="phone" placeholder="Phone" style="padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                    </div>
+                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; width: 100%;">Create & Link</button>
+                </form>
+            </div>
         </div>
 
         <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
@@ -86,6 +138,11 @@
                 {% elif event.type == 'NOTE_ADDED' %}
                     <div style="white-space: pre-wrap;">{{ event.payload.text }}</div>
                     <small style="color: #888;">Source: {{ event.payload.source }}</small>
+                {% elif event.type == 'CONTACT_CREATED' %}
+                    Contact created: <strong>{{ event.payload.name }}</strong>
+                    {% if event.payload.company %} ({{ event.payload.company }}){% endif %}
+                {% elif event.type == 'CONTACT_LINKED' %}
+                    Contact linked (ID: {{ event.payload.contact_id }})
                 {% else %}
                     {{ event.payload_json }}
                 {% endif %}
