@@ -91,23 +91,35 @@ Details will be documented in `docs/decisions.md`.
 
 ### Installation
 ```bash
-pip install -r requirements.txt
+make install
 ```
+*Note: This installs both backend (pip) and frontend (npm) dependencies.*
 
 ### Running the app
+
+#### 🚀 Full Stack (Backend + Frontend)
 ```bash
 make run
 ```
-*Note: If `python` is not in your PATH (e.g., on Windows), you can specify the path:*
-```bash
-make run PYTHON=C:\Path\To\python.exe
-```
+*This opens two new terminal windows: one for the FastAPI backend and one for the Vite frontend.*
 
-Or directly with python:
+#### 🔙 Backend only
 ```bash
-python -m uvicorn src.main:app --reload --port 8000
+make run-back
 ```
-The app will be available at [http://localhost:8000](http://localhost:8000).
+The API will be available at [http://localhost:8000](http://localhost:8000).
+
+#### 🎨 Frontend only
+```bash
+make run-front
+```
+The React app will be available at [http://localhost:5173](http://localhost:5173).
+
+### Environment configuration
+If `python` or `npm` are not in your PATH, you can specify them:
+```bash
+make install PYTHON=C:\Path\To\python.exe NPM=C:\Path\To\npm.cmd
+```
 
 ### Health check
 [http://localhost:8000/health](http://localhost:8000/health)
