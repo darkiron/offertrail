@@ -37,15 +37,15 @@ def init_db():
         """)
         conn.commit()
 
-def create_application(company, title, app_type, status, applied_at=None):
+def create_application(company, title, app_type, status, applied_at=None, next_followup_at=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO applications (company, title, type, status, applied_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO applications (company, title, type, status, applied_at, next_followup_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (company, title, app_type, status, applied_at, now, now)
+            (company, title, app_type, status, applied_at, next_followup_at, now, now)
         )
         app_id = cursor.lastrowid
         log_event(conn, "application", app_id, "CREATED", {
@@ -61,6 +61,19 @@ def create_application(company, title, app_type, status, applied_at=None):
 def list_applications():
     with get_db() as conn:
         return [dict(row) for row in conn.execute("SELECT * FROM applications ORDER BY updated_at DESC").fetchall()]
+
+def list_followups():
+    today = datetime.now().date().isoformat()
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM applications 
+            WHERE next_followup_at IS NOT NULL AND next_followup_at <= ?
+            ORDER BY next_followup_at ASC
+            """,
+            (today,)
+        ).fetchall()
+        return [dict(row) for row in rows]
 
 def get_application(app_id):
     with get_db() as conn:
@@ -81,6 +94,34 @@ def update_application_status(app_id, new_status):
         log_event(conn, "application", app_id, "STATUS_CHANGED", {
             "old_status": old_app["status"],
             "new_status": new_status
+        })
+        conn.commit()
+        return True
+
+def mark_as_followed_up(app_id):
+    from datetime import timedelta
+    today_dt = datetime.now()
+    today = today_dt.date().isoformat()
+    next_followup = (today_dt + timedelta(days=7)).date().isoformat()
+    now_ts = datetime.now(timezone.utc).isoformat()
+    
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE applications SET next_followup_at = ?, updated_at = ? WHERE id = ?",
+            (next_followup, now_ts, app_id)
+        )
+        log_event(conn, "application", app_id, "FOLLOWUP_SENT", {
+            "sent_at": today,
+            "next_followup_at": next_followup
+        })
+        conn.commit()
+        return True
+
+def add_note(app_id, text):
+    with get_db() as conn:
+        log_event(conn, "application", app_id, "NOTE_ADDED", {
+            "text": text,
+            "source": "manual"
         })
         conn.commit()
         return True
