@@ -82,7 +82,7 @@ def create_application(company, title, app_type, status, applied_at=None, next_f
         conn.commit()
         return app_id
 
-def list_applications(filters=None, search=None, show_hidden=False):
+def list_applications(filters=None, search=None, show_hidden=False, limit=None, offset=None):
     query = "SELECT a.* FROM applications a"
     params = []
     where_clauses = []
@@ -129,8 +129,64 @@ def list_applications(filters=None, search=None, show_hidden=False):
 
     query += " ORDER BY a.updated_at DESC"
 
+    if limit is not None:
+        query += " LIMIT ?"
+        params.append(limit)
+    if offset is not None:
+        query += " OFFSET ?"
+        params.append(offset)
+
     with get_db() as conn:
         return [dict(row) for row in conn.execute(query, params).fetchall()]
+
+def count_applications(filters=None, search=None, show_hidden=False):
+    query = "SELECT COUNT(*) as total FROM applications a"
+    params = []
+    where_clauses = []
+
+    if filters:
+        if filters.get("status"):
+            where_clauses.append("a.status = ?")
+            params.append(filters["status"])
+        elif not show_hidden:
+            where_clauses.append("a.status NOT IN ('REJECTED', 'OFFER')")
+        
+        if filters.get("type"):
+            where_clauses.append("a.type = ?")
+            params.append(filters["type"])
+        if filters.get("source"):
+            where_clauses.append("a.source = ?")
+            params.append(filters["source"])
+        if filters.get("has_contact") is not None:
+            if filters["has_contact"] == "yes":
+                where_clauses.append("EXISTS (SELECT 1 FROM application_contacts ac WHERE ac.application_id = a.id)")
+            elif filters["has_contact"] == "no":
+                where_clauses.append("NOT EXISTS (SELECT 1 FROM application_contacts ac WHERE ac.application_id = a.id)")
+        if filters.get("followup_due") == "yes":
+            today = datetime.now().date().isoformat()
+            where_clauses.append("a.next_followup_at IS NOT NULL AND a.next_followup_at <= ?")
+            params.append(today)
+    elif not show_hidden:
+        where_clauses.append("a.status NOT IN ('REJECTED', 'OFFER')")
+
+    if search:
+        search_term = f"%{search.strip()}%"
+        search_clause = """
+            (a.company LIKE ? OR a.title LIKE ? OR EXISTS (
+                SELECT 1 FROM application_contacts ac 
+                JOIN contacts c ON ac.contact_id = c.id 
+                WHERE ac.application_id = a.id AND (c.name LIKE ? OR c.email LIKE ?)
+            ))
+        """
+        where_clauses.append(search_clause)
+        params.extend([search_term, search_term, search_term, search_term])
+
+    if where_clauses:
+        query += " WHERE " + " AND ".join(where_clauses)
+
+    with get_db() as conn:
+        row = conn.execute(query, params).fetchone()
+        return row["total"]
 
 def create_contact(name, email=None, phone=None, company=None):
     now = datetime.now(timezone.utc).isoformat()
@@ -199,6 +255,7 @@ def list_followups():
             """
             SELECT * FROM applications 
             WHERE next_followup_at IS NOT NULL AND next_followup_at <= ?
+            AND status != "REJECTED"
             ORDER BY next_followup_at ASC
             """,
             (today,)
