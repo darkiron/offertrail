@@ -1,6 +1,5 @@
 .idea
 .idea/
-/offertrail.db
 .env
 __pycache__/
 *.py[cod]
@@ -8,6 +7,13 @@ __pycache__/
 venv/
 .venv/
 /saved_db/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+offertrail.db
+test_offertrail.db
 
 # Frontend
 frontend/node_modules/
