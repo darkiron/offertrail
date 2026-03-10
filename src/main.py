@@ -100,6 +100,17 @@ async def api_dashboard(
         "followups": followups
     }
 
+@app.get("/api/insights/monthly-applications")
+async def api_monthly_applications(year: int = None):
+    if year is None:
+        year = datetime.now().year
+    
+    stats = database.get_annual_monthly_stats(year)
+    return {
+        "year": year,
+        "months": stats
+    }
+
 @app.get("/api/applications")
 async def api_applications(
     status: str = None,
