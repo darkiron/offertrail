@@ -16,16 +16,16 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
   return (
     <div className="card" style={{ padding: 'var(--spacing-md)' }}>
       <div style={{ marginBottom: 'var(--spacing-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--ctp-mocha-text)' }}>
+        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--text-main)' }}>
           Monthly Applications
         </h3>
-        <span className="badge" style={{ backgroundColor: 'var(--ctp-mocha-blue)', color: 'white' }}>
+        <span className="badge" style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
           {year}
         </span>
       </div>
 
       {data.every(d => d.count === 0) ? (
-        <div style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ctp-mocha-subtext0)', fontStyle: 'italic' }}>
+        <div style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontStyle: 'italic' }}>
           No application data available for {year}
         </div>
       ) : (
@@ -39,7 +39,7 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
                 y1={chartHeight * (1 - percent)}
                 x2={chartWidth}
                 y2={chartHeight * (1 - percent)}
-                stroke="var(--ctp-mocha-surface1)"
+                stroke="var(--border)"
                 strokeDasharray="4 2"
               />
             ))}
@@ -58,7 +58,7 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
                     y={y}
                     width={barWidth}
                     height={barHeight}
-                    fill="var(--ctp-mocha-blue)"
+                    fill="var(--accent)"
                     rx="4"
                     className="chart-bar"
                   >
@@ -70,7 +70,7 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
                     x={x + barWidth / 2}
                     y={chartHeight + 20}
                     textAnchor="middle"
-                    fill="var(--ctp-mocha-subtext1)"
+                    fill="var(--text-dim)"
                     style={{ fontSize: 'var(--font-size-xs)' }}
                   >
                     {d.month}
@@ -82,7 +82,7 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
                       x={x + barWidth / 2}
                       y={y - 5}
                       textAnchor="middle"
-                      fill="var(--ctp-mocha-text)"
+                      fill="var(--text-main)"
                       style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold' }}
                     >
                       {d.count}
@@ -97,7 +97,7 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
       
       <style>{`
         .chart-bar:hover {
-          fill: var(--ctp-mocha-sapphire);
+          fill: var(--accent-hover);
           cursor: help;
         }
       `}</style>
