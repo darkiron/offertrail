@@ -37,3 +37,13 @@ export interface DashboardData {
   sources: string[];
   followups: Application[];
 }
+
+export interface MonthlyStats {
+  month: string;
+  count: number;
+}
+
+export interface MonthlyInsights {
+  year: number;
+  months: MonthlyStats[];
+}
