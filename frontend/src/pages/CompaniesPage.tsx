@@ -6,6 +6,8 @@ import { Card } from '../components/atoms/Card';
 import { Badge } from '../components/atoms/Badge';
 import { SearchInput } from '../components/molecules/SearchInput';
 
+import { Link } from 'react-router-dom';
+
 export const CompaniesPage: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +41,7 @@ export const CompaniesPage: React.FC = () => {
             title={company.name} 
             className="h-full"
             footer={
-              <a href={`#/companies/${company.id}`} className="card-footer-item">View Details</a>
+              <Link to={`/companies/${company.id}`} className="card-footer-item">View Details</Link>
             }
           >
             <div className="mb-2">

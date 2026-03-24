@@ -8,7 +8,10 @@ import { mapApplicationDtoToModel } from '../domain/application/model';
 import { Button } from '../components/atoms/Button';
 import { ApplicationModal } from '../components/organisms/ApplicationModal';
 
+import { useNavigate } from 'react-router-dom';
+
 export const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +64,7 @@ export const DashboardPage: React.FC = () => {
             <h2 className="subtitle">Follow-up Queue</h2>
             <ApplicationTable 
               applications={data.followups.map(mapApplicationDtoToModel)} 
-              onRowClick={(id) => window.location.hash = `/applications/${id}`}
+              onRowClick={(id) => navigate(`/applications/${id}`)}
             />
           </div>
         </div>

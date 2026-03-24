@@ -108,13 +108,25 @@ class Application:
             "notes": self.notes,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "events": self.events
         }
-        if include_company and company_name:
-            data["company"] = {
-                "id": self.company_id,
-                "name": company_name
-            }
+        
+        # Nested company object
+        if include_company:
+            if hasattr(self, 'company') and self.company:
+                data["company"] = {
+                    "id": self.company.id,
+                    "name": self.company.name
+                }
+            elif company_name:
+                data["company"] = {
+                    "id": self.company_id,
+                    "name": company_name
+                }
+            
+            # Fallback for old frontend still using company_name
+            if "company" in data:
+                data["company_name"] = data["company"]["name"]
+                
         return data
 
 @dataclass
@@ -164,7 +176,7 @@ class Company:
     applications: List[Application] = field(default_factory=list) # Direct link for easier stats
 
     def to_dict(self) -> Dict:
-        return {
+        data = {
             "id": self.id,
             "name": self.name,
             "slug": self.slug,
@@ -175,10 +187,17 @@ class Company:
             "notes": self.notes,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "metrics": self.metrics,
-            "flags": self.flags,
-            "global_flag_level": self.global_flag_level
         }
+        try:
+            data["metrics"] = self.metrics
+            data["flags"] = self.flags
+            data["global_flag_level"] = self.global_flag_level
+        except Exception as e:
+            data["metrics"] = None
+            data["flags"] = []
+            data["global_flag_level"] = "green"
+            data["_metrics_error"] = str(e)
+        return data
 
     @property
     def metrics(self) -> Dict:
@@ -251,23 +270,27 @@ class Company:
                     last_interaction = current_interaction
         
         # response_rate per Requirement 7: (interview + accepted) / total
-        interviews_or_accepted = 0
+        responded_positively = 0
+        interviews_count = 0
         for app in apps_list:
-            is_interview = any(e.get("type") == "INTERVIEW" for e in app.events) or app.status == ApplicationStatus.INTERVIEW
-            is_accepted = app.status == ApplicationStatus.ACCEPTED
-            if is_interview or is_accepted:
-                interviews_or_accepted += 1
+            is_interview = any(e.get("type") in ["INTERVIEW", "INTERVIEW_SCHEDULED", "OFFER_RECEIVED"] for e in app.events) or app.status in [ApplicationStatus.INTERVIEW, ApplicationStatus.ACCEPTED]
+            if is_interview:
+                responded_positively += 1
+                interviews_count += 1
+            elif app.status == ApplicationStatus.ACCEPTED:
+                # Should already be covered by is_interview (status check), but for clarity
+                responded_positively += 1
 
         return {
             "total_apps": total_apps,
             "total_offers": total_offers,
             "rejections": rejections,
             "no_responses": no_responses,
-            "interviews": interviews,
+            "interviews": interviews_count,
             "rejection_rate": round(rejections / total_apps * 100, 2),
             "ghosting_rate": round(no_responses / total_apps * 100, 2),
-            "response_rate": round(interviews_or_accepted / total_apps * 100, 2),
-            "interview_rate": round(interviews / total_apps * 100, 2),
+            "response_rate": round(responded_positively / total_apps * 100, 2),
+            "interview_rate": round(interviews_count / total_apps * 100, 2),
             "last_interaction": last_interaction
         }
 

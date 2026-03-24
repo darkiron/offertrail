@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferTrail - Companies</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { margin: 0; color: var(--primary); }
+        .search-box { margin-bottom: 2rem; display: flex; gap: 0.5rem; }
+        input { flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; }
+        button { background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; }
+        .company-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .company-card { background: var(--card-bg); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border); text-decoration: none; color: inherit; transition: transform 0.1s; }
+        .company-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .company-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .company-meta { font-size: 0.875rem; color: var(--text-muted); }
+        .stats { margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.875rem; }
+        .stat-item { background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+        .flag-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+        .flag-green { background: #10b981; }
+        .flag-orange { background: #f59e0b; }
+        .flag-red { background: #ef4444; }
+        .nav-link { text-decoration: none; color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Companies</h1>
+            <a href="/" class="nav-link">Dashboard</a>
+        </header>
+
+        <form class="search-box" action="/companies" method="GET">
+            <input type="text" name="q" placeholder="Search companies..." value="{{ q or '' }}">
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="company-grid">
+            {% for company in companies %}
+            <a href="/companies/{{ company.id }}" class="company-card">
+                <div class="company-name">
+                    <span class="flag-dot flag-{{ company.global_flag_level }}"></span>
+                    {{ company.name }}
+                </div>
+                <div class="company-meta">{{ company.type }} &bull; {{ company.location or 'N/A' }}</div>
+                <div class="stats">
+                    <div class="stat-item">Apps: {{ company.metrics.total_apps }}</div>
+                    <div class="stat-item">Rej: {{ company.metrics.rejections }}</div>
+                    <div class="stat-item">Resp: {{ company.metrics.response_rate }}%</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

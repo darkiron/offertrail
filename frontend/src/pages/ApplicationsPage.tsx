@@ -8,7 +8,10 @@ import { Button } from '../components/atoms/Button';
 
 import { ApplicationModal } from '../components/organisms/ApplicationModal';
 
+import { useNavigate } from 'react-router-dom';
+
 export const ApplicationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<ApplicationModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -43,7 +46,7 @@ export const ApplicationsPage: React.FC = () => {
   }, [search, status]);
 
   const handleRowClick = (id: number) => {
-    window.location.hash = `/applications/${id}`;
+    navigate(`/applications/${id}`);
   };
 
   return (

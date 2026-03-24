@@ -1,16 +1,31 @@
+export interface CompanySummary {
+  id: number;
+  name: string;
+}
+
 export interface Application {
   id: number;
-  company: string;
+  company: CompanySummary;
   title: string;
   type: string;
   status: string;
   source: string | null;
   job_url: string | null;
   applied_at: string | null;
+  last_contact_at: string | null;
   next_followup_at: string | null;
   created_at: string;
   updated_at: string;
   hidden: number;
+  events: Event[];
+}
+
+export interface Event {
+  id: number;
+  ts: string;
+  type: string;
+  payload_json: string;
+  payload?: any;
 }
 
 export interface PaginatedResponse<T> {
@@ -46,4 +61,32 @@ export interface MonthlyStats {
 export interface MonthlyInsights {
   year: number;
   months: MonthlyStats[];
+}
+
+export interface CompanyStats {
+  total_apps: number;
+  total_offers: number;
+  rejections: number;
+  no_responses: number;
+  interviews: number;
+  rejection_rate: number;
+  ghosting_rate: number;
+  response_rate: number;
+  interview_rate: number;
+  last_interaction: string | null;
+}
+
+export interface CompanyDetails extends CompanySummary {
+  slug: string;
+  type: string;
+  website: string | null;
+  location: string | null;
+  description: string | null;
+  notes: string | null;
+  metrics: CompanyStats;
+  flags: string[];
+  global_flag_level: string;
+  offers: any[];
+  contacts: any[];
+  applications: Application[];
 }

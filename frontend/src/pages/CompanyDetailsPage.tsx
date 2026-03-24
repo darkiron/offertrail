@@ -10,7 +10,10 @@ interface CompanyDetailsPageProps {
   id: number;
 }
 
+import { useNavigate } from 'react-router-dom';
+
 export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({ id }) => {
+  const navigate = useNavigate();
   const [company, setCompany] = useState<CompanyModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -75,19 +78,19 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({ id }) =>
     <div>
       <h2 className="subtitle">Applications</h2>
       <ApplicationTable 
-        applications={(company as any).applications?.map(mapApplicationDtoToModel) || []}
-        onRowClick={(appId) => window.location.hash = `/applications/${appId}`}
+        applications={company.applications?.map(mapApplicationDtoToModel) || []}
+        onRowClick={(appId) => navigate(`/applications/${appId}`)}
       />
       
       <h2 className="subtitle mt-6">Offers</h2>
       <div className="box">
-        {((company as any).offers || []).length === 0 ? (
+        {(company.offers || []).length === 0 ? (
           <p className="has-text-grey">No offers recorded yet.</p>
         ) : (
           <ul>
-            {((company as any).offers || []).map((offer: any) => (
+            {(company.offers || []).map((offer: any) => (
               <li key={offer.id} className="mb-2">
-                <strong>{offer.title}</strong> ({offer.type})
+                <strong>{offer.title}</strong> ({offer.type || offer.contract_type})
               </li>
             ))}
           </ul>

@@ -158,45 +158,52 @@ async def api_applications(
         "limit": limit
     }
 
-@app.post("/applications", response_class=RedirectResponse)
-async def create_application(
-    company: str = Form(...),
-    title: Optional[str] = Form(None),
-    type: str = Form("CDI"),
-    source: str = Form("OTHER"),
-    channel: str = Form("OTHER"),
-    applied_at: Optional[str] = Form(None),
-    job_url: Optional[str] = Form(None)
-):
-    app_service.apply_to_offer(
-        company_name=company,
-        offer_title=title if title and title.strip() else None,
-        offer_type=OfferType(type),
-        source=OfferSource(source),
-        channel=ApplicationChannel(channel),
-        url=job_url if job_url and job_url.strip() else None,
-        applied_at=applied_at if applied_at and applied_at.strip() else None
+@app.post("/api/applications")
+async def api_create_application(data: Dict[str, Any]):
+    # Extract data from JSON body
+    company_name = data.get("new_company_name") or data.get("company_name")
+    company_id = data.get("company_id")
+    title = data.get("title")
+    status_str = data.get("status", "APPLIED")
+    applied_at = data.get("applied_at")
+    notes = data.get("notes")
+    
+    # Simple validation
+    if not company_id and not company_name:
+        raise HTTPException(status_code=422, detail="Company ID or name is required")
+        
+    app_id = app_service.apply_to_offer(
+        company_name=company_name or "Unknown",
+        company_id=int(company_id) if company_id else None,
+        offer_title=title,
+        applied_at=applied_at
     )
-    return RedirectResponse(url="/", status_code=303)
+    
+    if notes:
+        repository.update_application_notes(app_id, notes)
+    
+    if status_str != "APPLIED":
+        try:
+            status = ApplicationStatus(status_str)
+            app_service.update_application_status(app_id, status)
+        except ValueError:
+            pass
+
+    return {"id": app_id, "status": "success"}
 
 @app.get("/api/companies")
 async def api_list_companies():
     companies = repository.list_companies()
+    # Ensure nested objects are included for consistency
     return [c.to_dict() for c in companies]
 
 @app.get("/api/companies/{company_id}")
 async def api_get_company(company_id: int):
-    details = comp_service.get_company_details(company_id)
-    if not details:
+    company = repository.get_company(company_id)
+    if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    company = details["company"]
-    # Enriched dictionary
-    res = company.to_dict()
-    res["offers"] = [o.to_dict() for o in company.offers]
-    res["contacts"] = [c.to_dict() for c in company.contacts]
-    res["applications"] = [a.to_dict(include_company=True, company_name=company.name) for a in company.applications]
-    return res
+    return company.to_dict()
 
 @app.get("/api/applications/{app_id}")
 async def api_application_details(app_id: int):
@@ -229,13 +236,7 @@ async def api_application_details(app_id: int):
             app_dict["source"] = offer.source.value
     
     events = repository.get_events_for_entity("application", app_id)
-    import json
-    for event in events:
-        if event.get("payload_json"):
-            try:
-                event["payload"] = json.loads(event["payload_json"])
-            except:
-                event["payload"] = {}
+    # Payload is already parsed and sanitized by repository._get_events_for_entity_with_conn
     
     # Get contacts for this company
     contacts = []

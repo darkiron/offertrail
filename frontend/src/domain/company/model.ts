@@ -13,6 +13,9 @@ export interface CompanyModel extends CompanySummaryModel {
   metrics: CompanyMetricsModel;
   flags: string[];
   globalFlagLevel: 'green' | 'orange' | 'red' | string;
+  applications?: any[];
+  offers?: any[];
+  contacts?: any[];
 }
 
 export interface CompanyMetricsModel {
@@ -52,5 +55,8 @@ export const mapCompanyDtoToModel = (dto: any): CompanyModel => {
     },
     flags: dto.flags || [],
     globalFlagLevel: dto.global_flag_level || 'green',
+    applications: dto.applications,
+    offers: dto.offers,
+    contacts: dto.contacts,
   };
 };

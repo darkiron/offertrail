@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferTrail - {{ company_details.company.name }}</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --red: #ef4444;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: white; }
+        .badge-green { background: var(--green); }
+        .badge-orange { background: var(--orange); }
+        .badge-red { background: var(--red); }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th { text-align: left; font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem; border-bottom: 1px solid var(--border); }
+        td { padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border); }
+        .nav-link { text-decoration: none; color: var(--primary); font-weight: 600; }
+        .btn-small { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; border: 1px solid var(--border); background: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/companies" class="nav-link">← All Companies</a>
+        
+        <header style="margin-top: 1rem;">
+            <div>
+                <h1 style="margin: 0;">{{ company_details.company.name }}</h1>
+                <div style="margin-top: 0.5rem;">
+                    <span class="badge badge-{{ company_details.global_flag_level }}">Flag: {{ company_details.global_flag_level }}</span>
+                    {% if company_details.company.type %}
+                    <span style="margin-left: 0.5rem; color: var(--text-muted);">{{ company_details.company.type }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                {% if company_details.company.website %}
+                <a href="{{ company_details.company.website }}" target="_blank" class="nav-link">{{ company_details.company.website }}</a><br>
+                {% endif %}
+                <span style="color: var(--text-muted);">{{ company_details.company.location or "Location not set" }}</span>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="section-title">Aggregated Stats</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.total_apps }}</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.total_offers }}</div>
+                    <div class="stat-label">Offers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.interviews }}</div>
+                    <div class="stat-label">Interviews</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.rejections }}</div>
+                    <div class="stat-label">Rejections</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.response_rate }}%</div>
+                    <div class="stat-label">Response Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ company_details.metrics.ghosting_rate }}%</div>
+                    <div class="stat-label">Ghosting Rate</div>
+                </div>
+            </div>
+            
+            {% if company_details.flags %}
+            <div style="margin-top: 1.5rem;">
+                <div class="stat-label" style="margin-bottom: 0.5rem;">Flags Detected</div>
+                {% for flag in company_details.flags %}
+                <span class="badge badge-orange" style="margin-right: 0.25rem;">{{ flag.replace('_', ' ') }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if company_details.company.description %}
+            <div style="margin-top: 1.5rem;">
+                <div class="stat-label">Description</div>
+                <p style="margin-top: 0.5rem; font-size: 0.875rem;">{{ company_details.company.description }}</p>
+            </div>
+            {% endif %}
+            
+            {% if company_details.company.notes %}
+            <div style="margin-top: 1rem;">
+                <div class="stat-label">Internal Notes</div>
+                <p style="margin-top: 0.5rem; font-size: 0.875rem; background: #fffbeb; padding: 0.5rem; border-left: 3px solid #fcd34d;">{{ company_details.company.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                Offers
+                <button class="btn-small">+ New Offer</button>
+            </div>
+            {% if company_details.company.offers %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Created</th>
+                        <th>Apps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for offer in company_details.company.offers %}
+                    <tr>
+                        <td><strong>{{ offer.title }}</strong></td>
+                        <td>{{ offer.contract_type }}</td>
+                        <td>{{ offer.source }}</td>
+                        <td>{{ offer.created_at[:10] }}</td>
+                        <td>{{ offer.applications|length }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No offers found for this company.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                Applications
+                <button class="btn-small">+ New Application</button>
+            </div>
+            {% if company_details.company.applications %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Offer/Title</th>
+                        <th>Status</th>
+                        <th>Channel</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in company_details.company.applications %}
+                    <tr>
+                        <td>{{ app.applied_at[:10] if app.applied_at else "N/A" }}</td>
+                        <td>
+                            {% if app.offer_id %}
+                                {% for o in company_details.company.offers if o.id == app.offer_id %}
+                                    {{ o.title }}
+                                {% endfor %}
+                            {% else %}
+                                <em>Unsolicited / Spontaneous</em>
+                            {% endif %}
+                        </td>
+                        <td>{{ app.status }}</td>
+                        <td>{{ app.channel }}</td>
+                        <td><a href="/applications/{{ app.id }}" class="nav-link">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No applications yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                Contacts
+                <button class="btn-small">+ New Contact</button>
+            </div>
+            {% if company_details.company.contacts %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                {% for contact in company_details.company.contacts %}
+                <div style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem;">
+                    <div style="font-weight: 700;">{{ contact.first_name }} {{ contact.last_name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ contact.role }}</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem;">
+                        {% if contact.email %}📧 {{ contact.email }}<br>{% endif %}
+                        {% if contact.phone %}📞 {{ contact.phone }}{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No contacts linked yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

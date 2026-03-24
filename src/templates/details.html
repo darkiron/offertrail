@@ -43,11 +43,11 @@
     <div class="card">
         {% if company %}
         <div class="company-summary">
-            <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏢 {{ company.name }}</h4>
+            <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏢 <a href="/companies/{{ company.company.id }}" style="text-decoration: none; color: inherit;">{{ company.company.name }}</a></h4>
             <div style="font-size: 0.85rem; color: #555;">
-                Offers: <strong>{{ company.applications_count }}</strong> | 
-                Rejections: <strong>{{ company.rejected_count }}</strong> | 
-                Response rate: <strong>{{ company.response_rate }}%</strong>
+                Offers: <strong>{{ company.metrics.total_apps }}</strong> | 
+                Rejections: <strong>{{ company.metrics.rejections }}</strong> | 
+                Ghosting: <strong>{{ company.metrics.ghosting_rate }}%</strong>
             </div>
             {% if company.flags %}
             <div style="margin-top: 0.5rem;">
@@ -56,6 +56,9 @@
                 {% endfor %}
             </div>
             {% endif %}
+            <div style="margin-top: 0.5rem;">
+                Flag Level: <strong>{{ company.global_flag_level.upper() }}</strong>
+            </div>
         </div>
         {% endif %}
 
@@ -68,11 +71,11 @@
         <form action="/applications/{{ application.id }}/status" method="POST" style="margin-top: 1.5rem;">
             <label for="status" style="font-weight: bold;">Update Status:</label>
             <select id="status" name="status" style="padding: 0.4rem; border-radius: 4px;">
-                <option value="INTERESTED" {% if application.status == 'INTERESTED' %}selected{% endif %}>INTERESTED</option>
-                <option value="APPLIED" {% if application.status == 'APPLIED' %}selected{% endif %}>APPLIED</option>
-                <option value="INTERVIEW" {% if application.status == 'INTERVIEW' %}selected{% endif %}>INTERVIEW</option>
-                <option value="OFFER" {% if application.status == 'OFFER' %}selected{% endif %}>OFFER</option>
-                <option value="REJECTED" {% if application.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+                <option value="APPLIED">APPLIED</option>
+                <option value="INTERVIEW">INTERVIEW</option>
+                <option value="OFFER">OFFER</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="NO_RESPONSE">NO_RESPONSE</option>
             </select>
             <button type="submit" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Update</button>
         </form>
