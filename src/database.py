@@ -13,9 +13,18 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company TEXT NOT NULL,
+                company_id INTEGER,
+                company TEXT NOT NULL, -- Keep for compatibility during transition
                 title TEXT NOT NULL,
                 type TEXT NOT NULL, -- CDI|FREELANCE
                 status TEXT NOT NULL,
@@ -24,18 +33,21 @@ def init_db():
                 applied_at TEXT,
                 next_followup_at TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (company_id) REFERENCES companies (id)
             )
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER,
                 name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT,
                 company TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (company_id) REFERENCES companies (id)
             )
         """)
         conn.execute("""
@@ -59,18 +71,33 @@ def init_db():
         """)
         conn.commit()
 
+def get_or_create_company(conn, name):
+    now = datetime.now(timezone.utc).isoformat()
+    cursor = conn.execute("SELECT id FROM companies WHERE name = ?", (name,))
+    row = cursor.fetchone()
+    if row:
+        return row["id"]
+    
+    cursor = conn.execute(
+        "INSERT INTO companies (name, created_at, updated_at) VALUES (?, ?, ?)",
+        (name, now, now)
+    )
+    return cursor.lastrowid
+
 def create_application(company, title, app_type, status, applied_at=None, next_followup_at=None, source=None, job_url=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
+        company_id = get_or_create_company(conn, company)
         cursor = conn.execute(
             """
-            INSERT INTO applications (company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO applications (company_id, company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (company, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
+            (company_id, company, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
         )
         app_id = cursor.lastrowid
         log_event(conn, "application", app_id, "CREATED", {
+            "company_id": company_id,
             "company": company,
             "title": title,
             "type": app_type,
@@ -191,15 +218,20 @@ def count_applications(filters=None, search=None, show_hidden=False):
 def create_contact(name, email=None, phone=None, company=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
+        company_id = None
+        if company:
+            company_id = get_or_create_company(conn, company)
+            
         cursor = conn.execute(
             """
-            INSERT INTO contacts (name, email, phone, company, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO contacts (company_id, name, email, phone, company, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (name, email, phone, company, now, now)
+            (company_id, name, email, phone, company, now, now)
         )
         contact_id = cursor.lastrowid
         log_event(conn, "contact", contact_id, "CONTACT_CREATED", {
+            "company_id": company_id,
             "name": name,
             "email": email,
             "company": company
@@ -207,9 +239,78 @@ def create_contact(name, email=None, phone=None, company=None):
         conn.commit()
         return contact_id
 
-def list_contacts():
+def list_companies():
+    query = """
+        SELECT 
+            c.*,
+            COUNT(a.id) as applications_count,
+            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
+            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count,
+            SUM(CASE WHEN a.status NOT IN ('REJECTED', 'NO_RESPONSE', 'INTERESTED', 'APPLIED') THEN 1 ELSE 0 END) as responded_count
+        FROM companies c
+        LEFT JOIN applications a ON c.id = a.company_id
+        GROUP BY c.id
+        ORDER BY c.name ASC
+    """
     with get_db() as conn:
-        return [dict(row) for row in conn.execute("SELECT * FROM contacts ORDER BY name ASC").fetchall()]
+        rows = conn.execute(query).fetchall()
+        companies = []
+        for row in rows:
+            d = dict(row)
+            total = d["applications_count"]
+            if total > 0:
+                d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
+                d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
+            else:
+                d["response_rate"] = 0
+                d["rejected_rate"] = 0
+            
+            # Qualitative flags
+            d["flags"] = []
+            if d["rejected_rate"] > 70 and total >= 3:
+                d["flags"].append("HIGH_REJECTION")
+            if d["no_response_count"] > 2 and d["response_rate"] < 30:
+                d["flags"].append("NO_RESPONSE_PATTERN")
+            if d["response_rate"] < 50 and total >= 3:
+                d["flags"].append("LOW_RESPONSE_RATE")
+                
+            companies.append(d)
+        return companies
+
+def get_company(company_id):
+    query = """
+        SELECT 
+            c.*,
+            COUNT(a.id) as applications_count,
+            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
+            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count
+        FROM companies c
+        LEFT JOIN applications a ON c.id = a.company_id
+        WHERE c.id = ?
+        GROUP BY c.id
+    """
+    with get_db() as conn:
+        row = conn.execute(query, (company_id,)).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        total = d["applications_count"]
+        if total > 0:
+            d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
+            d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
+        else:
+            d["response_rate"] = 0
+            d["rejected_rate"] = 0
+        
+        d["flags"] = []
+        if d["rejected_rate"] > 70 and total >= 3:
+            d["flags"].append("HIGH_REJECTION")
+        if d["no_response_count"] > 2 and d["response_rate"] < 30:
+            d["flags"].append("NO_RESPONSE_PATTERN")
+        if d["response_rate"] < 50 and total >= 3:
+            d["flags"].append("LOW_RESPONSE_RATE")
+            
+        return d
 
 def get_contact(contact_id):
     with get_db() as conn:

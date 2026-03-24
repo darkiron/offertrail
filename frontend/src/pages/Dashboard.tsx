@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { dashboardService, applicationService } from '../services/api';
-import type {Application, DashboardData} from '../types';
+import type {Application, DashboardData, MonthlyInsights} from '../types';
 import { KPICard } from '../components/molecules/KPICard';
 import { Link } from 'react-router-dom';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
+import MonthlyApplicationsChart from '../components/organisms/MonthlyApplicationsChart';
 
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -12,13 +13,27 @@ export const Dashboard: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [followups, setFollowups] = useState<Application[]>([]);
+  const [insights, setInsights] = useState<MonthlyInsights | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const [activeTab, setActiveTab] = useState<'apps' | 'queue' | 'insights'>('apps');
   const [showHidden, setShowHidden] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchInsights = async () => {
+    setLoadingInsights(true);
+    try {
+      const insightsData = await dashboardService.getMonthlyInsights();
+      setInsights(insightsData);
+    } catch (error) {
+      console.error('Error fetching insights:', error);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -52,6 +67,12 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [searchTerm, statusFilter, showHidden, page]);
+
+  useEffect(() => {
+    if (activeTab === 'insights' && !insights) {
+      fetchInsights();
+    }
+  }, [activeTab]);
 
   const handleMarkFollowup = async (id: number) => {
     try {
@@ -276,8 +297,20 @@ export const Dashboard: React.FC = () => {
         )}
 
         {activeTab === 'insights' && (
-          <div className="has-text-centered text-dim" style={{ padding: '4rem' }}>
-            <p className="text-lg italic">Insights & trends visualization coming soon.</p>
+          <div>
+            {loadingInsights ? (
+              <div className="has-text-centered text-dim" style={{ padding: '4rem' }}>
+                <div className="loading-spinner mb-md"></div>
+                <p>Loading insights...</p>
+              </div>
+            ) : insights ? (
+              <MonthlyApplicationsChart data={insights.months} year={insights.year} />
+            ) : (
+              <div className="has-text-centered text-dim" style={{ padding: '4rem' }}>
+                <p className="text-lg italic">Failed to load insights.</p>
+                <button className="btn-ghost" onClick={fetchInsights}>Retry</button>
+              </div>
+            )}
           </div>
         )}
       </div>
