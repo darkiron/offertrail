@@ -1,4 +1,4 @@
-import { CompanySummaryModel } from '../company/model';
+import type { CompanySummaryModel } from '../company/model';
 
 export interface ApplicationModel {
   id: number;

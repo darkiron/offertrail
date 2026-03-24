@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { CompanyModel, mapCompanyDtoToModel } from '../domain/company/model';
+import { type CompanyModel, mapCompanyDtoToModel } from '../domain/company/model';
 import { mapApplicationDtoToModel } from '../domain/application/model';
 import { DetailPageTemplate } from '../components/templates/DetailPageTemplate';
 import { Badge } from '../components/atoms/Badge';

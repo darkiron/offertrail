@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { DashboardModel, mapDashboardDtoToModel } from '../domain/dashboard/model';
+import { type DashboardModel, mapDashboardDtoToModel } from '../domain/dashboard/model';
 import { MetricsGrid } from '../components/organisms/MetricsGrid';
 import { ApplicationTable } from '../components/organisms/ApplicationTable';
 import { mapApplicationDtoToModel } from '../domain/application/model';

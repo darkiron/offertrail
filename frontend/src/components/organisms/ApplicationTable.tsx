@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApplicationModel } from '../../domain/application/model';
+import type { ApplicationModel } from '../../domain/application/model';
 import { StatusBadge } from '../molecules/StatusBadge';
 
 interface ApplicationTableProps {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { ApplicationModel, mapApplicationDtoToModel } from '../domain/application/model';
+import { type ApplicationModel, mapApplicationDtoToModel } from '../domain/application/model';
 import { ListPageTemplate } from '../components/templates/ListPageTemplate';
 import { ApplicationTable } from '../components/organisms/ApplicationTable';
 import { FilterBar } from '../components/organisms/FilterBar';
