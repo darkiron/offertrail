@@ -53,10 +53,14 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({
   }, [searchQuery, isOpen]);
 
   const handleSubmit = async () => {
+    if (!searchQuery) return;
     setLoading(true);
     try {
-      // Simplified creation logic
-      await api.createApplication(formData);
+      const payload = {
+        ...formData,
+        new_company_name: formData.company_id ? '' : searchQuery,
+      };
+      await api.createApplication(payload);
       onSuccess();
       onClose();
     } catch (err) {
@@ -116,12 +120,17 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({
         )}
       </div>
 
-      <Input 
-        label="Job Title" 
-        value={formData.title} 
-        onChange={(e) => setFormData({...formData, title: e.target.value})} 
-        required
-      />
+      <div className="field">
+        <label className="label">Job Title</label>
+        <div className="control">
+          <Input 
+            value={formData.title} 
+            onChange={(e) => setFormData({...formData, title: e.target.value})} 
+            required
+            placeholder="e.g. Senior Backend Developer"
+          />
+        </div>
+      </div>
 
       <div className="columns">
         <div className="column">
