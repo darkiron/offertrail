@@ -164,11 +164,26 @@ async def create_application(
     database.create_application(company, title, type, status, applied_at, next_followup_at, source, job_url)
     return RedirectResponse(url="/", status_code=303)
 
+@app.get("/api/companies")
+async def api_list_companies():
+    return database.list_companies()
+
+@app.get("/api/companies/{company_id}")
+async def api_get_company(company_id: int):
+    company = database.get_company(company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return company
+
 @app.get("/api/applications/{app_id}")
 async def api_application_details(app_id: int):
     app_data = database.get_application(app_id)
     if not app_data:
         raise HTTPException(status_code=404, detail="Application not found")
+    
+    company_info = None
+    if app_data.get("company_id"):
+        company_info = database.get_company(app_data["company_id"])
         
     events = database.get_events_for_entity("application", app_id)
     for event in events:
@@ -189,6 +204,7 @@ async def api_application_details(app_id: int):
     
     return {
         "application": app_data,
+        "company": company_info,
         "events": events,
         "contacts": contacts,
         "all_contacts": database.list_contacts()
@@ -221,7 +237,7 @@ async def api_add_note(app_id: int, data: dict):
 
 @app.post("/api/applications/{app_id}/followup")
 async def api_mark_followup(app_id: int):
-    database.mark_followed_up(app_id)
+    database.mark_as_followed_up(app_id)
     return {"success": True}
 
 @app.post("/api/applications/{app_id}/events")
@@ -252,6 +268,10 @@ async def application_details(request: Request, app_id: int):
     app_data = database.get_application(app_id)
     if not app_data:
         return RedirectResponse(url="/", status_code=404)
+    
+    company_info = None
+    if app_data.get("company_id"):
+        company_info = database.get_company(app_data["company_id"])
         
     events = database.get_events_for_entity("application", app_id)
     # Parse payload_json for each event
@@ -275,6 +295,7 @@ async def application_details(request: Request, app_id: int):
     return templates.TemplateResponse(request, "details.html", {
         "branch_name": get_branch_name(),
         "application": app_data,
+        "company": company_info,
         "events": events,
         "contacts": contacts,
         "all_contacts": all_contacts
