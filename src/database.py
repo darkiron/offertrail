@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 DB_PATH = Path("offertrail.db")
@@ -13,17 +13,22 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS companies (
+            CREATE TABLE IF NOT EXISTS organizations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                type TEXT NOT NULL DEFAULT 'AUTRE',
+                website TEXT,
+                linkedin_url TEXT,
+                city TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company_id INTEGER,
+                organization_id INTEGER,
                 company TEXT NOT NULL, -- Keep for compatibility during transition
                 title TEXT NOT NULL,
                 type TEXT NOT NULL, -- CDI|FREELANCE
@@ -34,20 +39,24 @@ def init_db():
                 next_followup_at TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                FOREIGN KEY (company_id) REFERENCES companies (id)
+                FOREIGN KEY (organization_id) REFERENCES organizations (id)
             )
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company_id INTEGER,
-                name TEXT NOT NULL,
+                organization_id INTEGER,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT,
-                company TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                FOREIGN KEY (company_id) REFERENCES companies (id)
+                role TEXT,
+                is_recruiter INTEGER NOT NULL DEFAULT 0,
+                linkedin_url TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (organization_id) REFERENCES organizations (id)
             )
         """)
         conn.execute("""
@@ -71,34 +80,34 @@ def init_db():
         """)
         conn.commit()
 
-def get_or_create_company(conn, name):
+def get_or_create_organization(conn, name, org_type='AUTRE'):
     now = datetime.now(timezone.utc).isoformat()
-    cursor = conn.execute("SELECT id FROM companies WHERE name = ?", (name,))
+    cursor = conn.execute("SELECT id FROM organizations WHERE name = ?", (name,))
     row = cursor.fetchone()
     if row:
         return row["id"]
     
     cursor = conn.execute(
-        "INSERT INTO companies (name, created_at, updated_at) VALUES (?, ?, ?)",
-        (name, now, now)
+        "INSERT INTO organizations (name, type, created_at, updated_at) VALUES (?, ?, ?, ?)",
+        (name, org_type, now, now)
     )
     return cursor.lastrowid
 
-def create_application(company, title, app_type, status, applied_at=None, next_followup_at=None, source=None, job_url=None):
+def create_application(company_name, title, app_type, status, applied_at=None, next_followup_at=None, source=None, job_url=None, org_type='AUTRE'):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
-        company_id = get_or_create_company(conn, company)
+        organization_id = get_or_create_organization(conn, company_name, org_type)
         cursor = conn.execute(
             """
-            INSERT INTO applications (company_id, company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
+            INSERT INTO applications (organization_id, company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (company_id, company, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
+            (organization_id, company_name, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
         )
         app_id = cursor.lastrowid
         log_event(conn, "application", app_id, "CREATED", {
-            "company_id": company_id,
-            "company": company,
+            "organization_id": organization_id,
+            "company": company_name,
             "title": title,
             "type": app_type,
             "status": status,
@@ -106,6 +115,12 @@ def create_application(company, title, app_type, status, applied_at=None, next_f
             "job_url": job_url,
             "applied_at": applied_at
         })
+        
+        # If the organization was already created, but we received a specific org_type in this request, 
+        # we might want to update it if it's currently 'AUTRE'.
+        if org_type != 'AUTRE':
+            conn.execute("UPDATE organizations SET type = ? WHERE id = ? AND type = 'AUTRE'", (org_type, organization_id))
+            
         conn.commit()
         return app_id
 
@@ -145,11 +160,11 @@ def list_applications(filters=None, search=None, show_hidden=False, limit=None, 
             (a.company LIKE ? OR a.title LIKE ? OR EXISTS (
                 SELECT 1 FROM application_contacts ac 
                 JOIN contacts c ON ac.contact_id = c.id 
-                WHERE ac.application_id = a.id AND (c.name LIKE ? OR c.email LIKE ?)
+                WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
             ))
         """
         where_clauses.append(search_clause)
-        params.extend([search_term, search_term, search_term, search_term])
+        params.extend([search_term, search_term, search_term, search_term, search_term])
 
     if where_clauses:
         query += " WHERE " + " AND ".join(where_clauses)
@@ -202,11 +217,11 @@ def count_applications(filters=None, search=None, show_hidden=False):
             (a.company LIKE ? OR a.title LIKE ? OR EXISTS (
                 SELECT 1 FROM application_contacts ac 
                 JOIN contacts c ON ac.contact_id = c.id 
-                WHERE ac.application_id = a.id AND (c.name LIKE ? OR c.email LIKE ?)
+                WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
             ))
         """
         where_clauses.append(search_clause)
-        params.extend([search_term, search_term, search_term, search_term])
+        params.extend([search_term, search_term, search_term, search_term, search_term])
 
     if where_clauses:
         query += " WHERE " + " AND ".join(where_clauses)
@@ -215,107 +230,224 @@ def count_applications(filters=None, search=None, show_hidden=False):
         row = conn.execute(query, params).fetchone()
         return row["total"]
 
-def create_contact(name, email=None, phone=None, company=None):
+def create_contact(first_name, last_name, email=None, phone=None, organization_id=None, role=None, is_recruiter=0, linkedin_url=None, notes=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
-        company_id = None
-        if company:
-            company_id = get_or_create_company(conn, company)
-            
         cursor = conn.execute(
             """
-            INSERT INTO contacts (company_id, name, email, phone, company, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO contacts (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (company_id, name, email, phone, company, now, now)
+            (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, now, now)
         )
         contact_id = cursor.lastrowid
-        log_event(conn, "contact", contact_id, "CONTACT_CREATED", {
-            "company_id": company_id,
-            "name": name,
+        log_event(conn, "contact", contact_id, "CREATED", {
+            "organization_id": organization_id,
+            "first_name": first_name,
+            "last_name": last_name,
             "email": email,
-            "company": company
+            "is_recruiter": is_recruiter
         })
         conn.commit()
         return contact_id
 
-def list_companies():
+def list_organizations(filters=None, search=None):
     query = """
         SELECT 
-            c.*,
-            COUNT(a.id) as applications_count,
-            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
-            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count,
-            SUM(CASE WHEN a.status NOT IN ('REJECTED', 'NO_RESPONSE', 'INTERESTED', 'APPLIED') THEN 1 ELSE 0 END) as responded_count
-        FROM companies c
-        LEFT JOIN applications a ON c.id = a.company_id
-        GROUP BY c.id
-        ORDER BY c.name ASC
+            o.*,
+            COUNT(a.id) as applications_count
+        FROM organizations o
+        LEFT JOIN applications a ON o.id = a.organization_id
     """
+    params = []
+    where_clauses = []
+    
+    if filters and filters.get("type"):
+        where_clauses.append("o.type = ?")
+        params.append(filters["type"])
+    
+    if search:
+        where_clauses.append("o.name LIKE ?")
+        params.append(f"%{search.strip()}%")
+        
+    if where_clauses:
+        query += " WHERE " + " AND ".join(where_clauses)
+        
+    query += " GROUP BY o.id ORDER BY o.name ASC"
+    
     with get_db() as conn:
-        rows = conn.execute(query).fetchall()
-        companies = []
+        rows = conn.execute(query, params).fetchall()
+        orgs = []
         for row in rows:
             d = dict(row)
-            total = d["applications_count"]
-            if total > 0:
-                d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
-                d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
-            else:
-                d["response_rate"] = 0
-                d["rejected_rate"] = 0
-            
-            # Qualitative flags
-            d["flags"] = []
-            if d["rejected_rate"] > 70 and total >= 3:
-                d["flags"].append("HIGH_REJECTION")
-            if d["no_response_count"] > 2 and d["response_rate"] < 30:
-                d["flags"].append("NO_RESPONSE_PATTERN")
-            if d["response_rate"] < 50 and total >= 3:
-                d["flags"].append("LOW_RESPONSE_RATE")
-                
-            companies.append(d)
-        return companies
+            stats = get_organization_stats(d["id"])
+            d.update(stats)
+            orgs.append(d)
+        return orgs
 
-def get_company(company_id):
-    query = """
-        SELECT 
-            c.*,
-            COUNT(a.id) as applications_count,
-            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
-            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count
-        FROM companies c
-        LEFT JOIN applications a ON c.id = a.company_id
-        WHERE c.id = ?
-        GROUP BY c.id
-    """
+def get_organization_stats(org_id):
+    """Calcule à la volée les stats de probité pour une organisation."""
     with get_db() as conn:
-        row = conn.execute(query, (company_id,)).fetchone()
-        if not row:
-            return None
-        d = dict(row)
-        total = d["applications_count"]
-        if total > 0:
-            d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
-            d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
-        else:
-            d["response_rate"] = 0
-            d["rejected_rate"] = 0
+        # 1. Total applications
+        total_apps = conn.execute("SELECT COUNT(*) FROM applications WHERE organization_id = ?", (org_id,)).fetchone()[0]
         
-        d["flags"] = []
-        if d["rejected_rate"] > 70 and total >= 3:
-            d["flags"].append("HIGH_REJECTION")
-        if d["no_response_count"] > 2 and d["response_rate"] < 30:
-            d["flags"].append("NO_RESPONSE_PATTERN")
-        if d["response_rate"] < 50 and total >= 3:
-            d["flags"].append("LOW_RESPONSE_RATE")
+        # 2. Total responses (status != APPLIED && != GHOSTED - let's map GHOSTED to NO_RESPONSE if needed)
+        # Based on instructions: status != APPLIED && != GHOSTED
+        # Current statuses: INTERESTED, APPLIED, INTERVIEW, OFFER, REJECTED, NO_RESPONSE
+        total_responses = conn.execute(
+            "SELECT COUNT(*) FROM applications WHERE organization_id = ? AND status NOT IN ('APPLIED', 'INTERESTED', 'NO_RESPONSE')", 
+            (org_id,)
+        ).fetchone()[0]
+        
+        response_rate = (total_responses / total_apps * 100) if total_apps > 0 else 0
+        
+        # 3. Avg response days
+        avg_response_days = conn.execute(
+            """
+            SELECT AVG(julianday(e.ts) - julianday(a.applied_at))
+            FROM applications a
+            JOIN events e ON a.id = e.entity_id AND e.entity_type = 'application'
+            WHERE a.organization_id = ? 
+              AND a.applied_at IS NOT NULL 
+              AND e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
+            """, (org_id,)
+        ).fetchone()[0]
+        
+        # 4. Ghosting count (APPLIED depuis > 30 jours sans évolution)
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+        ghosting_count = conn.execute(
+            """
+            SELECT COUNT(*) FROM applications 
+            WHERE organization_id = ? 
+              AND status = 'APPLIED' 
+              AND applied_at < ?
+            """, (org_id, thirty_days_ago)
+        ).fetchone()[0]
+        
+        # 5. Positive count (INTERVIEW + OFFER)
+        positive_count = conn.execute(
+            "SELECT COUNT(*) FROM applications WHERE organization_id = ? AND status IN ('INTERVIEW', 'OFFER')", 
+            (org_id,)
+        ).fetchone()[0]
+        
+        positive_rate = (positive_count / total_apps * 100) if total_apps > 0 else 0
+        
+        # 6. Probity score & level
+        probity_score = None
+        probity_level = 'insuffisant'
+        
+        if total_apps >= 3:
+            # Formula:
+            # score = (response_rate * 0.5)
+            #       + (Math.max(0, (14 - avg_response_days) / 14) * 100 * 0.3)
+            #       + (Math.max(0, 1 - ghosting_count / total_apps) * 100 * 0.2)
             
+            days_score = 0
+            if avg_response_days is not None:
+                days_score = max(0, (14 - avg_response_days) / 14) * 100
+            
+            ghost_score = max(0, 1 - ghosting_count / total_apps) * 100
+            
+            probity_score = (response_rate * 0.5) + (days_score * 0.3) + (ghost_score * 0.2)
+            
+            if probity_score >= 70: probity_level = 'fiable'
+            elif probity_score >= 40: probity_level = 'moyen'
+            else: probity_level = 'méfiance'
+        
+        return {
+            "organization_id": org_id,
+            "total_applications": total_apps,
+            "total_responses": total_responses,
+            "response_rate": round(response_rate, 1),
+            "avg_response_days": round(avg_response_days, 1) if avg_response_days else None,
+            "ghosting_count": ghosting_count,
+            "positive_count": positive_count,
+            "positive_rate": round(positive_rate, 1),
+            "probity_score": round(probity_score, 1) if probity_score is not None else None,
+            "probity_level": probity_level
+        }
+
+def list_contacts(filters=None):
+    query = "SELECT * FROM contacts"
+    params = []
+    if filters and filters.get("organization_id"):
+        query += " WHERE organization_id = ?"
+        params.append(filters["organization_id"])
+    
+    query += " ORDER BY last_name ASC, first_name ASC"
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute(query, params).fetchall()]
+
+def get_organization(org_id):
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM organizations WHERE id = ?", (org_id,)).fetchone()
+        if not row: return None
+        d = dict(row)
+        d.update(get_organization_stats(org_id))
         return d
 
-def get_contact(contact_id):
+def update_organization(org_id, data):
+    now = datetime.now(timezone.utc).isoformat()
+    fields = []
+    params = []
+    for k, v in data.items():
+        if k in ['name', 'type', 'website', 'linkedin_url', 'city', 'notes']:
+            fields.append(f"{k} = ?")
+            params.append(v)
+    
+    if not fields:
+        return False
+        
+    fields.append("updated_at = ?")
+    params.append(now)
+    params.append(org_id)
+    
     with get_db() as conn:
-        row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
-        return dict(row) if row else None
+        conn.execute(f"UPDATE organizations SET {', '.join(fields)} WHERE id = ?", params)
+        log_event(conn, "organization", org_id, "UPDATED", data)
+        conn.commit()
+        return True
+
+def delete_organization(org_id):
+    with get_db() as conn:
+        # Check if any application linked
+        count = conn.execute("SELECT COUNT(*) FROM applications WHERE organization_id = ?", (org_id,)).fetchone()[0]
+        if count > 0:
+            return False
+            
+        conn.execute("DELETE FROM organizations WHERE id = ?", (org_id,))
+        log_event(conn, "organization", org_id, "DELETED", {})
+        conn.commit()
+        return True
+
+def update_contact(contact_id, data):
+    now = datetime.now(timezone.utc).isoformat()
+    fields = []
+    params = []
+    for k, v in data.items():
+        if k in ['organization_id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_recruiter', 'linkedin_url', 'notes']:
+            fields.append(f"{k} = ?")
+            params.append(v)
+            
+    if not fields:
+        return False
+        
+    fields.append("updated_at = ?")
+    params.append(now)
+    params.append(contact_id)
+    
+    with get_db() as conn:
+        conn.execute(f"UPDATE contacts SET {', '.join(fields)} WHERE id = ?", params)
+        log_event(conn, "contact", contact_id, "UPDATED", data)
+        conn.commit()
+        return True
+
+def delete_contact(contact_id):
+    with get_db() as conn:
+        conn.execute("DELETE FROM contacts WHERE id = ?", (contact_id,))
+        log_event(conn, "contact", contact_id, "DELETED", {})
+        conn.commit()
+        return True
 
 def link_contact_to_application(application_id, contact_id):
     with get_db() as conn:

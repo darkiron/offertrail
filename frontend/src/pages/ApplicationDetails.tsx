@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { applicationService } from '../services/api';
+import { applicationService, organizationService, contactService } from '../services/api';
+import ProbityBadge from '../components/atoms/ProbityBadge';
+import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
+import type { Application, Organization, Contact } from '../types';
 
 export const ApplicationDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,7 +13,14 @@ export const ApplicationDetails: React.FC = () => {
   const [newNote, setNewNote] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
-  const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', company: '' });
+  const [contactForm, setContactForm] = useState({ 
+    first_name: '', 
+    last_name: '', 
+    email: '', 
+    phone: '', 
+    role: '',
+    is_recruiter: 0
+  });
 
   const fetchDetails = async () => {
     if (!id) return;
@@ -65,9 +75,20 @@ export const ApplicationDetails: React.FC = () => {
 
   const handleCreateContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !contactForm.name) return;
-    await applicationService.createContact(parseInt(id), contactForm);
-    setContactForm({ name: '', email: '', phone: '', company: '' });
+    if (!id || !contactForm.first_name || !contactForm.last_name) return;
+    const orgId = data?.organization?.id;
+    await applicationService.createContact(parseInt(id), { 
+      ...contactForm, 
+      organization_id: orgId 
+    });
+    setContactForm({ 
+      first_name: '', 
+      last_name: '', 
+      email: '', 
+      phone: '', 
+      role: '',
+      is_recruiter: 0
+    });
     setShowContactModal(false);
     fetchDetails();
   };
@@ -162,7 +183,7 @@ export const ApplicationDetails: React.FC = () => {
     </div>
   );
 
-  const { application: app, events, contacts, all_contacts } = data || { application: {}, events: [], contacts: [], all_contacts: [] };
+  const { application: app, organization, events, contacts, all_contacts } = data || { application: {}, organization: null, events: [], contacts: [], all_contacts: [] };
 
   return (
     <div className="container mt-lg">
@@ -181,16 +202,26 @@ export const ApplicationDetails: React.FC = () => {
 
             {!isLinking ? (
               <form onSubmit={handleCreateContact} className="flex-col gap-md">
-                <input 
-                  className="input" 
-                  placeholder="Name (Required)" 
-                  value={contactForm.name} 
-                  onChange={e => setContactForm({...contactForm, name: e.target.value})} 
-                  required
-                />
+                <div className="flex gap-sm">
+                  <input 
+                    className="input flex-1" 
+                    placeholder="First Name" 
+                    value={contactForm.first_name} 
+                    onChange={e => setContactForm({...contactForm, first_name: e.target.value})} 
+                    required
+                  />
+                  <input 
+                    className="input flex-1" 
+                    placeholder="Last Name" 
+                    value={contactForm.last_name} 
+                    onChange={e => setContactForm({...contactForm, last_name: e.target.value})} 
+                    required
+                  />
+                </div>
                 <input 
                   className="input" 
                   placeholder="Email" 
+                  type="email"
                   value={contactForm.email} 
                   onChange={e => setContactForm({...contactForm, email: e.target.value})} 
                 />
@@ -202,10 +233,18 @@ export const ApplicationDetails: React.FC = () => {
                 />
                 <input 
                   className="input" 
-                  placeholder="Company" 
-                  value={contactForm.company} 
-                  onChange={e => setContactForm({...contactForm, company: e.target.value})} 
+                  placeholder="Role (e.g. Lead Recruiter)" 
+                  value={contactForm.role} 
+                  onChange={e => setContactForm({...contactForm, role: e.target.value})} 
                 />
+                <label className="flex items-center gap-sm cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={contactForm.is_recruiter === 1} 
+                    onChange={e => setContactForm({...contactForm, is_recruiter: e.target.checked ? 1 : 0})} 
+                  />
+                  <span className="text-sm">Est recruteur</span>
+                </label>
                 <button type="submit" className="btn-primary w-full">Create and Link Contact</button>
               </form>
             ) : (
@@ -213,8 +252,8 @@ export const ApplicationDetails: React.FC = () => {
                 {all_contacts?.filter((c: any) => !contacts.some((rc: any) => rc.id === c.id)).map((c: any) => (
                   <div key={c.id} className="flex justify-between items-center p-sm border-bottom hover-dim" style={{ cursor: 'pointer' }} onClick={() => handleLinkContact(c.id)}>
                     <div>
-                      <div className="font-bold">{c.name}</div>
-                      <div className="text-xs text-dim">{c.company}</div>
+                      <div className="font-bold">{c.first_name} {c.last_name}</div>
+                      <div className="text-xs text-dim">{c.role}</div>
                     </div>
                     <button className="btn-ghost text-sm">Link</button>
                   </div>
@@ -235,7 +274,15 @@ export const ApplicationDetails: React.FC = () => {
       <div className="flex justify-between items-center mb-lg">
         <div>
           <Link to="/" className="text-sm text-dim mb-xs block">← Back to Dashboard</Link>
-          <h1 className="text-xxl font-bold">{app.company}</h1>
+          <div className="flex items-center gap-md">
+            <h1 className="text-xxl font-bold">{app.company}</h1>
+            {organization && (
+              <div className="flex gap-xs">
+                <OrganizationTypeBadge type={organization.type} />
+                <ProbityBadge score={organization.probity_score} level={organization.probity_level} />
+              </div>
+            )}
+          </div>
           <p className="text-lg text-dim">{app.title}</p>
         </div>
         <div className="flex gap-md">
@@ -339,8 +386,11 @@ export const ApplicationDetails: React.FC = () => {
             </div>
             {contacts.map((contact: any) => (
               <div key={contact.id} className="mb-md pb-md" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="font-bold">{contact.name}</div>
-                <div className="text-sm text-dim">{contact.company || app.company}</div>
+                <div className="font-bold flex items-center gap-sm">
+                  {contact.first_name} {contact.last_name}
+                  {contact.is_recruiter === 1 && <span className="text-[10px] text-pink-500 font-mono font-bold border border-pink-500/30 px-1 rounded">RECRUTEUR</span>}
+                </div>
+                <div className="text-sm text-dim">{contact.role || 'Contact'}</div>
                 {contact.email && <div className="text-sm mt-xs">📧 {contact.email}</div>}
                 {contact.phone && <div className="text-sm">📞 {contact.phone}</div>}
               </div>

@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import { Dashboard } from './pages/Dashboard';
 import { ApplicationDetails } from './pages/ApplicationDetails';
 import { Import } from './pages/Import';
+import { OrganizationsPage } from './pages/OrganizationsPage';
+import { ContactsPage } from './pages/ContactsPage';
 
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -39,6 +41,8 @@ const Navbar: React.FC = () => {
           <div className="nav-links">
             <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Dashboard</Link>
             <Link to="/applications" className={`nav-link ${isActive('/applications') ? 'active' : ''}`}>Applications</Link>
+            <Link to="/organizations" className={`nav-link ${isActive('/organizations') ? 'active' : ''}`}>Établissements</Link>
+            <Link to="/contacts" className={`nav-link ${isActive('/contacts') ? 'active' : ''}`}>Contacts</Link>
             <Link to="/import" className={`nav-link ${isActive('/import') ? 'active' : ''}`}>Import</Link>
           </div>
         </div>
@@ -59,6 +63,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/applications" element={<Dashboard />} />
             <Route path="/applications/:id" element={<ApplicationDetails />} />
+            <Route path="/organizations" element={<OrganizationsPage />} />
+            <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/import" element={<Import />} />
           </Routes>
         </main>
