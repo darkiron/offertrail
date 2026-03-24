@@ -34,6 +34,10 @@
         .event-payload { font-size: 0.9rem; margin-top: 0.25rem; }
         footer { margin-top: 2rem; font-size: 0.8rem; color: #666; text-align: center; }
         .back-link { display: inline-block; margin-bottom: 1rem; text-decoration: none; color: #007bff; }
+        .flag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 4px; }
+        .flag-HIGH_REJECTION { background: #f8d7da; color: #721c24; }
+        .flag-NO_RESPONSE_PATTERN { background: #fff3cd; color: #856404; }
+        .flag-LOW_RESPONSE_RATE { background: #d1ecf1; color: #0c5460; }
     </style>
 </head>
 <body>
@@ -46,7 +50,8 @@
             <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏢 {{ company.name }}</h4>
             <div style="font-size: 0.85rem; color: #555;">
                 Offers: <strong>{{ company.applications_count }}</strong> | 
-                Rejections: <strong>{{ company.rejected_count }}</strong> | 
+                Rejections: <strong>{{ company.rejected_offers_count }}</strong> | 
+                Unanswered: <strong>{{ company.unanswered_offers_count }}</strong> |
                 Response rate: <strong>{{ company.response_rate }}%</strong>
             </div>
             {% if company.flags %}

@@ -162,7 +162,7 @@ export const ApplicationDetails: React.FC = () => {
     </div>
   );
 
-  const { application: app, events, contacts, all_contacts } = data || { application: {}, events: [], contacts: [], all_contacts: [] };
+  const { application: app, company, events, contacts, all_contacts } = data || { application: {}, company: null, events: [], contacts: [], all_contacts: [] };
 
   return (
     <div className="container mt-lg">
@@ -301,6 +301,34 @@ export const ApplicationDetails: React.FC = () => {
         </div>
 
         <div className="flex-col gap-lg">
+          {company && (
+            <div className="card p-md border-radius-md mb-md" style={{ background: 'var(--card-secondary)', border: '1px solid var(--border)' }}>
+              <div className="flex justify-between items-start mb-sm">
+                <h3 className="text-md font-bold">🏢 {company.name}</h3>
+                <div className="flex gap-xs flex-wrap">
+                  {company.flags?.map((flag: string) => (
+                    <span key={flag} className={`tag status-${flag.toLowerCase()} text-xs`} style={{ padding: '0.1rem 0.4rem' }} title={flag.replace(/_/g, ' ')}>
+                      {flag === 'HIGH_REJECTION' ? '⚠️ High Rej.' : flag === 'NO_RESPONSE_PATTERN' ? '👻 Ghosting' : '📉 Low Resp.'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)', fontSize: '0.75rem' }}>
+                <div>
+                  <span className="text-dim">Applications:</span> <span className="font-bold">{company.applications_count}</span>
+                </div>
+                <div>
+                  <span className="text-dim">Response Rate:</span> <span className="font-bold">{company.response_rate}%</span>
+                </div>
+                <div>
+                  <span className="text-dim">Rejections:</span> <span className="font-bold">{company.rejected_offers_count}</span>
+                </div>
+                <div>
+                  <span className="text-dim">Unanswered:</span> <span className="font-bold">{company.unanswered_offers_count}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="card">
             <h2 className="text-lg font-bold mb-md">Details</h2>
             <div className="flex-col gap-sm text-sm">
