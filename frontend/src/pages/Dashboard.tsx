@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { dashboardService, applicationService } from '../services/api';
-import type {Application, DashboardData, MonthlyInsights} from '../types';
+import React, { useEffect, useState, useMemo } from 'react';
+import { dashboardService, applicationService, organizationService } from '../services/api';
+import type {Application, Organization, DashboardData, MonthlyInsights} from '../types';
 import { KPICard } from '../components/molecules/KPICard';
 import { Link } from 'react-router-dom';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import MonthlyApplicationsChart from '../components/organisms/MonthlyApplicationsChart';
+import ProbityBadge from '../components/atoms/ProbityBadge';
+import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
 
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [apps, setApps] = useState<Application[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [totalApps, setTotalApps] = useState(0);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -23,6 +26,37 @@ export const Dashboard: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchData = async () => {
+    try {
+      setError(null);
+      const [dashboardData, appsResponse, orgsData] = await Promise.all([
+        dashboardService.getDashboardData(),
+        applicationService.getApplications({ 
+          search: searchTerm, 
+          status: statusFilter,
+          show_hidden: showHidden ? 'yes' : undefined,
+          page,
+          limit
+        }),
+        organizationService.getAll()
+      ]);
+      setData(dashboardData);
+      setApps(appsResponse.items);
+      setTotalApps(appsResponse.total);
+      setFollowups(dashboardData.followups);
+      setOrganizations(orgsData);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setError('Failed to load dashboard data. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const orgMap = useMemo(() => {
+    return new Map(organizations.map(o => [o.id, o]));
+  }, [organizations]);
+
   const fetchInsights = async () => {
     setLoadingInsights(true);
     try {
@@ -32,31 +66,6 @@ export const Dashboard: React.FC = () => {
       console.error('Error fetching insights:', error);
     } finally {
       setLoadingInsights(false);
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      setError(null);
-      const [dashboardData, appsResponse] = await Promise.all([
-        dashboardService.getDashboardData(),
-        applicationService.getApplications({ 
-          search: searchTerm, 
-          status: statusFilter,
-          show_hidden: showHidden ? 'yes' : undefined,
-          page,
-          limit
-        })
-      ]);
-      setData(dashboardData);
-      setApps(appsResponse.items);
-      setTotalApps(appsResponse.total);
-      setFollowups(dashboardData.followups);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please check your connection.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -202,25 +211,32 @@ export const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {apps.map(app => (
-                    <tr key={app.id}>
-                      <td>
-                        <div className="font-bold">{app.company}</div>
-                        <div className="text-sm text-dim">{app.source || 'Direct'}</div>
-                      </td>
-                      <td>{app.title}</td>
-                      <td>{app.type}</td>
-                      <td className="has-text-centered">
-                        <span className={`tag status-${app.status.toLowerCase()}`}>
-                          {app.status}
-                        </span>
-                      </td>
-                      <td className="text-sm">{app.applied_at || '-'}</td>
-                      <td className="has-text-right">
-                        <Link to={`/applications/${app.id}`} className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }}>Details</Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {apps.map(app => {
+                    const org = orgMap.get(app.organization_id || -1);
+                    return (
+                      <tr key={app.id}>
+                        <td>
+                          <div className="flex items-center gap-sm">
+                            <div className="font-bold">{app.company}</div>
+                            {org && <OrganizationTypeBadge type={org.type} size="xs" />}
+                            {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
+                          </div>
+                          <div className="text-sm text-dim">{app.source || 'Direct'}</div>
+                        </td>
+                        <td>{app.title}</td>
+                        <td>{app.type}</td>
+                        <td className="has-text-centered">
+                          <span className={`tag status-${app.status.toLowerCase()}`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="text-sm">{app.applied_at || '-'}</td>
+                        <td className="has-text-right">
+                          <Link to={`/applications/${app.id}`} className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }}>Details</Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {apps.length === 0 && (
                     <tr>
                       <td colSpan={6} className="has-text-centered text-dim" style={{ padding: '4rem' }}>

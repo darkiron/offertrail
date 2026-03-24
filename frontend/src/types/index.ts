@@ -1,5 +1,50 @@
+export type OrganizationType = 'CLIENT_FINAL' | 'ESN' | 'CABINET_RECRUTEMENT' | 'STARTUP' | 'PME' | 'GRAND_COMPTE' | 'PORTAGE' | 'AUTRE';
+
+export type ProbityLevel = 'fiable' | 'moyen' | 'méfiance' | 'insuffisant';
+
+export interface OrganizationStats {
+  organization_id: number;
+  total_applications: number;
+  total_responses: number;
+  response_rate: number;
+  avg_response_days: number | null;
+  ghosting_count: number;
+  positive_count: number;
+  positive_rate: number;
+  probity_score: number | null;
+  probity_level: ProbityLevel;
+}
+
+export interface Organization extends OrganizationStats {
+  id: number;
+  name: string;
+  type: OrganizationType;
+  website: string | null;
+  linkedin_url: string | null;
+  city: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Contact {
+  id: number;
+  organization_id: number | null;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  is_recruiter: number;
+  linkedin_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Application {
   id: number;
+  organization_id: number | null;
   company: string;
   title: string;
   type: string;

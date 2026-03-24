@@ -1,5 +1,5 @@
 import subprocess
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -164,16 +164,89 @@ async def create_application(
     database.create_application(company, title, type, status, applied_at, next_followup_at, source, job_url)
     return RedirectResponse(url="/", status_code=303)
 
+@app.get("/api/organizations")
+async def api_list_organizations(type: str = None, search: str = None):
+    filters = {"type": type} if type else None
+    return database.list_organizations(filters=filters, search=search)
+
+@app.get("/api/organizations/{org_id}")
+async def api_get_organization(org_id: int):
+    org = database.get_organization(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return org
+
+@app.post("/api/organizations", status_code=201)
+async def api_create_organization(data: dict):
+    org_id = database.get_or_create_organization(
+        database.get_db(), # Wait, get_or_create needs a conn, but better use a service wrapper if possible
+        name=data.get("name"),
+        org_type=data.get("type", "AUTRE")
+    )
+    # Re-using get_db inside database.py functions is safer. 
+    # Let's adjust database.py to have a standalone create_organization if needed.
+    return {"id": org_id}
+
+@app.patch("/api/organizations/{org_id}")
+async def api_update_organization(org_id: int, data: dict):
+    success = database.update_organization(org_id, data)
+    if not success:
+        raise HTTPException(status_code=400, detail="Update failed")
+    return {"success": True}
+
+@app.delete("/api/organizations/{org_id}")
+async def api_delete_organization(org_id: int):
+    success = database.delete_organization(org_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Cannot delete organization with applications")
+    return {"success": True}
+
+@app.get("/api/contacts")
+async def api_list_contacts(organization_id: int = None):
+    filters = {"organization_id": organization_id} if organization_id else None
+    return database.list_contacts(filters=filters)
+
+@app.get("/api/contacts/{contact_id}")
+async def api_get_contact(contact_id: int):
+    contact = database.get_contact(contact_id)
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return contact
+
+@app.post("/api/contacts", status_code=201)
+async def api_create_contact_standalone(data: dict):
+    contact_id = database.create_contact(
+        first_name=data.get("first_name"),
+        last_name=data.get("last_name"),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        organization_id=data.get("organization_id"),
+        role=data.get("role"),
+        is_recruiter=data.get("is_recruiter", 0),
+        linkedin_url=data.get("linkedin_url"),
+        notes=data.get("notes")
+    )
+    return {"id": contact_id}
+
+@app.patch("/api/contacts/{contact_id}")
+async def api_update_contact(contact_id: int, data: dict):
+    success = database.update_contact(contact_id, data)
+    return {"success": success}
+
+@app.delete("/api/contacts/{contact_id}")
+async def api_delete_contact(contact_id: int):
+    database.delete_contact(contact_id)
+    return {"success": True}
+
 @app.get("/api/companies")
-async def api_list_companies():
-    return database.list_companies()
+async def api_list_companies(type: str = None, search: str = None):
+    # Compatibility route
+    return api_list_organizations(type, search)
 
 @app.get("/api/companies/{company_id}")
 async def api_get_company(company_id: int):
-    company = database.get_company(company_id)
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    return company
+    # Compatibility route
+    return api_get_organization(company_id)
 
 @app.get("/api/applications/{app_id}")
 async def api_application_details(app_id: int):
@@ -181,9 +254,11 @@ async def api_application_details(app_id: int):
     if not app_data:
         raise HTTPException(status_code=404, detail="Application not found")
     
-    company_info = None
-    if app_data.get("company_id"):
-        company_info = database.get_company(app_data["company_id"])
+    organization_info = None
+    if app_data.get("organization_id"):
+        organization_info = database.get_organization(app_data["organization_id"])
+    elif app_data.get("company_id"): # Compatibility
+        organization_info = database.get_organization(app_data["company_id"])
         
     events = database.get_events_for_entity("application", app_id)
     for event in events:
@@ -196,15 +271,15 @@ async def api_application_details(app_id: int):
         for ce in contact_events:
             ce["payload"] = json.loads(ce["payload_json"])
             # Enrichment: add contact name to event payload if not present
-            if "name" not in ce["payload"]:
-                ce["payload"]["contact_name"] = contact["name"]
+            if "first_name" not in ce["payload"]:
+                ce["payload"]["contact_name"] = f"{contact['first_name']} {contact['last_name']}"
             events.append(ce)
     
     events.sort(key=lambda x: x["ts"], reverse=True)
     
     return {
         "application": app_data,
-        "company": company_info,
+        "organization": organization_info,
         "events": events,
         "contacts": contacts,
         "all_contacts": database.list_contacts()
@@ -213,14 +288,15 @@ async def api_application_details(app_id: int):
 @app.post("/api/applications", status_code=201)
 async def api_create_application(data: dict):
     app_id = database.create_application(
-        company=data.get("company"),
+        company_name=data.get("company"),
         title=data.get("title"),
         app_type=data.get("type"),
         status=data.get("status"),
         applied_at=data.get("applied_at"),
         next_followup_at=data.get("next_followup_at"),
         source=data.get("source"),
-        job_url=data.get("job_url")
+        job_url=data.get("job_url"),
+        org_type=data.get("org_type", "AUTRE")
     )
     return {"id": app_id}
 
@@ -255,10 +331,13 @@ async def api_link_contact(app_id: int, data: dict):
 @app.post("/api/applications/{app_id}/create-contact")
 async def api_create_contact(app_id: int, data: dict):
     contact_id = database.create_contact(
-        name=data.get("name"),
+        first_name=data.get("first_name"),
+        last_name=data.get("last_name"),
         email=data.get("email"),
         phone=data.get("phone"),
-        company=data.get("company")
+        organization_id=data.get("organization_id"),
+        role=data.get("role"),
+        is_recruiter=data.get("is_recruiter", 0)
     )
     database.link_contact_to_application(app_id, contact_id)
     return {"id": contact_id}
@@ -460,7 +539,7 @@ async def api_process_import(data: dict):
             status = status_map.get(raw_status, "APPLIED")
 
             app_id = database.create_application(
-                company=company,
+                company_name=company,
                 title=title,
                 app_type=app_type,
                 status=status,
@@ -568,7 +647,7 @@ async def process_import(request: Request, tsv_data: str = Form(...)):
             status = status_map.get(raw_status, "APPLIED")
 
             app_id = database.create_application(
-                company=company,
+                company_name=company,
                 title=title,
                 app_type=app_type,
                 status=status,

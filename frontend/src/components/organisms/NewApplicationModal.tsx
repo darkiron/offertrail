@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { applicationService } from '../../services/api';
+import React, { useState, useEffect } from 'react';
+import { applicationService, organizationService } from '../../services/api';
+import type { Organization } from '../../types';
+import ProbityBadge from '../atoms/ProbityBadge';
+import OrganizationTypeBadge from '../atoms/OrganizationTypeBadge';
 
 interface NewApplicationModalProps {
   onClose: () => void;
@@ -15,10 +18,23 @@ export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClos
     source: '',
     job_url: '',
     applied_at: new Date().toISOString().split('T')[0],
-    next_followup_at: ''
+    next_followup_at: '',
+    org_type: 'AUTRE'
   });
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
+
+  useEffect(() => {
+    organizationService.getAll().then(setOrganizations);
+  }, []);
+
+  const filteredOrgs = organizations.filter(o => 
+    o.name.toLowerCase().includes(formData.company.toLowerCase())
+  ).slice(0, 5);
+
+  const matchedOrg = organizations.find(o => o.name.toLowerCase() === formData.company.toLowerCase());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +54,14 @@ export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClos
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === 'company') {
+      setShowOrgDropdown(true);
+    }
+  };
+
+  const selectOrg = (org: Organization) => {
+    setFormData({ ...formData, company: org.name });
+    setShowOrgDropdown(false);
   };
 
   return (
@@ -65,9 +89,52 @@ export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClos
 
         <form onSubmit={handleSubmit} className="flex-col gap-md">
           <div className="flex gap-md">
-            <div className="flex-grow">
+            <div className="flex-grow relative">
               <label className="text-sm font-bold text-dim mb-xs block">Company *</label>
-              <input name="company" className="input" required value={formData.company} onChange={handleChange} />
+              <input 
+                name="company" 
+                className="input w-full" 
+                required 
+                value={formData.company} 
+                onChange={handleChange} 
+                onFocus={() => setShowOrgDropdown(true)}
+                autoComplete="off"
+              />
+              {showOrgDropdown && formData.company && filteredOrgs.length > 0 && !matchedOrg && (
+                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded shadow-xl">
+                  {filteredOrgs.map(org => (
+                    <div 
+                      key={org.id} 
+                      className="p-sm hover:bg-gray-700 cursor-pointer flex justify-between items-center"
+                      onClick={() => selectOrg(org)}
+                    >
+                      <span className="font-bold">{org.name}</span>
+                      <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {matchedOrg && (
+                <div className="mt-xs flex gap-xs items-center">
+                  <OrganizationTypeBadge type={matchedOrg.type} size="xs" />
+                  <ProbityBadge score={matchedOrg.probity_score} level={matchedOrg.probity_level} size="sm" />
+                </div>
+              )}
+              {!matchedOrg && formData.company && (
+                <div className="mt-xs">
+                  <label className="text-[10px] font-bold text-accent uppercase block mb-1">New organization type</label>
+                  <select name="org_type" className="input text-xs py-1 h-auto" value={formData.org_type} onChange={handleChange}>
+                    <option value="CLIENT_FINAL">Client Final</option>
+                    <option value="ESN">ESN</option>
+                    <option value="CABINET_RECRUTEMENT">Cabinet</option>
+                    <option value="STARTUP">Startup</option>
+                    <option value="PME">PME</option>
+                    <option value="GRAND_COMPTE">Grand Compte</option>
+                    <option value="PORTAGE">Portage</option>
+                    <option value="AUTRE">Autre</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex-grow">
               <label className="text-sm font-bold text-dim mb-xs block">Job Title *</label>
