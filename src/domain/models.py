@@ -108,6 +108,7 @@ class Application:
             "notes": self.notes,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "events": self.events
         }
         
         # Nested company object
@@ -123,7 +124,7 @@ class Application:
                     "name": company_name
                 }
             
-            # Fallback for old frontend still using company_name
+            # Deprecated: Keep for fallback during transition but should be removed later
             if "company" in data:
                 data["company_name"] = data["company"]["name"]
                 
@@ -175,7 +176,7 @@ class Company:
     contacts: List[Contact] = field(default_factory=list)
     applications: List[Application] = field(default_factory=list) # Direct link for easier stats
 
-    def to_dict(self) -> Dict:
+    def to_dict(self, include_related: bool = True) -> Dict:
         data = {
             "id": self.id,
             "name": self.name,
@@ -188,6 +189,12 @@ class Company:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+        
+        if include_related:
+            data["offers"] = [o.to_dict() for o in self.offers]
+            data["contacts"] = [c.to_dict() for c in self.contacts]
+            data["applications"] = [a.to_dict(include_company=True, company_name=self.name) for a in self.applications]
+            
         try:
             data["metrics"] = self.metrics
             data["flags"] = self.flags

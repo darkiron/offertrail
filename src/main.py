@@ -140,32 +140,53 @@ async def api_applications(
 ):
     offset = (page - 1) * limit
     
-    apps = repository.list_applications(
+    apps_data = repository.list_applications(
         status=status, 
         search=search, 
         limit=limit,
         offset=offset
     )
+    
+    # apps_data from repository.list_applications are already enriched if repo supports it
+    # repository.list_applications returns list of dicts or list of Application objects?
+    # Based on src/main.py:155 it seems it returns list of dicts that might need normalization
+    
     total = repository.count_applications(
         status=status,
         search=search
     )
     
+    # Ensure each item is a dict with structured company
+    items = []
+    for app_item in apps_data:
+        if isinstance(app_item, dict):
+            # If it's already a dict, ensure it has structured company
+            if "company_id" in app_item and "company_name" in app_item and "company" not in app_item:
+                app_item["company"] = {"id": app_item["company_id"], "name": app_item["company_name"]}
+            items.append(app_item)
+        else:
+            # If it's an Application object
+            items.append(app_item.to_dict(include_company=True))
+            
     return {
-        "items": apps,
+        "items": items,
         "total": total,
         "page": page,
         "limit": limit
     }
 
 @app.post("/api/applications")
-async def api_create_application(data: Dict[str, Any]):
+async def api_create_application(request: Request):
+    # Support both flat and wrapped "data" formats
+    payload = await request.json()
+    data = payload.get("data") if "data" in payload else payload
+    
     # Extract data from JSON body
     company_name = data.get("new_company_name") or data.get("company_name")
     company_id = data.get("company_id")
-    title = data.get("title")
-    status_str = data.get("status", "APPLIED")
-    applied_at = data.get("applied_at")
+    title = data.get("title") or "Unknown"
+    status_str = data.get("status") or "APPLIED"
+    applied_at = data.get("applied_at") or datetime.now().isoformat()
     notes = data.get("notes")
     
     # Simple validation
@@ -194,8 +215,8 @@ async def api_create_application(data: Dict[str, Any]):
 @app.get("/api/companies")
 async def api_list_companies():
     companies = repository.list_companies()
-    # Ensure nested objects are included for consistency
-    return [c.to_dict() for c in companies]
+    # List view doesn't need all nested relations by default
+    return [c.to_dict(include_related=False) for c in companies]
 
 @app.get("/api/companies/{company_id}")
 async def api_get_company(company_id: int):
@@ -203,7 +224,8 @@ async def api_get_company(company_id: int):
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    return company.to_dict()
+    # Detail view includes all relations
+    return company.to_dict(include_related=True)
 
 @app.get("/api/applications/{app_id}")
 async def api_application_details(app_id: int):
@@ -261,20 +283,13 @@ async def api_application_details(app_id: int):
         "all_contacts": all_contacts
     }
 
-@app.post("/api/applications", status_code=201)
-async def api_create_application(data: dict):
-    # Mapping between API fields and apply_to_offer
-    # Frontend usually sends company, company_id, title, type, source, channel, etc.
-    
-    # If company_id is provided, we use it directly instead of searching by name
+@app.post("/api/applications/create_legacy")
+async def api_create_application_legacy(data: dict):
     company_id = data.get("company_id")
-    company_name = data.get("company")
-    
-    if company_id:
-        company = repository.get_company(company_id)
-        if not company:
-            raise HTTPException(status_code=404, detail="Company not found")
-        company_name = company.name
+    company = repository.get_company(company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    company_name = company.name
     
     app_id = app_service.apply_to_offer(
         company_name=company_name,
