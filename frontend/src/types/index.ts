@@ -1,3 +1,17 @@
+export interface Company {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  applications_count: number;
+  rejected_offers_count: number;
+  unanswered_offers_count: number;
+  responded_offers_count: number;
+  response_rate: number;
+  rejected_rate: number;
+  flags: string[];
+}
+
 export interface Application {
   id: number;
   company: string;

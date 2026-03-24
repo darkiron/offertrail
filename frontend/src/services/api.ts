@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type {Application, DashboardData, PaginatedResponse, MonthlyInsights} from '../types';
+import type {Application, Company, DashboardData, PaginatedResponse, MonthlyInsights} from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -57,6 +57,17 @@ export const dashboardService = {
   },
   getMonthlyInsights: async (year?: number) => {
     const response = await api.get<MonthlyInsights>('/api/insights/monthly-applications', { params: { year } });
+    return response.data;
+  },
+};
+
+export const companyService = {
+  getCompanies: async () => {
+    const response = await api.get<Company[]>('/api/companies');
+    return response.data;
+  },
+  getCompany: async (id: number) => {
+    const response = await api.get<Company>(`/api/companies/${id}`);
     return response.data;
   },
 };
