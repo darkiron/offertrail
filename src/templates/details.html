@@ -15,6 +15,11 @@
         }
         h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
         .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .company-summary { background: #e9ecef; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #6c757d; }
+        .flag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 0.5rem; color: white; }
+        .flag-HIGH_REJECTION { background: #dc3545; }
+        .flag-NO_RESPONSE_PATTERN { background: #fd7e14; }
+        .flag-LOW_RESPONSE_RATE { background: #ffc107; color: #333; }
         .status { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
         .status-INTERESTED { background: #e2e3e5; }
         .status-APPLIED { background: #cce5ff; color: #004085; }
@@ -36,6 +41,24 @@
     <h1>{{ application.company }} - {{ application.title }}</h1>
     
     <div class="card">
+        {% if company %}
+        <div class="company-summary">
+            <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏢 {{ company.name }}</h4>
+            <div style="font-size: 0.85rem; color: #555;">
+                Offers: <strong>{{ company.applications_count }}</strong> | 
+                Rejections: <strong>{{ company.rejected_count }}</strong> | 
+                Response rate: <strong>{{ company.response_rate }}%</strong>
+            </div>
+            {% if company.flags %}
+            <div style="margin-top: 0.5rem;">
+                {% for flag in company.flags %}
+                <span class="flag flag-{{ flag }}">{{ flag.replace('_', ' ') }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <p><strong>Type:</strong> {{ application.type }}</p>
         <p><strong>Source:</strong> {{ application.source or "Not specified" }}</p>
         <p><strong>Job URL:</strong> {% if application.job_url %}<a href="{{ application.job_url }}" target="_blank">{{ application.job_url }}</a>{% else %}Not specified{% endif %}</p>
