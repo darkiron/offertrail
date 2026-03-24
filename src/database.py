@@ -13,9 +13,18 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company TEXT NOT NULL,
+                company_id INTEGER,
+                company TEXT NOT NULL, -- Keep for compatibility during transition
                 title TEXT NOT NULL,
                 type TEXT NOT NULL, -- CDI|FREELANCE
                 status TEXT NOT NULL,
@@ -24,18 +33,21 @@ def init_db():
                 applied_at TEXT,
                 next_followup_at TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (company_id) REFERENCES companies (id)
             )
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER,
                 name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT,
                 company TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (company_id) REFERENCES companies (id)
             )
         """)
         conn.execute("""
