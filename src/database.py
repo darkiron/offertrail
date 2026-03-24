@@ -244,9 +244,9 @@ def list_companies():
         SELECT 
             c.*,
             COUNT(a.id) as applications_count,
-            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
-            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count,
-            SUM(CASE WHEN a.status NOT IN ('REJECTED', 'NO_RESPONSE', 'INTERESTED', 'APPLIED') THEN 1 ELSE 0 END) as responded_count
+            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_offers_count,
+            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as unanswered_offers_count,
+            SUM(CASE WHEN a.status NOT IN ('REJECTED', 'NO_RESPONSE', 'INTERESTED', 'APPLIED') THEN 1 ELSE 0 END) as responded_offers_count
         FROM companies c
         LEFT JOIN applications a ON c.id = a.company_id
         GROUP BY c.id
@@ -259,20 +259,21 @@ def list_companies():
             d = dict(row)
             total = d["applications_count"]
             if total > 0:
-                d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
-                d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
+                d["response_rate"] = round(d["responded_offers_count"] / total * 100, 2)
+                d["rejected_rate"] = round(d["rejected_offers_count"] / total * 100, 2)
             else:
                 d["response_rate"] = 0
                 d["rejected_rate"] = 0
             
             # Qualitative flags
             d["flags"] = []
-            if d["rejected_rate"] > 70 and total >= 3:
-                d["flags"].append("HIGH_REJECTION")
-            if d["no_response_count"] > 2 and d["response_rate"] < 30:
-                d["flags"].append("NO_RESPONSE_PATTERN")
-            if d["response_rate"] < 50 and total >= 3:
-                d["flags"].append("LOW_RESPONSE_RATE")
+            if total >= 3:
+                if d["rejected_rate"] > 70:
+                    d["flags"].append("HIGH_REJECTION")
+                if d["unanswered_offers_count"] > 2 and d["response_rate"] < 30:
+                    d["flags"].append("NO_RESPONSE_PATTERN")
+                if d["response_rate"] < 50:
+                    d["flags"].append("LOW_RESPONSE_RATE")
                 
             companies.append(d)
         return companies
@@ -282,8 +283,9 @@ def get_company(company_id):
         SELECT 
             c.*,
             COUNT(a.id) as applications_count,
-            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count,
-            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as no_response_count
+            SUM(CASE WHEN a.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_offers_count,
+            SUM(CASE WHEN a.status = 'NO_RESPONSE' THEN 1 ELSE 0 END) as unanswered_offers_count,
+            SUM(CASE WHEN a.status NOT IN ('REJECTED', 'NO_RESPONSE', 'INTERESTED', 'APPLIED') THEN 1 ELSE 0 END) as responded_offers_count
         FROM companies c
         LEFT JOIN applications a ON c.id = a.company_id
         WHERE c.id = ?
@@ -296,19 +298,20 @@ def get_company(company_id):
         d = dict(row)
         total = d["applications_count"]
         if total > 0:
-            d["response_rate"] = round((total - d["no_response_count"]) / total * 100, 2)
-            d["rejected_rate"] = round(d["rejected_count"] / total * 100, 2)
+            d["response_rate"] = round(d["responded_offers_count"] / total * 100, 2)
+            d["rejected_rate"] = round(d["rejected_offers_count"] / total * 100, 2)
         else:
             d["response_rate"] = 0
             d["rejected_rate"] = 0
         
         d["flags"] = []
-        if d["rejected_rate"] > 70 and total >= 3:
-            d["flags"].append("HIGH_REJECTION")
-        if d["no_response_count"] > 2 and d["response_rate"] < 30:
-            d["flags"].append("NO_RESPONSE_PATTERN")
-        if d["response_rate"] < 50 and total >= 3:
-            d["flags"].append("LOW_RESPONSE_RATE")
+        if total >= 3:
+            if d["rejected_rate"] > 70:
+                d["flags"].append("HIGH_REJECTION")
+            if d["unanswered_offers_count"] > 2 and d["response_rate"] < 30:
+                d["flags"].append("NO_RESPONSE_PATTERN")
+            if d["response_rate"] < 50:
+                d["flags"].append("LOW_RESPONSE_RATE")
             
         return d
 
