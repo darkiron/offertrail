@@ -52,7 +52,7 @@ export const ApplicationDetails: React.FC = () => {
 
   const handleResponseReceived = async () => {
     if (!id) return;
-    await applicationService.addEvent(parseInt(id), 'RESPONSE_RECEIVED');
+    await applicationService.recordResponse(parseInt(id));
     fetchDetails();
   };
 
@@ -235,7 +235,9 @@ export const ApplicationDetails: React.FC = () => {
       <div className="flex justify-between items-center mb-lg">
         <div>
           <Link to="/" className="text-sm text-dim mb-xs block">← Back to Dashboard</Link>
-          <h1 className="text-xxl font-bold">{app.company}</h1>
+          <h1 className="text-xxl font-bold">
+            {app.company?.name || app.company_name || app.company || 'Unknown Company'}
+          </h1>
           <p className="text-lg text-dim">{app.title}</p>
         </div>
         <div className="flex gap-md">
@@ -340,7 +342,7 @@ export const ApplicationDetails: React.FC = () => {
             {contacts.map((contact: any) => (
               <div key={contact.id} className="mb-md pb-md" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div className="font-bold">{contact.name}</div>
-                <div className="text-sm text-dim">{contact.company || app.company}</div>
+                <div className="text-sm text-dim">{contact.company || app.company?.name || app.company_name || app.company}</div>
                 {contact.email && <div className="text-sm mt-xs">📧 {contact.email}</div>}
                 {contact.phone && <div className="text-sm">📞 {contact.phone}</div>}
               </div>

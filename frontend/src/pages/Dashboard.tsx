@@ -172,11 +172,13 @@ export const Dashboard: React.FC = () => {
                 <label className="text-sm font-bold text-dim mb-xs block">Status</label>
                 <select className="input" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">All</option>
-                  <option value="INTERESTED">INTERESTED</option>
+                  <option value="DRAFT">DRAFT</option>
                   <option value="APPLIED">APPLIED</option>
+                  <option value="FOLLOW_UP">FOLLOW UP</option>
                   <option value="INTERVIEW">INTERVIEW</option>
-                  <option value="OFFER">OFFER</option>
+                  <option value="GHOSTING">GHOSTING (Computed)</option>
                   <option value="REJECTED">REJECTED</option>
+                  <option value="ACCEPTED">ACCEPTED</option>
                 </select>
               </div>
               <div className="flex items-center gap-sm mt-md">
@@ -205,7 +207,7 @@ export const Dashboard: React.FC = () => {
                   {apps.map(app => (
                     <tr key={app.id}>
                       <td>
-                        <div className="font-bold">{app.company}</div>
+                        <div className="font-bold">{app.company?.name || app.company_name || app.company}</div>
                         <div className="text-sm text-dim">{app.source || 'Direct'}</div>
                       </td>
                       <td>{app.title}</td>
@@ -270,7 +272,7 @@ export const Dashboard: React.FC = () => {
               <tbody>
                 {followups.map(app => (
                   <tr key={app.id}>
-                    <td className="font-bold">{app.company}</td>
+                    <td className="font-bold">{app.company?.name || app.company_name || app.company}</td>
                     <td>{app.title}</td>
                     <td className="font-bold" style={{ color: 'var(--status-rejected)' }}>{app.next_followup_at}</td>
                     <td className="has-text-right">
