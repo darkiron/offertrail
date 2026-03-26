@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { Title } from '../atoms/Title';
 import { Spinner } from '../atoms/Spinner';
-import { OrganizationTypeBadge } from '../molecules/OrganizationTypeBadge';
-import { ProbityBadge } from '../molecules/ProbityBadge';
-import { StatusBadge } from '../molecules/StatusBadge';
+import OrganizationTypeBadge from '../atoms/OrganizationTypeBadge';
+import ProbityBadge from '../atoms/ProbityBadge';
+import { StatusBadge } from '../atoms/StatusBadge';
 import { Button } from '../atoms/Button';
+import OrganizationEditModal from './OrganizationEditModal';
 
 interface OrganizationDetailDrawerProps {
   organizationId: number | null;
@@ -21,6 +22,7 @@ export const OrganizationDetailDrawer: React.FC<OrganizationDetailDrawerProps> =
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (organizationId) {
@@ -141,8 +143,21 @@ export const OrganizationDetailDrawer: React.FC<OrganizationDetailDrawerProps> =
             </div>
 
             <div className="p-lg border-top flex gap-md">
-              <Button variant="primary" className="flex-grow">MODIFIER ETS</Button>
+              <Button variant="primary" className="flex-grow" onClick={() => setEditing(true)}>MODIFIER ETS</Button>
             </div>
+
+            {editing && data && (
+              <OrganizationEditModal 
+                organization={data}
+                onClose={() => setEditing(false)}
+                onSaved={async () => { 
+                  setEditing(false);
+                  // refresh data
+                  setLoading(true);
+                  try { const refreshed = await api.getCompany(organizationId); setData(refreshed); } finally { setLoading(false); }
+                }}
+              />
+            )}
           </>
         ) : (
           <div className="p-lg text-center text-secondary">Établissement introuvable.</div>

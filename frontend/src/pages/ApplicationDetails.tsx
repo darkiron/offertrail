@@ -1,9 +1,236 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { applicationService, organizationService, contactService } from '../services/api';
+import { Link, useParams } from 'react-router-dom';
+import { applicationService, organizationService } from '../services/api';
 import ProbityBadge from '../components/atoms/ProbityBadge';
 import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
-import type { Application, Organization, Contact } from '../types';
+import StatusBadge, { statusLabelMap } from '../components/atoms/StatusBadge';
+import { Button } from '../components/atoms/Button';
+import type { Organization } from '../types';
+
+const pageStyles = `
+  .appdetail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 28px 32px 36px;
+  }
+
+  .appdetail-hero,
+  .appdetail-mainCard,
+  .appdetail-sideCard,
+  .appdetail-event,
+  .appdetail-contactCard,
+  .appdetail-modal {
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
+    border-radius: 20px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .appdetail-hero {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.85fr);
+    gap: 24px;
+    background:
+      radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
+      linear-gradient(135deg, color-mix(in srgb, var(--bg-mantle) 92%, white 8%), color-mix(in srgb, var(--bg-crust) 68%, var(--bg-mantle) 32%));
+  }
+
+  .appdetail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+
+  .appdetail-kicker,
+  .appdetail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+
+  .appdetail-title {
+    margin: 10px 0 0;
+    font-size: 34px;
+    line-height: 1.05;
+  }
+
+  .appdetail-subtitle {
+    margin: 10px 0 0;
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+
+  .appdetail-chipRow,
+  .appdetail-actions,
+  .appdetail-meta,
+  .appdetail-contactMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .appdetail-chipRow {
+    margin-top: 14px;
+  }
+
+  .appdetail-actions {
+    margin-top: 22px;
+  }
+
+  .appdetail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .appdetail-mainCard,
+  .appdetail-sideCard {
+    padding: 20px;
+  }
+
+  .appdetail-sectionTitle {
+    margin: 0 0 16px;
+    font-size: 20px;
+  }
+
+  .appdetail-eventList,
+  .appdetail-contactList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .appdetail-event {
+    padding: 18px;
+  }
+
+  .appdetail-eventTop,
+  .appdetail-contactTop {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .appdetail-muted {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .appdetail-noteForm {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .appdetail-textarea {
+    min-height: 110px;
+    width: 100%;
+    resize: vertical;
+  }
+
+  .appdetail-sideCard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .appdetail-sideSection {
+    padding-bottom: 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
+  }
+
+  .appdetail-sideSection:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .appdetail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .appdetail-contactCard {
+    padding: 16px;
+  }
+
+  .appdetail-modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.58);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+
+  .appdetail-modal {
+    width: min(720px, 100%);
+    padding: 20px;
+  }
+
+  .appdetail-modalTabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .appdetail-modalTab {
+    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent 16%);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-dim);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .appdetail-modalTab.is-active {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+    color: var(--text-main);
+  }
+
+  .appdetail-modalGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .appdetail-empty {
+    padding: 36px 16px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 1100px) {
+    .appdetail-hero,
+    .appdetail-layout,
+    .appdetail-modalGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .appdetail-shell {
+      padding: 18px;
+      gap: 18px;
+    }
+  }
+`;
 
 export const ApplicationDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,23 +240,32 @@ export const ApplicationDetails: React.FC = () => {
   const [newNote, setNewNote] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
-  const [contactForm, setContactForm] = useState({ 
-    first_name: '', 
-    last_name: '', 
-    email: '', 
-    phone: '', 
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [finalCustomerSearch, setFinalCustomerSearch] = useState('');
+  const [contactForm, setContactForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
     role: '',
-    is_recruiter: 0
+    is_recruiter: 0,
   });
 
   const fetchDetails = async () => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     try {
       setError(null);
-      const details = await applicationService.getApplication(parseInt(id));
+      const [details, organizationsData] = await Promise.all([
+        applicationService.getApplication(parseInt(id, 10)),
+        organizationService.getAll(),
+      ]);
       setData(details);
-    } catch (error: any) {
-      console.error('Error fetching application details:', error);
+      setOrganizations(organizationsData);
+      setFinalCustomerSearch(details.final_customer_organization?.name || '');
+    } catch (fetchError: any) {
+      console.error('Error fetching application details:', fetchError);
       setError('Failed to load application details.');
     } finally {
       setLoading(false);
@@ -41,364 +277,435 @@ export const ApplicationDetails: React.FC = () => {
   }, [id]);
 
   const handleUpdateStatus = async (status: string) => {
-    if (!id) return;
-    await applicationService.updateApplication(parseInt(id), { status });
+    if (!id) {
+      return;
+    }
+    await applicationService.updateApplication(parseInt(id, 10), { status });
     fetchDetails();
   };
 
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !newNote.trim()) return;
-    await applicationService.addNote(parseInt(id), newNote);
+  const handleAddNote = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!id || !newNote.trim()) {
+      return;
+    }
+    await applicationService.addNote(parseInt(id, 10), newNote);
     setNewNote('');
     fetchDetails();
   };
 
   const handleMarkFollowup = async () => {
-    if (!id) return;
-    await applicationService.markFollowup(parseInt(id));
+    if (!id) {
+      return;
+    }
+    await applicationService.markFollowup(parseInt(id, 10));
     fetchDetails();
   };
 
   const handleResponseReceived = async () => {
-    if (!id) return;
-    await applicationService.addEvent(parseInt(id), 'RESPONSE_RECEIVED');
+    if (!id) {
+      return;
+    }
+    await applicationService.addEvent(parseInt(id, 10), 'RESPONSE_RECEIVED');
     fetchDetails();
   };
 
   const handleLinkContact = async (contactId: number) => {
-    if (!id) return;
-    await applicationService.linkContact(parseInt(id), contactId);
+    if (!id) {
+      return;
+    }
+    await applicationService.linkContact(parseInt(id, 10), contactId);
     setShowContactModal(false);
     fetchDetails();
   };
 
-  const handleCreateContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !contactForm.first_name || !contactForm.last_name) return;
+  const handleCreateContact = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!id || !contactForm.first_name || !contactForm.last_name) {
+      return;
+    }
     const orgId = data?.organization?.id;
-    await applicationService.createContact(parseInt(id), { 
-      ...contactForm, 
-      organization_id: orgId 
+    await applicationService.createContact(parseInt(id, 10), {
+      ...contactForm,
+      organization_id: orgId,
     });
-    setContactForm({ 
-      first_name: '', 
-      last_name: '', 
-      email: '', 
-      phone: '', 
+    setContactForm({
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
       role: '',
-      is_recruiter: 0
+      is_recruiter: 0,
     });
     setShowContactModal(false);
     fetchDetails();
   };
+
+  const handleSetFinalCustomer = async (organizationId: number | null) => {
+    if (!id) {
+      return;
+    }
+    await applicationService.updateApplication(parseInt(id, 10), {
+      final_customer_organization_id: organizationId,
+    });
+    fetchDetails();
+  };
+
+  const statusOptions = [
+    { value: 'INTERESTED', label: statusLabelMap.INTERESTED },
+    { value: 'APPLIED', label: statusLabelMap.APPLIED },
+    { value: 'INTERVIEW', label: statusLabelMap.INTERVIEW },
+    { value: 'OFFER', label: statusLabelMap.OFFER },
+    { value: 'REJECTED', label: statusLabelMap.REJECTED },
+  ];
+  const getStatusLabel = (status?: string | null) => statusLabelMap[String(status || '').toUpperCase()] || status || '-';
 
   const formatEventType = (type: string) => {
-    if (!type) return 'UNKNOWN';
     const mapping: Record<string, string> = {
-      'CREATED': 'Application Created',
-      'STATUS_CHANGED': 'Status Updated',
-      'NOTE_ADDED': 'Note Added',
-      'CONTACT_CREATED': 'Contact Created',
-      'CONTACT_LINKED': 'Contact Linked',
-      'FOLLOWUP_SENT': 'Follow-up Sent',
-      'RESPONSE_RECEIVED': 'Response Received',
-      'INTERVIEW_SCHEDULED': 'Interview Scheduled',
-      'OFFER_RECEIVED': 'Offer Received',
-      'APPLICATION_CREATED': 'Application Created', // Legacy/Compatibility
-      'FOLLOWED_UP': 'Followed Up', // Legacy/Compatibility
+      CREATED: 'Creation',
+      UPDATED: 'Mise a jour',
+      STATUS_CHANGED: 'Statut',
+      NOTE_ADDED: 'Note',
+      CONTACT_CREATED: 'Contact cree',
+      CONTACT_LINKED: 'Contact lie',
+      FOLLOWUP_SENT: 'Relance',
+      RESPONSE_RECEIVED: 'Reponse',
+      INTERVIEW_SCHEDULED: 'Entretien',
+      OFFER_RECEIVED: 'Offre',
+      APPLICATION_CREATED: 'Creation',
+      FOLLOWED_UP: 'Relance',
     };
     return mapping[type] || type.replace(/_/g, ' ');
   };
 
   const renderEventPayload = (event: any) => {
-    const type = event.type || event.event_type; // Handle both possible field names
+    const type = event.type || event.event_type;
     switch (type) {
       case 'STATUS_CHANGED':
-        return event.payload?.old_status && (
-          <p className="mt-xs text-sm">
-            Changed from <strong>{event.payload.old_status}</strong> to <strong>{event.payload.new_status}</strong>
-          </p>
-        );
+        return event.payload?.old_status
+          ? `${getStatusLabel(event.payload.old_status)} -> ${getStatusLabel(event.payload.new_status)}`
+          : (event.payload?.new_status ? getStatusLabel(event.payload.new_status) : null);
+      case 'UPDATED':
+        if (event.payload?.status) {
+          return `Statut: ${getStatusLabel(event.payload.status)}`;
+        }
+        if (event.payload?.final_customer_organization_id !== undefined) {
+          return event.payload.final_customer_organization_id ? 'Client final lie' : 'Client final retire';
+        }
+        if (event.payload?.organization_id) {
+          return 'Organisation mise a jour';
+        }
+        return 'Informations mises a jour';
       case 'NOTE_ADDED':
-        return event.payload?.text && (
-          <div className="mt-xs text-sm whitespace-pre-wrap card-secondary p-sm border-radius-sm">{event.payload.text}</div>
-        );
+        return event.payload?.text || null;
       case 'CONTACT_CREATED':
-        return event.payload?.name && (
-          <p className="mt-xs text-sm">
-            Contact created: <strong>{event.payload.name}</strong>
-            {event.payload.company && ` (${event.payload.company})`}
-          </p>
-        );
+        return event.payload?.name ? `Contact: ${event.payload.name}` : null;
       case 'CONTACT_LINKED':
-        return event.payload?.contact_name ? (
-          <p className="mt-xs text-sm">Linked to <strong>{event.payload.contact_name}</strong></p>
-        ) : event.payload?.contact_id && (
-          <p className="mt-xs text-sm">Linked to contact ID: <strong>{event.payload.contact_id}</strong></p>
-        );
+        return event.payload?.contact_name || event.payload?.contact_id ? `Contact lie: ${event.payload?.contact_name || `#${event.payload?.contact_id}`}` : null;
       case 'CREATED':
       case 'APPLICATION_CREATED':
-        return event.payload?.company && (
-          <div className="mt-xs text-sm text-dim">
-            Initial application for <strong>{event.payload.company}</strong> as <strong>{event.payload.title}</strong>
-          </div>
-        );
+        return event.payload?.company ? `${event.payload.company} · ${event.payload.title}` : null;
       case 'FOLLOWUP_SENT':
-        return event.payload?.next_followup_at && (
-          <p className="mt-xs text-sm">
-            Follow-up sent. Next follow-up scheduled for: <strong>{event.payload.next_followup_at}</strong>
-          </p>
-        );
+        return event.payload?.next_followup_at ? `Prochaine relance: ${event.payload.next_followup_at}` : null;
       case 'RESPONSE_RECEIVED':
-        return (
-          <p className="mt-xs text-sm">
-            Employer responded to the application.
-          </p>
-        );
+        return 'Retour recu';
       default:
-        // Generic fallback for any other events with text or just data
-        if (event.payload?.text) return <p className="mt-xs text-sm">{event.payload.text}</p>;
-        if (event.payload && Object.keys(event.payload).length > 0) {
-          return (
-            <div className="mt-xs text-xs text-dim italic">
-              {JSON.stringify(event.payload)}
-            </div>
-          );
-        }
-        return null;
+        return event.payload?.text || null;
     }
   };
 
-  if (loading && !data) return (
-    <div className="container mt-lg has-text-centered text-dim" style={{ padding: '4rem' }}>
-      <div className="loading-spinner mb-md"></div>
-      <p>Loading application details...</p>
-    </div>
-  );
-  if (!data && !loading) return (
-    <div className="container mt-lg has-text-centered">
-      <div className="alert alert-error mb-lg">{error || 'Application not found.'}</div>
-      <Link to="/" className="btn-ghost">Back to Dashboard</Link>
-    </div>
-  );
+  if (loading && !data) {
+    return (
+      <div className="appdetail-shell">
+        <style>{pageStyles}</style>
+        <div className="appdetail-mainCard appdetail-empty">Loading application details...</div>
+      </div>
+    );
+  }
 
-  const { application: app, organization, events, contacts, all_contacts } = data || { application: {}, organization: null, events: [], contacts: [], all_contacts: [] };
+  if (!data && !loading) {
+    return (
+      <div className="appdetail-shell">
+        <style>{pageStyles}</style>
+        <div className="appdetail-mainCard appdetail-empty">
+          <div>{error || 'Application not found.'}</div>
+          <div style={{ marginTop: 12 }}>
+            <Link to="/">
+              <Button variant="ghost">Back to dashboard</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { application: app, organization, final_customer_organization, events, contacts, all_contacts } = data || {
+    application: {},
+    organization: null,
+    final_customer_organization: null,
+    events: [],
+    contacts: [],
+    all_contacts: [],
+  };
+  const finalCustomerCandidates = organizations
+    .filter((candidate) => !['ESN', 'CABINET_RECRUTEMENT', 'PORTAGE'].includes(candidate.type))
+    .filter((candidate) => candidate.name.toLowerCase().includes(finalCustomerSearch.toLowerCase()))
+    .slice(0, 6);
+  const shouldShowFinalCustomerLink = organization?.type === 'ESN' || organization?.type === 'CABINET_RECRUTEMENT' || !!final_customer_organization;
 
   return (
-    <div className="container mt-lg">
-      {showContactModal && (
-        <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-lg">
-              <h2 className="text-xl font-bold">Add Contact</h2>
-              <button className="btn-ghost" onClick={() => setShowContactModal(false)}>✕</button>
+    <div className="appdetail-shell">
+      <style>{pageStyles}</style>
+
+      {showContactModal ? (
+        <div className="appdetail-modalOverlay" onClick={() => setShowContactModal(false)}>
+          <div className="appdetail-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="appdetail-contactTop" style={{ marginBottom: 16 }}>
+              <div>
+                <div className="appdetail-kicker">Contact management</div>
+                <h2 className="appdetail-sectionTitle" style={{ marginBottom: 0 }}>Add contact</h2>
+              </div>
+              <Button variant="ghost" size="small" onClick={() => setShowContactModal(false)}>Close</Button>
             </div>
-            
-            <div className="tabs mb-lg">
-              <button className={`tab ${!isLinking ? 'active' : ''}`} onClick={() => setIsLinking(false)}>Create New</button>
-              <button className={`tab ${isLinking ? 'active' : ''}`} onClick={() => setIsLinking(true)}>Link Existing</button>
+
+            <div className="appdetail-modalTabs">
+              <button type="button" className={`appdetail-modalTab ${!isLinking ? 'is-active' : ''}`} onClick={() => setIsLinking(false)}>
+                Create new
+              </button>
+              <button type="button" className={`appdetail-modalTab ${isLinking ? 'is-active' : ''}`} onClick={() => setIsLinking(true)}>
+                Link existing
+              </button>
             </div>
 
             {!isLinking ? (
-              <form onSubmit={handleCreateContact} className="flex-col gap-md">
-                <div className="flex gap-sm">
-                  <input 
-                    className="input flex-1" 
-                    placeholder="First Name" 
-                    value={contactForm.first_name} 
-                    onChange={e => setContactForm({...contactForm, first_name: e.target.value})} 
-                    required
-                  />
-                  <input 
-                    className="input flex-1" 
-                    placeholder="Last Name" 
-                    value={contactForm.last_name} 
-                    onChange={e => setContactForm({...contactForm, last_name: e.target.value})} 
-                    required
-                  />
+              <form onSubmit={handleCreateContact} className="appdetail-noteForm">
+                <div className="appdetail-modalGrid">
+                  <input className="input" placeholder="First name" value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} required />
+                  <input className="input" placeholder="Last name" value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} required />
+                  <input className="input" placeholder="Email" type="email" value={contactForm.email} onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })} />
+                  <input className="input" placeholder="Phone" value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} />
+                  <input className="input" placeholder="Role" value={contactForm.role} onChange={(event) => setContactForm({ ...contactForm, role: event.target.value })} />
+                  <label className="appdetail-check appdetail-muted">
+                    <input type="checkbox" checked={contactForm.is_recruiter === 1} onChange={(event) => setContactForm({ ...contactForm, is_recruiter: event.target.checked ? 1 : 0 })} />
+                    Est recruteur
+                  </label>
                 </div>
-                <input 
-                  className="input" 
-                  placeholder="Email" 
-                  type="email"
-                  value={contactForm.email} 
-                  onChange={e => setContactForm({...contactForm, email: e.target.value})} 
-                />
-                <input 
-                  className="input" 
-                  placeholder="Phone" 
-                  value={contactForm.phone} 
-                  onChange={e => setContactForm({...contactForm, phone: e.target.value})} 
-                />
-                <input 
-                  className="input" 
-                  placeholder="Role (e.g. Lead Recruiter)" 
-                  value={contactForm.role} 
-                  onChange={e => setContactForm({...contactForm, role: e.target.value})} 
-                />
-                <label className="flex items-center gap-sm cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={contactForm.is_recruiter === 1} 
-                    onChange={e => setContactForm({...contactForm, is_recruiter: e.target.checked ? 1 : 0})} 
-                  />
-                  <span className="text-sm">Est recruteur</span>
-                </label>
-                <button type="submit" className="btn-primary w-full">Create and Link Contact</button>
+                <div>
+                  <Button type="submit" variant="primary">Create and link</Button>
+                </div>
               </form>
             ) : (
-              <div className="flex-col gap-sm" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {all_contacts?.filter((c: any) => !contacts.some((rc: any) => rc.id === c.id)).map((c: any) => (
-                  <div key={c.id} className="flex justify-between items-center p-sm border-bottom hover-dim" style={{ cursor: 'pointer' }} onClick={() => handleLinkContact(c.id)}>
-                    <div>
-                      <div className="font-bold">{c.first_name} {c.last_name}</div>
-                      <div className="text-xs text-dim">{c.role}</div>
+              <div className="appdetail-contactList" style={{ maxHeight: 320, overflowY: 'auto' }}>
+                {all_contacts?.filter((contact: any) => !contacts.some((related: any) => related.id === contact.id)).map((contact: any) => (
+                  <div key={contact.id} className="appdetail-contactCard">
+                    <div className="appdetail-contactTop">
+                      <div>
+                        <div><strong>{contact.first_name} {contact.last_name}</strong></div>
+                        <div className="appdetail-muted">{contact.role || 'Contact'}</div>
+                      </div>
+                      <Button variant="ghost" size="small" onClick={() => handleLinkContact(contact.id)}>Link</Button>
                     </div>
-                    <button className="btn-ghost text-sm">Link</button>
                   </div>
                 ))}
-                {all_contacts?.length === 0 && <p className="text-dim italic p-md">No existing contacts found.</p>}
+                {all_contacts?.length === 0 ? <div className="appdetail-empty">No existing contacts found.</div> : null}
               </div>
             )}
           </div>
         </div>
-      )}
-      {error && (
-        <div className="alert alert-error mb-lg">
+      ) : null}
+
+      {error ? (
+        <div className="alert alert-error">
           <span>{error}</span>
           <button className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }} onClick={fetchDetails}>Retry</button>
         </div>
-      )}
-      
-      <div className="flex justify-between items-center mb-lg">
-        <div>
-          <Link to="/" className="text-sm text-dim mb-xs block">← Back to Dashboard</Link>
-          <div className="flex items-center gap-md">
-            <h1 className="text-xxl font-bold">{app.company}</h1>
-            {organization && (
-              <div className="flex gap-xs">
-                <OrganizationTypeBadge type={organization.type} />
-                <ProbityBadge score={organization.probity_score} level={organization.probity_level} />
-              </div>
-            )}
-          </div>
-          <p className="text-lg text-dim">{app.title}</p>
-        </div>
-        <div className="flex gap-md">
-          <select 
-            className="input" 
-            value={app.status} 
-            onChange={(e) => handleUpdateStatus(e.target.value)}
-            style={{ width: 'auto' }}
-          >
-            <option value="INTERESTED">INTERESTED</option>
-            <option value="APPLIED">APPLIED</option>
-            <option value="INTERVIEW">INTERVIEW</option>
-            <option value="OFFER">OFFER</option>
-            <option value="REJECTED">REJECTED</option>
-          </select>
-          <button className="btn-ghost" onClick={handleResponseReceived}>Réponse reçue</button>
-          <button className="btn-primary" onClick={handleMarkFollowup}>Mark Follow-up Done</button>
-        </div>
-      </div>
+      ) : null}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 'var(--spacing-lg)' }}>
-        <div className="flex-col gap-lg">
-          <div className="card">
-            <h2 className="text-lg font-bold mb-md">Timeline</h2>
-            <div className="flex-col gap-md">
-              {events.map((event: any, i: number) => (
-                <div key={i} className="flex gap-md pb-md" style={{ borderLeft: '2px solid var(--border)', paddingLeft: 'var(--spacing-md)', position: 'relative' }}>
-                  <div style={{ 
-                    position: 'absolute', 
-                    left: '-7px', 
-                    top: '0', 
-                    width: '12px', 
-                    height: '12px', 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--accent)' 
-                  }} />
-                  <div className="flex-grow">
-                    <div className="flex justify-between">
-                      <span className="font-bold text-sm">{formatEventType(event.type || event.event_type)}</span>
-                      <span className="text-sm text-dim">{new Date(event.ts).toLocaleString()}</span>
+      <Link to="/" className="appdetail-back">Back to dashboard</Link>
+
+      <section className="appdetail-hero">
+        <div>
+          <div className="appdetail-kicker">Application record</div>
+          <h1 className="appdetail-title">{app.company}</h1>
+          <p className="appdetail-subtitle">{app.title}</p>
+          <div className="appdetail-chipRow">
+            <StatusBadge status={app.status} />
+            {organization ? <OrganizationTypeBadge type={organization.type} /> : null}
+            {organization ? <ProbityBadge score={organization.probity_score} level={organization.probity_level} /> : null}
+          </div>
+          <div className="appdetail-actions">
+            <select className="input" value={app.status} onChange={(event) => handleUpdateStatus(event.target.value)} style={{ width: 'auto' }}>
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <Button variant="ghost" onClick={handleResponseReceived}>Response received</Button>
+            <Button variant="primary" onClick={handleMarkFollowup}>Mark follow-up done</Button>
+          </div>
+        </div>
+
+        <div className="appdetail-sideCard">
+          <div className="appdetail-sideSection">
+            <div className="appdetail-label">Applied</div>
+            <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700 }}>{app.applied_at || '-'}</div>
+            <div className="appdetail-muted">source: {app.source || 'Direct'}</div>
+          </div>
+          <div className="appdetail-sideSection">
+            <div className="appdetail-label">Follow-up</div>
+            <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700 }}>{app.next_followup_at || '-'}</div>
+            <div className="appdetail-muted">next checkpoint for this application</div>
+          </div>
+          <div className="appdetail-sideSection">
+            <div className="appdetail-label">Organization</div>
+            <div className="appdetail-muted" style={{ marginTop: 6 }}>
+              {organization ? (
+                <Link to={`/organizations/${organization.id}`}>{organization.name}</Link>
+              ) : 'No linked organization'}
+            </div>
+          </div>
+          {shouldShowFinalCustomerLink ? (
+            <div className="appdetail-sideSection">
+              <div className="appdetail-label">Final customer</div>
+              <div className="appdetail-muted" style={{ marginTop: 6 }}>
+                {final_customer_organization ? (
+                  <Link to={`/organizations/${final_customer_organization.id}`}>{final_customer_organization.name}</Link>
+                ) : 'Not linked yet'}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="appdetail-layout">
+        <div className="appdetail-mainCard">
+          <h2 className="appdetail-sectionTitle">Timeline</h2>
+          <div className="appdetail-eventList">
+            {events.map((event: any, index: number) => (
+              <div key={`${event.id || index}-${event.ts}`} className="appdetail-event">
+                <div className="appdetail-eventTop">
+                  <div>
+                    <div><strong>{formatEventType(event.type || event.event_type)}</strong></div>
+                    <div className="appdetail-muted">{new Date(event.ts).toLocaleString()}</div>
+                  </div>
+                </div>
+                {renderEventPayload(event) ? (
+                  <div className="appdetail-muted" style={{ marginTop: 10 }}>{renderEventPayload(event)}</div>
+                ) : null}
+              </div>
+            ))}
+            {events.length === 0 ? <div className="appdetail-empty">No events recorded yet.</div> : null}
+          </div>
+
+          <form onSubmit={handleAddNote} className="appdetail-noteForm">
+            <label className="appdetail-label">Quick note</label>
+            <textarea className="input appdetail-textarea" placeholder="Type a note..." value={newNote} onChange={(event) => setNewNote(event.target.value)} />
+            <div>
+              <Button type="submit" variant="primary">Add note</Button>
+            </div>
+          </form>
+        </div>
+
+        <div className="appdetail-sideCard">
+          <div className="appdetail-sideSection">
+            <h2 className="appdetail-sectionTitle">Details</h2>
+            <div className="appdetail-grid">
+              <div>
+                <div className="appdetail-label">Status</div>
+                <div style={{ marginTop: 8 }}><StatusBadge status={app.status} /></div>
+              </div>
+              <div>
+                <div className="appdetail-label">Type</div>
+                <div className="appdetail-muted">{app.type}</div>
+              </div>
+              <div>
+                <div className="appdetail-label">Source</div>
+                <div className="appdetail-muted">{app.source || 'Direct'}</div>
+              </div>
+              {shouldShowFinalCustomerLink ? (
+                <div>
+                  <div className="appdetail-label">Client final</div>
+                  <div className="appdetail-muted">
+                    {final_customer_organization ? final_customer_organization.name : 'Aucun lien'}
+                  </div>
+                </div>
+              ) : null}
+              <div>
+                <div className="appdetail-label">Applied at</div>
+                <div className="appdetail-muted">{app.applied_at || '-'}</div>
+              </div>
+            </div>
+            {shouldShowFinalCustomerLink ? (
+              <div style={{ marginTop: 16 }}>
+                <div className="appdetail-label">Lier un client final</div>
+                <input
+                  className="input"
+                  placeholder="Rechercher un client final"
+                  value={finalCustomerSearch}
+                  onChange={(event) => setFinalCustomerSearch(event.target.value)}
+                  style={{ marginTop: 8 }}
+                />
+                <div className="appdetail-contactList" style={{ marginTop: 12 }}>
+                  {finalCustomerCandidates.map((candidate) => (
+                    <div key={candidate.id} className="appdetail-contactCard">
+                      <div className="appdetail-contactTop">
+                        <div>
+                          <div><strong>{candidate.name}</strong></div>
+                          <div className="appdetail-contactMeta">
+                            <span className="appdetail-muted">{candidate.city || 'Ville non renseignee'}</span>
+                            <OrganizationTypeBadge type={candidate.type} size="xs" />
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="small" onClick={() => handleSetFinalCustomer(candidate.id)}>
+                          Lier
+                        </Button>
+                      </div>
                     </div>
-                    {renderEventPayload(event)}
+                  ))}
+                  {final_customer_organization ? (
+                    <Button variant="ghost" size="small" onClick={() => handleSetFinalCustomer(null)}>
+                      Retirer le client final
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+            {app.job_url ? (
+              <div style={{ marginTop: 16 }}>
+                <a href={app.job_url} target="_blank" rel="noreferrer">
+                  <Button variant="ghost">View job description</Button>
+                </a>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="appdetail-sideSection">
+            <div className="appdetail-contactTop">
+              <h2 className="appdetail-sectionTitle" style={{ marginBottom: 0 }}>Contacts</h2>
+              <Button variant="ghost" size="small" onClick={() => setShowContactModal(true)}>Add</Button>
+            </div>
+            <div className="appdetail-contactList">
+              {contacts.map((contact: any) => (
+                <div key={contact.id} className="appdetail-contactCard">
+                  <div className="appdetail-contactTop">
+                    <div>
+                      <div><strong>{contact.first_name} {contact.last_name}</strong></div>
+                      <div className="appdetail-contactMeta">
+                        {contact.is_recruiter === 1 ? <span className="appdetail-muted">Recruiter</span> : null}
+                        <span className="appdetail-muted">{contact.role || 'Contact'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="appdetail-contactMeta" style={{ marginTop: 10 }}>
+                    {contact.email ? <span className="appdetail-muted">{contact.email}</span> : null}
+                    {contact.phone ? <span className="appdetail-muted">{contact.phone}</span> : null}
                   </div>
                 </div>
               ))}
-              {events.length === 0 && <p className="text-dim italic">No events recorded yet.</p>}
+              {contacts.length === 0 ? <div className="appdetail-empty">No contacts linked yet.</div> : null}
             </div>
-            
-            <form onSubmit={handleAddNote} className="mt-lg">
-              <label className="text-sm font-bold text-dim mb-xs block">Quick Note</label>
-              <div className="flex-col gap-sm">
-                <textarea 
-                  className="input" 
-                  style={{ minHeight: '80px', width: '100%', padding: '0.75rem' }}
-                  placeholder="Type a note..." 
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                />
-                <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-end' }}>Add Note</button>
-              </div>
-            </form>
           </div>
         </div>
-
-        <div className="flex-col gap-lg">
-          <div className="card">
-            <h2 className="text-lg font-bold mb-md">Details</h2>
-            <div className="flex-col gap-sm text-sm">
-              <div className="flex justify-between">
-                <span className="text-dim">Status</span>
-                <span className={`tag status-${app.status.toLowerCase()}`}>{app.status}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-dim">Type</span>
-                <span className="font-bold">{app.type}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-dim">Source</span>
-                <span className="font-bold">{app.source || 'Direct'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-dim">Applied At</span>
-                <span className="font-bold">{app.applied_at || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-dim">Follow-up</span>
-                <span className="font-bold text-rejected">{app.next_followup_at || '-'}</span>
-              </div>
-            </div>
-            {app.job_url && (
-              <a href={app.job_url} target="_blank" rel="noreferrer" className="btn-ghost mt-lg block has-text-centered">
-                View Job Description ↗
-              </a>
-            )}
-          </div>
-
-          <div className="card">
-            <div className="flex justify-between items-center mb-md">
-              <h2 className="text-lg font-bold">Contacts</h2>
-              <button className="btn-ghost text-sm" onClick={() => setShowContactModal(true)}>+ Add</button>
-            </div>
-            {contacts.map((contact: any) => (
-              <div key={contact.id} className="mb-md pb-md" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="font-bold flex items-center gap-sm">
-                  {contact.first_name} {contact.last_name}
-                  {contact.is_recruiter === 1 && <span className="text-[10px] text-pink-500 font-mono font-bold border border-pink-500/30 px-1 rounded">RECRUTEUR</span>}
-                </div>
-                <div className="text-sm text-dim">{contact.role || 'Contact'}</div>
-                {contact.email && <div className="text-sm mt-xs">📧 {contact.email}</div>}
-                {contact.phone && <div className="text-sm">📞 {contact.phone}</div>}
-              </div>
-            ))}
-            {contacts.length === 0 && <p className="text-dim italic text-sm">No contacts linked yet.</p>}
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };
