@@ -1,164 +1,196 @@
 # OfferTrail 🧭
 
-##  🧭 OfferTrail — follow your applications, don’t lose the plot
+## 🧭 OfferTrail, pour suivre ses candidatures sans perdre le fil
 
-**Local-first CRM for job & freelance applications**  
-Track your applications, measure what actually works, and keep a full history of every action — *Git-like*.
-
----
-
-## ✨ Why OfferTrail?
-Job searching is messy. Spreadsheets rot, inboxes overflow, and you lose track of who you contacted, when, and why.
-
-**OfferTrail** is a lightweight, self-hosted tool designed to:
-- centralize **CDI & freelance applications**
-- visualize your **pipeline**
-- track **KPIs that matter**
-- keep a **complete, immutable history** of changes and interactions
-
-No SaaS lock-in. No black box. Your data stays with you.
+**CRM local-first pour piloter ses candidatures CDI et freelance**  
+Centraliser, suivre, relancer, mesurer, garder l'historique. Simple, lisible, utile 🙂
 
 ---
 
-## 🧠 Core principles
-- **Local-first** → run it on your machine or your own server
-- **Simple by default** → avoid framework gravity
-- **Always traceable** → every change is logged (append-only)
-- **Stable main** → no direct commits, clean Git hygiene
+## ✨ Pourquoi OfferTrail ?
+
+La recherche d'emploi devient vite brouillonne :
+- plusieurs candidatures en parallèle
+- des contacts dispersés
+- des relances oubliées
+- peu de visibilité sur ce qui fonctionne vraiment
+
+**OfferTrail** sert à reprendre la main sur ce flux avec une logique claire :
+- suivre les candidatures dans le temps
+- visualiser les KPI utiles
+- relier organisations, contacts et événements
+- conserver un historique traçable des actions
+
+Pas de SaaS imposé. Pas de boîte noire. Les données restent chez vous.
 
 ---
 
-## 🚀 Features (current & planned)
-### Current
-- Project scaffolding & workflow foundations
+## 🧠 Principes du projet
 
-### Planned
-- Application pipeline (CDI & freelance)
-- Dashboard with actionable KPIs
-- Follow-up reminders & relance helpers
-- Event log (Git-like history)
-- Import offers from URLs / alerts (safe-first)
-- Contact & interaction tracking
+- **Local-first** : exécution en local, base SQLite, prise en main rapide
+- **Lisible par défaut** : éviter la complexité gratuite
+- **Traçable** : les événements métier restent visibles et exploitables
+- **Main propre** : pas de commits directs sur `main`, historique Git net
 
 ---
 
-## 🌿 Branching model
-We follow a strict but simple Git discipline:
+## 🚀 État actuel
 
-- `main` → **stable**, protected, no direct commits
-- `dev` → integration branch
-- `feat/*` → feature branches
-- `fix/*` → bugfix branches
+Le projet est déjà exploitable sur plusieurs briques :
+- tableau de bord KPI
+- gestion des candidatures
+- fiches détail candidature
+- gestion des organisations
+- gestion des contacts
+- import TSV
+- API FastAPI pour alimenter le front React
 
-> Every change starts in a feature branch and flows upward.
-
----
-
-## 🧱 Tech stack
-Not frozen yet. Chosen deliberately, step by step.
-
-Initial constraints:
-- Local-first
-- Minimal dependencies
-- Easy to run & debug
-- No premature architecture
-
-Details will be documented in `docs/decisions.md`.
+Le dépôt contient encore quelques zones en transition entre anciennes vues HTML et interface React. Le cap reste simple : consolider le socle avant d'élargir 🙂
 
 ---
 
-## 📁 Project structure
+## 🧱 Stack actuelle
+
+### Backend
+- Python 3.9+
+- FastAPI
+- Uvicorn
+- SQLite
+
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- Bulma
+- React Router
+
+---
+
+## 📁 Structure
+
 ```txt
 .
-├── docs/
-│   ├── vision.md        # product intent & non-goals
-│   ├── decisions.md    # architecture decisions (ADR-lite)
-│   └── runbook.md      # how to run / debug the app
-├── src/                # application source
-├── tests/              # tests
-├── scripts/            # helper scripts
-├── .env.example
+├── docs/              # vision, décisions, runbook
+├── frontend/          # interface React + Vite
+├── scripts/           # scripts utilitaires / migrations
+├── src/               # backend FastAPI + logique métier
+├── tests/             # tests Python
+├── saved_db/          # snapshots / bases sauvegardées
+├── Makefile
+├── requirements.txt
 ├── BACKLOG.md
 └── README.md
 ```
 
 ---
-## 🛠️ Getting started
 
-### Prerequisites
+## 🛠️ Démarrage
+
+### Prérequis
 - Python 3.9+
-- pip
+- npm
+- idéalement une virtualenv Python
 
 ### Installation
+
 ```bash
 make install
 ```
-*Note: This installs both backend (pip) and frontend (npm) dependencies.*
 
-### Running the app
+Cette commande installe :
+- les dépendances Python du backend
+- les dépendances npm du frontend
 
-#### 🚀 Full Stack (Backend + Frontend)
+### Lancer le projet
+
+#### Backend + Frontend
+
 ```bash
 make run
 ```
-*This opens two new terminal windows: one for the FastAPI backend and one for the Vite frontend.*
 
-#### 🔙 Backend only
+Cette commande ouvre deux processus :
+- API FastAPI sur `http://localhost:8000`
+- frontend Vite sur `http://localhost:5173`
+
+#### Backend seul
+
 ```bash
 make run-back
 ```
-The API will be available at [http://localhost:8000](http://localhost:8000).
 
-#### 🎨 Frontend only
+#### Frontend seul
+
 ```bash
 make run-front
 ```
-The React app will be available at [http://localhost:5173](http://localhost:5173).
 
-### Environment configuration
-If `python` or `npm` are not in your PATH, you can specify them:
+### Variables d'exécution
+
+Si `python`, `pip` ou `npm` ne sont pas dans le `PATH`, vous pouvez surcharger les variables du `Makefile` :
+
 ```bash
-make install PYTHON=C:\Path\To\python.exe NPM=C:\Path\To\npm.cmd
+make install PYTHON=C:\Path\To\python.exe PIP=C:\Path\To\pip.exe NPM=C:\Path\To\npm.cmd
 ```
 
-### Health check
-[http://localhost:8000/health](http://localhost:8000/health)
----
-## 📜 Documentation
+### Healthcheck
 
-* `docs/vision.md` → what OfferTrail is (and is not)
-
-* `docs/decisions.md` → why technical choices were made
-
-* `docs/runbook.md` → how to run, debug, and recover
-
----
-## 🤝 Contributing
-
-This project favors:
-
-* small, focused changes
-
-* explicit intent
-
-* clean commits
-
-* readable code over clever code
-
-PRs should include:
-
-* a short description
-
-* how to test the change
-
-* any trade-offs made
-
----
-## 📄 License
-
-To be defined.
-(MIT is the default candidate unless stated otherwise.)
+`GET http://localhost:8000/health`
 
 ---
 
+## 📌 Workflow Git
 
+Le projet suit une logique **git flow** légère :
+- `main` : stable, propre, pas de commit direct
+- `dev` : branche d'intégration
+- `feat/*` : nouvelles fonctionnalités
+- `fix/*` : corrections
+- `chore/*` : maintenance, scripts, doc, nettoyage
+
+Chaque changement part d'une branche dédiée puis remonte proprement.
+
+### Commits
+
+On garde des commits **courts, lisibles, conventionnels**, avec un smiley si pertinent 🙂
+
+Exemples :
+- `📝 docs: refresh readme`
+- `✨ feat: add contacts page`
+- `🐛 fix: handle empty followup date`
+- `♻️ refactor: simplify organization mapping`
+
+Objectif :
+- un commit = une intention claire
+- pas de message vague
+- historique facile à relire
+
+---
+
+## 📚 Documentation
+
+- `docs/vision.md` : la direction produit
+- `docs/decisions.md` : les choix techniques
+- `docs/runbook.md` : exécution, debug, récupération
+
+---
+
+## 🤝 Contribution
+
+Le projet préfère :
+- des changements petits et ciblés
+- de l'intention explicite
+- des commits propres
+- du code lisible avant le code malin
+
+Pour chaque PR :
+- résumer le changement
+- expliquer comment tester
+- signaler les compromis éventuels
+
+---
+
+## 📄 Licence
+
+Pas encore figée.
+MIT reste la candidate par défaut tant qu'aucune autre décision n'est prise.
