@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { StatusBadge } from '../molecules/StatusBadge';
+import { StatusBadge } from '../atoms/StatusBadge';
 import { Title } from '../atoms/Title';
 import { Spinner } from '../atoms/Spinner';
-import { OrganizationTypeBadge } from '../molecules/OrganizationTypeBadge';
-import { ProbityBadge } from '../molecules/ProbityBadge';
+import OrganizationTypeBadge from '../atoms/OrganizationTypeBadge';
+import ProbityBadge from '../atoms/ProbityBadge';
+import { Button } from '../atoms/Button';
 
 interface ApplicationDetailDrawerProps {
   appId: number | null;
