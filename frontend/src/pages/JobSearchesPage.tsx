@@ -39,11 +39,43 @@ const pageStyles = `
 
 const splitCsv = (value: string) => value.split(',').map((part) => part.trim()).filter(Boolean);
 
+const IconArrowPath = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M20 4v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconEdit = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="m16.5 3.5 4 4L8 20l-5 1 1-5 12.5-12.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M3 6h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 6 18 20H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const IconEye = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+  </svg>
+);
+
 export const JobSearchesPage: React.FC = () => {
   const [sources, setSources] = useState<JobSource[]>([]);
   const [searches, setSearches] = useState<JobSearch[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [runningId, setRunningId] = useState<number | null>(null);
+  const [runMessage, setRunMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     source_id: '',
@@ -93,6 +125,7 @@ export const JobSearchesPage: React.FC = () => {
   };
 
   const submit = async () => {
+    setRunMessage(null);
     const payload = {
       name: form.name,
       source_id: Number(form.source_id),
@@ -114,6 +147,7 @@ export const JobSearchesPage: React.FC = () => {
   };
 
   const editSearch = (search: JobSearch) => {
+    setRunMessage(null);
     setEditingId(search.id);
     setForm({
       name: search.name,
@@ -129,14 +163,31 @@ export const JobSearchesPage: React.FC = () => {
   };
 
   const removeSearch = async (id: number) => {
+    setRunMessage(null);
     await jobBacklogService.deleteSearch(id);
     await load();
+  };
+
+  const runSearch = async (search: JobSearch) => {
+    setError(null);
+    setRunMessage(null);
+    setRunningId(search.id);
+    try {
+      const result = await jobBacklogService.runSearch(search.id);
+      setRunMessage(`${search.name} · ${result.fetched_count} recuperees · ${result.created_count} ajoutees`);
+      await load();
+    } catch {
+      setError(`Impossible de lancer la recherche "${search.name}".`);
+    } finally {
+      setRunningId(null);
+    }
   };
 
   return (
     <div className="jobsearches-shell">
       <style>{pageStyles}</style>
       {error ? <div className="alert alert-error">{error}</div> : null}
+      {runMessage ? <div className="alert alert-success">{runMessage}</div> : null}
 
       <section className="jobsearches-hero">
         <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', fontWeight: 700 }}>Backlog</span>
@@ -206,11 +257,26 @@ export const JobSearchesPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: 12, color: 'var(--text-dim)' }}>{search.profile_summary || 'Aucun resume de profil.'}</div>
                 <div className="jobsearches-actions">
-                  <Link to="/backlog">
-                    <Button variant="ghost">Voir backlog</Button>
+                  <Link to={`/backlog?search_id=${search.id}`}>
+                    <Button variant="ghost" title="Voir dans le backlog" aria-label={`Voir ${search.name} dans le backlog`}>
+                      <IconEye />
+                    </Button>
                   </Link>
-                  <Button variant="ghost" onClick={() => editSearch(search)}>Editer</Button>
-                  <Button variant="secondary" onClick={() => removeSearch(search.id)}>Supprimer</Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => runSearch(search)}
+                    disabled={runningId === search.id}
+                    title="Lancer la recherche"
+                    aria-label={`Lancer la recherche ${search.name}`}
+                  >
+                    <IconArrowPath />
+                  </Button>
+                  <Button variant="ghost" onClick={() => editSearch(search)} title="Editer" aria-label={`Editer ${search.name}`}>
+                    <IconEdit />
+                  </Button>
+                  <Button variant="secondary" onClick={() => removeSearch(search.id)} title="Supprimer" aria-label={`Supprimer ${search.name}`}>
+                    <IconTrash />
+                  </Button>
                 </div>
               </article>
             ))}

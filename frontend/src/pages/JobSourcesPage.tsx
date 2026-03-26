@@ -39,6 +39,29 @@ const pageStyles = `
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+const IconEdit = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="m16.5 3.5 4 4L8 20l-5 1 1-5 12.5-12.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M3 6h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 6 18 20H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const IconArrowUpRight = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M7 17 17 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const JobSourcesPage: React.FC = () => {
   const [sources, setSources] = useState<JobSource[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -169,9 +192,20 @@ export const JobSourcesPage: React.FC = () => {
                   </div>
                 ) : <div style={{ marginTop: 12, color: 'var(--text-dim)' }}>Aucune URI definie.</div>}
                 <div className="jobsources-actions">
-                  <Button variant="ghost" onClick={() => editSource(source)}>Editer</Button>
+                  {source.uri ? (
+                    <a href={source.uri} target="_blank" rel="noreferrer">
+                      <Button variant="ghost" title="Ouvrir l'URI" aria-label={`Ouvrir l'URI de ${source.name}`}>
+                        <IconArrowUpRight />
+                      </Button>
+                    </a>
+                  ) : null}
+                  <Button variant="ghost" onClick={() => editSource(source)} title="Editer" aria-label={`Editer ${source.name}`}>
+                    <IconEdit />
+                  </Button>
                   {!['mock-board', 'wwr-rss'].includes(source.slug) ? (
-                    <Button variant="secondary" onClick={() => removeSource(source.id)}>Supprimer</Button>
+                    <Button variant="secondary" onClick={() => removeSource(source.id)} title="Supprimer" aria-label={`Supprimer ${source.name}`}>
+                      <IconTrash />
+                    </Button>
                   ) : null}
                 </div>
               </article>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { jobBacklogService } from '../services/api';
 import type { JobBacklogItem, JobBacklogRun, JobSearch, JobSource } from '../types';
 import { Button } from '../components/atoms/Button';
@@ -138,17 +138,33 @@ const stripHtml = (value: string | null | undefined) => (value || '').replace(/<
 const truncate = (value: string, max = 320) => value.length <= max ? value : `${value.slice(0, max).trim()}...`;
 
 export const JobBacklogPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [sources, setSources] = useState<JobSource[]>([]);
   const [searches, setSearches] = useState<JobSearch[]>([]);
   const [items, setItems] = useState<JobBacklogItem[]>([]);
   const [runs, setRuns] = useState<JobBacklogRun[]>([]);
-  const [activeSearchId, setActiveSearchId] = useState<number | null>(null);
-  const [activeSourceId, setActiveSourceId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [activeSearchId, setActiveSearchId] = useState<number | null>(() => {
+    const value = searchParams.get('search_id');
+    return value ? Number(value) : null;
+  });
+  const [activeSourceId, setActiveSourceId] = useState<number | null>(() => {
+    const value = searchParams.get('source_id');
+    return value ? Number(value) : null;
+  });
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const activeSearch = useMemo(() => searches.find((search) => search.id === activeSearchId) || null, [searches, activeSearchId]);
+
+  useEffect(() => {
+    const nextSearchId = searchParams.get('search_id');
+    const nextSourceId = searchParams.get('source_id');
+    const nextStatus = searchParams.get('status') || '';
+    setActiveSearchId(nextSearchId ? Number(nextSearchId) : null);
+    setActiveSourceId(nextSourceId ? Number(nextSourceId) : null);
+    setStatusFilter(nextStatus);
+  }, [searchParams]);
 
   const refresh = async () => {
     setLoading(true);
