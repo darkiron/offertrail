@@ -212,7 +212,7 @@ async def api_run_job_search(search_id: int):
 async def api_job_backlog(search_id: int = None, source_id: int = None, status: str = None):
     return {
         "items": database.list_job_backlog_items(search_id=search_id, source_id=source_id, status=status),
-        "runs": database.list_job_backlog_runs(search_id=search_id),
+        "runs": database.list_job_backlog_runs(search_id=search_id, source_id=source_id),
     }
 
 @app.post("/api/job-backlog/{item_id}/import")

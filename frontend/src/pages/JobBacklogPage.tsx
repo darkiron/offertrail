@@ -42,7 +42,7 @@ const pageStyles = `
     color: var(--text-dim);
     line-height: 1.6;
   }
-  .backlog-tabs, .backlog-filters, .backlog-meta, .backlog-actions, .backlog-reasons {
+  .backlog-tabs, .backlog-filters, .backlog-meta, .backlog-actions, .backlog-reasons, .backlog-stats {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -60,6 +60,45 @@ const pageStyles = `
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     color: var(--text-main);
     border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+  .backlog-filterHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .backlog-filterGrid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .backlog-filterField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .backlog-filterField label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+  .backlog-stats { margin-top: 18px; }
+  .backlog-stat {
+    min-width: 150px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg-surface) 74%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
+  }
+  .backlog-statValue {
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--text-main);
   }
   .backlog-filters { margin-top: 14px; }
   .backlog-item, .backlog-run { padding: 16px; }
@@ -125,11 +164,17 @@ const pageStyles = `
     .backlog-hero {
       grid-template-columns: 1fr;
     }
+    .backlog-filterGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   @media (max-width: 720px) {
     .backlog-shell {
       padding: 18px;
       gap: 18px;
+    }
+    .backlog-filterGrid {
+      grid-template-columns: 1fr;
     }
   }
 `;
@@ -138,33 +183,21 @@ const stripHtml = (value: string | null | undefined) => (value || '').replace(/<
 const truncate = (value: string, max = 320) => value.length <= max ? value : `${value.slice(0, max).trim()}...`;
 
 export const JobBacklogPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sources, setSources] = useState<JobSource[]>([]);
   const [searches, setSearches] = useState<JobSearch[]>([]);
   const [items, setItems] = useState<JobBacklogItem[]>([]);
   const [runs, setRuns] = useState<JobBacklogRun[]>([]);
-  const [activeSearchId, setActiveSearchId] = useState<number | null>(() => {
-    const value = searchParams.get('search_id');
-    return value ? Number(value) : null;
-  });
-  const [activeSourceId, setActiveSourceId] = useState<number | null>(() => {
-    const value = searchParams.get('source_id');
-    return value ? Number(value) : null;
-  });
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const activeSearchId = searchParams.get('search_id') ? Number(searchParams.get('search_id')) : null;
+  const activeSourceId = searchParams.get('source_id') ? Number(searchParams.get('source_id')) : null;
+  const statusFilter = searchParams.get('status') || '';
   const activeSearch = useMemo(() => searches.find((search) => search.id === activeSearchId) || null, [searches, activeSearchId]);
-
-  useEffect(() => {
-    const nextSearchId = searchParams.get('search_id');
-    const nextSourceId = searchParams.get('source_id');
-    const nextStatus = searchParams.get('status') || '';
-    setActiveSearchId(nextSearchId ? Number(nextSearchId) : null);
-    setActiveSourceId(nextSourceId ? Number(nextSourceId) : null);
-    setStatusFilter(nextStatus);
-  }, [searchParams]);
+  const activeSource = useMemo(() => sources.find((source) => source.id === activeSourceId) || null, [sources, activeSourceId]);
+  const importedCount = items.filter((item) => item.status === 'IMPORTED').length;
+  const rejectedCount = items.filter((item) => item.status === 'REJECTED').length;
 
   const refresh = async () => {
     setLoading(true);
@@ -193,6 +226,19 @@ export const JobBacklogPage: React.FC = () => {
   useEffect(() => {
     refresh();
   }, [activeSearchId, activeSourceId, statusFilter]);
+
+  const updateFilters = (next: { source_id?: number | null; search_id?: number | null; status?: string | null }) => {
+    const params = new URLSearchParams(searchParams);
+    const entries = Object.entries(next);
+    for (const [key, value] of entries) {
+      if (value === null || value === undefined || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    }
+    setSearchParams(params);
+  };
 
   const importItem = async (itemId: number) => {
     await jobBacklogService.importItem(itemId);
@@ -236,33 +282,90 @@ export const JobBacklogPage: React.FC = () => {
       </section>
 
       <section className="backlog-panel">
-        <span className="backlog-label">Filtres</span>
-        <div className="backlog-filters">
-          <select className="input" value={activeSourceId ?? ''} onChange={(event) => {
-            const nextSourceId = event.target.value ? Number(event.target.value) : null;
-            setActiveSourceId(nextSourceId);
-            setActiveSearchId(null);
-          }}>
-            <option value="">Toutes les sources</option>
-            {sources.map((source) => (
-              <option key={source.id} value={source.id}>{source.name}</option>
-            ))}
-          </select>
-          <select className="input" value={activeSearchId ?? ''} onChange={(event) => setActiveSearchId(event.target.value ? Number(event.target.value) : null)}>
-            <option value="">Toutes les recherches</option>
-            {visibleSearches.map((search) => (
-              <option key={search.id} value={search.id}>{search.name}</option>
-            ))}
-          </select>
-          <select className="input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="">Tous les statuts</option>
-            <option value="NEW">NEW</option>
-            <option value="IMPORTED">IMPORTED</option>
-            <option value="REJECTED">REJECTED</option>
-          </select>
+        <div className="backlog-filterHeader">
+          <div>
+            <span className="backlog-label">Filtres</span>
+            <p className="backlog-copy" style={{ margin: '10px 0 0', maxWidth: 760 }}>
+              Isole le backlog par source, recherche ou statut. Les filtres pilotent maintenant aussi la liste des runs.
+            </p>
+          </div>
+          <Button variant="ghost" onClick={() => setSearchParams(new URLSearchParams())}>Reset</Button>
+        </div>
+        <div className="backlog-filterGrid">
+          <div className="backlog-filterField">
+            <label htmlFor="backlog-source-filter">Source</label>
+            <select
+              id="backlog-source-filter"
+              className="input"
+              value={activeSourceId ?? ''}
+              onChange={(event) => {
+                const nextSourceId = event.target.value ? Number(event.target.value) : null;
+                updateFilters({ source_id: nextSourceId, search_id: null });
+              }}
+            >
+              <option value="">Toutes les sources</option>
+              {sources.map((source) => (
+                <option key={source.id} value={source.id}>{source.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="backlog-filterField">
+            <label htmlFor="backlog-search-filter">Recherche</label>
+            <select
+              id="backlog-search-filter"
+              className="input"
+              value={activeSearchId ?? ''}
+              onChange={(event) => updateFilters({ search_id: event.target.value ? Number(event.target.value) : null })}
+            >
+              <option value="">Toutes les recherches</option>
+              {visibleSearches.map((search) => (
+                <option key={search.id} value={search.id}>{search.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="backlog-filterField">
+            <label htmlFor="backlog-status-filter">Statut</label>
+            <select
+              id="backlog-status-filter"
+              className="input"
+              value={statusFilter}
+              onChange={(event) => updateFilters({ status: event.target.value || null })}
+            >
+              <option value="">Tous les statuts</option>
+              <option value="NEW">NEW</option>
+              <option value="IMPORTED">IMPORTED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+          <div className="backlog-filterField">
+            <label>Contexte</label>
+            <div className="backlog-filters">
+              <span className="backlog-pill">{activeSource ? activeSource.name : 'Toutes sources'}</span>
+              <span className="backlog-pill">{activeSearch ? activeSearch.name : 'Toutes recherches'}</span>
+              <span className="backlog-pill">{statusFilter || 'Tous statuts'}</span>
+            </div>
+          </div>
+        </div>
+        <div className="backlog-stats">
+          <div className="backlog-stat">
+            <div className="backlog-statValue">{items.length}</div>
+            <div className="backlog-muted">visibles</div>
+          </div>
+          <div className="backlog-stat">
+            <div className="backlog-statValue">{items.filter((item) => item.status === 'NEW').length}</div>
+            <div className="backlog-muted">a trier</div>
+          </div>
+          <div className="backlog-stat">
+            <div className="backlog-statValue">{importedCount}</div>
+            <div className="backlog-muted">importees</div>
+          </div>
+          <div className="backlog-stat">
+            <div className="backlog-statValue">{rejectedCount}</div>
+            <div className="backlog-muted">rejetees</div>
+          </div>
         </div>
         {activeSearch ? (
-          <div className="backlog-actions">
+          <div className="backlog-actions" style={{ marginTop: 18 }}>
             <span className="backlog-pill">{activeSearch.source_name || activeSearch.source}</span>
             <span className="backlog-pill">{activeSearch.keywords.join(', ')}</span>
           </div>

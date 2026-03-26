@@ -684,13 +684,23 @@ def list_job_backlog_items(search_id=None, status=None, source_id=None):
         rows = conn.execute(query, params).fetchall()
         return [_serialize_job_backlog_item(row) for row in rows]
 
-def list_job_backlog_runs(search_id=None):
-    query = "SELECT * FROM job_backlog_runs"
+def list_job_backlog_runs(search_id=None, source_id=None):
+    query = """
+        SELECT jr.*
+        FROM job_backlog_runs jr
+        LEFT JOIN job_searches js ON js.id = jr.search_id
+    """
     params = []
+    clauses = []
     if search_id:
-        query += " WHERE search_id = ?"
+        clauses.append("jr.search_id = ?")
         params.append(search_id)
-    query += " ORDER BY created_at DESC, id DESC"
+    if source_id:
+        clauses.append("js.source_id = ?")
+        params.append(source_id)
+    if clauses:
+        query += " WHERE " + " AND ".join(clauses)
+    query += " ORDER BY jr.created_at DESC, jr.id DESC"
     with get_db() as conn:
         return [dict(row) for row in conn.execute(query, params).fetchall()]
 

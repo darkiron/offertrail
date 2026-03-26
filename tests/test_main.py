@@ -322,3 +322,25 @@ def test_job_search_update_and_delete():
         assert delete_response.status_code == 200
         searches_after = client.get("/api/job-searches").json()
         assert all(item["id"] != search["id"] for item in searches_after)
+
+def test_job_backlog_filter_by_source():
+    with TestClient(app) as client:
+        sources = client.get("/api/job-sources").json()
+        source_id = next(source["id"] for source in sources if source["slug"] == "mock-board")
+        search_response = client.post("/api/job-searches", json={
+            "name": f"Mock filter {uuid4().hex[:6]}",
+            "source_id": source_id,
+            "keywords": ["python"],
+            "locations": ["Paris"],
+        })
+        assert search_response.status_code == 201
+        search = search_response.json()
+
+        run_response = client.post(f"/api/job-searches/{search['id']}/run")
+        assert run_response.status_code == 200
+
+        backlog_response = client.get(f"/api/job-backlog?source_id={source_id}")
+        assert backlog_response.status_code == 200
+        backlog = backlog_response.json()
+        assert any(item["search_id"] == search["id"] for item in backlog["items"])
+        assert any(run["search_id"] == search["id"] for run in backlog["runs"])
