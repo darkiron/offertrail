@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from src.main import app
 from src import database
 import re
+from uuid import uuid4
 
 def test_health_check():
     with TestClient(app) as client:
@@ -269,15 +270,18 @@ def test_job_backlog_flow():
 
 def test_job_source_crud():
     with TestClient(app) as client:
+        unique_slug = f"wwr-frontend-{uuid4().hex[:8]}"
         create_response = client.post("/api/job-sources", json={
             "name": "WWR Frontend",
-            "slug": "wwr-frontend-test",
+            "slug": unique_slug,
             "kind": "rss",
+            "uri": "https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss",
             "config": {"feed_key": "FRONTEND"},
         })
         assert create_response.status_code == 201
         source = create_response.json()
-        assert source["slug"] == "wwr-frontend-test"
+        assert source["slug"] == unique_slug
+        assert source["uri"].endswith(".rss")
 
         update_response = client.patch(f"/api/job-sources/{source['id']}", json={
             "is_enabled": False,
@@ -288,3 +292,33 @@ def test_job_source_crud():
         assert list_response.status_code == 200
         updated = next(item for item in list_response.json() if item["id"] == source["id"])
         assert updated["is_enabled"] is False
+
+def test_job_search_update_and_delete():
+    with TestClient(app) as client:
+        source_id = client.get("/api/job-sources").json()[0]["id"]
+        create_response = client.post("/api/job-searches", json={
+            "name": "Initial search",
+            "source_id": source_id,
+            "keywords": ["python"],
+            "locations": ["Remote"],
+        })
+        assert create_response.status_code == 201
+        search = create_response.json()
+
+        update_response = client.patch(f"/api/job-searches/{search['id']}", json={
+            "name": "Updated search",
+            "keywords": ["python", "fastapi"],
+            "min_score": 55,
+        })
+        assert update_response.status_code == 200
+
+        searches = client.get("/api/job-searches").json()
+        updated = next(item for item in searches if item["id"] == search["id"])
+        assert updated["name"] == "Updated search"
+        assert updated["keywords"] == ["python", "fastapi"]
+        assert updated["min_score"] == 55
+
+        delete_response = client.delete(f"/api/job-searches/{search['id']}")
+        assert delete_response.status_code == 200
+        searches_after = client.get("/api/job-searches").json()
+        assert all(item["id"] != search["id"] for item in searches_after)

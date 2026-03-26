@@ -155,6 +155,14 @@ export const jobBacklogService = {
     const response = await axiosInstance.post<JobSearch>('/api/job-searches', data);
     return response.data;
   },
+  updateSearch: async (id: number, data: Partial<JobSearch>) => {
+    const response = await axiosInstance.patch(`/api/job-searches/${id}`, data);
+    return response.data;
+  },
+  deleteSearch: async (id: number) => {
+    const response = await axiosInstance.delete(`/api/job-searches/${id}`);
+    return response.data;
+  },
   runSearch: async (id: number) => {
     const response = await axiosInstance.post<{
       run_id: number;
@@ -165,7 +173,7 @@ export const jobBacklogService = {
     }>(`/api/job-searches/${id}/run`);
     return response.data;
   },
-  getBacklog: async (params?: { search_id?: number; status?: string }) => {
+  getBacklog: async (params?: { search_id?: number; source_id?: number; status?: string }) => {
     const response = await axiosInstance.get<{ items: JobBacklogItem[]; runs: JobBacklogRun[] }>('/api/job-backlog', { params });
     return response.data;
   },

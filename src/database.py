@@ -28,12 +28,14 @@ DEFAULT_JOB_SOURCES = [
         "slug": JOB_SOURCE_MOCK,
         "name": "Mock board",
         "kind": "mock",
+        "uri": None,
         "config": {},
     },
     {
         "slug": JOB_SOURCE_WWR,
         "name": "We Work Remotely RSS",
         "kind": "rss",
+        "uri": WWR_RSS_FEEDS["PROGRAMMING"],
         "config": {"feed_key": "PROGRAMMING"},
     },
 ]
@@ -124,12 +126,18 @@ def init_db():
                 slug TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
                 kind TEXT NOT NULL,
+                uri TEXT,
                 config_json TEXT NOT NULL DEFAULT '{}',
                 is_enabled INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
+        job_source_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(job_sources)").fetchall()
+        }
+        if "uri" not in job_source_columns:
+            conn.execute("ALTER TABLE job_sources ADD COLUMN uri TEXT")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS job_searches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -214,13 +222,17 @@ def _ensure_default_job_sources(conn):
     for source in DEFAULT_JOB_SOURCES:
         existing = conn.execute("SELECT id FROM job_sources WHERE slug = ?", (source["slug"],)).fetchone()
         if existing:
+            conn.execute(
+                "UPDATE job_sources SET name = ?, kind = ?, uri = ?, config_json = ?, updated_at = ? WHERE slug = ?",
+                (source["name"], source["kind"], source["uri"], json.dumps(source["config"]), now, source["slug"])
+            )
             continue
         conn.execute(
             """
-            INSERT INTO job_sources (slug, name, kind, config_json, is_enabled, created_at, updated_at)
-            VALUES (?, ?, ?, ?, 1, ?, ?)
+            INSERT INTO job_sources (slug, name, kind, uri, config_json, is_enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
             """,
-            (source["slug"], source["name"], source["kind"], json.dumps(source["config"]), now, now)
+            (source["slug"], source["name"], source["kind"], source["uri"], json.dumps(source["config"]), now, now)
         )
 
 def _backfill_job_search_sources(conn):
@@ -475,18 +487,19 @@ def list_job_sources():
         rows = conn.execute("SELECT * FROM job_sources ORDER BY updated_at DESC, id DESC").fetchall()
         return [_serialize_job_source(row) for row in rows]
 
-def create_job_source(name, slug, kind, config=None, is_enabled=True):
+def create_job_source(name, slug, kind, uri=None, config=None, is_enabled=True):
     now = _utc_now()
     with get_db() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO job_sources (slug, name, kind, config_json, is_enabled, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO job_sources (slug, name, kind, uri, config_json, is_enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 slug.strip(),
                 name.strip(),
                 kind.strip(),
+                uri,
                 json.dumps(config or {}),
                 1 if is_enabled else 0,
                 now,
@@ -506,6 +519,9 @@ def update_job_source(source_id, data):
         if key == "config":
             fields.append("config_json = ?")
             params.append(json.dumps(value or {}))
+        elif key == "uri":
+            fields.append("uri = ?")
+            params.append(value)
         elif key in {"slug", "name", "kind"}:
             fields.append(f"{key} = ?")
             params.append(str(value).strip())
@@ -528,6 +544,48 @@ def delete_job_source(source_id):
         if search_count > 0:
             return False
         conn.execute("DELETE FROM job_sources WHERE id = ?", (source_id,))
+        conn.commit()
+        return True
+
+def update_job_search(search_id, data):
+    now = _utc_now()
+    fields = []
+    params = []
+    for key, value in data.items():
+        if key == "keywords":
+            fields.append("keywords_json = ?")
+            params.append(json.dumps(_json_list(value)))
+        elif key == "excluded_keywords":
+            fields.append("excluded_keywords_json = ?")
+            params.append(json.dumps(_json_list(value)))
+        elif key == "locations":
+            fields.append("locations_json = ?")
+            params.append(json.dumps(_json_list(value)))
+        elif key == "source_config":
+            fields.append("source_config_json = ?")
+            params.append(json.dumps(value or {}))
+        elif key == "source_id":
+            fields.append("source_id = ?")
+            params.append(value)
+        elif key in {"name", "source", "contract_type", "remote_mode", "profile_summary", "min_score"}:
+            fields.append(f"{key} = ?")
+            params.append(value)
+        elif key == "auto_import":
+            fields.append("auto_import = ?")
+            params.append(1 if value else 0)
+    if not fields:
+        return False
+    fields.append("updated_at = ?")
+    params.append(now)
+    params.append(search_id)
+    with get_db() as conn:
+        conn.execute(f"UPDATE job_searches SET {', '.join(fields)} WHERE id = ?", params)
+        conn.commit()
+        return True
+
+def delete_job_search(search_id):
+    with get_db() as conn:
+        conn.execute("DELETE FROM job_searches WHERE id = ?", (search_id,))
         conn.commit()
         return True
 
@@ -601,17 +659,21 @@ def get_job_search(search_id):
         ).fetchone()
         return _serialize_job_search(row) if row else None
 
-def list_job_backlog_items(search_id=None, status=None):
+def list_job_backlog_items(search_id=None, status=None, source_id=None):
     query = """
-        SELECT bi.*, jr.created_at AS run_created_at
+        SELECT bi.*, jr.created_at AS run_created_at, js.source_id
         FROM job_backlog_items bi
         LEFT JOIN job_backlog_runs jr ON jr.id = bi.run_id
+        LEFT JOIN job_searches js ON js.id = bi.search_id
     """
     params = []
     clauses = []
     if search_id:
         clauses.append("bi.search_id = ?")
         params.append(search_id)
+    if source_id:
+        clauses.append("js.source_id = ?")
+        params.append(source_id)
     if status:
         clauses.append("bi.status = ?")
         params.append(status)

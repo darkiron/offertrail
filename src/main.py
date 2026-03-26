@@ -151,6 +151,7 @@ async def api_create_job_source(data: dict):
         name=data.get("name"),
         slug=data.get("slug"),
         kind=data.get("kind"),
+        uri=data.get("uri"),
         config=data.get("config"),
         is_enabled=bool(data.get("is_enabled", True)),
     )
@@ -167,6 +168,18 @@ async def api_delete_job_source(source_id: int):
     success = database.delete_job_source(source_id)
     if not success:
         raise HTTPException(status_code=400, detail="Cannot delete source linked to searches")
+    return {"success": True}
+
+@app.patch("/api/job-searches/{search_id}")
+async def api_update_job_search(search_id: int, data: dict):
+    success = database.update_job_search(search_id, data)
+    if not success:
+        raise HTTPException(status_code=400, detail="Update failed")
+    return {"success": True}
+
+@app.delete("/api/job-searches/{search_id}")
+async def api_delete_job_search(search_id: int):
+    database.delete_job_search(search_id)
     return {"success": True}
 
 @app.post("/api/job-searches", status_code=201)
@@ -196,9 +209,9 @@ async def api_run_job_search(search_id: int):
     return result
 
 @app.get("/api/job-backlog")
-async def api_job_backlog(search_id: int = None, status: str = None):
+async def api_job_backlog(search_id: int = None, source_id: int = None, status: str = None):
     return {
-        "items": database.list_job_backlog_items(search_id=search_id, status=status),
+        "items": database.list_job_backlog_items(search_id=search_id, source_id=source_id, status=status),
         "runs": database.list_job_backlog_runs(search_id=search_id),
     }
 

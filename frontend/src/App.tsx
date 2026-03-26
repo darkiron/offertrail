@@ -7,6 +7,8 @@ import { CompanyDetailsPage } from './pages/CompanyDetailsPage';
 import { ContactDetailsPage } from './pages/ContactDetailsPage';
 import { Import } from './pages/Import';
 import { JobBacklogPage } from './pages/JobBacklogPage';
+import { JobSearchesPage } from './pages/JobSearchesPage';
+import { JobSourcesPage } from './pages/JobSourcesPage';
 import { OrganizationsPage } from './pages/OrganizationsPage';
 import { OrganizationMaintenancePage } from './pages/OrganizationMaintenancePage';
 import { ContactsPage } from './pages/ContactsPage';
@@ -172,6 +174,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/applications" element={<ApplicationsPage />} />
               <Route path="/backlog" element={<JobBacklogPage />} />
+              <Route path="/backlog/searches" element={<JobSearchesPage />} />
+              <Route path="/backlog/sources" element={<JobSourcesPage />} />
               <Route path="/applications/:id" element={<ApplicationDetails />} />
               <Route path="/organizations" element={<OrganizationsPage />} />
               <Route path="/organizations/maintenance" element={<OrganizationMaintenancePage />} />

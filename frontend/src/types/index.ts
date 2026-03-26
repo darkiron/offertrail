@@ -156,6 +156,7 @@ export interface JobSource {
   slug: string;
   name: string;
   kind: string;
+  uri: string | null;
   config: Record<string, unknown>;
   is_enabled: boolean;
   created_at: string;
