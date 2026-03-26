@@ -1,43 +1,166 @@
-# Runbook — OfferTrail
+# Runbook - OfferTrail
 
-This document explains how to run, debug, and recover the application.
-
----
-
-## Status
-The application is runnable.
+Ce document sert à lancer, vérifier et dépanner le projet sans perdre de temps.
 
 ---
 
-## Local Execution
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the application:
-   ```bash
-   make run
-   ```
-   If `python` is not in your PATH, use:
-   ```bash
-   make run PYTHON=C:\Python312\python.exe
-   ```
-   Or:
-   ```bash
-   C:\Python312\python.exe -m uvicorn src.main:app --reload --port 8000
-   ```
+## Etat du projet
 
-## Troubleshooting
-- **Port 8000 already in use**: Change the port using the `--port` flag.
-- **Python missing**: Ensure Python 3.9+ is installed and on your PATH.
-- **Template not found**: Ensure you are running the command from the project root.
+Le projet tourne avec :
+- un backend FastAPI
+- un frontend React + Vite
+- une base SQLite locale
+
+Le dépôt contient aussi une phase de transition :
+- anciennes vues HTML encore présentes
+- API utilisée comme socle commun
+- migrations SQL pour faire évoluer le schéma
 
 ---
 
-## Philosophy
-If something breaks, this file should answer:
-- how to reproduce
-- how to inspect
-- how to recover
+## Prérequis
 
-Short, practical instructions only.
+- Python 3.9+
+- npm
+- Windows + `make` disponible dans le terminal utilisé
+- idéalement un environnement virtuel Python
+
+---
+
+## Installation
+
+```bash
+make install
+```
+
+Cette commande :
+- installe `requirements.txt`
+- installe les dépendances du frontend dans `frontend/`
+
+Si besoin, vous pouvez surcharger :
+
+```bash
+make install PYTHON=C:\Path\To\python.exe PIP=C:\Path\To\pip.exe NPM=C:\Path\To\npm.cmd
+```
+
+---
+
+## Lancement
+
+### Stack complète
+
+```bash
+make run
+```
+
+Cela lance :
+- l'API sur `http://localhost:8000`
+- le front sur `http://localhost:5173`
+
+### Backend seul
+
+```bash
+make run-back
+```
+
+### Frontend seul
+
+```bash
+make run-front
+```
+
+### Healthcheck
+
+```txt
+GET http://localhost:8000/health
+```
+
+Réponse attendue :
+
+```json
+{"status":"ok"}
+```
+
+---
+
+## Tests
+
+Le dépôt contient actuellement des tests Python centrés sur le backend et les vues historiques.
+
+Commande simple :
+
+```bash
+pytest
+```
+
+Point d'attention :
+- une partie des tests reflète encore les anciennes vues HTML
+- la couverture React reste limitée
+- avec les changements `organization/contact`, certains tests historiques peuvent nécessiter une mise à jour
+
+---
+
+## Migrations utiles
+
+Des scripts de migration existent dans `scripts/`.
+
+### V4
+
+```bash
+python scripts/run_v4_migration.py
+```
+
+### V5 organisations
+
+```bash
+python scripts/run_v5_migration.py
+```
+
+Avant migration :
+- sauvegarder la base locale
+- vérifier quelle base est ciblée par le script
+
+Aujourd'hui :
+- `run_v4_migration.py` cible `offertrail_new.db`
+- `run_v5_migration.py` cible `offertrail.db`
+
+Ne pas lancer ces scripts à l'aveugle sur une base utile 🙂
+
+---
+
+## Dépannage rapide
+
+### Port déjà pris
+
+Le backend utilise par défaut le port `8000` et le frontend `5173`.
+Si un port est déjà utilisé, relancer le service concerné avec une config adaptée.
+
+### Python ou npm non trouvés
+
+Surcharger `PYTHON`, `PIP` ou `NPM` dans les commandes `make`.
+
+### Erreurs de schéma SQLite
+
+Vérifier :
+- la base réellement ouverte
+- le niveau de migration appliqué
+- la compatibilité entre schéma local et code courant
+
+### UI incohérente entre écrans
+
+Le dépôt mélange encore :
+- vues HTML historiques
+- écrans React récents
+
+Si un comportement semble différent selon la route, vérifier d'abord si la page vient du front React ou d'un template serveur.
+
+---
+
+## Philosophie
+
+Si quelque chose casse, ce fichier doit aider à répondre vite à trois questions :
+- comment reproduire
+- comment inspecter
+- comment revenir à un état compréhensible
+
+Court, pratique, sans roman.
