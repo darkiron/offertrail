@@ -172,6 +172,7 @@ Objectif :
 - `docs/vision.md` : la direction produit
 - `docs/decisions.md` : les choix techniques
 - `docs/runbook.md` : exécution, debug, récupération
+- `docs/project-state.md` : lecture de l'état du projet via l'historique Git
 
 ---
 
