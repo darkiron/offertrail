@@ -28,6 +28,7 @@ const pageStyles = `
   .jobsearches-form { display: flex; flex-direction: column; gap: 12px; }
   .jobsearches-list { display: flex; flex-direction: column; gap: 12px; }
   .jobsearches-card { padding: 16px; }
+  .jobsearches-iconButton { width: 36px; height: 36px; padding: 0; border-radius: 10px; }
   .jobsearches-pill {
     display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 700;
     background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.22); color: var(--text-main);
@@ -258,11 +259,12 @@ export const JobSearchesPage: React.FC = () => {
                 <div style={{ marginTop: 12, color: 'var(--text-dim)' }}>{search.profile_summary || 'Aucun resume de profil.'}</div>
                 <div className="jobsearches-actions">
                   <Link to={`/backlog?search_id=${search.id}`}>
-                    <Button variant="ghost" title="Voir dans le backlog" aria-label={`Voir ${search.name} dans le backlog`}>
+                    <Button className="jobsearches-iconButton" variant="ghost" title="Voir dans le backlog" aria-label={`Voir ${search.name} dans le backlog`}>
                       <IconEye />
                     </Button>
                   </Link>
                   <Button
+                    className="jobsearches-iconButton"
                     variant="primary"
                     onClick={() => runSearch(search)}
                     disabled={runningId === search.id}
@@ -271,10 +273,10 @@ export const JobSearchesPage: React.FC = () => {
                   >
                     <IconArrowPath />
                   </Button>
-                  <Button variant="ghost" onClick={() => editSearch(search)} title="Editer" aria-label={`Editer ${search.name}`}>
+                  <Button className="jobsearches-iconButton" variant="ghost" onClick={() => editSearch(search)} title="Editer" aria-label={`Editer ${search.name}`}>
                     <IconEdit />
                   </Button>
-                  <Button variant="secondary" onClick={() => removeSearch(search.id)} title="Supprimer" aria-label={`Supprimer ${search.name}`}>
+                  <Button className="jobsearches-iconButton" variant="secondary" onClick={() => removeSearch(search.id)} title="Supprimer" aria-label={`Supprimer ${search.name}`}>
                     <IconTrash />
                   </Button>
                 </div>

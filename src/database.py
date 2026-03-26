@@ -661,10 +661,11 @@ def get_job_search(search_id):
 
 def list_job_backlog_items(search_id=None, status=None, source_id=None):
     query = """
-        SELECT bi.*, jr.created_at AS run_created_at, js.source_id
+        SELECT bi.*, jr.created_at AS run_created_at, js.source_id, src.name AS source_name, src.slug AS source_slug
         FROM job_backlog_items bi
         LEFT JOIN job_backlog_runs jr ON jr.id = bi.run_id
         LEFT JOIN job_searches js ON js.id = bi.search_id
+        LEFT JOIN job_sources src ON src.id = js.source_id
     """
     params = []
     clauses = []
@@ -686,9 +687,10 @@ def list_job_backlog_items(search_id=None, status=None, source_id=None):
 
 def list_job_backlog_runs(search_id=None, source_id=None):
     query = """
-        SELECT jr.*
+        SELECT jr.*, src.name AS source_name, src.slug AS source_slug
         FROM job_backlog_runs jr
         LEFT JOIN job_searches js ON js.id = jr.search_id
+        LEFT JOIN job_sources src ON src.id = js.source_id
     """
     params = []
     clauses = []

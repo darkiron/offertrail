@@ -28,6 +28,7 @@ const pageStyles = `
   .jobsources-form { display: flex; flex-direction: column; gap: 12px; }
   .jobsources-list { display: flex; flex-direction: column; gap: 12px; }
   .jobsources-card { padding: 16px; }
+  .jobsources-iconButton { width: 36px; height: 36px; padding: 0; border-radius: 10px; }
   .jobsources-pill {
     display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 700;
     background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.22); color: var(--text-main);
@@ -194,16 +195,16 @@ export const JobSourcesPage: React.FC = () => {
                 <div className="jobsources-actions">
                   {source.uri ? (
                     <a href={source.uri} target="_blank" rel="noreferrer">
-                      <Button variant="ghost" title="Ouvrir l'URI" aria-label={`Ouvrir l'URI de ${source.name}`}>
+                      <Button className="jobsources-iconButton" variant="ghost" title="Ouvrir l'URI" aria-label={`Ouvrir l'URI de ${source.name}`}>
                         <IconArrowUpRight />
                       </Button>
                     </a>
                   ) : null}
-                  <Button variant="ghost" onClick={() => editSource(source)} title="Editer" aria-label={`Editer ${source.name}`}>
+                  <Button className="jobsources-iconButton" variant="ghost" onClick={() => editSource(source)} title="Editer" aria-label={`Editer ${source.name}`}>
                     <IconEdit />
                   </Button>
                   {!['mock-board', 'wwr-rss'].includes(source.slug) ? (
-                    <Button variant="secondary" onClick={() => removeSource(source.id)} title="Supprimer" aria-label={`Supprimer ${source.name}`}>
+                    <Button className="jobsources-iconButton" variant="secondary" onClick={() => removeSource(source.id)} title="Supprimer" aria-label={`Supprimer ${source.name}`}>
                       <IconTrash />
                     </Button>
                   ) : null}

@@ -102,6 +102,12 @@ const pageStyles = `
   }
   .backlog-filters { margin-top: 14px; }
   .backlog-item, .backlog-run { padding: 16px; }
+  .backlog-iconButton {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 10px;
+  }
   .backlog-items, .backlog-runs { display: flex; flex-direction: column; gap: 12px; }
   .backlog-itemHeader {
     display: flex;
@@ -382,6 +388,7 @@ export const JobBacklogPage: React.FC = () => {
           ) : items.map((item) => {
             const scoreTone = item.score >= 70 ? '' : item.score >= 40 ? 'is-mid' : 'is-low';
             const description = truncate(stripHtml(item.description), 340);
+            const displaySource = item.source_name || item.source_slug || item.source;
             return (
               <article key={item.id} className="backlog-item">
                 <div className="backlog-itemHeader">
@@ -389,7 +396,7 @@ export const JobBacklogPage: React.FC = () => {
                     <div style={{ fontWeight: 800, fontSize: 20 }}>{item.title}</div>
                     <div className="backlog-muted">{item.company} · {item.location || 'Lieu inconnu'} · {item.contract_type || 'Type inconnu'}</div>
                     <div className="backlog-meta" style={{ marginTop: 10 }}>
-                      <span className="backlog-pill">{item.source}</span>
+                      <span className="backlog-pill">{displaySource}</span>
                       <span className="backlog-pill">{item.status}</span>
                       {item.remote_mode ? <span className="backlog-pill">{item.remote_mode}</span> : null}
                     </div>
@@ -437,7 +444,7 @@ export const JobBacklogPage: React.FC = () => {
           ) : runs.map((run) => (
             <div key={run.id} className="backlog-run">
               <div>
-                <div style={{ fontWeight: 800 }}>{run.source} · {run.status}</div>
+                <div style={{ fontWeight: 800 }}>{run.source_name || run.source_slug || run.source} · {run.status}</div>
                 <div className="backlog-muted">fetch {run.fetched_count} · new {run.created_count} · imported {run.imported_count}</div>
               </div>
               <div className="backlog-muted">{new Date(run.created_at).toLocaleString('fr-FR')}</div>

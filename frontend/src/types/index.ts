@@ -121,6 +121,8 @@ export interface JobBacklogItem {
   search_id: number;
   run_id: number | null;
   source: string;
+  source_name?: string | null;
+  source_slug?: string | null;
   external_id: string;
   title: string;
   company: string;
@@ -143,6 +145,8 @@ export interface JobBacklogRun {
   id: number;
   search_id: number;
   source: string;
+  source_name?: string | null;
+  source_slug?: string | null;
   status: string;
   fetched_count: number;
   created_count: number;
