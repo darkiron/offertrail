@@ -1,5 +1,15 @@
 import axios from 'axios';
-import type {Application, Organization, Contact, DashboardData, PaginatedResponse, MonthlyInsights} from '../types';
+import type {
+  Application,
+  Organization,
+  Contact,
+  DashboardData,
+  PaginatedResponse,
+  MonthlyInsights,
+  JobSearch,
+  JobBacklogItem,
+  JobBacklogRun,
+} from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -115,6 +125,35 @@ export const dashboardService = {
   },
   getMonthlyInsights: async (year?: number) => {
     const response = await axiosInstance.get<MonthlyInsights>('/api/insights/monthly-applications', { params: { year } });
+    return response.data;
+  },
+};
+
+export const jobBacklogService = {
+  getSearches: async () => {
+    const response = await axiosInstance.get<JobSearch[]>('/api/job-searches');
+    return response.data;
+  },
+  createSearch: async (data: Partial<JobSearch> & { keywords: string[] }) => {
+    const response = await axiosInstance.post<JobSearch>('/api/job-searches', data);
+    return response.data;
+  },
+  runSearch: async (id: number) => {
+    const response = await axiosInstance.post<{
+      run_id: number;
+      fetched_count: number;
+      created_count: number;
+      imported_count: number;
+      items: JobBacklogItem[];
+    }>(`/api/job-searches/${id}/run`);
+    return response.data;
+  },
+  getBacklog: async (params?: { search_id?: number; status?: string }) => {
+    const response = await axiosInstance.get<{ items: JobBacklogItem[]; runs: JobBacklogRun[] }>('/api/job-backlog', { params });
+    return response.data;
+  },
+  importItem: async (itemId: number) => {
+    const response = await axiosInstance.post<{ application_id: number; already_imported: boolean }>(`/api/job-backlog/${itemId}/import`);
     return response.data;
   },
 };

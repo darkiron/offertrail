@@ -215,3 +215,44 @@ def test_response_received_event():
         # Since we have multiple apps created in previous tests (if DB persists), 
         # let's just check for the percentage sign at least.
         assert "%" in dashboard
+
+def test_job_backlog_flow():
+    with TestClient(app) as client:
+        create_response = client.post("/api/job-searches", json={
+            "name": "Python remote",
+            "keywords": ["python", "fastapi"],
+            "excluded_keywords": ["data analyst"],
+            "locations": ["Paris", "Remote"],
+            "contract_type": "CDI",
+            "remote_mode": "ANY",
+            "profile_summary": "Backend Python APIs FastAPI product engineering",
+            "min_score": 40,
+        })
+        assert create_response.status_code == 201
+        search = create_response.json()
+        assert search["name"] == "Python remote"
+
+        run_response = client.post(f"/api/job-searches/{search['id']}/run")
+        assert run_response.status_code == 200
+        run_payload = run_response.json()
+        assert run_payload["fetched_count"] >= 1
+
+        backlog_response = client.get(f"/api/job-backlog?search_id={search['id']}")
+        assert backlog_response.status_code == 200
+        backlog_payload = backlog_response.json()
+        assert len(backlog_payload["items"]) >= 1
+
+        accepted_item = next(item for item in backlog_payload["items"] if item["status"] == "NEW")
+        assert accepted_item["score"] >= 40
+        assert accepted_item["match_reasons"]
+
+        import_response = client.post(f"/api/job-backlog/{accepted_item['id']}/import")
+        assert import_response.status_code == 200
+        import_payload = import_response.json()
+        assert import_payload["application_id"]
+
+        application_response = client.get(f"/api/applications/{import_payload['application_id']}")
+        assert application_response.status_code == 200
+        application_payload = application_response.json()
+        assert application_payload["application"]["status"] == "INTERESTED"
+        assert application_payload["application"]["source"].startswith("job_backlog:")

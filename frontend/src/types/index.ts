@@ -94,3 +94,53 @@ export interface MonthlyInsights {
   year: number;
   months: MonthlyStats[];
 }
+
+export interface JobSearch {
+  id: number;
+  name: string;
+  keywords: string[];
+  excluded_keywords: string[];
+  locations: string[];
+  contract_type: string;
+  remote_mode: string;
+  profile_summary: string | null;
+  min_score: number;
+  auto_import: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobBacklogItem {
+  id: number;
+  search_id: number;
+  run_id: number | null;
+  source: string;
+  external_id: string;
+  title: string;
+  company: string;
+  location: string | null;
+  remote_mode: string | null;
+  contract_type: string | null;
+  url: string | null;
+  description: string | null;
+  published_at: string | null;
+  salary_text: string | null;
+  score: number;
+  match_reasons: string[];
+  status: 'NEW' | 'IMPORTED' | 'REJECTED';
+  imported_application_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobBacklogRun {
+  id: number;
+  search_id: number;
+  source: string;
+  status: string;
+  fetched_count: number;
+  created_count: number;
+  imported_count: number;
+  error_text: string | null;
+  created_at: string;
+}

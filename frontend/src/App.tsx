@@ -6,6 +6,7 @@ import { ApplicationDetails } from './pages/ApplicationDetails';
 import { CompanyDetailsPage } from './pages/CompanyDetailsPage';
 import { ContactDetailsPage } from './pages/ContactDetailsPage';
 import { Import } from './pages/Import';
+import { JobBacklogPage } from './pages/JobBacklogPage';
 import { OrganizationsPage } from './pages/OrganizationsPage';
 import { OrganizationMaintenancePage } from './pages/OrganizationMaintenancePage';
 import { ContactsPage } from './pages/ContactsPage';
@@ -145,6 +146,7 @@ const Navbar: React.FC = () => {
           <div className="app-navLinks">
             <Link to="/" className={`app-navLink ${isActive('/') && !isActive('/applications') ? 'is-active' : ''}`}>{t('nav.dashboard')}</Link>
             <Link to="/applications" className={`app-navLink ${isActive('/applications') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
+            <Link to="/backlog" className={`app-navLink ${isActive('/backlog') ? 'is-active' : ''}`}>{t('nav.backlog')}</Link>
             <Link to="/organizations" className={`app-navLink ${isActive('/organizations') || isActive('/companies') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
             <Link to="/contacts" className={`app-navLink ${isActive('/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
             <Link to="/import" className={`app-navLink ${isActive('/import') ? 'is-active' : ''}`}>{t('nav.import')}</Link>
@@ -169,6 +171,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/applications" element={<ApplicationsPage />} />
+              <Route path="/backlog" element={<JobBacklogPage />} />
               <Route path="/applications/:id" element={<ApplicationDetails />} />
               <Route path="/organizations" element={<OrganizationsPage />} />
               <Route path="/organizations/maintenance" element={<OrganizationMaintenancePage />} />

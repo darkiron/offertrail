@@ -135,6 +135,47 @@ async def api_monthly_applications(year: int = None):
         "months": stats
     }
 
+@app.get("/api/job-searches")
+async def api_job_searches():
+    return database.list_job_searches()
+
+@app.post("/api/job-searches", status_code=201)
+async def api_create_job_search(data: dict):
+    if not data.get("name") or not data.get("keywords"):
+        raise HTTPException(status_code=400, detail="name and keywords are required")
+    return database.create_job_search(
+        name=data.get("name"),
+        keywords=data.get("keywords"),
+        excluded_keywords=data.get("excluded_keywords"),
+        locations=data.get("locations"),
+        contract_type=data.get("contract_type", "CDI"),
+        remote_mode=data.get("remote_mode", "ANY"),
+        profile_summary=data.get("profile_summary"),
+        min_score=data.get("min_score", 60),
+        auto_import=bool(data.get("auto_import", False)),
+    )
+
+@app.post("/api/job-searches/{search_id}/run")
+async def api_run_job_search(search_id: int):
+    result = database.run_job_search(search_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Search not found")
+    return result
+
+@app.get("/api/job-backlog")
+async def api_job_backlog(search_id: int = None, status: str = None):
+    return {
+        "items": database.list_job_backlog_items(search_id=search_id, status=status),
+        "runs": database.list_job_backlog_runs(search_id=search_id),
+    }
+
+@app.post("/api/job-backlog/{item_id}/import")
+async def api_import_job_backlog(item_id: int):
+    result = database.import_job_backlog_item(item_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Backlog item not found")
+    return result
+
 @app.get("/api/applications")
 async def api_applications(
     status: str = None,

@@ -5,6 +5,10 @@ from pathlib import Path
 
 DB_PATH = Path("offertrail.db")
 
+JOB_BACKLOG_STATUS_NEW = "NEW"
+JOB_BACKLOG_STATUS_IMPORTED = "IMPORTED"
+JOB_BACKLOG_STATUS_REJECTED = "REJECTED"
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -85,7 +89,458 @@ def init_db():
                 payload_json TEXT
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_searches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                keywords_json TEXT NOT NULL,
+                excluded_keywords_json TEXT NOT NULL DEFAULT '[]',
+                locations_json TEXT NOT NULL DEFAULT '[]',
+                contract_type TEXT NOT NULL DEFAULT 'CDI',
+                remote_mode TEXT NOT NULL DEFAULT 'ANY',
+                profile_summary TEXT,
+                min_score INTEGER NOT NULL DEFAULT 60,
+                auto_import INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_backlog_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                search_id INTEGER NOT NULL,
+                source TEXT NOT NULL,
+                status TEXT NOT NULL,
+                fetched_count INTEGER NOT NULL DEFAULT 0,
+                created_count INTEGER NOT NULL DEFAULT 0,
+                imported_count INTEGER NOT NULL DEFAULT 0,
+                error_text TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (search_id) REFERENCES job_searches (id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_backlog_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                search_id INTEGER NOT NULL,
+                run_id INTEGER,
+                source TEXT NOT NULL,
+                external_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                company TEXT NOT NULL,
+                location TEXT,
+                remote_mode TEXT,
+                contract_type TEXT,
+                url TEXT,
+                description TEXT,
+                published_at TEXT,
+                salary_text TEXT,
+                score REAL NOT NULL DEFAULT 0,
+                match_reasons_json TEXT NOT NULL DEFAULT '[]',
+                status TEXT NOT NULL DEFAULT 'NEW',
+                raw_payload_json TEXT NOT NULL DEFAULT '{}',
+                imported_application_id INTEGER,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(source, external_id),
+                FOREIGN KEY (search_id) REFERENCES job_searches (id) ON DELETE CASCADE,
+                FOREIGN KEY (run_id) REFERENCES job_backlog_runs (id) ON DELETE SET NULL,
+                FOREIGN KEY (imported_application_id) REFERENCES applications (id) ON DELETE SET NULL
+            )
+        """)
         conn.commit()
+
+def _utc_now():
+    return datetime.now(timezone.utc).isoformat()
+
+def _json_list(value):
+    if not value:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return [part.strip() for part in str(value).split(",") if part.strip()]
+
+def _decode_json_list(value):
+    if not value:
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [str(item) for item in parsed]
+
+def _serialize_job_search(row):
+    data = dict(row)
+    data["keywords"] = _decode_json_list(data.pop("keywords_json", "[]"))
+    data["excluded_keywords"] = _decode_json_list(data.pop("excluded_keywords_json", "[]"))
+    data["locations"] = _decode_json_list(data.pop("locations_json", "[]"))
+    data["auto_import"] = bool(data.get("auto_import"))
+    return data
+
+def _serialize_job_backlog_item(row):
+    data = dict(row)
+    try:
+        data["match_reasons"] = json.loads(data.pop("match_reasons_json", "[]"))
+    except json.JSONDecodeError:
+        data["match_reasons"] = []
+    try:
+        data["raw_payload"] = json.loads(data.pop("raw_payload_json", "{}"))
+    except json.JSONDecodeError:
+        data["raw_payload"] = {}
+    return data
+
+def _tokenize_text(value):
+    normalized = "".join(ch.lower() if ch.isalnum() else " " for ch in (value or ""))
+    return {part for part in normalized.split() if part}
+
+def _build_mock_job_catalog():
+    return [
+        {
+            "source": "mock-board",
+            "external_id": "mock-001",
+            "title": "Python Backend Engineer",
+            "company": "Blue Signal",
+            "location": "Paris",
+            "remote_mode": "HYBRID",
+            "contract_type": "CDI",
+            "url": "https://example.com/jobs/mock-001",
+            "description": "FastAPI, Python, APIs, PostgreSQL, backend ownership, product mindset.",
+            "published_at": "2026-03-20",
+            "salary_text": "55k-65k",
+        },
+        {
+            "source": "mock-board",
+            "external_id": "mock-002",
+            "title": "React Frontend Engineer",
+            "company": "Northwind Studio",
+            "location": "Lyon",
+            "remote_mode": "REMOTE",
+            "contract_type": "CDI",
+            "url": "https://example.com/jobs/mock-002",
+            "description": "React, TypeScript, design systems, dashboard UX, product collaboration.",
+            "published_at": "2026-03-21",
+            "salary_text": "50k-60k",
+        },
+        {
+            "source": "mock-board",
+            "external_id": "mock-003",
+            "title": "Freelance DevOps Consultant",
+            "company": "Cloud Peak",
+            "location": "Remote",
+            "remote_mode": "REMOTE",
+            "contract_type": "FREELANCE",
+            "url": "https://example.com/jobs/mock-003",
+            "description": "Terraform, AWS, Kubernetes, CI/CD, freelance mission, 6 months.",
+            "published_at": "2026-03-19",
+            "salary_text": "650/day",
+        },
+        {
+            "source": "mock-board",
+            "external_id": "mock-004",
+            "title": "Data Analyst",
+            "company": "Quiet Metrics",
+            "location": "Bordeaux",
+            "remote_mode": "ONSITE",
+            "contract_type": "CDI",
+            "url": "https://example.com/jobs/mock-004",
+            "description": "SQL, BI, dashboards, stakeholder communication.",
+            "published_at": "2026-03-18",
+            "salary_text": "45k-52k",
+        },
+    ]
+
+def _score_job_backlog_item(search, item):
+    haystack = " ".join([
+        item.get("title", ""),
+        item.get("company", ""),
+        item.get("location", ""),
+        item.get("description", ""),
+        item.get("contract_type", ""),
+        item.get("remote_mode", ""),
+        search.get("profile_summary", "") or "",
+    ])
+    tokens = _tokenize_text(haystack)
+    reasons = []
+    score = 0
+
+    for keyword in search["keywords"]:
+        keyword_tokens = _tokenize_text(keyword)
+        if keyword_tokens and keyword_tokens.issubset(tokens):
+            score += 25
+            reasons.append(f"keyword:{keyword}")
+
+    for keyword in search["excluded_keywords"]:
+        keyword_tokens = _tokenize_text(keyword)
+        if keyword_tokens and keyword_tokens.issubset(tokens):
+            score -= 80
+            reasons.append(f"exclude:{keyword}")
+
+    if search["contract_type"] and search["contract_type"] != "ANY":
+        if (item.get("contract_type") or "").upper() == search["contract_type"].upper():
+            score += 15
+            reasons.append(f"contract:{search['contract_type']}")
+        else:
+            score -= 10
+
+    if search["remote_mode"] and search["remote_mode"] != "ANY":
+        if (item.get("remote_mode") or "").upper() == search["remote_mode"].upper():
+            score += 10
+            reasons.append(f"remote:{search['remote_mode']}")
+
+    if search["locations"]:
+        item_location = (item.get("location") or "").lower()
+        if any(location.lower() in item_location for location in search["locations"]):
+            score += 10
+            reasons.append("location-match")
+
+    if score < 0:
+        score = 0
+    return min(score, 100), reasons
+
+def list_job_searches():
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM job_searches ORDER BY updated_at DESC, id DESC").fetchall()
+        return [_serialize_job_search(row) for row in rows]
+
+def create_job_search(name, keywords, excluded_keywords=None, locations=None, contract_type="CDI", remote_mode="ANY", profile_summary=None, min_score=60, auto_import=False):
+    now = _utc_now()
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO job_searches (
+                name, keywords_json, excluded_keywords_json, locations_json, contract_type,
+                remote_mode, profile_summary, min_score, auto_import, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name.strip(),
+                json.dumps(_json_list(keywords)),
+                json.dumps(_json_list(excluded_keywords)),
+                json.dumps(_json_list(locations)),
+                contract_type or "CDI",
+                remote_mode or "ANY",
+                profile_summary,
+                int(min_score),
+                1 if auto_import else 0,
+                now,
+                now,
+            )
+        )
+        search_id = cursor.lastrowid
+        conn.commit()
+        row = conn.execute("SELECT * FROM job_searches WHERE id = ?", (search_id,)).fetchone()
+        return _serialize_job_search(row)
+
+def get_job_search(search_id):
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM job_searches WHERE id = ?", (search_id,)).fetchone()
+        return _serialize_job_search(row) if row else None
+
+def list_job_backlog_items(search_id=None, status=None):
+    query = """
+        SELECT bi.*, jr.created_at AS run_created_at
+        FROM job_backlog_items bi
+        LEFT JOIN job_backlog_runs jr ON jr.id = bi.run_id
+    """
+    params = []
+    clauses = []
+    if search_id:
+        clauses.append("bi.search_id = ?")
+        params.append(search_id)
+    if status:
+        clauses.append("bi.status = ?")
+        params.append(status)
+    if clauses:
+        query += " WHERE " + " AND ".join(clauses)
+    query += " ORDER BY bi.score DESC, bi.updated_at DESC, bi.id DESC"
+    with get_db() as conn:
+        rows = conn.execute(query, params).fetchall()
+        return [_serialize_job_backlog_item(row) for row in rows]
+
+def list_job_backlog_runs(search_id=None):
+    query = "SELECT * FROM job_backlog_runs"
+    params = []
+    if search_id:
+        query += " WHERE search_id = ?"
+        params.append(search_id)
+    query += " ORDER BY created_at DESC, id DESC"
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute(query, params).fetchall()]
+
+def run_job_search(search_id):
+    search = get_job_search(search_id)
+    if not search:
+        return None
+
+    now = _utc_now()
+    catalog = _build_mock_job_catalog()
+    created_count = 0
+    imported_count = 0
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO job_backlog_runs (search_id, source, status, fetched_count, created_count, imported_count, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (search_id, "mock-board", "SUCCESS", len(catalog), 0, 0, now)
+        )
+        run_id = cursor.lastrowid
+
+        for item in catalog:
+            score, reasons = _score_job_backlog_item(search, item)
+            status = JOB_BACKLOG_STATUS_NEW if score >= search["min_score"] else JOB_BACKLOG_STATUS_REJECTED
+            existing = conn.execute(
+                "SELECT id, status, imported_application_id FROM job_backlog_items WHERE source = ? AND external_id = ?",
+                (item["source"], item["external_id"])
+            ).fetchone()
+
+            payload = (
+                search_id,
+                run_id,
+                item["source"],
+                item["external_id"],
+                item["title"],
+                item["company"],
+                item["location"],
+                item["remote_mode"],
+                item["contract_type"],
+                item["url"],
+                item["description"],
+                item["published_at"],
+                item["salary_text"],
+                score,
+                json.dumps(reasons),
+                status,
+                json.dumps(item),
+                now,
+                now,
+            )
+
+            if existing:
+                conn.execute(
+                    """
+                    UPDATE job_backlog_items
+                    SET search_id = ?, run_id = ?, title = ?, company = ?, location = ?, remote_mode = ?,
+                        contract_type = ?, url = ?, description = ?, published_at = ?, salary_text = ?,
+                        score = ?, match_reasons_json = ?, status = ?, raw_payload_json = ?, updated_at = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        search_id,
+                        run_id,
+                        item["title"],
+                        item["company"],
+                        item["location"],
+                        item["remote_mode"],
+                        item["contract_type"],
+                        item["url"],
+                        item["description"],
+                        item["published_at"],
+                        item["salary_text"],
+                        score,
+                        json.dumps(reasons),
+                        existing["status"] if existing["imported_application_id"] else status,
+                        json.dumps(item),
+                        now,
+                        existing["id"],
+                    )
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO job_backlog_items (
+                        search_id, run_id, source, external_id, title, company, location, remote_mode,
+                        contract_type, url, description, published_at, salary_text, score,
+                        match_reasons_json, status, raw_payload_json, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    payload
+                )
+                if status == JOB_BACKLOG_STATUS_NEW:
+                    created_count += 1
+
+        if search["auto_import"]:
+            rows = conn.execute(
+                "SELECT id FROM job_backlog_items WHERE search_id = ? AND run_id = ? AND status = ?",
+                (search_id, run_id, JOB_BACKLOG_STATUS_NEW)
+            ).fetchall()
+            for row in rows:
+                import_job_backlog_item(row["id"], conn=conn)
+                imported_count += 1
+
+        conn.execute(
+            "UPDATE job_backlog_runs SET created_count = ?, imported_count = ? WHERE id = ?",
+            (created_count, imported_count, run_id)
+        )
+        conn.commit()
+
+    return {
+        "run_id": run_id,
+        "search": search,
+        "fetched_count": len(catalog),
+        "created_count": created_count,
+        "imported_count": imported_count,
+        "items": list_job_backlog_items(search_id=search_id),
+    }
+
+def import_job_backlog_item(item_id, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_db()
+    try:
+        row = conn.execute("SELECT * FROM job_backlog_items WHERE id = ?", (item_id,)).fetchone()
+        if not row:
+            return None
+        item = _serialize_job_backlog_item(row)
+        if item.get("imported_application_id"):
+            return {"item_id": item_id, "application_id": item["imported_application_id"], "already_imported": True}
+
+        organization_id = get_or_create_organization(conn, item["company"], "AUTRE")
+        app_now = _utc_now()
+        cursor = conn.execute(
+            """
+            INSERT INTO applications (organization_id, company, title, type, status, source, job_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                organization_id,
+                item["company"],
+                item["title"],
+                item["contract_type"] or "CDI",
+                "INTERESTED",
+                f"job_backlog:{item['source']}",
+                item["url"],
+                app_now,
+                app_now,
+            )
+        )
+        app_id = cursor.lastrowid
+        log_event(conn, "application", app_id, "CREATED", {
+            "organization_id": organization_id,
+            "company": item["company"],
+            "title": item["title"],
+            "type": item["contract_type"] or "CDI",
+            "status": "INTERESTED",
+            "source": f"job_backlog:{item['source']}",
+            "job_url": item["url"],
+            "backlog_item_id": item_id,
+        })
+        conn.execute(
+            """
+            UPDATE job_backlog_items
+            SET status = ?, imported_application_id = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (JOB_BACKLOG_STATUS_IMPORTED, app_id, app_now, item_id)
+        )
+        if owns_conn:
+            conn.commit()
+        return {"item_id": item_id, "application_id": app_id, "already_imported": False}
+    finally:
+        if owns_conn:
+            conn.close()
 
 def get_or_create_organization(conn, name, org_type='AUTRE'):
     now = datetime.now(timezone.utc).isoformat()
