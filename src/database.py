@@ -29,6 +29,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 organization_id INTEGER,
+                final_customer_organization_id INTEGER,
                 company TEXT NOT NULL, -- Keep for compatibility during transition
                 title TEXT NOT NULL,
                 type TEXT NOT NULL, -- CDI|FREELANCE
@@ -39,9 +40,15 @@ def init_db():
                 next_followup_at TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                FOREIGN KEY (organization_id) REFERENCES organizations (id)
+                FOREIGN KEY (organization_id) REFERENCES organizations (id),
+                FOREIGN KEY (final_customer_organization_id) REFERENCES organizations (id)
             )
         """)
+        application_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(applications)").fetchall()
+        }
+        if "final_customer_organization_id" not in application_columns:
+            conn.execute("ALTER TABLE applications ADD COLUMN final_customer_organization_id INTEGER")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,20 +100,73 @@ def get_or_create_organization(conn, name, org_type='AUTRE'):
     )
     return cursor.lastrowid
 
-def create_application(company_name, title, app_type, status, applied_at=None, next_followup_at=None, source=None, job_url=None, org_type='AUTRE'):
+def create_organization(name, org_type='AUTRE', city=None, website=None, linkedin_url=None, notes=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
-        organization_id = get_or_create_organization(conn, company_name, org_type)
+      existing = conn.execute("SELECT id FROM organizations WHERE name = ?", (name,)).fetchone()
+      if existing:
+          org_id = existing["id"]
+          conn.execute(
+              """
+              UPDATE organizations
+              SET type = ?, city = ?, website = ?, linkedin_url = ?, notes = ?, updated_at = ?
+              WHERE id = ?
+              """,
+              (org_type, city, website, linkedin_url, notes, now, org_id)
+          )
+          log_event(conn, "organization", org_id, "UPDATED", {
+              "name": name,
+              "type": org_type,
+              "city": city,
+              "website": website,
+              "linkedin_url": linkedin_url,
+              "notes": notes,
+          })
+          conn.commit()
+          return org_id
+
+      cursor = conn.execute(
+          """
+          INSERT INTO organizations (name, type, city, website, linkedin_url, notes, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          """,
+          (name, org_type, city, website, linkedin_url, notes, now, now)
+      )
+      org_id = cursor.lastrowid
+      log_event(conn, "organization", org_id, "CREATED", {
+          "name": name,
+          "type": org_type,
+          "city": city,
+          "website": website,
+          "linkedin_url": linkedin_url,
+          "notes": notes,
+      })
+      conn.commit()
+      return org_id
+
+def create_application(company_name, title, app_type, status, applied_at=None, next_followup_at=None, source=None, job_url=None, org_type='AUTRE', organization_id=None, final_customer_organization_id=None):
+    now = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        if organization_id:
+            row = conn.execute("SELECT id, name FROM organizations WHERE id = ?", (organization_id,)).fetchone()
+            if row:
+                organization_id = row["id"]
+                company_name = row["name"]
+            else:
+                organization_id = get_or_create_organization(conn, company_name, org_type)
+        else:
+            organization_id = get_or_create_organization(conn, company_name, org_type)
         cursor = conn.execute(
             """
-            INSERT INTO applications (organization_id, company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO applications (organization_id, final_customer_organization_id, company, title, type, status, source, job_url, applied_at, next_followup_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (organization_id, company_name, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
+            (organization_id, final_customer_organization_id, company_name, title, app_type, status, source, job_url, applied_at, next_followup_at, now, now)
         )
         app_id = cursor.lastrowid
         log_event(conn, "application", app_id, "CREATED", {
             "organization_id": organization_id,
+            "final_customer_organization_id": final_customer_organization_id,
             "company": company_name,
             "title": title,
             "type": app_type,
@@ -125,11 +185,20 @@ def create_application(company_name, title, app_type, status, applied_at=None, n
         return app_id
 
 def list_applications(filters=None, search=None, show_hidden=False, limit=None, offset=None):
-    query = "SELECT a.* FROM applications a"
+    query = """
+        SELECT
+            a.*,
+            fc.name AS final_customer_name
+        FROM applications a
+        LEFT JOIN organizations fc ON fc.id = a.final_customer_organization_id
+    """
     params = []
     where_clauses = []
 
     if filters:
+        if filters.get("organization_id"):
+            where_clauses.append("a.organization_id = ?")
+            params.append(filters["organization_id"])
         if filters.get("status"):
             where_clauses.append("a.status = ?")
             params.append(filters["status"])
@@ -157,14 +226,14 @@ def list_applications(filters=None, search=None, show_hidden=False, limit=None, 
     if search:
         search_term = f"%{search.strip()}%"
         search_clause = """
-            (a.company LIKE ? OR a.title LIKE ? OR EXISTS (
+            (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
                 SELECT 1 FROM application_contacts ac 
                 JOIN contacts c ON ac.contact_id = c.id 
                 WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
             ))
         """
         where_clauses.append(search_clause)
-        params.extend([search_term, search_term, search_term, search_term, search_term])
+        params.extend([search_term, search_term, search_term, search_term, search_term, search_term])
 
     if where_clauses:
         query += " WHERE " + " AND ".join(where_clauses)
@@ -182,11 +251,18 @@ def list_applications(filters=None, search=None, show_hidden=False, limit=None, 
         return [dict(row) for row in conn.execute(query, params).fetchall()]
 
 def count_applications(filters=None, search=None, show_hidden=False):
-    query = "SELECT COUNT(*) as total FROM applications a"
+    query = """
+        SELECT COUNT(*) as total
+        FROM applications a
+        LEFT JOIN organizations fc ON fc.id = a.final_customer_organization_id
+    """
     params = []
     where_clauses = []
 
     if filters:
+        if filters.get("organization_id"):
+            where_clauses.append("a.organization_id = ?")
+            params.append(filters["organization_id"])
         if filters.get("status"):
             where_clauses.append("a.status = ?")
             params.append(filters["status"])
@@ -214,14 +290,14 @@ def count_applications(filters=None, search=None, show_hidden=False):
     if search:
         search_term = f"%{search.strip()}%"
         search_clause = """
-            (a.company LIKE ? OR a.title LIKE ? OR EXISTS (
+            (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
                 SELECT 1 FROM application_contacts ac 
                 JOIN contacts c ON ac.contact_id = c.id 
                 WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
             ))
         """
         where_clauses.append(search_clause)
-        params.extend([search_term, search_term, search_term, search_term, search_term])
+        params.extend([search_term, search_term, search_term, search_term, search_term, search_term])
 
     if where_clauses:
         query += " WHERE " + " AND ".join(where_clauses)
@@ -241,10 +317,11 @@ def create_contact(first_name, last_name, email=None, phone=None, organization_i
             (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, now, now)
         )
         contact_id = cursor.lastrowid
-        log_event(conn, "contact", contact_id, "CREATED", {
+        log_event(conn, "contact", contact_id, "CONTACT_CREATED", {
             "organization_id": organization_id,
             "first_name": first_name,
             "last_name": last_name,
+            "name": f"{first_name} {last_name}".strip(),
             "email": email,
             "is_recruiter": is_recruiter
         })
@@ -291,11 +368,16 @@ def get_organization_stats(org_id):
         # 1. Total applications
         total_apps = conn.execute("SELECT COUNT(*) FROM applications WHERE organization_id = ?", (org_id,)).fetchone()[0]
         
-        # 2. Total responses (status != APPLIED && != GHOSTED - let's map GHOSTED to NO_RESPONSE if needed)
-        # Based on instructions: status != APPLIED && != GHOSTED
-        # Current statuses: INTERESTED, APPLIED, INTERVIEW, OFFER, REJECTED, NO_RESPONSE
+        # 2. Total responses based on explicit response-like events.
+        # This keeps organization stats aligned with application details and dashboard KPIs.
         total_responses = conn.execute(
-            "SELECT COUNT(*) FROM applications WHERE organization_id = ? AND status NOT IN ('APPLIED', 'INTERESTED', 'NO_RESPONSE')", 
+            """
+            SELECT COUNT(DISTINCT a.id)
+            FROM applications a
+            JOIN events e ON e.entity_id = a.id AND e.entity_type = 'application'
+            WHERE a.organization_id = ?
+              AND e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
+            """,
             (org_id,)
         ).fetchone()[0]
         
@@ -378,6 +460,24 @@ def list_contacts(filters=None):
     with get_db() as conn:
         return [dict(row) for row in conn.execute(query, params).fetchall()]
 
+def get_contact(contact_id):
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        return dict(row) if row else None
+
+def get_applications_for_contact(contact_id):
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT a.* FROM applications a
+            JOIN application_contacts ac ON a.id = ac.application_id
+            WHERE ac.contact_id = ?
+            ORDER BY a.updated_at DESC
+            """,
+            (contact_id,)
+        ).fetchall()
+        return [dict(row) for row in rows]
+
 def get_organization(org_id):
     with get_db() as conn:
         row = conn.execute("SELECT * FROM organizations WHERE id = ?", (org_id,)).fetchone()
@@ -419,6 +519,100 @@ def delete_organization(org_id):
         log_event(conn, "organization", org_id, "DELETED", {})
         conn.commit()
         return True
+
+def merge_organizations(source_org_id, target_org_id):
+    now = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        source = conn.execute("SELECT * FROM organizations WHERE id = ?", (source_org_id,)).fetchone()
+        target = conn.execute("SELECT * FROM organizations WHERE id = ?", (target_org_id,)).fetchone()
+        if not source or not target or source_org_id == target_org_id:
+            return False
+
+        conn.execute(
+            "UPDATE applications SET organization_id = ?, company = ?, updated_at = ? WHERE organization_id = ?",
+            (target_org_id, target["name"], now, source_org_id)
+        )
+        conn.execute(
+            "UPDATE applications SET final_customer_organization_id = ?, updated_at = ? WHERE final_customer_organization_id = ?",
+            (target_org_id, now, source_org_id)
+        )
+        conn.execute(
+            "UPDATE contacts SET organization_id = ?, updated_at = ? WHERE organization_id = ?",
+            (target_org_id, now, source_org_id)
+        )
+        conn.execute("DELETE FROM organizations WHERE id = ?", (source_org_id,))
+
+        log_event(conn, "organization", target_org_id, "MERGED_IN", {
+            "source_organization_id": source_org_id,
+            "source_name": source["name"],
+        })
+        conn.commit()
+        return True
+
+def split_organization(org_id, new_name, new_type='AUTRE', city=None, website=None, linkedin_url=None, notes=None, move_contacts=True):
+    now = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        source = conn.execute("SELECT * FROM organizations WHERE id = ?", (org_id,)).fetchone()
+        if not source or not new_name or not new_name.strip():
+            return None
+
+        existing = conn.execute("SELECT id FROM organizations WHERE name = ?", (new_name.strip(),)).fetchone()
+        if existing:
+            new_org_id = existing["id"]
+            conn.execute(
+                """
+                UPDATE organizations
+                SET type = ?, city = ?, website = ?, linkedin_url = ?, notes = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (new_type, city, website, linkedin_url, notes, now, new_org_id)
+            )
+        else:
+            cursor = conn.execute(
+                """
+                INSERT INTO organizations (name, type, city, website, linkedin_url, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (new_name.strip(), new_type, city, website, linkedin_url, notes, now, now)
+            )
+            new_org_id = cursor.lastrowid
+
+        conn.execute(
+            "UPDATE applications SET organization_id = ?, company = ?, updated_at = ? WHERE organization_id = ?",
+            (new_org_id, new_name.strip(), now, org_id)
+        )
+        conn.execute(
+            "UPDATE applications SET final_customer_organization_id = ?, updated_at = ? WHERE final_customer_organization_id = ?",
+            (new_org_id, now, org_id)
+        )
+
+        if move_contacts:
+            conn.execute(
+                "UPDATE contacts SET organization_id = ?, updated_at = ? WHERE organization_id = ?",
+                (new_org_id, now, org_id)
+            )
+
+        log_event(conn, "organization", org_id, "SPLIT_OUT", {
+            "new_organization_id": new_org_id,
+            "new_name": new_name.strip(),
+        })
+        log_event(conn, "organization", new_org_id, "SPLIT_IN", {
+            "source_organization_id": org_id,
+            "source_name": source["name"],
+        })
+
+        remaining_apps = conn.execute("SELECT COUNT(*) FROM applications WHERE organization_id = ?", (org_id,)).fetchone()[0]
+        remaining_final_customer_links = conn.execute(
+            "SELECT COUNT(*) FROM applications WHERE final_customer_organization_id = ?",
+            (org_id,)
+        ).fetchone()[0]
+        remaining_contacts = conn.execute("SELECT COUNT(*) FROM contacts WHERE organization_id = ?", (org_id,)).fetchone()[0]
+        if remaining_apps == 0 and remaining_contacts == 0 and remaining_final_customer_links == 0:
+            conn.execute("DELETE FROM organizations WHERE id = ?", (org_id,))
+            log_event(conn, "organization", org_id, "DELETED", {"reason": "split_empty"})
+
+        conn.commit()
+        return new_org_id
 
 def update_contact(contact_id, data):
     now = datetime.now(timezone.utc).isoformat()
@@ -497,8 +691,66 @@ def list_followups():
 
 def get_application(app_id):
     with get_db() as conn:
-        row = conn.execute("SELECT * FROM applications WHERE id = ?", (app_id,)).fetchone()
+        row = conn.execute(
+            """
+            SELECT
+                a.*,
+                fc.name AS final_customer_name
+            FROM applications a
+            LEFT JOIN organizations fc ON fc.id = a.final_customer_organization_id
+            WHERE a.id = ?
+            """,
+            (app_id,)
+        ).fetchone()
         return dict(row) if row else None
+
+def update_application(app_id, data):
+    now = datetime.now(timezone.utc).isoformat()
+    allowed_fields = {
+        "organization_id",
+        "final_customer_organization_id",
+        "company",
+        "title",
+        "type",
+        "status",
+        "source",
+        "job_url",
+        "applied_at",
+        "next_followup_at",
+    }
+    fields = []
+    params = []
+    with get_db() as conn:
+        current = conn.execute("SELECT * FROM applications WHERE id = ?", (app_id,)).fetchone()
+        if not current:
+            return False
+
+        next_organization_id = data.get("organization_id", current["organization_id"])
+        for key, value in data.items():
+            if key not in allowed_fields:
+                continue
+            if key in {"organization_id", "final_customer_organization_id"} and value == "":
+                value = None
+            fields.append(f"{key} = ?")
+            params.append(value)
+
+        if not fields:
+            return False
+
+        if "organization_id" in data and next_organization_id:
+            linked_org = conn.execute("SELECT name FROM organizations WHERE id = ?", (next_organization_id,)).fetchone()
+            if linked_org:
+                fields.append("company = ?")
+                params.append(linked_org["name"])
+
+        fields.append("updated_at = ?")
+        params.append(now)
+        params.append(app_id)
+
+        conn.execute(f"UPDATE applications SET {', '.join(fields)} WHERE id = ?", params)
+        log_event(conn, "application", app_id, "UPDATED", data)
+        conn.commit()
+        return True
 
 def update_application_status(app_id, new_status):
     now = datetime.now(timezone.utc).isoformat()
@@ -553,22 +805,30 @@ def get_distinct_sources():
 
 def get_kpis(filters=None):
     where_clauses = []
+    joined_where_clauses = []
     params = []
     
     if filters:
         if filters.get("status"):
             where_clauses.append("status = ?")
+            joined_where_clauses.append("a.status = ?")
             params.append(filters["status"])
         if filters.get("type"):
             where_clauses.append("type = ?")
+            joined_where_clauses.append("a.type = ?")
             params.append(filters["type"])
         if filters.get("source"):
             where_clauses.append("source = ?")
+            joined_where_clauses.append("a.source = ?")
             params.append(filters["source"])
             
     where_stmt = ""
     if where_clauses:
         where_stmt = " WHERE " + " AND ".join(where_clauses)
+
+    joined_where_stmt = ""
+    if joined_where_clauses:
+        joined_where_stmt = " WHERE " + " AND ".join(joined_where_clauses)
         
     with get_db() as conn:
         # A) Total applications
@@ -594,8 +854,8 @@ def get_kpis(filters=None):
             SELECT COUNT(DISTINCT a.id) 
             FROM applications a
             JOIN events e ON e.entity_id = a.id AND e.entity_type = 'application'
-            {where_stmt}
-            {' AND ' if where_stmt else ' WHERE '} e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
+            {joined_where_stmt}
+            {' AND ' if joined_where_stmt else ' WHERE '} e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
         """
         responded_count = conn.execute(response_query, params).fetchone()[0]
         
@@ -609,8 +869,8 @@ def get_kpis(filters=None):
                 SELECT a.id, a.applied_at, MIN(e.ts) as first_response_date
                 FROM applications a
                 JOIN events e ON e.entity_id = a.id AND e.entity_type = 'application'
-                {where_stmt}
-                {' AND ' if where_stmt else ' WHERE '} a.applied_at IS NOT NULL 
+                {joined_where_stmt}
+                {' AND ' if joined_where_stmt else ' WHERE '} a.applied_at IS NOT NULL 
                 AND a.applied_at != ''
                 AND e.type IN ('RESPONSE_RECEIVED', 'INTERVIEW_SCHEDULED', 'OFFER_RECEIVED')
                 GROUP BY a.id

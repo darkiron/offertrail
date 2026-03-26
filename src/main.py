@@ -31,6 +31,30 @@ def get_branch_name():
     except Exception:
         return "dev"
 
+def split_legacy_contact_name(name: str):
+    cleaned = (name or "").strip()
+    if not cleaned:
+        return "", ""
+    parts = cleaned.split()
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], " ".join(parts[1:])
+
+def format_contact_for_legacy_views(contact: dict):
+    formatted = dict(contact)
+    first_name = (formatted.get("first_name") or "").strip()
+    last_name = (formatted.get("last_name") or "").strip()
+    full_name = f"{first_name} {last_name}".strip()
+    formatted["name"] = full_name or formatted.get("name") or "Contact"
+
+    if formatted.get("organization_id"):
+        organization = database.get_organization(formatted["organization_id"])
+        formatted["company"] = organization["name"] if organization else formatted.get("company")
+    else:
+        formatted["company"] = formatted.get("company")
+
+    return formatted
+
 @app.get("/", response_class=HTMLResponse)
 async def list_applications(
     request: Request,
@@ -178,13 +202,14 @@ async def api_get_organization(org_id: int):
 
 @app.post("/api/organizations", status_code=201)
 async def api_create_organization(data: dict):
-    org_id = database.get_or_create_organization(
-        database.get_db(), # Wait, get_or_create needs a conn, but better use a service wrapper if possible
+    org_id = database.create_organization(
         name=data.get("name"),
-        org_type=data.get("type", "AUTRE")
+        org_type=data.get("type", "AUTRE"),
+        city=data.get("city"),
+        website=data.get("website"),
+        linkedin_url=data.get("linkedin_url"),
+        notes=data.get("notes"),
     )
-    # Re-using get_db inside database.py functions is safer. 
-    # Let's adjust database.py to have a standalone create_organization if needed.
     return {"id": org_id}
 
 @app.patch("/api/organizations/{org_id}")
@@ -201,6 +226,29 @@ async def api_delete_organization(org_id: int):
         raise HTTPException(status_code=400, detail="Cannot delete organization with applications")
     return {"success": True}
 
+@app.post("/api/organizations/{org_id}/merge")
+async def api_merge_organization(org_id: int, data: dict):
+    success = database.merge_organizations(org_id, data.get("target_organization_id"))
+    if not success:
+        raise HTTPException(status_code=400, detail="Merge failed")
+    return {"success": True}
+
+@app.post("/api/organizations/{org_id}/split")
+async def api_split_organization(org_id: int, data: dict):
+    new_org_id = database.split_organization(
+        org_id,
+        new_name=data.get("name"),
+        new_type=data.get("type", "AUTRE"),
+        city=data.get("city"),
+        website=data.get("website"),
+        linkedin_url=data.get("linkedin_url"),
+        notes=data.get("notes"),
+        move_contacts=data.get("move_contacts", True),
+    )
+    if not new_org_id:
+        raise HTTPException(status_code=400, detail="Split failed")
+    return {"id": new_org_id}
+
 @app.get("/api/contacts")
 async def api_list_contacts(organization_id: int = None):
     filters = {"organization_id": organization_id} if organization_id else None
@@ -211,7 +259,32 @@ async def api_get_contact(contact_id: int):
     contact = database.get_contact(contact_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
-    return contact
+    organization = database.get_organization(contact["organization_id"]) if contact.get("organization_id") else None
+    applications = database.get_applications_for_contact(contact_id)
+    events = database.get_events_for_entity("contact", contact_id)
+
+    for event in events:
+        event["payload"] = json.loads(event["payload_json"]) if event.get("payload_json") else {}
+
+    for application in applications:
+        app_events = database.get_events_for_entity("application", application["id"])
+        for event in app_events:
+            event["payload"] = json.loads(event["payload_json"]) if event.get("payload_json") else {}
+            event["application"] = {
+                "id": application["id"],
+                "title": application["title"],
+                "status": application["status"],
+            }
+            events.append(event)
+
+    events.sort(key=lambda item: item["ts"], reverse=True)
+
+    return {
+        **contact,
+        "organization": organization,
+        "applications": applications,
+        "events": events,
+    }
 
 @app.post("/api/contacts", status_code=201)
 async def api_create_contact_standalone(data: dict):
@@ -245,8 +318,50 @@ async def api_list_companies(type: str = None, search: str = None):
 
 @app.get("/api/companies/{company_id}")
 async def api_get_company(company_id: int):
-    # Compatibility route
-    return api_get_organization(company_id)
+    organization = database.get_organization(company_id)
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    applications = database.list_applications(
+        filters={"organization_id": company_id},
+        show_hidden=True
+    )
+    contacts = database.list_contacts(filters={"organization_id": company_id})
+
+    events = database.get_events_for_entity("organization", company_id)
+    for event in events:
+        event["payload"] = json.loads(event["payload_json"]) if event.get("payload_json") else {}
+
+    for application in applications:
+        app_events = database.get_events_for_entity("application", application["id"])
+        for event in app_events:
+            event["payload"] = json.loads(event["payload_json"]) if event.get("payload_json") else {}
+            event["application"] = {
+                "id": application["id"],
+                "title": application["title"],
+                "status": application["status"],
+            }
+            events.append(event)
+
+    for contact in contacts:
+        contact_events = database.get_events_for_entity("contact", contact["id"])
+        for event in contact_events:
+            event["payload"] = json.loads(event["payload_json"]) if event.get("payload_json") else {}
+            event["contact"] = {
+                "id": contact["id"],
+                "name": f"{contact['first_name']} {contact['last_name']}".strip(),
+            }
+            events.append(event)
+
+    events.sort(key=lambda item: item["ts"], reverse=True)
+
+    detail = {
+        **organization,
+        "applications": applications,
+        "contacts": contacts,
+        "events": events,
+    }
+    return detail
 
 @app.get("/api/applications/{app_id}")
 async def api_application_details(app_id: int):
@@ -259,6 +374,9 @@ async def api_application_details(app_id: int):
         organization_info = database.get_organization(app_data["organization_id"])
     elif app_data.get("company_id"): # Compatibility
         organization_info = database.get_organization(app_data["company_id"])
+    final_customer_organization = None
+    if app_data.get("final_customer_organization_id"):
+        final_customer_organization = database.get_organization(app_data["final_customer_organization_id"])
         
     events = database.get_events_for_entity("application", app_id)
     for event in events:
@@ -280,6 +398,7 @@ async def api_application_details(app_id: int):
     return {
         "application": app_data,
         "organization": organization_info,
+        "final_customer_organization": final_customer_organization,
         "events": events,
         "contacts": contacts,
         "all_contacts": database.list_contacts()
@@ -296,14 +415,20 @@ async def api_create_application(data: dict):
         next_followup_at=data.get("next_followup_at"),
         source=data.get("source"),
         job_url=data.get("job_url"),
-        org_type=data.get("org_type", "AUTRE")
+        org_type=data.get("org_type", "AUTRE"),
+        organization_id=data.get("organization_id"),
+        final_customer_organization_id=data.get("final_customer_organization_id"),
     )
     return {"id": app_id}
 
 @app.patch("/api/applications/{app_id}")
 async def api_update_application(app_id: int, data: dict):
-    if "status" in data:
-        database.update_application_status(app_id, data["status"])
+    if set(data.keys()) == {"status"}:
+        success = database.update_application_status(app_id, data["status"])
+    else:
+        success = database.update_application(app_id, data)
+    if not success:
+        raise HTTPException(status_code=400, detail="Update failed")
     return {"success": True}
 
 @app.post("/api/applications/{app_id}/notes")
@@ -349,16 +474,16 @@ async def application_details(request: Request, app_id: int):
         return RedirectResponse(url="/", status_code=404)
     
     company_info = None
-    if app_data.get("company_id"):
-        company_info = database.get_company(app_data["company_id"])
+    if app_data.get("organization_id"):
+        company_info = database.get_organization(app_data["organization_id"])
         
     events = database.get_events_for_entity("application", app_id)
     # Parse payload_json for each event
     for event in events:
         event["payload"] = json.loads(event["payload_json"])
     
-    contacts = database.get_contacts_for_application(app_id)
-    all_contacts = database.list_contacts()
+    contacts = [format_contact_for_legacy_views(contact) for contact in database.get_contacts_for_application(app_id)]
+    all_contacts = [format_contact_for_legacy_views(contact) for contact in database.list_contacts()]
     
     # Also get contact events
     for contact in contacts:
@@ -424,7 +549,21 @@ async def create_and_link_contact(
     phone: str = Form(None),
     company: str = Form(None)
 ):
-    contact_id = database.create_contact(name, email, phone, company)
+    first_name, last_name = split_legacy_contact_name(name)
+    organization_id = None
+
+    if company and company.strip():
+        with database.get_db() as conn:
+            organization_id = database.get_or_create_organization(conn, company.strip())
+            conn.commit()
+
+    contact_id = database.create_contact(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        phone=phone,
+        organization_id=organization_id
+    )
     database.link_contact_to_application(app_id, contact_id)
     return RedirectResponse(url=f"/applications/{app_id}", status_code=303)
 
