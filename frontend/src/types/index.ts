@@ -45,6 +45,8 @@ export interface Contact {
 export interface Application {
   id: number;
   organization_id: number | null;
+  final_customer_organization_id: number | null;
+  final_customer_name?: string | null;
   company: string;
   title: string;
   type: string;

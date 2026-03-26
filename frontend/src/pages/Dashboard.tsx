@@ -1,14 +1,239 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { dashboardService, applicationService, organizationService } from '../services/api';
-import type {Application, Organization, DashboardData, MonthlyInsights} from '../types';
+import type { Application, Organization, DashboardData, MonthlyInsights } from '../types';
 import { KPICard } from '../components/molecules/KPICard';
-import { Link } from 'react-router-dom';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import MonthlyApplicationsChart from '../components/organisms/MonthlyApplicationsChart';
 import ProbityBadge from '../components/atoms/ProbityBadge';
 import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
+import StatusBadge, { statusLabelMap } from '../components/atoms/StatusBadge';
+import { Button } from '../components/atoms/Button';
+import { useI18n } from '../i18n';
+
+const pageStyles = `
+  .dashboard-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 28px 32px 36px;
+  }
+
+  .dashboard-hero,
+  .dashboard-panel,
+  .dashboard-tableWrap,
+  .dashboard-followupCard {
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
+    border-radius: 20px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .dashboard-hero {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+    gap: 24px;
+    background:
+      radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
+      linear-gradient(135deg, color-mix(in srgb, var(--bg-mantle) 92%, white 8%), color-mix(in srgb, var(--bg-crust) 68%, var(--bg-mantle) 32%));
+  }
+
+  .dashboard-title {
+    margin: 0;
+    font-size: 36px;
+    line-height: 1.05;
+  }
+
+  .dashboard-kicker,
+  .dashboard-sectionLabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+
+  .dashboard-copy {
+    margin: 14px 0 0;
+    max-width: 720px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .dashboard-actions,
+  .dashboard-tabs,
+  .dashboard-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .dashboard-actions {
+    margin-top: 20px;
+  }
+
+  .dashboard-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dashboard-sideStat {
+    padding-bottom: 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
+  }
+
+  .dashboard-sideStat:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .dashboard-sideValue {
+    margin-top: 8px;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  .dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .dashboard-panel {
+    padding: 20px;
+  }
+
+  .dashboard-tab {
+    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent 16%);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-dim);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .dashboard-tab.is-active {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+    color: var(--text-main);
+  }
+
+  .dashboard-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) 220px auto;
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: end;
+  }
+
+  .dashboard-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .dashboard-tableWrap {
+    overflow: hidden;
+  }
+
+  .dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .dashboard-table th {
+    padding: 14px 16px;
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dashboard-table td {
+    padding: 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
+    vertical-align: top;
+  }
+
+  .dashboard-table tbody tr:hover td {
+    background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+  }
+
+  .dashboard-companyCell {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard-companyTop {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .dashboard-muted {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .dashboard-followupList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-followupCard {
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .dashboard-followupCard:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--border) 56%);
+    box-shadow: 0 22px 44px rgba(0, 0, 0, 0.18);
+  }
+
+  .dashboard-empty {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 1180px) {
+    .dashboard-hero,
+    .dashboard-filters,
+    .dashboard-kpis {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .dashboard-shell {
+      padding: 18px;
+      gap: 18px;
+    }
+  }
+`;
 
 export const Dashboard: React.FC = () => {
+  const { t } = useI18n();
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [apps, setApps] = useState<Application[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -25,49 +250,55 @@ export const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const statusOptions = [
+    { value: '', label: 'Tous' },
+    { value: 'INTERESTED', label: statusLabelMap.INTERESTED },
+    { value: 'APPLIED', label: statusLabelMap.APPLIED },
+    { value: 'INTERVIEW', label: statusLabelMap.INTERVIEW },
+    { value: 'OFFER', label: statusLabelMap.OFFER },
+    { value: 'REJECTED', label: statusLabelMap.REJECTED },
+  ];
 
   const fetchData = async () => {
     try {
       setError(null);
       const [dashboardData, appsResponse, orgsData] = await Promise.all([
         dashboardService.getDashboardData(),
-        applicationService.getApplications({ 
-          search: searchTerm, 
+        applicationService.getApplications({
+          search: searchTerm,
           status: statusFilter,
           show_hidden: showHidden ? 'yes' : undefined,
           page,
-          limit
+          limit,
         }),
-        organizationService.getAll()
+        organizationService.getAll(),
       ]);
       setData(dashboardData);
       setApps(appsResponse.items);
       setTotalApps(appsResponse.total);
       setFollowups(dashboardData.followups);
       setOrganizations(orgsData);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please check your connection.');
+    } catch (fetchError) {
+      console.error('Error fetching dashboard data:', fetchError);
+      setError('Impossible de charger le tableau de bord.');
     } finally {
       setLoading(false);
     }
   };
-
-  const orgMap = useMemo(() => {
-    return new Map(organizations.map(o => [o.id, o]));
-  }, [organizations]);
 
   const fetchInsights = async () => {
     setLoadingInsights(true);
     try {
       const insightsData = await dashboardService.getMonthlyInsights();
       setInsights(insightsData);
-    } catch (error) {
-      console.error('Error fetching insights:', error);
+    } catch (fetchError) {
+      console.error('Error fetching insights:', fetchError);
     } finally {
       setLoadingInsights(false);
     }
   };
+
+  const orgMap = useMemo(() => new Map(organizations.map((organization) => [organization.id, organization])), [organizations]);
 
   useEffect(() => {
     setPage(1);
@@ -87,18 +318,11 @@ export const Dashboard: React.FC = () => {
     try {
       await applicationService.markFollowup(id);
       fetchData();
-    } catch (error) {
-      console.error('Error marking follow-up as done:', error);
-      setError('Failed to update follow-up status.');
+    } catch (updateError) {
+      console.error('Error marking follow-up as done:', updateError);
+      setError('Impossible de mettre a jour la relance.');
     }
   };
-
-  if (loading && !data) return (
-    <div className="container mt-lg has-text-centered text-dim" style={{ padding: '4rem' }}>
-      <div className="loading-spinner mb-md"></div>
-      <p>Loading your dashboard...</p>
-    </div>
-  );
 
   const kpis = data?.kpis || {
     total_count: 0,
@@ -108,228 +332,230 @@ export const Dashboard: React.FC = () => {
     rejected_count: 0,
     response_rate: 0,
     responded_count: 0,
-    avg_response_time: null
+    avg_response_time: null,
   };
 
+  if (loading && !data) {
+    return (
+      <div className="dashboard-shell">
+        <style>{pageStyles}</style>
+        <div className="dashboard-panel dashboard-empty">{t('common.loading')}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mt-lg">
-      {error && (
+    <div className="dashboard-shell">
+      <style>{pageStyles}</style>
+
+      {showModal ? <NewApplicationModal onClose={() => setShowModal(false)} onCreated={fetchData} /> : null}
+
+      {error ? (
         <div className="alert alert-error">
           <span>{error}</span>
           <button className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }} onClick={fetchData}>Retry</button>
         </div>
-      )}
+      ) : null}
 
-      <div className="flex justify-between items-center mb-lg">
-        <h1 className="text-xxl font-bold">🚀 Dashboard</h1>
-        <div className="flex gap-md">
-          <Link to="/import" className="btn-ghost">📥 Import</Link>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>+ New Application</button>
+      <section className="dashboard-hero">
+        <div>
+          <div className="dashboard-kicker">{t('dashboard.kicker')}</div>
+          <h1 className="dashboard-title">{t('dashboard.title')}</h1>
+          <p className="dashboard-copy">{t('dashboard.copy')}</p>
+          <div className="dashboard-actions">
+            <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
+            <Link to="/import">
+              <Button variant="ghost">{t('dashboard.import')}</Button>
+            </Link>
+          </div>
         </div>
-      </div>
-
-      {activeTab === 'apps' && apps.length === 0 && !loading && (
-        <div className="card has-text-centered" style={{ padding: '4rem' }}>
-          <p className="text-lg text-dim mb-md">No applications found.</p>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>Add your first application</button>
+        <div className="dashboard-side">
+          <div className="dashboard-sideStat">
+            <div className="dashboard-sectionLabel">{t('dashboard.active')}</div>
+            <div className="dashboard-sideValue">{kpis.active_count}</div>
+            <div className="dashboard-muted">{t('dashboard.activeHint')}</div>
+          </div>
+          <div className="dashboard-sideStat">
+            <div className="dashboard-sectionLabel">{t('dashboard.responses')}</div>
+            <div className="dashboard-sideValue">{kpis.response_rate}%</div>
+            <div className="dashboard-muted">{kpis.responded_count} {t('dashboard.responsesHint')}</div>
+          </div>
+          <div className="dashboard-sideStat">
+            <div className="dashboard-sectionLabel">{t('dashboard.followups')}</div>
+            <div className="dashboard-sideValue">{kpis.due_followups}</div>
+            <div className="dashboard-muted">{t('dashboard.followupsHint')}</div>
+          </div>
         </div>
-      )}
+      </section>
 
-      {activeTab === 'queue' && followups.length === 0 && !loading && (
-        <div className="card has-text-centered" style={{ padding: '4rem' }}>
-          <p className="text-lg text-dim">No follow-ups due. Great job! 🎉</p>
+      <section className="dashboard-kpis">
+        <KPICard label={t('dashboard.totalApplications')} value={kpis.total_count} />
+        <KPICard label={t('dashboard.activePipeline')} value={kpis.active_count} subValue={t('dashboard.ongoingProcesses')} />
+        <KPICard label={t('dashboard.dueFollowups')} value={kpis.due_followups} subValue={t('dashboard.attentionRequired')} />
+        <KPICard label={t('dashboard.rejectedRate')} value={`${kpis.rejected_rate}%`} subValue={`${kpis.rejected_count} ${t('dashboard.refusals')}`} />
+        <KPICard label={t('dashboard.responseRate')} value={`${kpis.response_rate}%`} subValue={`${kpis.responded_count} ${t('dashboard.responsesCount')}`} />
+        <KPICard label={t('dashboard.avgResponseTime')} value={kpis.avg_response_time ?? '-'} subValue={t('dashboard.days')} />
+      </section>
+
+      <section className="dashboard-panel">
+        <div className="dashboard-tabs">
+          <button type="button" className={`dashboard-tab ${activeTab === 'apps' ? 'is-active' : ''}`} onClick={() => setActiveTab('apps')}>
+            {t('dashboard.tabApplications')}
+          </button>
+          <button type="button" className={`dashboard-tab ${activeTab === 'queue' ? 'is-active' : ''}`} onClick={() => setActiveTab('queue')}>
+            {t('dashboard.tabFollowups')}
+          </button>
+          <button type="button" className={`dashboard-tab ${activeTab === 'insights' ? 'is-active' : ''}`} onClick={() => setActiveTab('insights')}>
+            {t('dashboard.tabInsights')}
+          </button>
         </div>
-      )}
 
-      {showModal && (
-        <NewApplicationModal 
-          onClose={() => setShowModal(false)} 
-          onCreated={fetchData} 
-        />
-      )}
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-lg)', marginBottom: 'var(--spacing-xl)' }}>
-        <KPICard label="Total Applications" value={kpis.total_count} />
-        <KPICard label="Active Pipeline" value={kpis.active_count} subValue="Ongoing processes" />
-        <KPICard label="Due Follow-ups" value={kpis.due_followups} subValue="Requires attention" />
-        <KPICard label="Rejected Rate" value={`${kpis.rejected_rate}%`} subValue={`${kpis.rejected_count} total`} />
-        <KPICard label="Response Rate" value={`${kpis.response_rate}%`} subValue={`${kpis.responded_count} responses`} />
-        <KPICard label="Avg Response Time" value={kpis.avg_response_time ?? '-'} subValue="Days" />
-      </div>
-
-      <div className="tabs">
-        <div className={`tab ${activeTab === 'apps' ? 'active' : ''}`} onClick={() => setActiveTab('apps')}>Applications</div>
-        <div className={`tab ${activeTab === 'queue' ? 'active' : ''}`} onClick={() => setActiveTab('queue')}>Follow-up Queue</div>
-        <div className={`tab ${activeTab === 'insights' ? 'active' : ''}`} onClick={() => setActiveTab('insights')}>Insights</div>
-      </div>
-
-      <div className="card">
-        {activeTab === 'apps' && (
+        {activeTab === 'apps' ? (
           <>
-            <div className="flex gap-lg items-center mb-lg">
-              <div className="flex-grow">
-                <label className="text-sm font-bold text-dim mb-xs block">Search</label>
-                <input 
-                  className="input" 
-                  type="text" 
-                  placeholder="Company, title, contact..."
+            <div className="dashboard-filters">
+              <div>
+                <label className="dashboard-sectionLabel">{t('dashboard.search')}</label>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Entreprise, poste, contact..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(event) => setSearchTerm(event.target.value)}
                 />
               </div>
-              <div style={{ width: '200px' }}>
-                <label className="text-sm font-bold text-dim mb-xs block">Status</label>
-                <select className="input" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="">All</option>
-                  <option value="INTERESTED">INTERESTED</option>
-                  <option value="APPLIED">APPLIED</option>
-                  <option value="INTERVIEW">INTERVIEW</option>
-                  <option value="OFFER">OFFER</option>
-                  <option value="REJECTED">REJECTED</option>
+              <div>
+                <label className="dashboard-sectionLabel">{t('dashboard.status')}</label>
+                <select className="input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                  {statusOptions.map((option) => (
+                    <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
-              <div className="flex items-center gap-sm mt-md">
-                <input 
-                  type="checkbox" 
-                  checked={showHidden}
-                  onChange={(e) => setShowHidden(e.target.checked)}
-                />
-                <span className="text-sm text-dim">Show Rejected/Offer</span>
-              </div>
+              <label className="dashboard-check">
+                <input type="checkbox" checked={showHidden} onChange={(event) => setShowHidden(event.target.checked)} />
+                {t('dashboard.showHidden')}
+              </label>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table>
+            <div className="dashboard-tableWrap">
+              <table className="dashboard-table">
                 <thead>
                   <tr>
-                    <th>Company</th>
-                    <th>Position</th>
-                    <th>Type</th>
-                    <th className="has-text-centered">Status</th>
-                    <th>Applied</th>
-                    <th className="has-text-right">Actions</th>
+                    <th>{t('dashboard.company')}</th>
+                    <th>{t('dashboard.position')}</th>
+                    <th>{t('dashboard.status')}</th>
+                    <th>{t('dashboard.applied')}</th>
+                    <th>{t('dashboard.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {apps.map(app => {
-                    const org = orgMap.get(app.organization_id || -1);
+                  {apps.map((app) => {
+                    const organization = orgMap.get(app.organization_id || -1);
                     return (
                       <tr key={app.id}>
                         <td>
-                          <div className="flex items-center gap-sm">
-                            <div className="font-bold">{app.company}</div>
-                            {org && <OrganizationTypeBadge type={org.type} size="xs" />}
-                            {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
+                          <div className="dashboard-companyCell">
+                            <div className="dashboard-companyTop">
+                              <strong>{app.company}</strong>
+                              {organization ? <OrganizationTypeBadge type={organization.type} size="xs" /> : null}
+                              {organization ? <ProbityBadge score={organization.probity_score} level={organization.probity_level} showScore={false} /> : null}
+                            </div>
+                            <div className="dashboard-muted">{app.source || t('dashboard.sourceDirect')} • {app.type}</div>
+                            {app.final_customer_organization_id ? (
+                              <div className="dashboard-muted">
+                                Client final: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
+                              </div>
+                            ) : null}
                           </div>
-                          <div className="text-sm text-dim">{app.source || 'Direct'}</div>
                         </td>
                         <td>{app.title}</td>
-                        <td>{app.type}</td>
-                        <td className="has-text-centered">
-                          <span className={`tag status-${app.status.toLowerCase()}`}>
-                            {app.status}
-                          </span>
-                        </td>
-                        <td className="text-sm">{app.applied_at || '-'}</td>
-                        <td className="has-text-right">
-                          <Link to={`/applications/${app.id}`} className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }}>Details</Link>
+                        <td><StatusBadge status={app.status} /></td>
+                        <td>{app.applied_at || '-'}</td>
+                        <td>
+                          <Link to={`/applications/${app.id}`}>
+                            <Button variant="ghost" size="small">{t('common.details')}</Button>
+                          </Link>
                         </td>
                       </tr>
                     );
                   })}
-                  {apps.length === 0 && (
+                  {apps.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="has-text-centered text-dim" style={{ padding: '4rem' }}>
-                        No applications found. Try changing filters or adding a new one.
+                      <td colSpan={5} className="dashboard-empty">
+                        {t('dashboard.noApplications')}
                       </td>
                     </tr>
-                  )}
+                  ) : null}
                 </tbody>
               </table>
             </div>
 
-            {totalApps > limit && (
+            {totalApps > limit ? (
               <div className="pagination">
-                <button 
-                  className="pagination-btn" 
-                  disabled={page === 1}
-                  onClick={() => setPage(p => p - 1)}
-                >
+                <button className="pagination-btn" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
                   Previous
                 </button>
                 <div className="pagination-info">
                   Page {page} of {Math.ceil(totalApps / limit)} ({totalApps} total)
                 </div>
-                <button 
-                  className="pagination-btn" 
+                <button
+                  className="pagination-btn"
                   disabled={page >= Math.ceil(totalApps / limit)}
-                  onClick={() => setPage(p => p + 1)}
+                  onClick={() => setPage((current) => current + 1)}
                 >
                   Next
                 </button>
               </div>
-            )}
+            ) : null}
           </>
-        )}
+        ) : null}
 
-        {activeTab === 'queue' && (
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Position</th>
-                  <th>Next Follow-up</th>
-                  <th className="has-text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {followups.map(app => (
-                  <tr key={app.id}>
-                    <td className="font-bold">{app.company}</td>
-                    <td>{app.title}</td>
-                    <td className="font-bold" style={{ color: 'var(--status-rejected)' }}>{app.next_followup_at}</td>
-                    <td className="has-text-right">
-                      <button 
-                        className="btn-primary" 
-                        style={{ padding: '0.25rem 0.5rem' }}
-                        onClick={() => handleMarkFollowup(app.id)}
-                      >
-                        Mark as Done
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {followups.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="has-text-centered text-dim" style={{ padding: '4rem' }}>
-                      🎉 No follow-ups due! All caught up.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {activeTab === 'queue' ? (
+          followups.length > 0 ? (
+            <div className="dashboard-followupList">
+              {followups.map((app) => (
+                <div key={app.id} className="dashboard-followupCard" onClick={() => navigate(`/applications/${app.id}`)}>
+                  <div>
+                    <div className="dashboard-companyTop">
+                      <strong>{app.company}</strong>
+                      <StatusBadge status={app.status} />
+                    </div>
+                    <div className="dashboard-muted">{app.title}</div>
+                    <div className="dashboard-muted">{t('dashboard.nextFollowup')}: {app.next_followup_at || '-'}</div>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="small"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleMarkFollowup(app.id);
+                    }}
+                  >
+                    {t('dashboard.markDone')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="dashboard-empty">{t('dashboard.noFollowups')}</div>
+          )
+        ) : null}
 
-        {activeTab === 'insights' && (
-          <div>
-            {loadingInsights ? (
-              <div className="has-text-centered text-dim" style={{ padding: '4rem' }}>
-                <div className="loading-spinner mb-md"></div>
-                <p>Loading insights...</p>
+        {activeTab === 'insights' ? (
+          loadingInsights ? (
+            <div className="dashboard-empty">{t('dashboard.loadingInsights')}</div>
+          ) : insights ? (
+            <MonthlyApplicationsChart data={insights.months} year={insights.year} />
+          ) : (
+            <div className="dashboard-empty">
+              {t('dashboard.failedInsights')}
+              <div style={{ marginTop: 12 }}>
+                <Button variant="ghost" size="small" onClick={fetchInsights}>{t('common.retry')}</Button>
               </div>
-            ) : insights ? (
-              <MonthlyApplicationsChart data={insights.months} year={insights.year} />
-            ) : (
-              <div className="has-text-centered text-dim" style={{ padding: '4rem' }}>
-                <p className="text-lg italic">Failed to load insights.</p>
-                <button className="btn-ghost" onClick={fetchInsights}>Retry</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )
+        ) : null}
+      </section>
     </div>
   );
 };
