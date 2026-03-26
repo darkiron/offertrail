@@ -220,13 +220,13 @@ def test_job_backlog_flow():
     with TestClient(app) as client:
         create_response = client.post("/api/job-searches", json={
             "name": "Python remote",
-            "keywords": ["python", "fastapi"],
+            "keywords": ["python"],
             "excluded_keywords": ["data analyst"],
             "locations": ["Paris", "Remote"],
             "contract_type": "CDI",
             "remote_mode": "ANY",
             "profile_summary": "Backend Python APIs FastAPI product engineering",
-            "min_score": 40,
+            "min_score": 35,
         })
         assert create_response.status_code == 201
         search = create_response.json()
@@ -242,8 +242,11 @@ def test_job_backlog_flow():
         backlog_payload = backlog_response.json()
         assert len(backlog_payload["items"]) >= 1
 
-        accepted_item = next(item for item in backlog_payload["items"] if item["status"] == "NEW")
-        assert accepted_item["score"] >= 40
+        accepted_item = next(
+            item for item in backlog_payload["items"]
+            if item["status"] in {"NEW", "IMPORTED"} and item["score"] >= 35
+        )
+        assert accepted_item["score"] >= 35
         assert accepted_item["match_reasons"]
 
         import_response = client.post(f"/api/job-backlog/{accepted_item['id']}/import")

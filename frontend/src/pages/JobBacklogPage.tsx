@@ -166,6 +166,8 @@ export const JobBacklogPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
+    source: 'mock-board',
+    feed_key: 'PROGRAMMING',
     keywords: 'python, fastapi',
     excluded_keywords: 'data analyst',
     locations: 'Paris, Remote',
@@ -229,6 +231,8 @@ export const JobBacklogPage: React.FC = () => {
     try {
       const created = await jobBacklogService.createSearch({
         name: form.name || `Recherche ${new Date().toLocaleTimeString('fr-FR')}`,
+        source: form.source,
+        source_config: form.source === 'wwr-rss' ? { feed_key: form.feed_key } : {},
         keywords: splitCsv(form.keywords),
         excluded_keywords: splitCsv(form.excluded_keywords),
         locations: splitCsv(form.locations),
@@ -299,6 +303,19 @@ export const JobBacklogPage: React.FC = () => {
           <span className="jobbacklog-label">{t('backlog.createSearch')}</span>
           <div className="jobbacklog-form" style={{ marginTop: 14 }}>
             <input className="input" placeholder="Nom de la recherche" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+            <select className="input" value={form.source} onChange={(event) => setForm((current) => ({ ...current, source: event.target.value }))}>
+              <option value="mock-board">{t('backlog.sourceMock')}</option>
+              <option value="wwr-rss">{t('backlog.sourceWwr')}</option>
+            </select>
+            {form.source === 'wwr-rss' ? (
+              <select className="input" value={form.feed_key} onChange={(event) => setForm((current) => ({ ...current, feed_key: event.target.value }))}>
+                <option value="PROGRAMMING">PROGRAMMING</option>
+                <option value="BACKEND">BACKEND</option>
+                <option value="FRONTEND">FRONTEND</option>
+                <option value="FULLSTACK">FULLSTACK</option>
+                <option value="DEVOPS">DEVOPS</option>
+              </select>
+            ) : null}
             <input className="input" placeholder={t('backlog.keywords')} value={form.keywords} onChange={(event) => setForm((current) => ({ ...current, keywords: event.target.value }))} />
             <input className="input" placeholder={t('backlog.excluded')} value={form.excluded_keywords} onChange={(event) => setForm((current) => ({ ...current, excluded_keywords: event.target.value }))} />
             <input className="input" placeholder={t('backlog.locations')} value={form.locations} onChange={(event) => setForm((current) => ({ ...current, locations: event.target.value }))} />
@@ -336,6 +353,7 @@ export const JobBacklogPage: React.FC = () => {
                   <div style={{ fontWeight: 800 }}>{search.name}</div>
                   <div className="jobbacklog-muted">{search.keywords.join(', ')}</div>
                   <div className="jobbacklog-actions">
+                    <span className="jobbacklog-pill">{search.source}</span>
                     <span className="jobbacklog-pill">{search.contract_type}</span>
                     <span className="jobbacklog-pill">{search.remote_mode}</span>
                     <span className="jobbacklog-pill">{t('backlog.minScore')}: {search.min_score}</span>

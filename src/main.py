@@ -145,6 +145,8 @@ async def api_create_job_search(data: dict):
         raise HTTPException(status_code=400, detail="name and keywords are required")
     return database.create_job_search(
         name=data.get("name"),
+        source=data.get("source", database.JOB_SOURCE_MOCK),
+        source_config=data.get("source_config"),
         keywords=data.get("keywords"),
         excluded_keywords=data.get("excluded_keywords"),
         locations=data.get("locations"),

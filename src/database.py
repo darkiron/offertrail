@@ -1,13 +1,27 @@
 import sqlite3
 import json
+import httpx
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from xml.etree import ElementTree
 
 DB_PATH = Path("offertrail.db")
 
 JOB_BACKLOG_STATUS_NEW = "NEW"
 JOB_BACKLOG_STATUS_IMPORTED = "IMPORTED"
 JOB_BACKLOG_STATUS_REJECTED = "REJECTED"
+
+JOB_SOURCE_MOCK = "mock-board"
+JOB_SOURCE_WWR = "wwr-rss"
+
+WWR_RSS_FEEDS = {
+    "ALL": "https://weworkremotely.com/remote-jobs.rss",
+    "PROGRAMMING": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+    "BACKEND": "https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss",
+    "FRONTEND": "https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss",
+    "FULLSTACK": "https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss",
+    "DEVOPS": "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
+}
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -93,6 +107,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS job_searches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'mock-board',
+                source_config_json TEXT NOT NULL DEFAULT '{}',
                 keywords_json TEXT NOT NULL,
                 excluded_keywords_json TEXT NOT NULL DEFAULT '[]',
                 locations_json TEXT NOT NULL DEFAULT '[]',
@@ -105,6 +121,13 @@ def init_db():
                 updated_at TEXT NOT NULL
             )
         """)
+        job_search_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(job_searches)").fetchall()
+        }
+        if "source" not in job_search_columns:
+            conn.execute("ALTER TABLE job_searches ADD COLUMN source TEXT NOT NULL DEFAULT 'mock-board'")
+        if "source_config_json" not in job_search_columns:
+            conn.execute("ALTER TABLE job_searches ADD COLUMN source_config_json TEXT NOT NULL DEFAULT '{}'")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS job_backlog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,6 +196,10 @@ def _decode_json_list(value):
 
 def _serialize_job_search(row):
     data = dict(row)
+    try:
+        data["source_config"] = json.loads(data.pop("source_config_json", "{}"))
+    except json.JSONDecodeError:
+        data["source_config"] = {}
     data["keywords"] = _decode_json_list(data.pop("keywords_json", "[]"))
     data["excluded_keywords"] = _decode_json_list(data.pop("excluded_keywords_json", "[]"))
     data["locations"] = _decode_json_list(data.pop("locations_json", "[]"))
@@ -251,6 +278,62 @@ def _build_mock_job_catalog():
         },
     ]
 
+def _extract_rss_text(element, tag_name):
+    value = element.findtext(tag_name)
+    return value.strip() if isinstance(value, str) else None
+
+def _fetch_wwr_rss_items(source_config=None):
+    source_config = source_config or {}
+    feed_key = str(source_config.get("feed_key") or "PROGRAMMING").upper()
+    feed_url = WWR_RSS_FEEDS.get(feed_key, WWR_RSS_FEEDS["PROGRAMMING"])
+    with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+        response = client.get(feed_url, headers={"User-Agent": "OfferTrail/1.0 (+local backlog ingestion)"})
+        response.raise_for_status()
+
+    root = ElementTree.fromstring(response.text)
+    channel = root.find("channel")
+    if channel is None:
+        return []
+
+    items = []
+    for node in channel.findall("item"):
+        title = _extract_rss_text(node, "title") or "Untitled role"
+        link = _extract_rss_text(node, "link")
+        guid = _extract_rss_text(node, "guid") or link or title
+        description = _extract_rss_text(node, "description") or ""
+        pub_date = _extract_rss_text(node, "pubDate")
+
+        company = "Unknown company"
+        role_title = title
+        if ": " in title:
+            company, role_title = title.split(": ", 1)
+        elif " at " in title:
+            role_title, company = title.rsplit(" at ", 1)
+
+        lowered = f"{title} {description}".lower()
+        contract_type = "FREELANCE" if "contract" in lowered or "freelance" in lowered else "CDI"
+        remote_mode = "REMOTE"
+
+        items.append({
+            "source": JOB_SOURCE_WWR,
+            "external_id": guid,
+            "title": role_title.strip(),
+            "company": company.strip(),
+            "location": "Remote",
+            "remote_mode": remote_mode,
+            "contract_type": contract_type,
+            "url": link,
+            "description": description,
+            "published_at": pub_date,
+            "salary_text": None,
+        })
+    return items
+
+def _fetch_job_catalog(source, source_config=None):
+    if source == JOB_SOURCE_WWR:
+        return _fetch_wwr_rss_items(source_config)
+    return _build_mock_job_catalog()
+
 def _score_job_backlog_item(search, item):
     haystack = " ".join([
         item.get("title", ""),
@@ -259,17 +342,18 @@ def _score_job_backlog_item(search, item):
         item.get("description", ""),
         item.get("contract_type", ""),
         item.get("remote_mode", ""),
-        search.get("profile_summary", "") or "",
     ])
     tokens = _tokenize_text(haystack)
     reasons = []
     score = 0
+    keyword_hits = 0
 
     for keyword in search["keywords"]:
         keyword_tokens = _tokenize_text(keyword)
         if keyword_tokens and keyword_tokens.issubset(tokens):
             score += 25
             reasons.append(f"keyword:{keyword}")
+            keyword_hits += 1
 
     for keyword in search["excluded_keywords"]:
         keyword_tokens = _tokenize_text(keyword)
@@ -295,6 +379,17 @@ def _score_job_backlog_item(search, item):
             score += 10
             reasons.append("location-match")
 
+    if search.get("profile_summary"):
+        profile_tokens = _tokenize_text(search["profile_summary"])
+        overlap = len(tokens.intersection(profile_tokens))
+        if overlap >= 3:
+            score += min(15, overlap * 2)
+            reasons.append(f"profile-overlap:{overlap}")
+
+    if search["keywords"] and keyword_hits == 0:
+        score = 0
+        reasons.append("no-keyword-hit")
+
     if score < 0:
         score = 0
     return min(score, 100), reasons
@@ -304,18 +399,20 @@ def list_job_searches():
         rows = conn.execute("SELECT * FROM job_searches ORDER BY updated_at DESC, id DESC").fetchall()
         return [_serialize_job_search(row) for row in rows]
 
-def create_job_search(name, keywords, excluded_keywords=None, locations=None, contract_type="CDI", remote_mode="ANY", profile_summary=None, min_score=60, auto_import=False):
+def create_job_search(name, keywords, excluded_keywords=None, locations=None, contract_type="CDI", remote_mode="ANY", profile_summary=None, min_score=60, auto_import=False, source=JOB_SOURCE_MOCK, source_config=None):
     now = _utc_now()
     with get_db() as conn:
         cursor = conn.execute(
             """
             INSERT INTO job_searches (
-                name, keywords_json, excluded_keywords_json, locations_json, contract_type,
+                name, source, source_config_json, keywords_json, excluded_keywords_json, locations_json, contract_type,
                 remote_mode, profile_summary, min_score, auto_import, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name.strip(),
+                source or JOB_SOURCE_MOCK,
+                json.dumps(source_config or {}),
                 json.dumps(_json_list(keywords)),
                 json.dumps(_json_list(excluded_keywords)),
                 json.dumps(_json_list(locations)),
@@ -375,7 +472,28 @@ def run_job_search(search_id):
         return None
 
     now = _utc_now()
-    catalog = _build_mock_job_catalog()
+    try:
+        catalog = _fetch_job_catalog(search["source"], search.get("source_config"))
+    except Exception as exc:
+        with get_db() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO job_backlog_runs (search_id, source, status, fetched_count, created_count, imported_count, error_text, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (search_id, search["source"], "FAILED", 0, 0, 0, str(exc), now)
+            )
+            conn.commit()
+            run_id = cursor.lastrowid
+        return {
+            "run_id": run_id,
+            "search": search,
+            "fetched_count": 0,
+            "created_count": 0,
+            "imported_count": 0,
+            "error": str(exc),
+            "items": list_job_backlog_items(search_id=search_id),
+        }
     created_count = 0
     imported_count = 0
 
@@ -385,7 +503,7 @@ def run_job_search(search_id):
             INSERT INTO job_backlog_runs (search_id, source, status, fetched_count, created_count, imported_count, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (search_id, "mock-board", "SUCCESS", len(catalog), 0, 0, now)
+            (search_id, search["source"], "SUCCESS", len(catalog), 0, 0, now)
         )
         run_id = cursor.lastrowid
 

@@ -98,6 +98,8 @@ export interface MonthlyInsights {
 export interface JobSearch {
   id: number;
   name: string;
+  source: string;
+  source_config: Record<string, unknown>;
   keywords: string[];
   excluded_keywords: string[];
   locations: string[];
