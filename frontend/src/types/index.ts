@@ -97,9 +97,13 @@ export interface MonthlyInsights {
 
 export interface JobSearch {
   id: number;
+  source_id: number | null;
   name: string;
   source: string;
   source_config: Record<string, unknown>;
+  source_name?: string | null;
+  source_slug?: string | null;
+  source_kind?: string | null;
   keywords: string[];
   excluded_keywords: string[];
   locations: string[];
@@ -145,4 +149,15 @@ export interface JobBacklogRun {
   imported_count: number;
   error_text: string | null;
   created_at: string;
+}
+
+export interface JobSource {
+  id: number;
+  slug: string;
+  name: string;
+  kind: string;
+  config: Record<string, unknown>;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }

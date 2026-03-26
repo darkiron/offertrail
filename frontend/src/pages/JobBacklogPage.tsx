@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { jobBacklogService } from '../services/api';
-import type { JobBacklogItem, JobBacklogRun, JobSearch } from '../types';
+import type { JobBacklogItem, JobBacklogRun, JobSearch, JobSource } from '../types';
 import { Button } from '../components/atoms/Button';
 import { useI18n } from '../i18n';
 
@@ -15,9 +15,9 @@ const pageStyles = `
 
   .jobbacklog-hero,
   .jobbacklog-panel,
+  .jobbacklog-card,
   .jobbacklog-item,
-  .jobbacklog-run,
-  .jobbacklog-searchCard {
+  .jobbacklog-run {
     border: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
     border-radius: 20px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle));
@@ -34,11 +34,17 @@ const pageStyles = `
       linear-gradient(135deg, color-mix(in srgb, var(--bg-mantle) 92%, white 8%), color-mix(in srgb, var(--bg-crust) 68%, var(--bg-mantle) 32%));
   }
 
-  .jobbacklog-grid {
+  .jobbacklog-layout {
     display: grid;
-    grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
     gap: 20px;
     align-items: start;
+  }
+
+  .jobbacklog-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .jobbacklog-panel {
@@ -119,7 +125,7 @@ const pageStyles = `
     border: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
   }
 
-  .jobbacklog-searchList,
+  .jobbacklog-cardList,
   .jobbacklog-items,
   .jobbacklog-runs {
     display: flex;
@@ -127,19 +133,19 @@ const pageStyles = `
     gap: 12px;
   }
 
-  .jobbacklog-searchCard,
+  .jobbacklog-card,
   .jobbacklog-item,
   .jobbacklog-run {
     padding: 16px;
   }
 
-  .jobbacklog-searchCard {
+  .jobbacklog-card {
     width: 100%;
     text-align: left;
     color: inherit;
   }
 
-  .jobbacklog-searchCard.is-active {
+  .jobbacklog-card.is-active {
     border-color: color-mix(in srgb, var(--accent) 42%, transparent);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg-base) 90%);
   }
@@ -225,7 +231,7 @@ const pageStyles = `
 
   @media (max-width: 1100px) {
     .jobbacklog-hero,
-    .jobbacklog-grid {
+    .jobbacklog-layout {
       grid-template-columns: 1fr;
     }
   }
@@ -243,11 +249,13 @@ const pageStyles = `
 `;
 
 const splitCsv = (value: string) => value.split(',').map((part) => part.trim()).filter(Boolean);
+const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const stripHtml = (value: string | null | undefined) => (value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 const truncate = (value: string, max = 320) => value.length <= max ? value : `${value.slice(0, max).trim()}...`;
 
 export const JobBacklogPage: React.FC = () => {
   const { t } = useI18n();
+  const [sources, setSources] = useState<JobSource[]>([]);
   const [searches, setSearches] = useState<JobSearch[]>([]);
   const [items, setItems] = useState<JobBacklogItem[]>([]);
   const [runs, setRuns] = useState<JobBacklogRun[]>([]);
@@ -255,10 +263,15 @@ export const JobBacklogPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({
+  const [sourceForm, setSourceForm] = useState({
+    name: 'We Work Remotely RSS',
+    slug: 'we-work-remotely-backend',
+    kind: 'rss',
+    feed_key: 'BACKEND',
+  });
+  const [searchForm, setSearchForm] = useState({
     name: '',
-    source: 'mock-board',
-    feed_key: 'PROGRAMMING',
+    source_id: '',
     keywords: 'python, fastapi',
     excluded_keywords: 'data analyst',
     locations: 'Paris, Remote',
@@ -272,6 +285,12 @@ export const JobBacklogPage: React.FC = () => {
     () => searches.find((search) => search.id === activeSearchId) || null,
     [searches, activeSearchId],
   );
+
+  const fetchSources = async () => {
+    const sourceData = await jobBacklogService.getSources();
+    setSources(sourceData);
+    return sourceData;
+  };
 
   const fetchSearches = async () => {
     const searchData = await jobBacklogService.getSearches();
@@ -297,8 +316,11 @@ export const JobBacklogPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const searchData = await fetchSearches();
+      const [sourceData, searchData] = await Promise.all([fetchSources(), fetchSearches()]);
       const selectedSearchId = activeSearchId || searchData[0]?.id || null;
+      if (!searchForm.source_id && sourceData.length > 0) {
+        setSearchForm((current) => ({ ...current, source_id: String(sourceData[0].id) }));
+      }
       await fetchBacklog(selectedSearchId);
     } catch {
       setError(t('backlog.loadError'));
@@ -317,20 +339,34 @@ export const JobBacklogPage: React.FC = () => {
     }
   }, [activeSearchId]);
 
+  const createSource = async () => {
+    setError(null);
+    try {
+      await jobBacklogService.createSource({
+        name: sourceForm.name,
+        slug: sourceForm.slug || slugify(sourceForm.name),
+        kind: sourceForm.kind,
+        config: sourceForm.kind === 'rss' ? { feed_key: sourceForm.feed_key } : {},
+      });
+      await refresh();
+    } catch {
+      setError('Impossible de creer la source.');
+    }
+  };
+
   const createSearch = async () => {
     setError(null);
     try {
       const created = await jobBacklogService.createSearch({
-        name: form.name || `Recherche ${new Date().toLocaleTimeString('fr-FR')}`,
-        source: form.source,
-        source_config: form.source === 'wwr-rss' ? { feed_key: form.feed_key } : {},
-        keywords: splitCsv(form.keywords),
-        excluded_keywords: splitCsv(form.excluded_keywords),
-        locations: splitCsv(form.locations),
-        contract_type: form.contract_type,
-        remote_mode: form.remote_mode,
-        profile_summary: form.profile_summary,
-        min_score: Number(form.min_score),
+        name: searchForm.name || `Recherche ${new Date().toLocaleTimeString('fr-FR')}`,
+        source_id: Number(searchForm.source_id),
+        keywords: splitCsv(searchForm.keywords),
+        excluded_keywords: splitCsv(searchForm.excluded_keywords),
+        locations: splitCsv(searchForm.locations),
+        contract_type: searchForm.contract_type,
+        remote_mode: searchForm.remote_mode,
+        profile_summary: searchForm.profile_summary,
+        min_score: Number(searchForm.min_score),
       });
       setActiveSearchId(created.id);
       await refresh();
@@ -367,7 +403,9 @@ export const JobBacklogPage: React.FC = () => {
         <div>
           <span className="jobbacklog-label">{t('backlog.kicker')}</span>
           <h1 style={{ margin: '8px 0 0', fontSize: 36, lineHeight: 1.05 }}>{t('backlog.title')}</h1>
-          <p className="jobbacklog-copy" style={{ marginTop: 16, maxWidth: 720 }}>{t('backlog.copy')}</p>
+          <p className="jobbacklog-copy" style={{ marginTop: 16, maxWidth: 720 }}>
+            Sources et recherches sont maintenant separees. On configure d'abord d'ou viennent les annonces, puis on construit des recherches lisibles dessus.
+          </p>
           <div className="jobbacklog-heroActions">
             {activeSearch ? (
               <Button variant="primary" onClick={() => runSearch(activeSearch.id)} disabled={running}>
@@ -382,85 +420,119 @@ export const JobBacklogPage: React.FC = () => {
 
         <div className="jobbacklog-stats">
           <div className="jobbacklog-stat">
-            <span className="jobbacklog-label">Items</span>
-            <div className="jobbacklog-statValue">{items.length}</div>
-            <div className="jobbacklog-subtle">annonces backlog chargees</div>
+            <span className="jobbacklog-label">Sources</span>
+            <div className="jobbacklog-statValue">{sources.length}</div>
+            <div className="jobbacklog-subtle">sources configurables</div>
           </div>
           <div className="jobbacklog-stat">
-            <span className="jobbacklog-label">A traiter</span>
-            <div className="jobbacklog-statValue">{items.filter((item) => item.status === 'NEW').length}</div>
-            <div className="jobbacklog-subtle">encore a qualifier ou importer</div>
+            <span className="jobbacklog-label">Recherches</span>
+            <div className="jobbacklog-statValue">{searches.length}</div>
+            <div className="jobbacklog-subtle">recherches metier actives</div>
           </div>
         </div>
       </section>
 
-      <section className="jobbacklog-grid">
-        <div className="jobbacklog-panel">
-          <span className="jobbacklog-label">{t('backlog.createSearch')}</span>
-          <div className="jobbacklog-form" style={{ marginTop: 14 }}>
-            <div className="jobbacklog-formSection">
-              <span className="jobbacklog-label">Source</span>
-              <div className="jobbacklog-form" style={{ marginTop: 10 }}>
-                <input className="input" placeholder="Nom de la recherche" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                <select className="input" value={form.source} onChange={(event) => setForm((current) => ({ ...current, source: event.target.value }))}>
-                  <option value="mock-board">{t('backlog.sourceMock')}</option>
-                  <option value="wwr-rss">{t('backlog.sourceWwr')}</option>
-                </select>
-                {form.source === 'wwr-rss' ? (
-                  <select className="input" value={form.feed_key} onChange={(event) => setForm((current) => ({ ...current, feed_key: event.target.value }))}>
-                    <option value="PROGRAMMING">PROGRAMMING</option>
-                    <option value="BACKEND">BACKEND</option>
-                    <option value="FRONTEND">FRONTEND</option>
-                    <option value="FULLSTACK">FULLSTACK</option>
-                    <option value="DEVOPS">DEVOPS</option>
+      <section className="jobbacklog-layout">
+        <div className="jobbacklog-stack">
+          <section className="jobbacklog-panel">
+            <span className="jobbacklog-label">Sources</span>
+            <div className="jobbacklog-form" style={{ marginTop: 14 }}>
+              <div className="jobbacklog-formSection">
+                <div className="jobbacklog-form">
+                  <input
+                    className="input"
+                    placeholder="Nom de la source"
+                    value={sourceForm.name}
+                    onChange={(event) => setSourceForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
+                  />
+                  <input
+                    className="input"
+                    placeholder="slug-source"
+                    value={sourceForm.slug}
+                    onChange={(event) => setSourceForm((current) => ({ ...current, slug: event.target.value }))}
+                  />
+                  <select className="input" value={sourceForm.kind} onChange={(event) => setSourceForm((current) => ({ ...current, kind: event.target.value }))}>
+                    <option value="rss">rss</option>
+                    <option value="mock">mock</option>
                   </select>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="jobbacklog-formSection">
-              <span className="jobbacklog-label">Matching</span>
-              <div className="jobbacklog-form" style={{ marginTop: 10 }}>
-                <input className="input" placeholder={t('backlog.keywords')} value={form.keywords} onChange={(event) => setForm((current) => ({ ...current, keywords: event.target.value }))} />
-                <input className="input" placeholder={t('backlog.excluded')} value={form.excluded_keywords} onChange={(event) => setForm((current) => ({ ...current, excluded_keywords: event.target.value }))} />
-                <input className="input" placeholder={t('backlog.locations')} value={form.locations} onChange={(event) => setForm((current) => ({ ...current, locations: event.target.value }))} />
-                <textarea className="input" placeholder={t('backlog.profile')} value={form.profile_summary} onChange={(event) => setForm((current) => ({ ...current, profile_summary: event.target.value }))} />
-                <div className="jobbacklog-row">
-                  <select className="input" value={form.contract_type} onChange={(event) => setForm((current) => ({ ...current, contract_type: event.target.value }))}>
-                    <option value="CDI">CDI</option>
-                    <option value="FREELANCE">FREELANCE</option>
-                    <option value="ANY">ANY</option>
-                  </select>
-                  <select className="input" value={form.remote_mode} onChange={(event) => setForm((current) => ({ ...current, remote_mode: event.target.value }))}>
-                    <option value="ANY">ANY</option>
-                    <option value="REMOTE">REMOTE</option>
-                    <option value="HYBRID">HYBRID</option>
-                    <option value="ONSITE">ONSITE</option>
-                  </select>
-                  <input className="input" type="number" min={0} max={100} value={form.min_score} onChange={(event) => setForm((current) => ({ ...current, min_score: Number(event.target.value) }))} />
+                  {sourceForm.kind === 'rss' ? (
+                    <select className="input" value={sourceForm.feed_key} onChange={(event) => setSourceForm((current) => ({ ...current, feed_key: event.target.value }))}>
+                      <option value="PROGRAMMING">PROGRAMMING</option>
+                      <option value="BACKEND">BACKEND</option>
+                      <option value="FRONTEND">FRONTEND</option>
+                      <option value="FULLSTACK">FULLSTACK</option>
+                      <option value="DEVOPS">DEVOPS</option>
+                    </select>
+                  ) : null}
                 </div>
               </div>
+              <Button variant="primary" onClick={createSource}>Creer la source</Button>
             </div>
 
-            <Button variant="primary" onClick={createSearch}>{t('backlog.createSearch')}</Button>
-          </div>
+            <div style={{ marginTop: 20 }} className="jobbacklog-cardList">
+              {sources.map((source) => (
+                <article key={source.id} className="jobbacklog-card">
+                  <div style={{ fontWeight: 800 }}>{source.name}</div>
+                  <div className="jobbacklog-subtle">{source.slug}</div>
+                  <div className="jobbacklog-actions">
+                    <span className="jobbacklog-pill">{source.kind}</span>
+                    <span className="jobbacklog-pill">{source.is_enabled ? 'active' : 'inactive'}</span>
+                    {'feed_key' in source.config ? <span className="jobbacklog-pill">{String(source.config.feed_key)}</span> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
 
-          <div style={{ marginTop: 26 }}>
-            <span className="jobbacklog-label">Recherches</span>
-            <div className="jobbacklog-searchList" style={{ marginTop: 12 }}>
+          <section className="jobbacklog-panel">
+            <span className="jobbacklog-label">{t('backlog.createSearch')}</span>
+            <div className="jobbacklog-form" style={{ marginTop: 14 }}>
+              <div className="jobbacklog-formSection">
+                <div className="jobbacklog-form">
+                  <input className="input" placeholder="Nom de la recherche" value={searchForm.name} onChange={(event) => setSearchForm((current) => ({ ...current, name: event.target.value }))} />
+                  <select className="input" value={searchForm.source_id} onChange={(event) => setSearchForm((current) => ({ ...current, source_id: event.target.value }))}>
+                    <option value="">Choisir une source</option>
+                    {sources.filter((source) => source.is_enabled).map((source) => (
+                      <option key={source.id} value={source.id}>{source.name}</option>
+                    ))}
+                  </select>
+                  <input className="input" placeholder={t('backlog.keywords')} value={searchForm.keywords} onChange={(event) => setSearchForm((current) => ({ ...current, keywords: event.target.value }))} />
+                  <input className="input" placeholder={t('backlog.excluded')} value={searchForm.excluded_keywords} onChange={(event) => setSearchForm((current) => ({ ...current, excluded_keywords: event.target.value }))} />
+                  <input className="input" placeholder={t('backlog.locations')} value={searchForm.locations} onChange={(event) => setSearchForm((current) => ({ ...current, locations: event.target.value }))} />
+                  <textarea className="input" placeholder={t('backlog.profile')} value={searchForm.profile_summary} onChange={(event) => setSearchForm((current) => ({ ...current, profile_summary: event.target.value }))} />
+                  <div className="jobbacklog-row">
+                    <select className="input" value={searchForm.contract_type} onChange={(event) => setSearchForm((current) => ({ ...current, contract_type: event.target.value }))}>
+                      <option value="CDI">CDI</option>
+                      <option value="FREELANCE">FREELANCE</option>
+                      <option value="ANY">ANY</option>
+                    </select>
+                    <select className="input" value={searchForm.remote_mode} onChange={(event) => setSearchForm((current) => ({ ...current, remote_mode: event.target.value }))}>
+                      <option value="ANY">ANY</option>
+                      <option value="REMOTE">REMOTE</option>
+                      <option value="HYBRID">HYBRID</option>
+                      <option value="ONSITE">ONSITE</option>
+                    </select>
+                    <input className="input" type="number" min={0} max={100} value={searchForm.min_score} onChange={(event) => setSearchForm((current) => ({ ...current, min_score: Number(event.target.value) }))} />
+                  </div>
+                </div>
+              </div>
+              <Button variant="primary" onClick={createSearch}>Creer la recherche</Button>
+            </div>
+
+            <div style={{ marginTop: 20 }} className="jobbacklog-cardList">
               {searches.length === 0 ? (
                 <div className="jobbacklog-empty">{t('backlog.noSearches')}</div>
               ) : searches.map((search) => (
                 <button
                   key={search.id}
                   type="button"
-                  className={`jobbacklog-searchCard ${activeSearchId === search.id ? 'is-active' : ''}`}
+                  className={`jobbacklog-card ${activeSearchId === search.id ? 'is-active' : ''}`}
                   onClick={() => setActiveSearchId(search.id)}
                 >
                   <div style={{ fontWeight: 800 }}>{search.name}</div>
                   <div className="jobbacklog-subtle">{search.keywords.join(', ')}</div>
                   <div className="jobbacklog-actions">
-                    <span className="jobbacklog-pill">{search.source}</span>
+                    <span className="jobbacklog-pill">{search.source_name || search.source}</span>
                     <span className="jobbacklog-pill">{search.contract_type}</span>
                     <span className="jobbacklog-pill">{search.remote_mode}</span>
                     <span className="jobbacklog-pill">{t('backlog.minScore')}: {search.min_score}</span>
@@ -468,10 +540,10 @@ export const JobBacklogPage: React.FC = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="jobbacklog-stack">
           <section className="jobbacklog-panel">
             <span className="jobbacklog-label">Annonces</span>
             <div className="jobbacklog-items" style={{ marginTop: 14 }}>

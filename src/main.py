@@ -139,12 +139,43 @@ async def api_monthly_applications(year: int = None):
 async def api_job_searches():
     return database.list_job_searches()
 
+@app.get("/api/job-sources")
+async def api_job_sources():
+    return database.list_job_sources()
+
+@app.post("/api/job-sources", status_code=201)
+async def api_create_job_source(data: dict):
+    if not data.get("name") or not data.get("slug") or not data.get("kind"):
+        raise HTTPException(status_code=400, detail="name, slug and kind are required")
+    return database.create_job_source(
+        name=data.get("name"),
+        slug=data.get("slug"),
+        kind=data.get("kind"),
+        config=data.get("config"),
+        is_enabled=bool(data.get("is_enabled", True)),
+    )
+
+@app.patch("/api/job-sources/{source_id}")
+async def api_update_job_source(source_id: int, data: dict):
+    success = database.update_job_source(source_id, data)
+    if not success:
+        raise HTTPException(status_code=400, detail="Update failed")
+    return {"success": True}
+
+@app.delete("/api/job-sources/{source_id}")
+async def api_delete_job_source(source_id: int):
+    success = database.delete_job_source(source_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Cannot delete source linked to searches")
+    return {"success": True}
+
 @app.post("/api/job-searches", status_code=201)
 async def api_create_job_search(data: dict):
     if not data.get("name") or not data.get("keywords"):
         raise HTTPException(status_code=400, detail="name and keywords are required")
     return database.create_job_search(
         name=data.get("name"),
+        source_id=data.get("source_id"),
         source=data.get("source", database.JOB_SOURCE_MOCK),
         source_config=data.get("source_config"),
         keywords=data.get("keywords"),

@@ -218,8 +218,15 @@ def test_response_received_event():
 
 def test_job_backlog_flow():
     with TestClient(app) as client:
+        sources_response = client.get("/api/job-sources")
+        assert sources_response.status_code == 200
+        sources = sources_response.json()
+        assert len(sources) >= 1
+        source_id = sources[0]["id"]
+
         create_response = client.post("/api/job-searches", json={
             "name": "Python remote",
+            "source_id": source_id,
             "keywords": ["python"],
             "excluded_keywords": ["data analyst"],
             "locations": ["Paris", "Remote"],
@@ -259,3 +266,25 @@ def test_job_backlog_flow():
         application_payload = application_response.json()
         assert application_payload["application"]["status"] == "INTERESTED"
         assert application_payload["application"]["source"].startswith("job_backlog:")
+
+def test_job_source_crud():
+    with TestClient(app) as client:
+        create_response = client.post("/api/job-sources", json={
+            "name": "WWR Frontend",
+            "slug": "wwr-frontend-test",
+            "kind": "rss",
+            "config": {"feed_key": "FRONTEND"},
+        })
+        assert create_response.status_code == 201
+        source = create_response.json()
+        assert source["slug"] == "wwr-frontend-test"
+
+        update_response = client.patch(f"/api/job-sources/{source['id']}", json={
+            "is_enabled": False,
+        })
+        assert update_response.status_code == 200
+
+        list_response = client.get("/api/job-sources")
+        assert list_response.status_code == 200
+        updated = next(item for item in list_response.json() if item["id"] == source["id"])
+        assert updated["is_enabled"] is False

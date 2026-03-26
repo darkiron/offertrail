@@ -23,6 +23,21 @@ WWR_RSS_FEEDS = {
     "DEVOPS": "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
 }
 
+DEFAULT_JOB_SOURCES = [
+    {
+        "slug": JOB_SOURCE_MOCK,
+        "name": "Mock board",
+        "kind": "mock",
+        "config": {},
+    },
+    {
+        "slug": JOB_SOURCE_WWR,
+        "name": "We Work Remotely RSS",
+        "kind": "rss",
+        "config": {"feed_key": "PROGRAMMING"},
+    },
+]
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -104,9 +119,22 @@ def init_db():
             )
         """)
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_sources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                config_json TEXT NOT NULL DEFAULT '{}',
+                is_enabled INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS job_searches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                source_id INTEGER,
                 source TEXT NOT NULL DEFAULT 'mock-board',
                 source_config_json TEXT NOT NULL DEFAULT '{}',
                 keywords_json TEXT NOT NULL,
@@ -118,16 +146,21 @@ def init_db():
                 min_score INTEGER NOT NULL DEFAULT 60,
                 auto_import INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (source_id) REFERENCES job_sources (id) ON DELETE SET NULL
             )
         """)
         job_search_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(job_searches)").fetchall()
         }
+        if "source_id" not in job_search_columns:
+            conn.execute("ALTER TABLE job_searches ADD COLUMN source_id INTEGER")
         if "source" not in job_search_columns:
             conn.execute("ALTER TABLE job_searches ADD COLUMN source TEXT NOT NULL DEFAULT 'mock-board'")
         if "source_config_json" not in job_search_columns:
             conn.execute("ALTER TABLE job_searches ADD COLUMN source_config_json TEXT NOT NULL DEFAULT '{}'")
+        _ensure_default_job_sources(conn)
+        _backfill_job_search_sources(conn)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS job_backlog_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -176,6 +209,28 @@ def init_db():
 def _utc_now():
     return datetime.now(timezone.utc).isoformat()
 
+def _ensure_default_job_sources(conn):
+    now = _utc_now()
+    for source in DEFAULT_JOB_SOURCES:
+        existing = conn.execute("SELECT id FROM job_sources WHERE slug = ?", (source["slug"],)).fetchone()
+        if existing:
+            continue
+        conn.execute(
+            """
+            INSERT INTO job_sources (slug, name, kind, config_json, is_enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 1, ?, ?)
+            """,
+            (source["slug"], source["name"], source["kind"], json.dumps(source["config"]), now, now)
+        )
+
+def _backfill_job_search_sources(conn):
+    rows = conn.execute("SELECT id, source FROM job_searches WHERE source_id IS NULL").fetchall()
+    for row in rows:
+        source_slug = row["source"] or JOB_SOURCE_MOCK
+        source = conn.execute("SELECT id FROM job_sources WHERE slug = ?", (source_slug,)).fetchone()
+        if source:
+            conn.execute("UPDATE job_searches SET source_id = ? WHERE id = ?", (source["id"], row["id"]))
+
 def _json_list(value):
     if not value:
         return []
@@ -204,6 +259,15 @@ def _serialize_job_search(row):
     data["excluded_keywords"] = _decode_json_list(data.pop("excluded_keywords_json", "[]"))
     data["locations"] = _decode_json_list(data.pop("locations_json", "[]"))
     data["auto_import"] = bool(data.get("auto_import"))
+    return data
+
+def _serialize_job_source(row):
+    data = dict(row)
+    try:
+        data["config"] = json.loads(data.pop("config_json", "{}"))
+    except json.JSONDecodeError:
+        data["config"] = {}
+    data["is_enabled"] = bool(data.get("is_enabled"))
     return data
 
 def _serialize_job_backlog_item(row):
@@ -396,21 +460,107 @@ def _score_job_backlog_item(search, item):
 
 def list_job_searches():
     with get_db() as conn:
-        rows = conn.execute("SELECT * FROM job_searches ORDER BY updated_at DESC, id DESC").fetchall()
+        rows = conn.execute(
+            """
+            SELECT js.*, src.name AS source_name, src.slug AS source_slug, src.kind AS source_kind
+            FROM job_searches js
+            LEFT JOIN job_sources src ON src.id = js.source_id
+            ORDER BY js.updated_at DESC, js.id DESC
+            """
+        ).fetchall()
         return [_serialize_job_search(row) for row in rows]
 
-def create_job_search(name, keywords, excluded_keywords=None, locations=None, contract_type="CDI", remote_mode="ANY", profile_summary=None, min_score=60, auto_import=False, source=JOB_SOURCE_MOCK, source_config=None):
+def list_job_sources():
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM job_sources ORDER BY updated_at DESC, id DESC").fetchall()
+        return [_serialize_job_source(row) for row in rows]
+
+def create_job_source(name, slug, kind, config=None, is_enabled=True):
     now = _utc_now()
     with get_db() as conn:
         cursor = conn.execute(
             """
+            INSERT INTO job_sources (slug, name, kind, config_json, is_enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                slug.strip(),
+                name.strip(),
+                kind.strip(),
+                json.dumps(config or {}),
+                1 if is_enabled else 0,
+                now,
+                now,
+            )
+        )
+        source_id = cursor.lastrowid
+        conn.commit()
+        row = conn.execute("SELECT * FROM job_sources WHERE id = ?", (source_id,)).fetchone()
+        return _serialize_job_source(row)
+
+def update_job_source(source_id, data):
+    now = _utc_now()
+    fields = []
+    params = []
+    for key, value in data.items():
+        if key == "config":
+            fields.append("config_json = ?")
+            params.append(json.dumps(value or {}))
+        elif key in {"slug", "name", "kind"}:
+            fields.append(f"{key} = ?")
+            params.append(str(value).strip())
+        elif key == "is_enabled":
+            fields.append("is_enabled = ?")
+            params.append(1 if value else 0)
+    if not fields:
+        return False
+    fields.append("updated_at = ?")
+    params.append(now)
+    params.append(source_id)
+    with get_db() as conn:
+        conn.execute(f"UPDATE job_sources SET {', '.join(fields)} WHERE id = ?", params)
+        conn.commit()
+        return True
+
+def delete_job_source(source_id):
+    with get_db() as conn:
+        search_count = conn.execute("SELECT COUNT(*) FROM job_searches WHERE source_id = ?", (source_id,)).fetchone()[0]
+        if search_count > 0:
+            return False
+        conn.execute("DELETE FROM job_sources WHERE id = ?", (source_id,))
+        conn.commit()
+        return True
+
+def create_job_search(name, keywords, excluded_keywords=None, locations=None, contract_type="CDI", remote_mode="ANY", profile_summary=None, min_score=60, auto_import=False, source=JOB_SOURCE_MOCK, source_config=None, source_id=None):
+    now = _utc_now()
+    with get_db() as conn:
+        resolved_source_id = source_id
+        source_row = None
+        if resolved_source_id:
+            source_row = conn.execute("SELECT * FROM job_sources WHERE id = ?", (resolved_source_id,)).fetchone()
+        elif source:
+            source_row = conn.execute("SELECT * FROM job_sources WHERE slug = ?", (source,)).fetchone()
+            if source_row:
+                resolved_source_id = source_row["id"]
+
+        if source_row:
+            source = source_row["slug"]
+            if not source_config:
+                try:
+                    source_config = json.loads(source_row["config_json"])
+                except json.JSONDecodeError:
+                    source_config = {}
+
+        cursor = conn.execute(
+            """
             INSERT INTO job_searches (
-                name, source, source_config_json, keywords_json, excluded_keywords_json, locations_json, contract_type,
+                name, source_id, source, source_config_json, keywords_json, excluded_keywords_json, locations_json, contract_type,
                 remote_mode, profile_summary, min_score, auto_import, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name.strip(),
+                resolved_source_id,
                 source or JOB_SOURCE_MOCK,
                 json.dumps(source_config or {}),
                 json.dumps(_json_list(keywords)),
@@ -427,12 +577,28 @@ def create_job_search(name, keywords, excluded_keywords=None, locations=None, co
         )
         search_id = cursor.lastrowid
         conn.commit()
-        row = conn.execute("SELECT * FROM job_searches WHERE id = ?", (search_id,)).fetchone()
+        row = conn.execute(
+            """
+            SELECT js.*, src.name AS source_name, src.slug AS source_slug, src.kind AS source_kind
+            FROM job_searches js
+            LEFT JOIN job_sources src ON src.id = js.source_id
+            WHERE js.id = ?
+            """,
+            (search_id,)
+        ).fetchone()
         return _serialize_job_search(row)
 
 def get_job_search(search_id):
     with get_db() as conn:
-        row = conn.execute("SELECT * FROM job_searches WHERE id = ?", (search_id,)).fetchone()
+        row = conn.execute(
+            """
+            SELECT js.*, src.name AS source_name, src.slug AS source_slug, src.kind AS source_kind
+            FROM job_searches js
+            LEFT JOIN job_sources src ON src.id = js.source_id
+            WHERE js.id = ?
+            """,
+            (search_id,)
+        ).fetchone()
         return _serialize_job_search(row) if row else None
 
 def list_job_backlog_items(search_id=None, status=None):

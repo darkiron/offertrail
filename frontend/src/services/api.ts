@@ -7,6 +7,7 @@ import type {
   PaginatedResponse,
   MonthlyInsights,
   JobSearch,
+  JobSource,
   JobBacklogItem,
   JobBacklogRun,
 } from '../types';
@@ -130,6 +131,22 @@ export const dashboardService = {
 };
 
 export const jobBacklogService = {
+  getSources: async () => {
+    const response = await axiosInstance.get<JobSource[]>('/api/job-sources');
+    return response.data;
+  },
+  createSource: async (data: Partial<JobSource> & { name: string; slug: string; kind: string }) => {
+    const response = await axiosInstance.post<JobSource>('/api/job-sources', data);
+    return response.data;
+  },
+  updateSource: async (id: number, data: Partial<JobSource>) => {
+    const response = await axiosInstance.patch(`/api/job-sources/${id}`, data);
+    return response.data;
+  },
+  deleteSource: async (id: number) => {
+    const response = await axiosInstance.delete(`/api/job-sources/${id}`);
+    return response.data;
+  },
   getSearches: async () => {
     const response = await axiosInstance.get<JobSearch[]>('/api/job-searches');
     return response.data;
