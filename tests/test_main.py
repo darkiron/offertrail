@@ -344,3 +344,81 @@ def test_job_backlog_filter_by_source():
         backlog = backlog_response.json()
         assert any(item["search_id"] == search["id"] for item in backlog["items"])
         assert any(run["search_id"] == search["id"] for run in backlog["runs"])
+
+def test_free_work_source_does_not_fallback_to_mock(monkeypatch):
+    unique_slug = f"free-work-test-{uuid4().hex[:8]}"
+    free_work_item = {
+        "source": unique_slug,
+        "external_id": "https://www.free-work.com/fr/tech-it/test-job",
+        "title": "Backend Symfony Engineer",
+        "company": "FreeWork Client",
+        "location": "Lyon, France",
+        "remote_mode": "REMOTE",
+        "contract_type": "FREELANCE",
+        "url": "https://www.free-work.com/fr/tech-it/test-job",
+        "description": "Symfony backend mission",
+        "published_at": "29/03/2026",
+        "salary_text": "500 €",
+    }
+
+    def fake_fetch_free_work_items(source_url, source_slug):
+        assert "free-work.com" in source_url
+        assert source_slug == unique_slug
+        return [free_work_item]
+
+    monkeypatch.setattr(database, "_fetch_free_work_items", fake_fetch_free_work_items)
+
+    with TestClient(app) as client:
+        create_source_response = client.post("/api/job-sources", json={
+            "name": "Free-work test",
+            "slug": unique_slug,
+            "kind": "rss",
+            "uri": "https://www.free-work.com/fr/tech-it/jobs?query=symfony",
+            "config": {},
+        })
+        assert create_source_response.status_code == 201
+        source = create_source_response.json()
+
+        create_search_response = client.post("/api/job-searches", json={
+            "name": "Free-work search",
+            "source_id": source["id"],
+            "keywords": ["symfony"],
+            "locations": ["Lyon"],
+            "contract_type": "FREELANCE",
+            "remote_mode": "ANY",
+            "min_score": 10,
+        })
+        assert create_search_response.status_code == 201
+        search = create_search_response.json()
+
+        run_response = client.post(f"/api/job-searches/{search['id']}/run")
+        assert run_response.status_code == 200
+        run_payload = run_response.json()
+        assert run_payload["fetched_count"] == 1
+        assert run_payload["items"][0]["source"] == unique_slug
+        assert run_payload["items"][0]["title"] == "Backend Symfony Engineer"
+        assert run_payload["items"][0]["title"] != "Python Backend Engineer"
+
+def test_job_search_items_are_not_rejected_by_default():
+    with TestClient(app) as client:
+        source_id = next(source["id"] for source in client.get("/api/job-sources").json() if source["slug"] == "mock-board")
+        create_response = client.post("/api/job-searches", json={
+            "name": f"No reject default {uuid4().hex[:6]}",
+            "source_id": source_id,
+            "keywords": ["unlikely-keyword"],
+            "locations": ["Paris"],
+            "contract_type": "CDI",
+            "remote_mode": "ANY",
+            "min_score": 95,
+        })
+        assert create_response.status_code == 201
+        search = create_response.json()
+
+        run_response = client.post(f"/api/job-searches/{search['id']}/run")
+        assert run_response.status_code == 200
+        run_payload = run_response.json()
+        run_items = [item for item in run_payload["items"] if item["run_id"] == run_payload["run_id"]]
+
+        assert run_items
+        assert all(item["status"] in {"NEW", "IMPORTED"} for item in run_items)
+        assert not any(item["status"] == "REJECTED" for item in run_items)

@@ -155,6 +155,16 @@ export interface JobBacklogRun {
   created_at: string;
 }
 
+export interface JobSearchRunResult {
+  run_id: number;
+  search: JobSearch;
+  fetched_count: number;
+  created_count: number;
+  imported_count: number;
+  error?: string | null;
+  items: JobBacklogItem[];
+}
+
 export interface JobSource {
   id: number;
   slug: string;

@@ -1,6 +1,6 @@
 # Runbook - OfferTrail
 
-Ce document sert à lancer, vérifier et dépanner le projet sans perdre de temps.
+Ce document sert a lancer, verifier et depanner le projet sans perdre de temps.
 
 ---
 
@@ -11,19 +11,19 @@ Le projet tourne avec :
 - un frontend React + Vite
 - une base SQLite locale
 
-Le dépôt contient aussi une phase de transition :
-- anciennes vues HTML encore présentes
-- API utilisée comme socle commun
-- migrations SQL pour faire évoluer le schéma
+Le depot contient aussi une phase de transition :
+- anciennes vues HTML encore presentes
+- API utilisee comme socle commun
+- migrations SQL pour faire evoluer le schema
 
 ---
 
-## Prérequis
+## Prerequis
 
 - Python 3.9+
 - npm
-- Windows + `make` disponible dans le terminal utilisé
-- idéalement un environnement virtuel Python
+- Windows + `make` disponible dans le terminal utilise
+- idealement un environnement virtuel Python
 
 ---
 
@@ -35,7 +35,7 @@ make install
 
 Cette commande :
 - installe `requirements.txt`
-- installe les dépendances du frontend dans `frontend/`
+- installe les dependances du frontend dans `frontend/`
 
 Si besoin, vous pouvez surcharger :
 
@@ -47,7 +47,7 @@ make install PYTHON=C:\Path\To\python.exe PIP=C:\Path\To\pip.exe NPM=C:\Path\To\
 
 ## Lancement
 
-### Stack complète
+### Stack complete
 
 ```bash
 make run
@@ -75,7 +75,7 @@ make run-front
 GET http://localhost:8000/health
 ```
 
-Réponse attendue :
+Reponse attendue :
 
 ```json
 {"status":"ok"}
@@ -85,7 +85,7 @@ Réponse attendue :
 
 ## Tests
 
-Le dépôt contient actuellement des tests Python centrés sur le backend et les vues historiques.
+Le depot contient actuellement des tests Python centres sur le backend et les vues historiques.
 
 Commande simple :
 
@@ -94,9 +94,23 @@ pytest
 ```
 
 Point d'attention :
-- une partie des tests reflète encore les anciennes vues HTML
-- la couverture React reste limitée
-- avec les changements `organization/contact`, certains tests historiques peuvent nécessiter une mise à jour
+- une partie des tests reflete encore les anciennes vues HTML
+- la couverture React reste limitee
+- avec les changements `organization/contact`, certains tests historiques peuvent necessiter une mise a jour
+
+### Cibler le backlog
+
+Pour valider rapidement la partie backlog sans relancer toute la suite :
+
+```bash
+.venv\Scripts\python.exe -m pytest tests\test_main.py -q
+```
+
+Ce bloc couvre notamment :
+- les sources backlog
+- les recherches
+- l'import backlog vers application
+- le cas `free-work` sans fallback vers le mock
 
 ---
 
@@ -118,49 +132,58 @@ python scripts/run_v5_migration.py
 
 Avant migration :
 - sauvegarder la base locale
-- vérifier quelle base est ciblée par le script
+- verifier quelle base est ciblee par le script
 
 Aujourd'hui :
 - `run_v4_migration.py` cible `offertrail_new.db`
 - `run_v5_migration.py` cible `offertrail.db`
 
-Ne pas lancer ces scripts à l'aveugle sur une base utile 🙂
+Ne pas lancer ces scripts a l'aveugle sur une base utile.
 
 ---
 
-## Dépannage rapide
+## Depannage rapide
 
-### Port déjà pris
+### Port deja pris
 
-Le backend utilise par défaut le port `8000` et le frontend `5173`.
-Si un port est déjà utilisé, relancer le service concerné avec une config adaptée.
+Le backend utilise par defaut le port `8000` et le frontend `5173`.
+Si un port est deja utilise, relancer le service concerne avec une config adaptee.
 
-### Python ou npm non trouvés
+### Python ou npm non trouves
 
 Surcharger `PYTHON`, `PIP` ou `NPM` dans les commandes `make`.
 
-### Erreurs de schéma SQLite
+### Erreurs de schema SQLite
 
-Vérifier :
-- la base réellement ouverte
-- le niveau de migration appliqué
-- la compatibilité entre schéma local et code courant
+Verifier :
+- la base reellement ouverte
+- le niveau de migration applique
+- la compatibilite entre schema local et code courant
 
-### UI incohérente entre écrans
+### UI incoherente entre ecrans
 
-Le dépôt mélange encore :
+Le depot melange encore :
 - vues HTML historiques
-- écrans React récents
+- ecrans React recents
 
-Si un comportement semble différent selon la route, vérifier d'abord si la page vient du front React ou d'un template serveur.
+Si un comportement semble different selon la route, verifier d'abord si la page vient du front React ou d'un template serveur.
+
+### Backlog trop complexe ou trompeur
+
+Le backlog est volontairement traite comme une feature simple :
+- une recherche recupere
+- le backlog affiche
+- l'import cree une application `INTERESTED`
+
+Si la logique de scoring, de statuts ou de source devient difficile a expliquer, revenir au document `docs/job-backlog.md` et privilegier le chemin le plus simple.
 
 ---
 
 ## Philosophie
 
-Si quelque chose casse, ce fichier doit aider à répondre vite à trois questions :
+Si quelque chose casse, ce fichier doit aider a repondre vite a trois questions :
 - comment reproduire
 - comment inspecter
-- comment revenir à un état compréhensible
+- comment revenir a un etat comprehensible
 
 Court, pratique, sans roman.

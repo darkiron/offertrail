@@ -1,8 +1,11 @@
 import sqlite3
 import json
 import httpx
+import re
 from datetime import datetime, timezone, timedelta
+from html import unescape
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 from xml.etree import ElementTree
 
 DB_PATH = Path("offertrail.db")
@@ -405,10 +408,122 @@ def _fetch_wwr_rss_items(source_config=None):
         })
     return items
 
-def _fetch_job_catalog(source, source_config=None):
+def _extract_free_work_contract_type(label):
+    lowered = (label or "").lower()
+    return "FREELANCE" if "freelance" in lowered else "CDI"
+
+def _extract_free_work_remote_mode(location, description):
+    lowered = f"{location or ''} {description or ''}".lower()
+    if "remote" in lowered or "télétravail" in lowered or "teletravail" in lowered:
+        return "REMOTE"
+    if "hybride" in lowered or "hybrid" in lowered:
+        return "HYBRID"
+    return "ONSITE"
+
+def _clean_html_text(value):
+    text = re.sub(r"<[^>]+>", " ", value or "")
+    text = unescape(text)
+    return re.sub(r"\s+", " ", text).strip()
+
+def _fetch_generic_rss_items(feed_url, source_slug):
+    with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+        response = client.get(feed_url, headers={"User-Agent": "OfferTrail/1.0 (+local backlog ingestion)"})
+        response.raise_for_status()
+
+    root = ElementTree.fromstring(response.text)
+    channel = root.find("channel")
+    if channel is None:
+        return []
+
+    items = []
+    for node in channel.findall("item"):
+        title = _extract_rss_text(node, "title") or "Untitled role"
+        link = _extract_rss_text(node, "link")
+        guid = _extract_rss_text(node, "guid") or link or title
+        description = _extract_rss_text(node, "description") or ""
+        pub_date = _extract_rss_text(node, "pubDate")
+
+        items.append({
+            "source": source_slug,
+            "external_id": guid,
+            "title": title.strip(),
+            "company": "Unknown company",
+            "location": None,
+            "remote_mode": None,
+            "contract_type": None,
+            "url": link,
+            "description": description,
+            "published_at": pub_date,
+            "salary_text": None,
+        })
+    return items
+
+def _fetch_free_work_items(source_url, source_slug):
+    with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+        response = client.get(source_url, headers={"User-Agent": "OfferTrail/1.0 (+local backlog ingestion)"})
+        response.raise_for_status()
+
+    html = response.text
+    pattern = re.compile(
+        r'<h3[^>]*>\s*<a href="(?P<url>[^"]+)"[^>]*>.*?<span class="block text-xs font-normal">\s*(?P<label>[^<]+)\s*</span>.*?<span class="fw-text-highlight">(?P<title>.*?)</span></a></h3>\s*'
+        r'<div class="flex items-center gap-2 justify-between mb-4 -mt-2">\s*<div class="text-base font-medium truncate w-full">\s*(?P<company>.*?)\s*</div>\s*<div class="text-sm whitespace-nowrap">\s*Publiée? le\s*<time>(?P<published_at>[^<]+)</time></div>\s*</div>.*?'
+        r'<div class="flex flex-wrap items-center gap-4 mb-4 w-full">(?P<meta>.*?)</div>\s*<div class="fw-text-highlight line-clamp-3 mb-4">(?P<description>.*?)</div>',
+        re.DOTALL,
+    )
+
+    items = []
+    for index, match in enumerate(pattern.finditer(html), start=1):
+        location_match = re.findall(r'<span title="([^"]+)" class="flex-1">', match.group("meta"))
+        location = unescape(location_match[-1]).strip() if location_match else None
+
+        salary_candidates = re.findall(r'<span class="flex-1">([^<]*(?:€|&euro;|&#8364;)[^<]*)</span>', match.group("meta"))
+        salary_text = _clean_html_text(salary_candidates[-1]) if salary_candidates else None
+
+        duration_candidates = re.findall(r'<span class="flex-1">\s*([^<]*?(?:jour|jours|mois|an|ans|semaine|semaines))\s*</span>', match.group("meta"))
+        contract_duration = _clean_html_text(duration_candidates[0]) if duration_candidates else None
+
+        description = _clean_html_text(match.group("description"))
+        if contract_duration and contract_duration not in description:
+            description = f"{contract_duration}. {description}".strip()
+
+        absolute_url = urljoin("https://www.free-work.com", unescape(match.group("url")))
+        items.append({
+            "source": source_slug,
+            "external_id": absolute_url,
+            "title": _clean_html_text(match.group("title")),
+            "company": _clean_html_text(match.group("company")) or "Unknown company",
+            "location": location,
+            "remote_mode": _extract_free_work_remote_mode(location, description),
+            "contract_type": _extract_free_work_contract_type(match.group("label")),
+            "url": absolute_url,
+            "description": description,
+            "published_at": _clean_html_text(match.group("published_at")),
+            "salary_text": salary_text,
+        })
+
+    if not items:
+        raise ValueError("Free-Work parsing returned no job cards")
+
+    return items
+
+def _fetch_job_catalog(source, source_config=None, source_details=None):
     if source == JOB_SOURCE_WWR:
         return _fetch_wwr_rss_items(source_config)
-    return _build_mock_job_catalog()
+    if source == JOB_SOURCE_MOCK:
+        return _build_mock_job_catalog()
+
+    source_details = source_details or {}
+    source_kind = source_details.get("kind")
+    source_uri = source_details.get("uri")
+    source_slug = source_details.get("slug") or source
+
+    if source_kind == "rss" and source_uri:
+        parsed = urlparse(source_uri)
+        if "free-work.com" in parsed.netloc:
+            return _fetch_free_work_items(source_uri, source_slug)
+        return _fetch_generic_rss_items(source_uri, source_slug)
+
+    raise ValueError(f"Unsupported job source: {source_slug}")
 
 def _score_job_backlog_item(search, item):
     haystack = " ".join([
@@ -486,6 +601,11 @@ def list_job_sources():
     with get_db() as conn:
         rows = conn.execute("SELECT * FROM job_sources ORDER BY updated_at DESC, id DESC").fetchall()
         return [_serialize_job_source(row) for row in rows]
+
+def get_job_source(source_id):
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM job_sources WHERE id = ?", (source_id,)).fetchone()
+        return _serialize_job_source(row) if row else None
 
 def create_job_source(name, slug, kind, uri=None, config=None, is_enabled=True):
     now = _utc_now()
@@ -712,8 +832,9 @@ def run_job_search(search_id):
         return None
 
     now = _utc_now()
+    source_details = get_job_source(search["source_id"]) if search.get("source_id") else None
     try:
-        catalog = _fetch_job_catalog(search["source"], search.get("source_config"))
+        catalog = _fetch_job_catalog(search["source"], search.get("source_config"), source_details)
     except Exception as exc:
         with get_db() as conn:
             cursor = conn.execute(
@@ -747,9 +868,18 @@ def run_job_search(search_id):
         )
         run_id = cursor.lastrowid
 
+        # Cleanup stale non-imported rows left from a previous source mismatch.
+        conn.execute(
+            """
+            DELETE FROM job_backlog_items
+            WHERE search_id = ? AND source != ? AND imported_application_id IS NULL
+            """,
+            (search_id, search["source"])
+        )
+
         for item in catalog:
             score, reasons = _score_job_backlog_item(search, item)
-            status = JOB_BACKLOG_STATUS_NEW if score >= search["min_score"] else JOB_BACKLOG_STATUS_REJECTED
+            status = JOB_BACKLOG_STATUS_NEW
             existing = conn.execute(
                 "SELECT id, status, imported_application_id FROM job_backlog_items WHERE source = ? AND external_id = ?",
                 (item["source"], item["external_id"])

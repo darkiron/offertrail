@@ -10,6 +10,7 @@ import type {
   JobSource,
   JobBacklogItem,
   JobBacklogRun,
+  JobSearchRunResult,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -164,13 +165,7 @@ export const jobBacklogService = {
     return response.data;
   },
   runSearch: async (id: number) => {
-    const response = await axiosInstance.post<{
-      run_id: number;
-      fetched_count: number;
-      created_count: number;
-      imported_count: number;
-      items: JobBacklogItem[];
-    }>(`/api/job-searches/${id}/run`);
+    const response = await axiosInstance.post<JobSearchRunResult>(`/api/job-searches/${id}/run`);
     return response.data;
   },
   getBacklog: async (params?: { search_id?: number; source_id?: number; status?: string }) => {
