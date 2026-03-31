@@ -1,3 +1,6 @@
+import secrets
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -9,8 +12,16 @@ from src.auth import (
     verify_password,
 )
 from src.database import get_db
-from src.models import User
-from src.schemas.auth import TokenResponse, UserCreate, UserSchema, UserUpdate
+from src.models import PasswordResetToken, User
+from src.schemas.auth import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+    UserCreate,
+    UserSchema,
+    UserUpdate,
+)
+from src.services.email import send_password_reset
 
 router = APIRouter()
 
@@ -72,3 +83,55 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return UserSchema.model_validate(current_user)
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    body: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    user = db.query(User).filter(User.email == body.email).first()
+
+    if user:
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used.is_(False),
+        ).update({"used": True})
+
+        token = secrets.token_urlsafe(32)
+        reset = PasswordResetToken(
+            user_id=user.id,
+            token=token,
+            expires_at=datetime.utcnow() + timedelta(hours=1),
+        )
+        db.add(reset)
+        db.commit()
+
+        reset_url = f"http://localhost:5173/reset-password?token={token}"
+        send_password_reset(user.email, reset_url)
+
+    return {"message": "Si cet email est enregistré, un lien de réinitialisation a été envoyé."}
+
+
+@router.post("/reset-password")
+def reset_password(
+    body: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    reset = (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.token == body.token,
+            PasswordResetToken.used.is_(False),
+            PasswordResetToken.expires_at > datetime.utcnow(),
+        )
+        .first()
+    )
+
+    if not reset:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré")
+
+    reset.user.hashed_password = hash_password(body.new_password)
+    reset.used = True
+    db.commit()
+    return {"message": "Mot de passe mis à jour avec succès."}

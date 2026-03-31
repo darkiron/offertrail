@@ -14,6 +14,8 @@ import { AuthProvider, useAuth, useRestoreAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
+import { ForgotPasswordPage } from './pages/ForgotPassword';
+import { ResetPasswordPage } from './pages/ResetPassword';
 
 const appStyles = `
   .app-shell {
@@ -187,6 +189,8 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
               <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />

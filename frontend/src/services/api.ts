@@ -116,6 +116,17 @@ export const authService = {
     const response = await axiosInstance.patch<AuthResponse['user']>('/auth/me', payload);
     return response.data;
   },
+  forgotPassword: async (email: string) => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/reset-password', {
+      token,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
 };
 
 export const organizationService = {
