@@ -2,7 +2,7 @@ PYTHON ?= .venv\Scripts\python
 PIP ?= .venv\Scripts\pip
 NPM ?= npm
 
-.PHONY: install run run-back run-front migrate reset-db clean
+.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean
 
 install:
 	$(PIP) install -r requirements.txt
@@ -19,6 +19,12 @@ run-front:
 
 migrate:
 	$(PYTHON) scripts/migrate_to_saas.py
+
+drop-legacy:
+	$(PYTHON) scripts/drop_legacy_tables.py
+
+db-diagnostic:
+	$(PYTHON) scripts/diagnostic.py
 
 reset-db:
 	del /f /q offertrail.db && $(PYTHON) -c "from src.database import init_db; init_db()"
