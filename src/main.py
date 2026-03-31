@@ -3,7 +3,8 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from . import database
+from . import legacy_database as database
+from .database import init_db as init_saas_db
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -11,6 +12,7 @@ from datetime import datetime
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     database.init_db()
+    init_saas_db()
     yield
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
