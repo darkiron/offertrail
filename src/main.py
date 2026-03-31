@@ -7,6 +7,7 @@ from . import legacy_database as database
 from .auth import start_scheduler
 from .database import init_db as init_saas_db
 from .routers import auth as auth_router
+from .routers import me as me_router
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -28,6 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(me_router.router, prefix="/me", tags=["me"])
 
 templates = Jinja2Templates(directory="src/templates")
 

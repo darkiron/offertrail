@@ -1,0 +1,85 @@
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class CandidatureCreate(BaseModel):
+    etablissement_id: str
+    succursale_id: Optional[str] = None
+    poste: str
+    url_offre: Optional[str] = None
+    description: Optional[str] = None
+    statut: str = "brouillon"
+    date_candidature: Optional[datetime] = None
+    date_reponse: Optional[datetime] = None
+    salaire_vise: Optional[int] = None
+    source: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class CandidatureSchema(BaseModel):
+    id: str
+    user_id: str
+    etablissement_id: str
+    succursale_id: Optional[str]
+    poste: str
+    url_offre: Optional[str]
+    description: Optional[str]
+    statut: str
+    date_candidature: Optional[datetime]
+    date_reponse: Optional[datetime]
+    salaire_vise: Optional[int]
+    source: Optional[str]
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EventSchema(BaseModel):
+    id: str
+    type: str
+    ancien_statut: Optional[str]
+    nouveau_statut: Optional[str]
+    contenu: Optional[str]
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedCandidatures(BaseModel):
+    items: list[CandidatureSchema]
+    total: int
+    page: int
+    per_page: int
+
+
+class StatItem(BaseModel):
+    label: str
+    value: float
+
+
+class MeStatsResponse(BaseModel):
+    total_candidatures: int
+    taux_refus: float
+    delai_moyen_reponse: Optional[float]
+    taux_reponse: float
+
+
+class PipelineBucket(BaseModel):
+    statut: str
+    count: int
+
+
+class RelanceSchema(BaseModel):
+    id: str
+    candidature_id: str
+    user_id: str
+    contact_id: Optional[str]
+    date_prevue: datetime
+    date_effectuee: Optional[datetime]
+    canal: Optional[str]
+    contenu: Optional[str]
+    statut: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)

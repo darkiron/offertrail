@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "changeme-avant-prod-utiliser-secrets-pytho
 ALGORITHM = "HS256"
 TOKEN_EXPIRE = 60 * 24 * 7  # 7 jours en minutes
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
