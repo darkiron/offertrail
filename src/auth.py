@@ -81,12 +81,24 @@ def get_current_user(
 
 
 def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
-    """Version legere : retourne juste le user_id sans requete BDD."""
-    payload = decode_token(token)
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Token invalide")
-    return user_id
+    """
+    Decode le JWT et retourne le user_id.
+    JAMAIS de fallback, JAMAIS de valeur par defaut.
+    Si le token est absent ou invalide -> 401 immediat.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token invalide ou expiré",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if not user_id:
+            raise credentials_exception
+        return user_id
+    except JWTError as exc:
+        raise credentials_exception from exc
 
 
 # ============================================================

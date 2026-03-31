@@ -7,7 +7,11 @@ from . import legacy_database as database
 from .auth import start_scheduler
 from .database import init_db as init_saas_db
 from .routers import auth as auth_router
+from .routers import candidatures as candidatures_router
+from .routers import candidature_events as candidature_events_router
+from .routers import contact_interactions as contact_interactions_router
 from .routers import me as me_router
+from .routers import relances as relances_router
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -29,6 +33,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(candidatures_router.router, prefix="/candidatures", tags=["candidatures"])
+app.include_router(relances_router.router, prefix="/relances", tags=["relances"])
+app.include_router(candidature_events_router.router, prefix="/candidature-events", tags=["candidature-events"])
+app.include_router(contact_interactions_router.router, prefix="/contact-interactions", tags=["contact-interactions"])
 app.include_router(me_router.router, prefix="/me", tags=["me"])
 
 templates = Jinja2Templates(directory="src/templates")
