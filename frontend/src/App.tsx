@@ -10,6 +10,10 @@ import { OrganizationsPage } from './pages/OrganizationsPage';
 import { OrganizationMaintenancePage } from './pages/OrganizationMaintenancePage';
 import { ContactsPage } from './pages/ContactsPage';
 import { I18nProvider, useI18n } from './i18n';
+import { AuthProvider, useAuth, useRestoreAuth } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoginPage } from './pages/Login';
+import { RegisterPage } from './pages/Register';
 
 const appStyles = `
   .app-shell {
@@ -131,6 +135,7 @@ const ThemeToggle: React.FC = () => {
 
 const Navbar: React.FC = () => {
   const { t } = useI18n();
+  const { isAuthenticated, logout, user } = useAuth();
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
@@ -142,15 +147,27 @@ const Navbar: React.FC = () => {
             <span className="app-brandMark">OT</span>
             <span>{t('nav.brand')}</span>
           </Link>
-          <div className="app-navLinks">
-            <Link to="/" className={`app-navLink ${isActive('/') && !isActive('/applications') ? 'is-active' : ''}`}>{t('nav.dashboard')}</Link>
-            <Link to="/applications" className={`app-navLink ${isActive('/applications') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
-            <Link to="/organizations" className={`app-navLink ${isActive('/organizations') || isActive('/companies') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
-            <Link to="/contacts" className={`app-navLink ${isActive('/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
-            <Link to="/import" className={`app-navLink ${isActive('/import') ? 'is-active' : ''}`}>{t('nav.import')}</Link>
-          </div>
+          {isAuthenticated ? (
+            <div className="app-navLinks">
+              <Link to="/" className={`app-navLink ${isActive('/') && !isActive('/applications') ? 'is-active' : ''}`}>{t('nav.dashboard')}</Link>
+              <Link to="/applications" className={`app-navLink ${isActive('/applications') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
+              <Link to="/organizations" className={`app-navLink ${isActive('/organizations') || isActive('/companies') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
+              <Link to="/contacts" className={`app-navLink ${isActive('/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
+              <Link to="/import" className={`app-navLink ${isActive('/import') ? 'is-active' : ''}`}>{t('nav.import')}</Link>
+            </div>
+          ) : null}
         </div>
-        <ThemeToggle />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {isAuthenticated ? (
+            <>
+              <span style={{ color: 'var(--text-dim)', fontSize: 14 }}>{user?.prenom || user?.email}</span>
+              <button onClick={logout} className="btn-ghost" style={{ padding: '0.45rem 0.7rem', borderRadius: 999 }}>
+                Logout
+              </button>
+            </>
+          ) : null}
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   );
@@ -158,6 +175,7 @@ const Navbar: React.FC = () => {
 
 function App() {
   const { t } = useI18n();
+  useRestoreAuth();
   return (
     <>
       <style>{appStyles}</style>
@@ -167,16 +185,18 @@ function App() {
 
           <main className="flex-grow">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/applications" element={<ApplicationsPage />} />
-              <Route path="/applications/:id" element={<ApplicationDetails />} />
-              <Route path="/organizations" element={<OrganizationsPage />} />
-              <Route path="/organizations/maintenance" element={<OrganizationMaintenancePage />} />
-              <Route path="/organizations/:id" element={<CompanyDetailsPage />} />
-              <Route path="/companies/:id" element={<CompanyDetailsPage />} />
-              <Route path="/contacts" element={<ContactsPage />} />
-              <Route path="/contacts/:id" element={<ContactDetailsPage />} />
-              <Route path="/import" element={<Import />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
+              <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
+              <Route path="/organizations" element={<ProtectedRoute><OrganizationsPage /></ProtectedRoute>} />
+              <Route path="/organizations/maintenance" element={<ProtectedRoute><OrganizationMaintenancePage /></ProtectedRoute>} />
+              <Route path="/organizations/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
+              <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
+              <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
+              <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
+              <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
             </Routes>
           </main>
 
@@ -191,7 +211,9 @@ function App() {
 
 const AppWithProviders: React.FC = () => (
   <I18nProvider>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </I18nProvider>
 );
 

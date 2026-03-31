@@ -1,11 +1,122 @@
 import axios from 'axios';
-import type {Application, Organization, Contact, DashboardData, PaginatedResponse, MonthlyInsights} from '../types';
+import type {
+  Application,
+  AuthResponse,
+  Contact,
+  DashboardData,
+  LoginCredentials,
+  MonthlyInsights,
+  Organization,
+  PaginatedResponse,
+  RegisterPayload,
+} from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const AUTH_STORAGE_KEY = 'offertrail.auth.token';
 
-const axiosInstance = axios.create({
+export interface ApplicationListParams {
+  status?: string;
+  type?: string;
+  source?: string;
+  search?: string;
+  show_hidden?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface DashboardParams {
+  status?: string;
+  type?: string;
+  source?: string;
+}
+
+export interface ApplicationPayload {
+  company?: string;
+  title?: string;
+  type?: string;
+  status?: string;
+  source?: string | null;
+  job_url?: string | null;
+  applied_at?: string | null;
+  next_followup_at?: string | null;
+  org_type?: string;
+  organization_id?: number | null;
+  final_customer_organization_id?: number | null;
+}
+
+export interface ApplicationDetailsResponse {
+  application: Application;
+  organization: Organization | null;
+  final_customer_organization: Organization | null;
+  events: Array<Record<string, unknown>>;
+  contacts: Contact[];
+  all_contacts: Contact[];
+}
+
+export interface ImportResponse {
+  total: number;
+  created: number;
+  skipped: number;
+  errors: Array<{ row: number; reason: string }>;
+}
+
+export const axiosInstance = axios.create({
   baseURL: API_URL,
 });
+
+export function setAuthToken(token: string | null): void {
+  if (token) {
+    axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
+  } else {
+    delete axiosInstance.defaults.headers.common.Authorization;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
+const initialToken = localStorage.getItem(AUTH_STORAGE_KEY);
+if (initialToken) {
+  setAuthToken(initialToken);
+}
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const authService = {
+  login: async (credentials: LoginCredentials) => {
+    const response = await axiosInstance.post<AuthResponse>(
+      '/auth/login',
+      new URLSearchParams({
+        username: credentials.email,
+        password: credentials.password,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
+    return response.data;
+  },
+  register: async (payload: RegisterPayload) => {
+    const response = await axiosInstance.post<AuthResponse>('/auth/register', payload);
+    return response.data;
+  },
+  me: async () => {
+    const response = await axiosInstance.get<AuthResponse['user']>('/auth/me');
+    return response.data;
+  },
+  updateMe: async (payload: Pick<RegisterPayload, 'prenom' | 'nom'>) => {
+    const response = await axiosInstance.patch<AuthResponse['user']>('/auth/me', payload);
+    return response.data;
+  },
+};
 
 export const organizationService = {
   getAll: async (params?: { type?: string; search?: string }) => {
@@ -21,11 +132,13 @@ export const organizationService = {
     return response.data;
   },
   update: async (id: number, data: Partial<Organization>) => {
-    const response = await axiosInstance.patch(`/api/organizations/${id}`, data);
+    const response = await axiosInstance.patch('/api/organizations/' + id, data);
     return response.data;
   },
-  merge: async (id: number, target_organization_id: number) => {
-    const response = await axiosInstance.post(`/api/organizations/${id}/merge`, { target_organization_id });
+  merge: async (id: number, targetOrganizationId: number) => {
+    const response = await axiosInstance.post(`/api/organizations/${id}/merge`, {
+      target_organization_id: targetOrganizationId,
+    });
     return response.data;
   },
   split: async (id: number, data: Partial<Organization> & { move_contacts?: boolean }) => {
@@ -60,25 +173,27 @@ export const contactService = {
     return response.data;
   },
   linkToApplication: async (contactId: number, applicationId: number) => {
-    const response = await axiosInstance.post(`/api/applications/${applicationId}/link-contact`, { contact_id: contactId });
+    const response = await axiosInstance.post(`/api/applications/${applicationId}/link-contact`, {
+      contact_id: contactId,
+    });
     return response.data;
   },
 };
 
 export const applicationService = {
-  getApplications: async (params?: any) => {
+  getApplications: async (params?: ApplicationListParams) => {
     const response = await axiosInstance.get<PaginatedResponse<Application>>('/api/applications', { params });
     return response.data;
   },
   getApplication: async (id: number) => {
-    const response = await axiosInstance.get<any>(`/api/applications/${id}`);
+    const response = await axiosInstance.get<ApplicationDetailsResponse>(`/api/applications/${id}`);
     return response.data;
   },
-  createApplication: async (data: any) => {
+  createApplication: async (data: ApplicationPayload) => {
     const response = await axiosInstance.post('/api/applications', data);
     return response.data;
   },
-  updateApplication: async (id: number, data: any) => {
+  updateApplication: async (id: number, data: ApplicationPayload) => {
     const response = await axiosInstance.patch(`/api/applications/${id}`, data);
     return response.data;
   },
@@ -90,41 +205,53 @@ export const applicationService = {
     const response = await axiosInstance.post(`/api/applications/${id}/followup`);
     return response.data;
   },
-  addEvent: async (id: number, event_type: string) => {
-    const response = await axiosInstance.post(`/api/applications/${id}/events`, { event_type });
+  addEvent: async (id: number, eventType: string) => {
+    const response = await axiosInstance.post(`/api/applications/${id}/events`, { event_type: eventType });
     return response.data;
   },
   linkContact: async (appId: number, contactId: number) => {
     const response = await axiosInstance.post(`/api/applications/${appId}/link-contact`, { contact_id: contactId });
     return response.data;
   },
-  createContact: async (appId: number, data: any) => {
+  createContact: async (
+    appId: number,
+    data: {
+      first_name?: string;
+      last_name?: string;
+      email?: string | null;
+      phone?: string | null;
+      organization_id?: number | null;
+      role?: string | null;
+      is_recruiter?: number;
+    },
+  ) => {
     const response = await axiosInstance.post(`/api/applications/${appId}/create-contact`, data);
     return response.data;
   },
   importTsv: async (tsv: string) => {
-    const response = await axiosInstance.post('/api/import', { tsv });
+    const response = await axiosInstance.post<ImportResponse>('/api/import', { tsv });
     return response.data;
-  }
+  },
 };
 
 export const dashboardService = {
-  getDashboardData: async (params?: any) => {
+  getDashboardData: async (params?: DashboardParams) => {
     const response = await axiosInstance.get<DashboardData>('/api/dashboard', { params });
     return response.data;
   },
   getMonthlyInsights: async (year?: number) => {
-    const response = await axiosInstance.get<MonthlyInsights>('/api/insights/monthly-applications', { params: { year } });
+    const response = await axiosInstance.get<MonthlyInsights>('/api/insights/monthly-applications', {
+      params: { year },
+    });
     return response.data;
   },
 };
 
-// Lightweight named API for legacy components expecting `api.getCompany`
 export const api = {
   getCompany: async (id: number) => {
     const response = await axiosInstance.get(`/api/companies/${id}`);
     return response.data;
-  }
+  },
 };
 
 export default axiosInstance;

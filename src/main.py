@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from . import legacy_database as database
+from .auth import start_scheduler
 from .database import init_db as init_saas_db
+from .routers import auth as auth_router
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -13,6 +15,7 @@ from datetime import datetime
 async def lifespan(app: FastAPI):
     database.init_db()
     init_saas_db()
+    start_scheduler()
     yield
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
@@ -24,6 +27,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 
 templates = Jinja2Templates(directory="src/templates")
 
