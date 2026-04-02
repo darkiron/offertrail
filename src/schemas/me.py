@@ -61,9 +61,12 @@ class StatItem(BaseModel):
 
 class MeStatsResponse(BaseModel):
     total_candidatures: int
+    pipeline_actif: int
     taux_refus: float
+    temps_moyen_reponse: Optional[float]
     delai_moyen_reponse: Optional[float]
     taux_reponse: float
+    relances_dues: int
 
 
 class PipelineBucket(BaseModel):

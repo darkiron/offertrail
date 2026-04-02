@@ -99,27 +99,54 @@ def get_my_stats(
 ) -> MeStatsResponse:
     candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
     total = len(candidatures)
+    due_relances = (
+        db.query(Relance)
+        .filter(
+            Relance.user_id == user_id,
+            Relance.statut == "a_faire",
+            Relance.date_prevue <= datetime.combine(date.today(), time.max),
+        )
+        .count()
+    )
     if total == 0:
         return MeStatsResponse(
             total_candidatures=0,
+            pipeline_actif=0,
             taux_refus=0,
+            temps_moyen_reponse=None,
             delai_moyen_reponse=None,
             taux_reponse=0,
+            relances_dues=0,
         )
 
+    envoyees = [
+        cand for cand in candidatures if cand.statut != "brouillon" or cand.date_candidature is not None
+    ]
+    total_envoyees = len(envoyees)
     refus = [cand for cand in candidatures if cand.statut == "refusee"]
-    repondues = [cand for cand in candidatures if cand.date_reponse is not None]
+    repondues = [
+        cand
+        for cand in candidatures
+        if cand.date_reponse is not None or cand.statut in {"refusee", "ghosting", "entretien", "offre_recue", "acceptee"}
+    ]
+    pipeline_actif = len(
+        [cand for cand in candidatures if cand.statut not in {"refusee", "abandonnee", "acceptee"}]
+    )
     delais = [
         (cand.date_reponse - cand.date_candidature).days
         for cand in repondues
         if cand.date_candidature is not None and cand.date_reponse is not None
     ]
+    avg_response = round(sum(delais) / len(delais), 2) if delais else None
 
     return MeStatsResponse(
         total_candidatures=total,
-        taux_refus=round(len(refus) / total * 100, 2),
-        delai_moyen_reponse=round(sum(delais) / len(delais), 2) if delais else None,
-        taux_reponse=round(len(repondues) / total * 100, 2),
+        pipeline_actif=pipeline_actif,
+        taux_refus=round(len(refus) / total_envoyees * 100, 2) if total_envoyees else 0,
+        temps_moyen_reponse=avg_response,
+        delai_moyen_reponse=avg_response,
+        taux_reponse=round(len(repondues) / total_envoyees * 100, 2) if total_envoyees else 0,
+        relances_dues=due_relances,
     )
 
 
@@ -128,14 +155,12 @@ def get_due_relances(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ) -> list[RelanceSchema]:
-    today_start = datetime.combine(date.today(), time.min)
     today_end = datetime.combine(date.today(), time.max)
     relances = (
         db.query(Relance)
         .filter(
             Relance.user_id == user_id,
             Relance.statut == "a_faire",
-            Relance.date_prevue >= today_start,
             Relance.date_prevue <= today_end,
         )
         .order_by(Relance.date_prevue.asc())

@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_current_user, get_current_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement
+from src.models import Candidature, CandidatureEvent, Etablissement, User
+from src.schemas.candidature_events import CandidatureEventSchema
 from src.schemas.candidatures import CandidatureCreate, CandidatureSchema, CandidatureUpdate
+from src.services.subscription import check_can_create
 
 router = APIRouter()
 
@@ -27,22 +29,28 @@ def list_candidatures(
 def create_candidature(
     body: CandidatureCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user: User = Depends(get_current_user),
 ) -> CandidatureSchema:
     etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
     if not etablissement:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    if body.client_final_id:
+        client_final = db.query(Etablissement).filter(Etablissement.id == body.client_final_id).first()
+        if not client_final:
+            raise HTTPException(status_code=404, detail="Client final introuvable")
+
+    check_can_create(db, user)
 
     cand = Candidature(
         **body.model_dump(exclude={"user_id"}),
-        user_id=user_id,
+        user_id=user.id,
     )
     db.add(cand)
     db.flush()
     db.add(
         CandidatureEvent(
             candidature_id=cand.id,
-            user_id=user_id,
+            user_id=user.id,
             type="creation",
             nouveau_statut=cand.statut,
             contenu="Candidature creee",
@@ -84,6 +92,15 @@ def update_candidature(
     if not cand:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
 
+    if body.etablissement_id:
+        etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
+        if not etablissement:
+            raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    if body.client_final_id:
+        client_final = db.query(Etablissement).filter(Etablissement.id == body.client_final_id).first()
+        if not client_final:
+            raise HTTPException(status_code=404, detail="Client final introuvable")
+
     for field, value in body.model_dump(exclude_unset=True).items():
         if field == "user_id":
             continue
@@ -92,6 +109,32 @@ def update_candidature(
     db.commit()
     db.refresh(cand)
     return CandidatureSchema.model_validate(cand)
+
+
+@router.get("/{candidature_id}/events", response_model=list[CandidatureEventSchema])
+def get_candidature_events(
+    candidature_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+) -> list[CandidatureEventSchema]:
+    cand = (
+        db.query(Candidature)
+        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
+        .first()
+    )
+    if not cand:
+        raise HTTPException(status_code=404, detail="Candidature introuvable")
+
+    events = (
+        db.query(CandidatureEvent)
+        .filter(
+            CandidatureEvent.candidature_id == candidature_id,
+            CandidatureEvent.user_id == user_id,
+        )
+        .order_by(CandidatureEvent.created_at.desc())
+        .all()
+    )
+    return [CandidatureEventSchema.model_validate(event) for event in events]
 
 
 @router.delete("/{candidature_id}", status_code=status.HTTP_204_NO_CONTENT)
