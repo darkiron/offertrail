@@ -14,6 +14,7 @@ from src.auth import (
 from src.database import get_db
 from src.models import PasswordResetToken, User
 from src.schemas.auth import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
     TokenResponse,
@@ -83,6 +84,21 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return UserSchema.model_validate(current_user)
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mot de passe actuel invalide")
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    return {"message": "Mot de passe mis a jour avec succes."}
 
 
 @router.post("/forgot-password")

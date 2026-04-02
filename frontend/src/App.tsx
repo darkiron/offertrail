@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationDetails } from './pages/ApplicationDetails';
@@ -16,6 +16,8 @@ import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { MonCompte } from './pages/MonCompte';
+import { Pricing } from './pages/Pricing';
 
 const appStyles = `
   .app-shell {
@@ -113,6 +115,91 @@ const appStyles = `
       flex-direction: column;
     }
   }
+
+  .app-userMenu {
+    position: relative;
+  }
+
+  .app-userBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .app-userBtn:hover {
+    background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+    color: var(--text-main);
+  }
+
+  .app-userBtn svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0.5;
+    transition: transform 0.15s;
+  }
+
+  .app-userBtn.is-open svg {
+    transform: rotate(180deg);
+  }
+
+  .app-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 180px;
+    background: var(--bg-mantle);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    border-radius: 12px;
+    padding: 6px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+
+  .app-dropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .app-dropdownItem:hover {
+    background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+    color: var(--text-main);
+  }
+
+  .app-dropdownItem.is-danger {
+    color: #f09595;
+  }
+
+  .app-dropdownItem.is-danger:hover {
+    background: rgba(80, 19, 19, 0.6);
+  }
+
+  .app-dropdownDivider {
+    height: 1px;
+    background: color-mix(in srgb, var(--border) 60%, transparent);
+    margin: 4px 6px;
+  }
 `;
 
 const ThemeToggle: React.FC = () => {
@@ -139,7 +226,28 @@ const Navbar: React.FC = () => {
   const { t } = useI18n();
   const { isAuthenticated, logout, user } = useAuth();
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    setDropdownOpen(false);
+    logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="app-nav">
@@ -151,7 +259,12 @@ const Navbar: React.FC = () => {
           </Link>
           {isAuthenticated ? (
             <div className="app-navLinks">
-              <Link to="/" className={`app-navLink ${isActive('/') && !isActive('/applications') ? 'is-active' : ''}`}>{t('nav.dashboard')}</Link>
+              <Link
+                to="/"
+                className={`app-navLink ${isActive('/') && !isActive('/applications') && !isActive('/organizations') && !isActive('/contacts') && !isActive('/import') ? 'is-active' : ''}`}
+              >
+                {t('nav.dashboard')}
+              </Link>
               <Link to="/applications" className={`app-navLink ${isActive('/applications') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
               <Link to="/organizations" className={`app-navLink ${isActive('/organizations') || isActive('/companies') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
               <Link to="/contacts" className={`app-navLink ${isActive('/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
@@ -159,14 +272,41 @@ const Navbar: React.FC = () => {
             </div>
           ) : null}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {isAuthenticated ? (
-            <>
-              <span style={{ color: 'var(--text-dim)', fontSize: 14 }}>{user?.prenom || user?.email}</span>
-              <button onClick={logout} className="btn-ghost" style={{ padding: '0.45rem 0.7rem', borderRadius: 999 }}>
-                Logout
+            <div className="app-userMenu" ref={dropdownRef}>
+              <button
+                className={`app-userBtn ${dropdownOpen ? 'is-open' : ''}`}
+                onClick={() => setDropdownOpen((o) => !o)}
+              >
+                {user?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
+                <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 1l4 4 4-4" />
+                </svg>
               </button>
-            </>
+
+              {dropdownOpen ? (
+                <div className="app-dropdown">
+                  <div style={{ padding: '8px 12px 6px', fontSize: '12px', color: 'var(--text-dim)' }}>
+                    {user?.email}
+                  </div>
+                  <div className="app-dropdownDivider" />
+
+                  <Link to="/mon-compte" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                    Mon compte
+                  </Link>
+                  <Link to="/pricing" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                    Abonnement
+                  </Link>
+
+                  <div className="app-dropdownDivider" />
+
+                  <button className="app-dropdownItem is-danger" onClick={handleLogout}>
+                    Se déconnecter
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
           <ThemeToggle />
         </div>
@@ -191,6 +331,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
               <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
@@ -201,6 +342,7 @@ function App() {
               <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
               <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
               <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+              <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
             </Routes>
           </main>
 

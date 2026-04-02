@@ -16,6 +16,11 @@ class UserUpdate(BaseModel):
     nom: Optional[str] = None
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=8)
+    new_password: str = Field(min_length=8)
+
+
 class UserSchema(BaseModel):
     id: str
     email: str

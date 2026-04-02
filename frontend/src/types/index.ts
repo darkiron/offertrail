@@ -126,3 +126,13 @@ export interface AuthResponse {
   token_type: string;
   user: AuthUser;
 }
+
+export interface SubscriptionStatus {
+  plan: 'starter' | 'pro' | string;
+  is_pro: boolean;
+  candidatures_count: number;
+  candidatures_max: number;
+  limite_atteinte: boolean;
+  alerte_80: boolean;
+  plan_started_at: string | null;
+}
