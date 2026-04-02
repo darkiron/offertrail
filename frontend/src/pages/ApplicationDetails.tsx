@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { applicationService, organizationService } from '../services/api';
 import ProbityBadge from '../components/atoms/ProbityBadge';
 import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
@@ -234,9 +234,11 @@ const pageStyles = `
 
 export const ApplicationDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
@@ -250,6 +252,11 @@ export const ApplicationDetails: React.FC = () => {
     role: '',
     is_recruiter: 0,
   });
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchDetails = async () => {
     if (!id) {
@@ -265,12 +272,23 @@ export const ApplicationDetails: React.FC = () => {
       setOrganizations(organizationsData);
       setFinalCustomerSearch(details.final_customer_organization?.name || '');
     } catch (fetchError: any) {
-      console.error('Error fetching application details:', fetchError);
-      setError('Failed to load application details.');
+      if (fetchError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (fetchError.response?.status === 402) {
+        navigate('/pricing?reason=limit_reached');
+        return;
+      }
+      setError(fetchError.response?.data?.detail || 'Impossible de charger le detail de la candidature.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    document.title = 'Candidature — OfferTrail';
+  }, []);
 
   useEffect(() => {
     fetchDetails();
@@ -280,8 +298,17 @@ export const ApplicationDetails: React.FC = () => {
     if (!id) {
       return;
     }
-    await applicationService.updateApplication(parseInt(id, 10), { status });
-    fetchDetails();
+    try {
+      await applicationService.updateApplication(parseInt(id, 10), { status });
+      showToast('Statut mis a jour');
+      fetchDetails();
+    } catch (updateError: any) {
+      if (updateError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      setError(updateError.response?.data?.detail || 'Impossible de mettre a jour le statut.');
+    }
   };
 
   const handleAddNote = async (event: React.FormEvent) => {
@@ -289,34 +316,50 @@ export const ApplicationDetails: React.FC = () => {
     if (!id || !newNote.trim()) {
       return;
     }
-    await applicationService.addNote(parseInt(id, 10), newNote);
-    setNewNote('');
-    fetchDetails();
+    try {
+      await applicationService.addNote(parseInt(id, 10), newNote);
+      setNewNote('');
+      fetchDetails();
+    } catch (noteError: any) {
+      setError(noteError.response?.data?.detail || 'Impossible d\'ajouter la note.');
+    }
   };
 
   const handleMarkFollowup = async () => {
     if (!id) {
       return;
     }
-    await applicationService.markFollowup(parseInt(id, 10));
-    fetchDetails();
+    try {
+      await applicationService.markFollowup(parseInt(id, 10));
+      fetchDetails();
+    } catch (followupError: any) {
+      setError(followupError.response?.data?.detail || 'Impossible de mettre a jour la relance.');
+    }
   };
 
   const handleResponseReceived = async () => {
     if (!id) {
       return;
     }
-    await applicationService.addEvent(parseInt(id, 10), 'RESPONSE_RECEIVED');
-    fetchDetails();
+    try {
+      await applicationService.addEvent(parseInt(id, 10), 'RESPONSE_RECEIVED');
+      fetchDetails();
+    } catch (eventError: any) {
+      setError(eventError.response?.data?.detail || 'Impossible d\'ajouter l\'evenement.');
+    }
   };
 
   const handleLinkContact = async (contactId: number) => {
     if (!id) {
       return;
     }
-    await applicationService.linkContact(parseInt(id, 10), contactId);
-    setShowContactModal(false);
-    fetchDetails();
+    try {
+      await applicationService.linkContact(parseInt(id, 10), contactId);
+      setShowContactModal(false);
+      fetchDetails();
+    } catch (linkError: any) {
+      setError(linkError.response?.data?.detail || 'Impossible de lier le contact.');
+    }
   };
 
   const handleCreateContact = async (event: React.FormEvent) => {
@@ -325,30 +368,38 @@ export const ApplicationDetails: React.FC = () => {
       return;
     }
     const orgId = data?.organization?.id;
-    await applicationService.createContact(parseInt(id, 10), {
-      ...contactForm,
-      organization_id: orgId,
-    });
-    setContactForm({
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      role: '',
-      is_recruiter: 0,
-    });
-    setShowContactModal(false);
-    fetchDetails();
+    try {
+      await applicationService.createContact(parseInt(id, 10), {
+        ...contactForm,
+        organization_id: orgId,
+      });
+      setContactForm({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        role: '',
+        is_recruiter: 0,
+      });
+      setShowContactModal(false);
+      fetchDetails();
+    } catch (createError: any) {
+      setError(createError.response?.data?.detail || 'Impossible de creer le contact.');
+    }
   };
 
   const handleSetFinalCustomer = async (organizationId: number | null) => {
     if (!id) {
       return;
     }
-    await applicationService.updateApplication(parseInt(id, 10), {
-      final_customer_organization_id: organizationId,
-    });
-    fetchDetails();
+    try {
+      await applicationService.updateApplication(parseInt(id, 10), {
+        final_customer_organization_id: organizationId,
+      });
+      fetchDetails();
+    } catch (customerError: any) {
+      setError(customerError.response?.data?.detail || 'Impossible de mettre a jour le client final.');
+    }
   };
 
   const statusOptions = [
@@ -456,6 +507,24 @@ export const ApplicationDetails: React.FC = () => {
   return (
     <div className="appdetail-shell">
       <style>{pageStyles}</style>
+
+      {toast ? (
+        <div style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          zIndex: 9999,
+          padding: '10px 18px',
+          borderRadius: '8px',
+          background: 'rgba(16, 185, 129, 0.18)',
+          color: '#86efac',
+          border: '1px solid rgba(16, 185, 129, 0.34)',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          {toast}
+        </div>
+      ) : null}
 
       {showContactModal ? (
         <div className="appdetail-modalOverlay" onClick={() => setShowContactModal(false)}>

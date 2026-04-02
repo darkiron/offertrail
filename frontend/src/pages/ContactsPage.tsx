@@ -183,6 +183,9 @@ export const ContactsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<ContactTab>('all');
   const navigate = useNavigate();
+  useEffect(() => {
+    document.title = 'Contacts — OfferTrail';
+  }, []);
   const tabs: Array<{ id: ContactTab; label: string; hint: string }> = [
     { id: 'all', label: `◌ ${t('contacts.tabAll')}`, hint: t('contacts.tabAllHint') },
     { id: 'recruiters', label: `◎ ${t('contacts.tabRecruiters')}`, hint: t('contacts.tabRecruitersHint') },
