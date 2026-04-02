@@ -135,6 +135,7 @@ class Candidature(Base):
     id               = Column(String, primary_key=True, default=gen_uuid)
     user_id          = Column(String, ForeignKey("users.id"), nullable=False)
     etablissement_id = Column(String, ForeignKey("etablissements.id"), nullable=False)
+    client_final_id  = Column(String, ForeignKey("etablissements.id"), nullable=True)
     succursale_id    = Column(String, ForeignKey("succursales.id"), nullable=True)
     poste            = Column(String, nullable=False)
     url_offre        = Column(String)
@@ -150,7 +151,8 @@ class Candidature(Base):
 
     # Relations
     user          = relationship("User", foreign_keys=[user_id])
-    etablissement = relationship("Etablissement")
+    etablissement = relationship("Etablissement", foreign_keys=[etablissement_id])
+    client_final  = relationship("Etablissement", foreign_keys=[client_final_id])
     succursale    = relationship("Succursale")
     events        = relationship("CandidatureEvent", back_populates="candidature",
                                  cascade="all, delete-orphan",
@@ -259,6 +261,9 @@ class User(Base):
     nom          = Column(String)
     prenom       = Column(String)
     plan         = Column(String, default="starter")   # starter | pro
+    plan_started_at = Column(DateTime, nullable=True)
+    plan_expires_at = Column(DateTime, nullable=True)
+    stripe_customer_id = Column(String, nullable=True)
     is_active    = Column(Boolean, default=True)
     created_at   = Column(DateTime, default=now)
     updated_at   = Column(DateTime, default=now, onupdate=now)

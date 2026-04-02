@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 class CandidatureCreate(BaseModel):
     etablissement_id: str
+    client_final_id: Optional[str] = None
     succursale_id: Optional[str] = None
     poste: str
     url_offre: Optional[str] = None
@@ -20,6 +21,7 @@ class CandidatureCreate(BaseModel):
 
 class CandidatureUpdate(BaseModel):
     etablissement_id: Optional[str] = None
+    client_final_id: Optional[str] = None
     succursale_id: Optional[str] = None
     poste: Optional[str] = None
     url_offre: Optional[str] = None
@@ -36,6 +38,7 @@ class CandidatureSchema(BaseModel):
     id: str
     user_id: str
     etablissement_id: str
+    client_final_id: Optional[str]
     succursale_id: Optional[str]
     poste: str
     url_offre: Optional[str]

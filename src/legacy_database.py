@@ -2,6 +2,7 @@ import sqlite3
 import json
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 DB_PATH = Path("offertrail.db")
 
@@ -9,6 +10,34 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _table_columns(conn, table_name):
+    return {row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
+
+
+def _uses_saas_contact_schema(conn):
+    columns = _table_columns(conn, "contacts")
+    return "prenom" in columns and "first_name" not in columns
+
+
+def _legacy_contact_select():
+    return """
+        SELECT
+            c.id,
+            c.etablissement_id AS organization_id,
+            c.prenom AS first_name,
+            c.nom AS last_name,
+            c.email_pro AS email,
+            NULL AS phone,
+            c.poste AS role,
+            0 AS is_recruiter,
+            c.linkedin_url,
+            NULL AS notes,
+            c.created_at,
+            c.updated_at
+        FROM contacts c
+    """
 
 def init_db():
     with get_db() as conn:
@@ -225,13 +254,24 @@ def list_applications(filters=None, search=None, show_hidden=False, limit=None, 
 
     if search:
         search_term = f"%{search.strip()}%"
-        search_clause = """
-            (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
-                SELECT 1 FROM application_contacts ac 
-                JOIN contacts c ON ac.contact_id = c.id 
-                WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
-            ))
-        """
+        with get_db() as conn:
+            uses_saas_contacts = _uses_saas_contact_schema(conn)
+        if uses_saas_contacts:
+            search_clause = """
+                (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
+                    SELECT 1 FROM application_contacts ac
+                    JOIN contacts c ON ac.contact_id = c.id
+                    WHERE ac.application_id = a.id AND (c.prenom LIKE ? OR c.nom LIKE ? OR c.email_pro LIKE ?)
+                ))
+            """
+        else:
+            search_clause = """
+                (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
+                    SELECT 1 FROM application_contacts ac 
+                    JOIN contacts c ON ac.contact_id = c.id 
+                    WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
+                ))
+            """
         where_clauses.append(search_clause)
         params.extend([search_term, search_term, search_term, search_term, search_term, search_term])
 
@@ -289,13 +329,24 @@ def count_applications(filters=None, search=None, show_hidden=False):
 
     if search:
         search_term = f"%{search.strip()}%"
-        search_clause = """
-            (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
-                SELECT 1 FROM application_contacts ac 
-                JOIN contacts c ON ac.contact_id = c.id 
-                WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
-            ))
-        """
+        with get_db() as conn:
+            uses_saas_contacts = _uses_saas_contact_schema(conn)
+        if uses_saas_contacts:
+            search_clause = """
+                (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
+                    SELECT 1 FROM application_contacts ac
+                    JOIN contacts c ON ac.contact_id = c.id
+                    WHERE ac.application_id = a.id AND (c.prenom LIKE ? OR c.nom LIKE ? OR c.email_pro LIKE ?)
+                ))
+            """
+        else:
+            search_clause = """
+                (a.company LIKE ? OR a.title LIKE ? OR fc.name LIKE ? OR EXISTS (
+                    SELECT 1 FROM application_contacts ac 
+                    JOIN contacts c ON ac.contact_id = c.id 
+                    WHERE ac.application_id = a.id AND (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ?)
+                ))
+            """
         where_clauses.append(search_clause)
         params.extend([search_term, search_term, search_term, search_term, search_term, search_term])
 
@@ -309,14 +360,24 @@ def count_applications(filters=None, search=None, show_hidden=False):
 def create_contact(first_name, last_name, email=None, phone=None, organization_id=None, role=None, is_recruiter=0, linkedin_url=None, notes=None):
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO contacts (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, now, now)
-        )
-        contact_id = cursor.lastrowid
+        if _uses_saas_contact_schema(conn):
+            contact_id = str(uuid4())
+            conn.execute(
+                """
+                INSERT INTO contacts (id, etablissement_id, succursale_id, prenom, nom, poste, linkedin_url, email_pro, created_by, created_at, updated_at)
+                VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NULL, ?, ?)
+                """,
+                (contact_id, organization_id, first_name, last_name, role, linkedin_url, email, now, now)
+            )
+        else:
+            cursor = conn.execute(
+                """
+                INSERT INTO contacts (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (organization_id, first_name, last_name, email, phone, role, is_recruiter, linkedin_url, notes, now, now)
+            )
+            contact_id = cursor.lastrowid
         log_event(conn, "contact", contact_id, "CONTACT_CREATED", {
             "organization_id": organization_id,
             "first_name": first_name,
@@ -450,19 +511,28 @@ def get_organization_stats(org_id):
         }
 
 def list_contacts(filters=None):
-    query = "SELECT * FROM contacts"
-    params = []
-    if filters and filters.get("organization_id"):
-        query += " WHERE organization_id = ?"
-        params.append(filters["organization_id"])
-    
-    query += " ORDER BY last_name ASC, first_name ASC"
     with get_db() as conn:
+        params = []
+        if _uses_saas_contact_schema(conn):
+            query = _legacy_contact_select()
+            if filters and filters.get("organization_id"):
+                query += " WHERE c.etablissement_id = ?"
+                params.append(filters["organization_id"])
+            query += " ORDER BY c.nom ASC, c.prenom ASC"
+        else:
+            query = "SELECT * FROM contacts"
+            if filters and filters.get("organization_id"):
+                query += " WHERE organization_id = ?"
+                params.append(filters["organization_id"])
+            query += " ORDER BY last_name ASC, first_name ASC"
         return [dict(row) for row in conn.execute(query, params).fetchall()]
 
 def get_contact(contact_id):
     with get_db() as conn:
-        row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if _uses_saas_contact_schema(conn):
+            row = conn.execute(_legacy_contact_select() + " WHERE c.id = ?", (contact_id,)).fetchone()
+        else:
+            row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
         return dict(row) if row else None
 
 def get_applications_for_contact(contact_id):
@@ -618,19 +688,33 @@ def update_contact(contact_id, data):
     now = datetime.now(timezone.utc).isoformat()
     fields = []
     params = []
-    for k, v in data.items():
-        if k in ['organization_id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_recruiter', 'linkedin_url', 'notes']:
-            fields.append(f"{k} = ?")
-            params.append(v)
-            
-    if not fields:
-        return False
-        
-    fields.append("updated_at = ?")
-    params.append(now)
-    params.append(contact_id)
-    
     with get_db() as conn:
+        if _uses_saas_contact_schema(conn):
+            field_map = {
+                "organization_id": "etablissement_id",
+                "first_name": "prenom",
+                "last_name": "nom",
+                "email": "email_pro",
+                "role": "poste",
+                "linkedin_url": "linkedin_url",
+            }
+            for k, v in data.items():
+                column = field_map.get(k)
+                if column:
+                    fields.append(f"{column} = ?")
+                    params.append(v)
+        else:
+            for k, v in data.items():
+                if k in ['organization_id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_recruiter', 'linkedin_url', 'notes']:
+                    fields.append(f"{k} = ?")
+                    params.append(v)
+
+        if not fields:
+            return False
+
+        fields.append("updated_at = ?")
+        params.append(now)
+        params.append(contact_id)
         conn.execute(f"UPDATE contacts SET {', '.join(fields)} WHERE id = ?", params)
         log_event(conn, "contact", contact_id, "UPDATED", data)
         conn.commit()
@@ -665,14 +749,23 @@ def link_contact_to_application(application_id, contact_id):
 
 def get_contacts_for_application(application_id):
     with get_db() as conn:
-        rows = conn.execute(
-            """
-            SELECT c.* FROM contacts c
-            JOIN application_contacts ac ON c.id = ac.contact_id
-            WHERE ac.application_id = ?
-            """,
-            (application_id,)
-        ).fetchall()
+        if _uses_saas_contact_schema(conn):
+            rows = conn.execute(
+                _legacy_contact_select() + """
+                JOIN application_contacts ac ON c.id = ac.contact_id
+                WHERE ac.application_id = ?
+                """,
+                (application_id,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT c.* FROM contacts c
+                JOIN application_contacts ac ON c.id = ac.contact_id
+                WHERE ac.application_id = ?
+                """,
+                (application_id,)
+            ).fetchall()
         return [dict(row) for row in rows]
 
 def list_followups():

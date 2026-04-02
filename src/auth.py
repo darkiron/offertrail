@@ -67,7 +67,7 @@ def decode_token(token: str) -> dict:
 # ============================================================
 def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(lambda: next(get_db())),
+    db: Session = Depends(get_db),
 ) -> User:
     payload = decode_token(token)
     user_id = payload.get("sub")
@@ -107,7 +107,7 @@ def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
 def own_candidature(
     candidature_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(lambda: next(get_db())),
+    db: Session = Depends(get_db),
 ) -> Candidature:
     """
     Equivalent RLS : user_id = auth.uid() sur candidatures.
@@ -125,7 +125,7 @@ def own_candidature(
 def contact_visible_by_user(
     contact_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(lambda: next(get_db())),
+    db: Session = Depends(get_db),
 ) -> Contact:
     """
     Equivalent de la policy contacts_visible_par_contexte.
@@ -164,6 +164,8 @@ def _user_can_see_contact(db: Session, user_id: str, contact: Contact) -> bool:
         ets_contact = db.query(Etablissement).filter(
             Etablissement.id == contact.etablissement_id
         ).first()
+        if ets_contact and ets_contact.created_by == user_id:
+            return True
         if ets_contact and ets_contact.siege_id:
             groupe_ids = {
                 e.id
@@ -174,6 +176,9 @@ def _user_can_see_contact(db: Session, user_id: str, contact: Contact) -> bool:
             groupe_ids.add(ets_contact.siege_id)
             if user_ets_ids & groupe_ids:
                 return True
+
+    if contact.created_by == user_id:
+        return True
 
     return False
 
@@ -191,6 +196,10 @@ def get_visible_contacts(
     user_cands = db.query(Candidature).filter(Candidature.user_id == user_id).all()
     user_ets_ids = {c.etablissement_id for c in user_cands}
     user_succ_ids = {c.succursale_id for c in user_cands if c.succursale_id}
+    owned_ets_ids = {
+        etablissement_id
+        for (etablissement_id,) in db.query(Etablissement.id).filter(Etablissement.created_by == user_id).all()
+    }
 
     groupe_ets_ids: set[str] = set()
     if user_ets_ids:
@@ -200,7 +209,7 @@ def get_visible_contacts(
             filiales = db.query(Etablissement).filter(Etablissement.siege_id.in_(siege_ids)).all()
             groupe_ets_ids = {e.id for e in filiales} | siege_ids
 
-    visible_ets = user_ets_ids | groupe_ets_ids
+    visible_ets = user_ets_ids | groupe_ets_ids | owned_ets_ids
 
     from sqlalchemy import or_
 
@@ -208,6 +217,7 @@ def get_visible_contacts(
         or_(
             Contact.succursale_id.in_(user_succ_ids) if user_succ_ids else False,
             Contact.etablissement_id.in_(visible_ets) if visible_ets else False,
+            Contact.created_by == user_id,
         )
     )
 

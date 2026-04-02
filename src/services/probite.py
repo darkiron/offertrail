@@ -6,9 +6,8 @@ Tourne toutes les heures via APScheduler.
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case
 
-from models import Candidature, ProbiteScore
+from src.models import Candidature, ProbiteScore
 
 
 # Statuts exclus du calcul (brouillons et abandons ne comptent pas)
@@ -44,7 +43,8 @@ def recompute_probite_scores(db: Session) -> int:
     # Grouper par ETS
     ets_groups: dict[str, list[Candidature]] = {}
     for c in candidatures:
-        ets_groups.setdefault(c.etablissement_id, []).append(c)
+        effective_ets_id = c.client_final_id or c.etablissement_id
+        ets_groups.setdefault(effective_ets_id, []).append(c)
 
     updated = 0
     for ets_id, cands in ets_groups.items():
