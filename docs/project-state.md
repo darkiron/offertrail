@@ -1,112 +1,46 @@
-# Etat du projet - branche et historique
+# État du projet — 2026-04-02
 
-Ce document résume l'état du projet à partir de l'historique Git et de la branche de travail actuelle.
+## Ce qui fonctionne
+- L'authentification JWT locale fonctionne avec inscription, connexion, profil courant, changement de mot de passe et restauration de session.
+- Les routes CRUD principales existent côté backend pour les candidatures, relances, événements de candidature, établissements et abonnement.
+- Le frontend React couvre les écrans principaux : tableau de bord, candidatures, détail candidature, établissements, contacts, import, compte et pricing.
+- Les dépendances d'authentification `get_current_user` et `get_current_user_id` sont présentes sur les routes SaaS principales.
+- Les schémas Pydantic sont définis pour les routers SaaS audités.
+- Les contrôles de propriété sur les candidatures et relances utilisent le pattern `id + user_id`, ce qui masque correctement les ressources absentes.
+- Le plan starter/pro est branché de bout en bout avec bannière d'alerte, endpoint `/subscription/me`, upgrade local et garde 402 à la création.
+- Les établissements disposent d'une couche SaaS dédiée et d'un flux d'édition front cohérent.
 
----
+## Ce qui était cassé et a été corrigé dans ce ticket
+- CORS dans `src/main.py` resserré sur `http://localhost:5173`.
+- `GET /health` aligné sur le contrat `{ "status": "ok", "version": "0.1.0" }`.
+- `GET /me/stats` enrichi avec `pipeline_actif`, `relances_dues` et `temps_moyen_reponse`.
+- `GET /me/relances/dues` corrigé pour couvrir `date_prevue <= aujourd'hui`.
+- Ajout de `GET /candidatures/{id}/events`.
+- Suppression des `print()` backend restants au profit du logging.
+- Suppression des `console.*` frontend restants dans le périmètre du ticket.
+- Ajout des titres de pages principaux, de feedbacks visuels et d'états vides plus explicites.
 
-## Lecture rapide
+## Ce qui reste cassé / fragile
+- `src/main.py` mélange encore vues HTML legacy, routes `/api/...` de compatibilité et routers SaaS récents.
+- Le frontend mélange encore des endpoints legacy `/api/...` avec les routes SaaS sur `contacts` et `import`.
+- Les endpoints de maintenance ETS `merge` / `split` ne sont pas encore stabilisés côté backend.
+- Plusieurs textes UI et messages backend historiques gardent des problèmes d'encodage.
 
-OfferTrail a évolué en plusieurs étapes :
+## Ce qui est manquant
+- Endpoint SaaS dédié pour les contacts, afin de sortir définitivement de `/api/contacts`.
+- Endpoint SaaS dédié pour l'import, afin de sortir de `/api/import`.
+- Tests plus larges côté frontend React.
+- Finalisation d'un flux de maintenance ETS complet avec fusion/scission réelles.
 
-1. base locale simple pour suivre des candidatures
-2. ajout de KPI et d'un historique d'événements
-3. introduction d'un front React
-4. séparation progressive entre candidatures, organisations et contacts
-5. montée d'une lecture plus qualitative du pipeline via les stats d'organisation
+## Dette technique identifiée
+- `src/auth.py` garde des imports historiques fragiles sans préfixe `src` dans certains chemins d'exécution.
+- Le frontend conserve une couche de compatibilité d'IDs hashés pour faire cohabiter ancien et nouveau modèle.
+- Les composants UI ne sont pas encore totalement homogènes malgré l'harmonisation des boutons et badges de statut.
+- La base legacy SQLite et la base SaaS cohabitent encore avec plusieurs adaptations de compatibilité.
 
----
-
-## Ce que raconte l'historique Git
-
-### Socle initial
-
-Les premiers commits posent :
-- un backend FastAPI minimal
-- des vues HTML serveur
-- une logique locale simple
-- une base SQLite légère
-
-### Montée des KPI et du dashboard
-
-L'historique montre ensuite :
-- un dashboard plus riche
-- des métriques mensuelles
-- une meilleure lecture du volume de candidatures
-
-### Bascule progressive vers React
-
-Plusieurs branches dédiées ont introduit :
-- le frontend React + Vite
-- la parité progressive avec les vues historiques
-- du theming et des composants UI
-
-### Evolution métier récente
-
-Depuis `dev`, la branche `feat/organizations-contacts-probity` apporte surtout :
-- le passage du concept `company` vers `organization`
-- des endpoints API pour les organisations et les contacts
-- des pages React dédiées pour consulter ces entités
-- des statistiques de réponse / ghosting / probité
-- des migrations SQL pour accompagner la transition du schéma
-
----
-
-## Comparaison avec `dev`
-
-Par rapport à `origin/dev`, la branche courante ajoute un bloc fonctionnel clair :
-
-- organisation comme entité métier structurée
-- contact comme entité autonome
-- compatibilité API maintenue sur certaines routes historiques
-- migration du backend pour supporter ce nouveau modèle
-- nouvelles vues React pour explorer ce portefeuille
-
-En clair :
-le projet n'est plus seulement un tracker de candidatures, il devient un outil de lecture relationnelle du pipeline 🙂
-
----
-
-## Etat de la branche actuelle
-
-### Déjà dans l'historique
-
-Les commits récents visibles montrent :
-- séparation company / organization
-- ajout de métriques organisation
-- pages organisations / contacts
-- ajustements API / types / migrations
-- nettoyage du README
-
-### Encore en worktree local
-
-Le worktree courant contient aussi un volume important de changements non commités, notamment sur :
-- pages React détaillées
-- modales de création / édition
-- i18n
-- maintenance des organisations
-- enrichissements backend associés
-
-Conclusion :
-- la direction produit est claire
-- la doc doit refléter ce cap
-- mais tout ce qui est en worktree ne doit pas être présenté comme complètement stabilisé
-
----
-
-## Conseils de discipline Git
-
-Le dépôt gagne à garder la logique actuelle :
-- `main` propre
-- `dev` pour intégrer
-- une branche par intention
-- commits courts et conventionnels avec smiley
-
-Exemples adaptés au projet :
-- `✨ feat: add org detail page`
-- `🧱 feat: add contact api`
-- `♻️ refactor: rename company to organization`
-- `📝 docs: refresh project state`
-- `🐛 fix: handle missing org data`
-
-Le vrai nettoyage de l'historique ici n'est pas de tout compacter.
-C'est de garder des commits courts, lisibles et homogènes d'une intention à l'autre.
+## À faire dans les prochains tickets
+- Séparer clairement les routes legacy de compatibilité et les routes SaaS stabilisées.
+- Remplacer progressivement les endpoints frontend legacy `/api/...` restants par des routes SaaS dédiées.
+- Corriger les problèmes d'encodage dans les messages UI, emails simulés et chaînes backend.
+- Étendre les tests API autour des KPIs dashboard, de la visibilité 404 et des routes établissements.
+- Finaliser un vrai lot produit dédié à la maintenance ETS.

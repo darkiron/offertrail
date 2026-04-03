@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { applicationService, organizationService } from '../services/api';
 import type { Application, Organization } from '../types';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
@@ -95,6 +95,10 @@ const pageStyles = `
     border-collapse: collapse;
   }
 
+  .applications-tableWrap {
+    overflow-x: auto;
+  }
+
   .applications-table th {
     padding: 14px 16px;
     text-align: left;
@@ -144,6 +148,7 @@ const pageStyles = `
 
 export const ApplicationsPage: React.FC = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [apps, setApps] = useState<Application[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [totalApps, setTotalApps] = useState(0);
@@ -155,6 +160,7 @@ export const ApplicationsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const statusOptions = [
     { value: '', label: 'Tous' },
     { value: 'INTERESTED', label: statusLabelMap.INTERESTED },
@@ -164,6 +170,11 @@ export const ApplicationsPage: React.FC = () => {
     { value: 'REJECTED', label: statusLabelMap.REJECTED },
   ];
 
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3000);
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -172,22 +183,36 @@ export const ApplicationsPage: React.FC = () => {
         applicationService.getApplications({
           search: searchTerm,
           status: statusFilter,
-          show_hidden: showHidden ? 'yes' : undefined,
           page,
           limit,
         }),
         organizationService.getAll(),
       ]);
-      setApps(appsResponse.items);
-      setTotalApps(appsResponse.total);
+      const includeRejected = showHidden || statusFilter === 'REJECTED';
+      const visibleItems = includeRejected
+        ? appsResponse.items
+        : appsResponse.items.filter((item) => item.status !== 'REJECTED');
+      setApps(visibleItems);
+      setTotalApps(visibleItems.length);
       setOrganizations(orgsData);
-    } catch (fetchError) {
-      console.error('Error fetching applications:', fetchError);
-      setError('Impossible de charger les candidatures.');
+    } catch (fetchError: any) {
+      if (fetchError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (fetchError.response?.status === 402) {
+        navigate('/pricing?reason=limit_reached');
+        return;
+      }
+      setError(fetchError.response?.data?.detail || 'Impossible de charger les candidatures.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    document.title = 'Candidatures — OfferTrail';
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -203,7 +228,33 @@ export const ApplicationsPage: React.FC = () => {
     <div className="applications-shell">
       <style>{pageStyles}</style>
 
-      {showModal ? <NewApplicationModal onClose={() => setShowModal(false)} onCreated={fetchData} /> : null}
+      {showModal ? (
+        <NewApplicationModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => {
+            showToast('Candidature ajoutee');
+            fetchData();
+          }}
+        />
+      ) : null}
+
+      {toast ? (
+        <div style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          zIndex: 9999,
+          padding: '10px 18px',
+          borderRadius: '8px',
+          background: 'rgba(16, 185, 129, 0.18)',
+          color: '#86efac',
+          border: '1px solid rgba(16, 185, 129, 0.34)',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          {toast}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="alert alert-error">
@@ -303,7 +354,10 @@ export const ApplicationsPage: React.FC = () => {
                 })}
                 {apps.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="applications-empty">Aucune candidature ne correspond aux filtres.</td>
+                    <td colSpan={5} className="applications-empty">
+                      <div style={{ fontSize: '15px', marginBottom: '8px' }}>Aucune candidature pour l'instant.</div>
+                      <div style={{ fontSize: '13px' }}>Commence par en ajouter une.</div>
+                    </td>
                   </tr>
                 ) : null}
               </tbody>

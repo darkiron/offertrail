@@ -78,9 +78,16 @@ export interface KPIs {
   avg_response_time: number | null;
 }
 
+export interface MonthlyKpis {
+  created: number;
+  responses: number;
+  rejected: number;
+  followups_due: number;
+}
+
 export interface DashboardData {
   kpis: KPIs;
-  monthly_kpis: any[];
+  monthly_kpis: MonthlyKpis;
   sources: string[];
   followups: Application[];
 }
@@ -93,4 +100,39 @@ export interface MonthlyStats {
 export interface MonthlyInsights {
   year: number;
   months: MonthlyStats[];
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  prenom: string | null;
+  nom: string | null;
+  plan: string;
+  created_at: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload extends LoginCredentials {
+  prenom?: string;
+  nom?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: AuthUser;
+}
+
+export interface SubscriptionStatus {
+  plan: 'starter' | 'pro' | string;
+  is_pro: boolean;
+  candidatures_count: number;
+  candidatures_max: number;
+  limite_atteinte: boolean;
+  alerte_80: boolean;
+  plan_started_at: string | null;
 }

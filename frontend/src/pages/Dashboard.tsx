@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { dashboardService, applicationService, organizationService } from '../services/api';
-import type { Application, Organization, DashboardData, MonthlyInsights } from '../types';
+import { dashboardService, applicationService, organizationService, subscriptionService } from '../services/api';
+import type { Application, Organization, DashboardData, MonthlyInsights, SubscriptionStatus } from '../types';
 import { KPICard } from '../components/molecules/KPICard';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import MonthlyApplicationsChart from '../components/organisms/MonthlyApplicationsChart';
@@ -10,6 +10,7 @@ import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
 import StatusBadge, { statusLabelMap } from '../components/atoms/StatusBadge';
 import { Button } from '../components/atoms/Button';
 import { useI18n } from '../i18n';
+import { PlanLimitBanner } from '../components/PlanLimitBanner';
 
 const pageStyles = `
   .dashboard-shell {
@@ -141,7 +142,7 @@ const pageStyles = `
   }
 
   .dashboard-tableWrap {
-    overflow: hidden;
+    overflow-x: auto;
   }
 
   .dashboard-table {
@@ -250,6 +251,8 @@ export const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const statusOptions = [
     { value: '', label: 'Tous' },
     { value: 'INTERESTED', label: statusLabelMap.INTERESTED },
@@ -259,27 +262,44 @@ export const Dashboard: React.FC = () => {
     { value: 'REJECTED', label: statusLabelMap.REJECTED },
   ];
 
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3000);
+  };
+
   const fetchData = async () => {
     try {
       setError(null);
-      const [dashboardData, appsResponse, orgsData] = await Promise.all([
+      const [dashboardData, appsResponse, orgsData, subscriptionData] = await Promise.all([
         dashboardService.getDashboardData(),
         applicationService.getApplications({
           search: searchTerm,
           status: statusFilter,
-          show_hidden: showHidden ? 'yes' : undefined,
           page,
           limit,
         }),
         organizationService.getAll(),
+        subscriptionService.getMe(),
       ]);
+      const includeRejected = showHidden || statusFilter === 'REJECTED';
+      const visibleItems = includeRejected
+        ? appsResponse.items
+        : appsResponse.items.filter((item) => item.status !== 'REJECTED');
       setData(dashboardData);
-      setApps(appsResponse.items);
-      setTotalApps(appsResponse.total);
+      setApps(visibleItems);
+      setTotalApps(visibleItems.length);
       setFollowups(dashboardData.followups);
       setOrganizations(orgsData);
-    } catch (fetchError) {
-      console.error('Error fetching dashboard data:', fetchError);
+      setSub(subscriptionData);
+    } catch (fetchError: any) {
+      if (fetchError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (fetchError.response?.status === 402) {
+        navigate('/pricing?reason=limit_reached');
+        return;
+      }
       setError('Impossible de charger le tableau de bord.');
     } finally {
       setLoading(false);
@@ -291,14 +311,21 @@ export const Dashboard: React.FC = () => {
     try {
       const insightsData = await dashboardService.getMonthlyInsights();
       setInsights(insightsData);
-    } catch (fetchError) {
-      console.error('Error fetching insights:', fetchError);
+    } catch (fetchError: any) {
+      if (fetchError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
     } finally {
       setLoadingInsights(false);
     }
   };
 
   const orgMap = useMemo(() => new Map(organizations.map((organization) => [organization.id, organization])), [organizations]);
+
+  useEffect(() => {
+    document.title = 'Tableau de bord — OfferTrail';
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -317,10 +344,14 @@ export const Dashboard: React.FC = () => {
   const handleMarkFollowup = async (id: number) => {
     try {
       await applicationService.markFollowup(id);
+      showToast('Relance mise a jour');
       fetchData();
-    } catch (updateError) {
-      console.error('Error marking follow-up as done:', updateError);
-      setError('Impossible de mettre a jour la relance.');
+    } catch (updateError: any) {
+      if (updateError.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      setError(updateError.response?.data?.detail || 'Impossible de mettre a jour la relance.');
     }
   };
 
@@ -348,12 +379,39 @@ export const Dashboard: React.FC = () => {
     <div className="dashboard-shell">
       <style>{pageStyles}</style>
 
-      {showModal ? <NewApplicationModal onClose={() => setShowModal(false)} onCreated={fetchData} /> : null}
+      {showModal ? (
+        <NewApplicationModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => {
+            showToast('Candidature ajoutee');
+            fetchData();
+          }}
+        />
+      ) : null}
 
       {error ? (
         <div className="alert alert-error">
           <span>{error}</span>
           <button className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }} onClick={fetchData}>Retry</button>
+        </div>
+      ) : null}
+
+      <PlanLimitBanner sub={sub} />
+      {toast ? (
+        <div style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          zIndex: 9999,
+          padding: '10px 18px',
+          borderRadius: '8px',
+          background: 'rgba(16, 185, 129, 0.18)',
+          color: '#86efac',
+          border: '1px solid rgba(16, 185, 129, 0.34)',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          {toast}
         </div>
       ) : null}
 
@@ -482,7 +540,8 @@ export const Dashboard: React.FC = () => {
                   {apps.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="dashboard-empty">
-                        {t('dashboard.noApplications')}
+                        <div style={{ fontSize: '15px', marginBottom: '8px' }}>Aucune candidature pour l'instant.</div>
+                        <div style={{ fontSize: '13px' }}>Commence par en ajouter une.</div>
                       </td>
                     </tr>
                   ) : null}

@@ -459,6 +459,10 @@ export const OrganizationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<OrganizationTab>('all');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = 'Établissements — OfferTrail';
+  }, []);
+
   const fetchOrganizations = async () => {
     setLoading(true);
     setError(null);
