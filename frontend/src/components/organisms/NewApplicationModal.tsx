@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { applicationService, organizationService } from '../../services/api';
 import type { Organization, OrganizationType } from '../../types';
 import ProbityBadge from '../atoms/ProbityBadge';
@@ -155,6 +156,7 @@ const organizationTypeOptions: Array<{ value: OrganizationType; label: string }>
 
 export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClose, onCreated }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     company: '',
     title: '',
@@ -241,7 +243,16 @@ export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClos
       onCreated();
       onClose();
     } catch (submitError: any) {
-      console.error('Failed to create application', submitError);
+      if (submitError.response?.status === 402) {
+        onClose();
+        navigate('/pricing?reason=limit_reached');
+        return;
+      }
+      if (submitError.response?.status === 401) {
+        onClose();
+        navigate('/login');
+        return;
+      }
       setError(submitError.response?.data?.detail || t('newApplication.createError'));
     } finally {
       setLoading(false);

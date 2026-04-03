@@ -8,6 +8,10 @@ export const Import: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    document.title = 'Import — OfferTrail';
+  }, []);
+
   const handleImport = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!tsv.trim()) {
@@ -22,8 +26,7 @@ export const Import: React.FC = () => {
         setTsv('');
       }
     } catch (importError: any) {
-      console.error('Import failed', importError);
-      setError(importError.response?.data?.detail || 'Echec de l’import. Verifie le format TSV.');
+      setError(importError.response?.data?.detail || "Echec de l'import. Verifie le format TSV.");
     } finally {
       setLoading(false);
     }
@@ -32,7 +35,7 @@ export const Import: React.FC = () => {
   return (
     <div className="container mt-lg">
       <div className="flex justify-between items-center mb-lg">
-        <h1 className="text-xxl font-bold">⇪ Import des candidatures</h1>
+        <h1 className="text-xxl font-bold">Import des candidatures</h1>
         <Link to="/" className="btn-ghost">Retour au tableau de bord</Link>
       </div>
 
@@ -43,7 +46,7 @@ export const Import: React.FC = () => {
         </div>
       ) : null}
 
-      <div className="grid" style={{ gridTemplateColumns: '1fr 300px', gap: 'var(--spacing-lg)' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 'var(--spacing-lg)' }}>
         <div className="card">
           <h2 className="text-lg font-bold mb-md">Donnees TSV</h2>
           <p className="text-sm text-dim mb-md">
@@ -56,10 +59,10 @@ export const Import: React.FC = () => {
               style={{ minHeight: '300px', fontFamily: 'monospace', fontSize: '12px' }}
               value={tsv}
               onChange={(event) => setTsv(event.target.value)}
-              placeholder="Entreprise	Poste	Type	Source	Statut..."
+              placeholder={'Entreprise\tPoste\tType\tSource\tStatut...'}
             />
             <button type="submit" className="btn-primary mt-md w-full flex items-center justify-center gap-sm" disabled={loading}>
-              {loading ? 'Import en cours...' : 'Lancer l’import'}
+              {loading ? 'Import en cours...' : "Lancer l'import"}
             </button>
           </form>
         </div>
