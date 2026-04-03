@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user, get_current_user_id
+from src.auth import get_current_user_id
 from src.database import get_db
 from src.models import Candidature, CandidatureEvent, Etablissement, User
 from src.schemas.candidature_events import CandidatureEventSchema
@@ -29,8 +29,12 @@ def list_candidatures(
 def create_candidature(
     body: CandidatureCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user_id),
 ) -> CandidatureSchema:
+    user = db.query(User.id, User.plan).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+
     etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
     if not etablissement:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
@@ -39,25 +43,26 @@ def create_candidature(
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
-    check_can_create(db, user)
+    plan_holder = db.query(User).filter(User.id == user_id).first()
+    check_can_create(db, plan_holder)
 
     cand = Candidature(
         **body.model_dump(exclude={"user_id"}),
-        user_id=user.id,
+        user_id=user_id,
     )
     db.add(cand)
     db.flush()
     db.add(
         CandidatureEvent(
             candidature_id=cand.id,
-            user_id=user.id,
+            user_id=user_id,
             type="creation",
             nouveau_statut=cand.statut,
             contenu="Candidature creee",
         )
     )
     db.commit()
-    db.refresh(cand)
+    cand = db.query(Candidature).filter(Candidature.id == cand.id).first()
     return CandidatureSchema.model_validate(cand)
 
 
@@ -101,13 +106,34 @@ def update_candidature(
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
-    for field, value in body.model_dump(exclude_unset=True).items():
-        if field == "user_id":
-            continue
-        setattr(cand, field, value)
-
+    updates = {
+        field: value
+        for field, value in body.model_dump(exclude_unset=True).items()
+        if field != "user_id"
+    }
+    old_status = cand.statut
+    if updates:
+        db.query(Candidature).filter(
+            Candidature.id == candidature_id,
+            Candidature.user_id == user_id,
+        ).update(updates)
+        new_status = updates.get("statut")
+        if new_status and new_status != old_status:
+            db.add(
+                CandidatureEvent(
+                    candidature_id=candidature_id,
+                    user_id=user_id,
+                    type="statut_change",
+                    ancien_statut=old_status,
+                    nouveau_statut=new_status,
+                )
+            )
     db.commit()
-    db.refresh(cand)
+    cand = (
+        db.query(Candidature)
+        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
+        .first()
+    )
     return CandidatureSchema.model_validate(cand)
 
 
