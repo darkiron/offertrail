@@ -2,7 +2,7 @@ PYTHON ?= .venv\Scripts\python
 PIP ?= .venv\Scripts\pip
 NPM ?= npm
 
-.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean
+.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage
 
 install:
 	$(PIP) install -r requirements.txt
@@ -25,6 +25,22 @@ drop-legacy:
 
 db-diagnostic:
 	$(PYTHON) scripts/diagnostic.py
+
+test:
+	$(PYTHON) -m pytest tests/test_auth.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_candidatures.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_etablissements.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_isolation.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_subscription.py -v --tb=short
+
+test-isolation:
+	$(PYTHON) -m pytest tests/test_isolation.py -v
+
+test-coverage:
+	$(PYTHON) -m coverage erase
+	$(PYTHON) -m pytest tests/test_auth.py tests/test_candidatures.py --cov=src.auth --cov=src.database --cov=src.models --cov=src.routers.auth --cov=src.routers.candidatures --cov=src.routers.etablissements --cov=src.routers.subscription --cov=src.services.subscription --cov-report=
+	$(PYTHON) -m pytest tests/test_etablissements.py tests/test_isolation.py tests/test_subscription.py --cov=src.auth --cov=src.database --cov=src.models --cov=src.routers.auth --cov=src.routers.candidatures --cov=src.routers.etablissements --cov=src.routers.subscription --cov=src.services.subscription --cov-report= --cov-append
+	$(PYTHON) -m coverage report --show-missing --fail-under=80
 
 reset-db:
 	del /f /q offertrail.db && $(PYTHON) -c "from src.database import init_db; init_db()"
