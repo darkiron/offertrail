@@ -444,7 +444,10 @@
         <div class="brand-mark">OT</div>
         OfferTrail
       </a>
-      <a href="/register" class="nav-cta" data-register-link>Creer mon compte</a>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/login" class="btn-ghost" data-login-link>Connexion</a>
+        <a href="/register" class="nav-cta" data-register-link>Creer mon compte</a>
+      </div>
     </nav>
   </div>
 
@@ -612,6 +615,9 @@
     }
     document.querySelectorAll("[data-register-link]").forEach((link) => {
       link.setAttribute("href", origin ? `${origin}/register` : "/register");
+    });
+    document.querySelectorAll("[data-login-link]").forEach((link) => {
+      link.setAttribute("href", origin ? `${origin}/login` : "/login");
     });
     document.querySelectorAll("[data-app-link]").forEach((link) => {
       link.setAttribute("href", origin || "/");
