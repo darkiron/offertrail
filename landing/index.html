@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OfferTrail - Pilote ta recherche d'emploi</title>
-  <meta name="description" content="Suis tes candidatures, mesure tes taux de reponse, ne rate plus aucune relance. Essai gratuit de 14 jours.">
+  <meta name="description" content="Suis tes candidatures, mesure tes taux de reponse, ne rate plus aucune relance. OfferTrail, 9EUR par mois.">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -91,9 +91,9 @@
 
     .hero-badge {
       display: inline-block;
-      background: rgba(56,189,248,0.12);
-      color: var(--accent);
-      border: 1px solid rgba(56,189,248,0.25);
+      background: rgba(37,99,235,0.16);
+      color: #93c5fd;
+      border: 1px solid rgba(147,197,253,0.24);
       font-size: 12px;
       font-weight: 600;
       padding: 4px 14px;
@@ -205,6 +205,123 @@
     .stat-num { font-size: 28px; font-weight: 800; color: var(--accent); }
     .stat-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
 
+    .dashboard-mock {
+      padding: 24px;
+      background:
+        radial-gradient(circle at top right, rgba(56,189,248,0.14), transparent 30%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.3fr .9fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(13,13,15,0.72);
+      padding: 18px;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text2);
+      margin-bottom: 14px;
+    }
+
+    .pipeline-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .pipeline-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .pipeline-item strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .pipeline-item span {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .status-pill.relance { background: rgba(245,158,11,0.14); color: #fbbf24; }
+    .status-pill.entretien { background: rgba(59,130,246,0.14); color: #93c5fd; }
+    .status-pill.attente { background: rgba(148,163,184,0.14); color: #cbd5e1; }
+
+    .mini-chart {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .signal-card {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(56,189,248,0.18);
+      background: rgba(56,189,248,0.08);
+    }
+
+    .signal-card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .signal-card p {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
     .features {
       max-width: 1000px;
       margin: 0 auto;
@@ -247,11 +364,12 @@
     .pricing-sub { color: var(--text2); margin-bottom: 40px; }
 
     .pricing-card {
-      background: rgba(56,189,248,0.06);
-      border: 1px solid var(--accent);
+      background: linear-gradient(180deg, rgba(56,189,248,0.08), rgba(37,99,235,0.08));
+      border: 1px solid rgba(56,189,248,0.32);
       border-radius: 16px;
       padding: 28px;
       text-align: left;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.22);
     }
 
     .plan-name {
@@ -290,7 +408,7 @@
       gap: 6px;
     }
 
-    .plan-features li::before { content: "->"; color: var(--accent); }
+    .plan-features li::before { content: "+"; color: var(--accent); }
 
     .cta-final {
       text-align: center;
@@ -313,6 +431,10 @@
     @media (max-width: 600px) {
       .stats-row { gap: 20px; }
     }
+
+    @media (max-width: 820px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -322,12 +444,12 @@
         <div class="brand-mark">OT</div>
         OfferTrail
       </a>
-      <a href="https://app.offertrail.fr/register" class="nav-cta">Essayer 14 jours</a>
+      <a href="https://app.offertrail.fr/register" class="nav-cta">Creer mon compte</a>
     </nav>
   </div>
 
   <section class="hero">
-    <div class="hero-badge">Essai gratuit de 14 jours</div>
+    <div class="hero-badge">Pilotage clair. Tarif simple.</div>
     <h1>Ta recherche d'emploi<br><span>sans perdre le fil.</span></h1>
     <p class="hero-sub">
       Suis chaque candidature, mesure tes taux de reponse,
@@ -335,7 +457,7 @@
     </p>
     <div class="hero-actions">
       <a href="https://app.offertrail.fr/register" class="btn-primary">
-        Commencer 14 jours gratuits ->
+        Creer mon compte ->
       </a>
       <a href="#features" class="btn-ghost">Voir comment ca marche</a>
     </div>
@@ -347,7 +469,7 @@
         <div class="dot dot-red"></div>
         <div class="dot dot-yellow"></div>
         <div class="dot dot-green"></div>
-        <div class="screenshot-url">app.offertrail.fr</div>
+        <div class="screenshot-url" id="current-uri">offertrail.fr</div>
       </div>
       <div class="stats-row">
         <div class="stat">
@@ -367,8 +489,56 @@
           <div class="stat-label">Delai moyen de reponse</div>
         </div>
       </div>
-      <div style="background:var(--bg3);height:360px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px;">
-        [ Screenshot du tableau de bord ]
+      <div class="dashboard-mock">
+        <div class="dashboard-grid">
+          <div class="panel">
+            <p class="panel-title">Pipeline actif</p>
+            <div class="pipeline-list">
+              <div class="pipeline-item">
+                <div>
+                  <strong>Product Designer · FinTech Paris</strong>
+                  <span>Relance prevue demain · contact recruteur attache</span>
+                </div>
+                <span class="status-pill relance">Relance</span>
+              </div>
+              <div class="pipeline-item">
+                <div>
+                  <strong>UX Lead · Startup SaaS</strong>
+                  <span>Entretien prevu mercredi · notes deja centralisees</span>
+                </div>
+                <span class="status-pill entretien">Entretien</span>
+              </div>
+              <div class="pipeline-item">
+                <div>
+                  <strong>Senior Designer · ESN Lille</strong>
+                  <span>En attente de retour · dernier contact il y a 5 jours</span>
+                </div>
+                <span class="status-pill attente">En attente</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <p class="panel-title">Signaux clefs</p>
+            <div class="mini-chart">
+              <div class="bar-row">
+                <div class="bar-meta"><span>Taux de refus</span><span>69%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width:69%"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-meta"><span>Taux de reponse</span><span>20.9%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width:20.9%"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-meta"><span>Dossiers encore actifs</span><span>11</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width:26%"></div></div>
+              </div>
+            </div>
+            <div class="signal-card">
+              <strong>Point de friction detecte</strong>
+              <p>Les candidatures sans relance dans les 5 jours ont le moins bon taux de reponse. Tu le vois tout de suite.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -410,29 +580,35 @@
 
   <section class="pricing">
     <h2>Simple.</h2>
-    <p class="pricing-sub">Une promesse claire: teste OfferTrail pendant 14 jours, puis passe sur une offre payante quand le produit te sert vraiment.</p>
+    <p class="pricing-sub">Une seule offre. Pas de grille compliquee. OfferTrail est pense pour rester lisible aussi dans sa tarification.</p>
     <div class="pricing-card">
-      <p class="plan-name">Offre actuelle</p>
-      <p class="plan-price">14 jours gratuits <span>puis offre payante</span></p>
+      <p class="plan-name">Offre unique</p>
+      <p class="plan-price">9EUR <span>/ mois</span></p>
       <ul class="plan-features">
-        <li>Acces complet pendant l'essai</li>
-        <li>Sans carte bancaire</li>
-        <li>Dashboard, relances et historique inclus</li>
-        <li>Tarification definitive en cours de cadrage</li>
+        <li>Dashboard complet avec tes vrais KPIs</li>
+        <li>Relances, historique et suivi centralises</li>
+        <li>Contacts et entreprises rattaches proprement</li>
+        <li>Un prix simple pour un usage pro regulier</li>
       </ul>
     </div>
   </section>
 
   <section class="cta-final">
     <h2>Reprends le controle.</h2>
-    <p>14 jours gratuits. Sans carte bancaire. En 2 minutes.</p>
+    <p>Un outil propre, un prix clair, une recherche mieux pilotee.</p>
     <a href="https://app.offertrail.fr/register" class="btn-primary">
-      Demarrer mon essai gratuit ->
+      Passer a OfferTrail ->
     </a>
   </section>
 
   <footer>
     <p>&copy; 2026 OfferTrail · <a href="https://app.offertrail.fr" style="color:var(--accent);text-decoration:none;">Acceder a l'app</a></p>
   </footer>
+  <script>
+    const uri = document.getElementById("current-uri");
+    if (uri && window.location.host) {
+      uri.textContent = window.location.host;
+    }
+  </script>
 </body>
 </html>
