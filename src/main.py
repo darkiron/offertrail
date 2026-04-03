@@ -1,5 +1,6 @@
 import ctypes
 import logging
+import os
 import subprocess
 from fastapi import Depends, FastAPI, Request, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,10 +35,11 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
