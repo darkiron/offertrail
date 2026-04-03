@@ -444,7 +444,7 @@
         <div class="brand-mark">OT</div>
         OfferTrail
       </a>
-      <a href="https://app.offertrail.fr/register" class="nav-cta">Creer mon compte</a>
+      <a href="/register" class="nav-cta" data-register-link>Creer mon compte</a>
     </nav>
   </div>
 
@@ -456,7 +456,7 @@
       ne rate plus aucune relance. Sans tableur.
     </p>
     <div class="hero-actions">
-      <a href="https://app.offertrail.fr/register" class="btn-primary">
+      <a href="/register" class="btn-primary" data-register-link>
         Creer mon compte ->
       </a>
       <a href="#features" class="btn-ghost">Voir comment ca marche</a>
@@ -596,19 +596,26 @@
   <section class="cta-final">
     <h2>Reprends le controle.</h2>
     <p>Un outil propre, un prix clair, une recherche mieux pilotee.</p>
-    <a href="https://app.offertrail.fr/register" class="btn-primary">
+    <a href="/register" class="btn-primary" data-register-link>
       Passer a OfferTrail ->
     </a>
   </section>
 
   <footer>
-    <p>&copy; 2026 OfferTrail · <a href="https://app.offertrail.fr" style="color:var(--accent);text-decoration:none;">Acceder a l'app</a></p>
+    <p>&copy; 2026 OfferTrail · <a href="/" style="color:var(--accent);text-decoration:none;" data-app-link>Acceder a l'app</a></p>
   </footer>
   <script>
     const uri = document.getElementById("current-uri");
+    const origin = window.location.origin || "";
     if (uri && window.location.host) {
       uri.textContent = window.location.host;
     }
+    document.querySelectorAll("[data-register-link]").forEach((link) => {
+      link.setAttribute("href", origin ? `${origin}/register` : "/register");
+    });
+    document.querySelectorAll("[data-app-link]").forEach((link) => {
+      link.setAttribute("href", origin || "/");
+    });
   </script>
 </body>
 </html>
