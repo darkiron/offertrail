@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OfferTrail - Pilote ta recherche d'emploi</title>
-  <meta name="description" content="Suis tes candidatures, mesure tes taux de réponse, ne rate plus aucune relance. Gratuit jusqu'à 25 candidatures.">
+  <meta name="description" content="Suis tes candidatures, mesure tes taux de reponse, ne rate plus aucune relance. Essai gratuit de 14 jours.">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -237,7 +237,7 @@
     .feature p { font-size: 14px; color: var(--text2); line-height: 1.6; }
 
     .pricing {
-      max-width: 480px;
+      max-width: 560px;
       margin: 0 auto;
       padding: 0 24px 80px;
       text-align: center;
@@ -246,23 +246,12 @@
     .pricing h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
     .pricing-sub { color: var(--text2); margin-bottom: 40px; }
 
-    .pricing-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      text-align: left;
-    }
-
     .pricing-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-    }
-
-    .pricing-card.featured {
-      border-color: var(--accent);
       background: rgba(56,189,248,0.06);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 28px;
+      text-align: left;
     }
 
     .plan-name {
@@ -274,8 +263,17 @@
       margin-bottom: 8px;
     }
 
-    .plan-price { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
-    .plan-price span { font-size: 14px; font-weight: 400; color: var(--text2); }
+    .plan-price {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .plan-price span {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text2);
+    }
 
     .plan-features {
       list-style: none;
@@ -292,7 +290,7 @@
       gap: 6px;
     }
 
-    .plan-features li::before { content: "✓"; color: var(--accent); }
+    .plan-features li::before { content: "->"; color: var(--accent); }
 
     .cta-final {
       text-align: center;
@@ -313,7 +311,6 @@
     }
 
     @media (max-width: 600px) {
-      .pricing-cards { grid-template-columns: 1fr; }
       .stats-row { gap: 20px; }
     }
   </style>
@@ -325,12 +322,12 @@
         <div class="brand-mark">OT</div>
         OfferTrail
       </a>
-      <a href="https://app.offertrail.fr/register" class="nav-cta">Essayer gratuitement</a>
+      <a href="https://app.offertrail.fr/register" class="nav-cta">Essayer 14 jours</a>
     </nav>
   </div>
 
   <section class="hero">
-    <div class="hero-badge">Gratuit jusqu'a 25 candidatures</div>
+    <div class="hero-badge">Essai gratuit de 14 jours</div>
     <h1>Ta recherche d'emploi<br><span>sans perdre le fil.</span></h1>
     <p class="hero-sub">
       Suis chaque candidature, mesure tes taux de reponse,
@@ -338,7 +335,7 @@
     </p>
     <div class="hero-actions">
       <a href="https://app.offertrail.fr/register" class="btn-primary">
-        Commencer gratuitement ->
+        Commencer 14 jours gratuits ->
       </a>
       <a href="#features" class="btn-ghost">Voir comment ca marche</a>
     </div>
@@ -367,7 +364,7 @@
         </div>
         <div class="stat">
           <div class="stat-num">7j</div>
-          <div class="stat-label">Delai moyen reponse</div>
+          <div class="stat-label">Delai moyen de reponse</div>
         </div>
       </div>
       <div style="background:var(--bg3);height:360px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px;">
@@ -379,32 +376,32 @@
   <section id="features">
     <div class="features">
       <div class="feature">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon">KPI</div>
         <h3>KPIs en temps reel</h3>
         <p>Taux de refus, taux de reponse, delai moyen. Comprends ce qui fonctionne dans ta recherche.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">🔔</div>
+        <div class="feature-icon">REL</div>
         <h3>File de relances</h3>
         <p>Ne laisse plus une candidature sans suite. OfferTrail te rappelle quand relancer et qui contacter.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">🏢</div>
+        <div class="feature-icon">PRO</div>
         <h3>Score de probite</h3>
         <p>Chaque entreprise recoit un score base sur les retours de tous les utilisateurs. Sache avant de postuler.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">📜</div>
+        <div class="feature-icon">HIS</div>
         <h3>Historique complet</h3>
         <p>Chaque changement de statut est trace. Retrouve l'historique exact de chaque candidature.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">👤</div>
+        <div class="feature-icon">CRM</div>
         <h3>Contacts centralises</h3>
         <p>Rattache tes recruteurs a leurs entreprises. Le reseau se construit candidature apres candidature.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">📥</div>
+        <div class="feature-icon">CSV</div>
         <h3>Import rapide</h3>
         <p>Importe depuis un CSV ou saisis manuellement. En 2 minutes, ton pipeline est pret.</p>
       </div>
@@ -413,38 +410,24 @@
 
   <section class="pricing">
     <h2>Simple.</h2>
-    <p class="pricing-sub">Un plan gratuit pour demarrer. Un plan Pro pour aller plus loin.</p>
-    <div class="pricing-cards">
-      <div class="pricing-card">
-        <p class="plan-name">Starter</p>
-        <p class="plan-price">Gratuit</p>
-        <ul class="plan-features">
-          <li>25 candidatures</li>
-          <li>KPIs essentiels</li>
-          <li>File de relances</li>
-          <li>Score de probite</li>
-          <li>Export CSV</li>
-        </ul>
-      </div>
-      <div class="pricing-card featured">
-        <p class="plan-name">Pro</p>
-        <p class="plan-price">9,99EUR<span>/mois</span></p>
-        <ul class="plan-features">
-          <li>Candidatures illimitees</li>
-          <li>Analytics complets</li>
-          <li>File de relances</li>
-          <li>Score de probite</li>
-          <li>Export CSV</li>
-        </ul>
-      </div>
+    <p class="pricing-sub">Une promesse claire: teste OfferTrail pendant 14 jours, puis passe sur une offre payante quand le produit te sert vraiment.</p>
+    <div class="pricing-card">
+      <p class="plan-name">Offre actuelle</p>
+      <p class="plan-price">14 jours gratuits <span>puis offre payante</span></p>
+      <ul class="plan-features">
+        <li>Acces complet pendant l'essai</li>
+        <li>Sans carte bancaire</li>
+        <li>Dashboard, relances et historique inclus</li>
+        <li>Tarification definitive en cours de cadrage</li>
+      </ul>
     </div>
   </section>
 
   <section class="cta-final">
     <h2>Reprends le controle.</h2>
-    <p>Gratuit. Sans carte bancaire. En 2 minutes.</p>
+    <p>14 jours gratuits. Sans carte bancaire. En 2 minutes.</p>
     <a href="https://app.offertrail.fr/register" class="btn-primary">
-      Creer mon compte gratuitement ->
+      Demarrer mon essai gratuit ->
     </a>
   </section>
 
