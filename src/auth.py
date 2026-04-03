@@ -14,8 +14,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from models import Candidature, Contact, Etablissement, User
-from services.probite import recompute_probite_scores
+from src.models import Candidature, Contact, Etablissement, User
+from src.services.probite import recompute_probite_scores
 from src.database import SessionLocal, get_db
 
 # ============================================================

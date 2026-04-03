@@ -121,8 +121,10 @@ def create_etablissement(
         created_by=user_id,
     )
     db.add(etablissement)
+    db.flush()
+    etablissement_id = etablissement.id
     db.commit()
-    db.refresh(etablissement)
+    etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     return build_schema(etablissement, [])
 
 

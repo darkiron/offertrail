@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from src.auth import (
     create_access_token,
     get_current_user,
+    get_current_user_id,
     hash_password,
     verify_password,
 )
@@ -47,6 +48,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenRespons
         prenom=payload.prenom,
         nom=payload.nom,
         plan="starter",
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -73,30 +75,47 @@ def me(current_user: User = Depends(get_current_user)) -> UserSchema:
 @router.patch("/me", response_model=UserSchema)
 def update_me(
     payload: UserUpdate,
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ) -> UserSchema:
+    current_user = (
+        db.query(User.id, User.email, User.plan, User.created_at, User.is_active)
+        .filter(User.id == user_id)
+        .first()
+    )
+    if current_user is None or not current_user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+
+    updates: dict[str, str] = {}
     if payload.prenom is not None:
-        current_user.prenom = payload.prenom
+        updates["prenom"] = payload.prenom
     if payload.nom is not None:
-        current_user.nom = payload.nom
-    db.add(current_user)
-    db.commit()
-    db.refresh(current_user)
+        updates["nom"] = payload.nom
+    if updates:
+        db.query(User).filter(User.id == user_id).update(updates)
+        db.commit()
+    current_user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
     return UserSchema.model_validate(current_user)
 
 
 @router.post("/change-password")
 def change_password(
     payload: ChangePasswordRequest,
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
+    current_user = (
+        db.query(User.hashed_password, User.is_active)
+        .filter(User.id == user_id)
+        .first()
+    )
+    if current_user is None or not current_user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mot de passe actuel invalide")
 
-    current_user.hashed_password = hash_password(payload.new_password)
-    db.add(current_user)
+    db.query(User).filter(User.id == user_id).update({"hashed_password": hash_password(payload.new_password)})
     db.commit()
     return {"message": "Mot de passe mis a jour avec succes."}
 
