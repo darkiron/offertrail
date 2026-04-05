@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
@@ -176,8 +177,8 @@ const registerStyles = `
 `;
 
 const registerSchema = z.object({
-  email: z.email("Saisis une adresse email valide."),
-  password: z.string().min(8, "Choisis un mot de passe d'au moins 8 caracteres."),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(8, 'Minimum 8 caracteres'),
   prenom: z.string().trim().optional(),
   nom: z.string().trim().optional(),
 });
@@ -191,6 +192,8 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     defaultValues: {
@@ -208,16 +211,28 @@ export function RegisterPage() {
   const onSubmit = handleSubmit(async (values) => {
     const result = registerSchema.safeParse(values);
     if (!result.success) {
+      clearErrors();
+      result.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0];
+        if (fieldName === 'email' || fieldName === 'password' || fieldName === 'prenom' || fieldName === 'nom') {
+          setError(fieldName, { type: 'manual', message: issue.message });
+        }
+      });
       setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
       return;
     }
 
     try {
       setFormError(null);
+      clearErrors();
       await registerUser(result.data);
       navigate('/', { replace: true });
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Inscription impossible');
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        setFormError('Cet email est déjà utilisé.');
+        return;
+      }
+      setFormError(error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.');
     }
   });
 
@@ -305,7 +320,7 @@ export function RegisterPage() {
           </form>
 
           <div className="signup-footer">
-            Deja inscrit ? <Link to="/login">Se connecter</Link>
+            Déjà un compte ? <Link to="/login">Se connecter</Link>
           </div>
         </div>
       </section>
