@@ -1,6 +1,18 @@
+NPM ?= npm
+
+ifeq ($(OS),Windows_NT)
 PYTHON ?= .venv\Scripts\python
 PIP ?= .venv\Scripts\pip
-NPM ?= npm
+RM_FILE = del /f /q
+RM_DIR = rmdir /s /q
+RUN_ALL = powershell -Command "Start-Process make run-back; Start-Process make run-front"
+else
+PYTHON ?= .venv/bin/python
+PIP ?= .venv/bin/pip
+RM_FILE = rm -f
+RM_DIR = rm -rf
+RUN_ALL = sh -c '$(MAKE) run-back & $(MAKE) run-front'
+endif
 
 .PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage
 
@@ -9,7 +21,7 @@ install:
 	cd frontend && $(NPM) install
 
 run:
-	powershell -Command "Start-Process make run-back; Start-Process make run-front"
+	$(RUN_ALL)
 
 run-back:
 	$(PYTHON) -m uvicorn src.main:app --reload --port 8000
@@ -43,8 +55,9 @@ test-coverage:
 	$(PYTHON) -m coverage report --show-missing --fail-under=80
 
 reset-db:
-	del /f /q offertrail.db && $(PYTHON) -c "from src.database import init_db; init_db()"
+	$(RM_FILE) offertrail.db
+	$(PYTHON) -c "from src.database import init_db; init_db()"
 
 clean:
-	-rmdir /s /q frontend\dist
-	-for /d /r . %%d in (__pycache__) do @if exist "%%d" rmdir /s /q "%%d"
+	-$(RM_DIR) frontend/dist
+	-$(PYTHON) -c "import pathlib, shutil; [shutil.rmtree(path) for path in pathlib.Path('.').rglob('__pycache__') if path.is_dir()]"
