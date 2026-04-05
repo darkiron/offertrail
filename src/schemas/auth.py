@@ -27,6 +27,7 @@ class UserSchema(BaseModel):
     prenom: Optional[str]
     nom: Optional[str]
     plan: str
+    role: str
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 

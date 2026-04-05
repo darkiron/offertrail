@@ -108,6 +108,7 @@ export interface AuthUser {
   prenom: string | null;
   nom: string | null;
   plan: string;
+  role: string;
   created_at: string;
 }
 

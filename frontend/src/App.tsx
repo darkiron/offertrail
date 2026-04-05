@@ -18,6 +18,7 @@ import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
+import { Admin } from './pages/Admin';
 
 const appStyles = `
   .app-shell {
@@ -295,6 +296,11 @@ const Navbar: React.FC = () => {
                   <Link to="/mon-compte" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
                     Mon compte
                   </Link>
+                  {user?.role === 'admin' ? (
+                    <Link to="/admin" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                      Administration
+                    </Link>
+                  ) : null}
                   <Link to="/pricing" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
                     Abonnement
                   </Link>
@@ -343,6 +349,7 @@ function App() {
               <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
               <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
               <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             </Routes>
           </main>
 
