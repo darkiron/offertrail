@@ -18,6 +18,7 @@ from src.auth import create_access_token, hash_password
 from src.database import init_db as init_saas_db, engine, SessionLocal
 from src.main import app
 from src.models import Candidature, Etablissement, PasswordResetToken, User
+from src.routers.auth import limiter
 
 legacy_database.DB_PATH = TEST_DB_PATH
 main_module.start_scheduler = lambda: None
@@ -28,6 +29,7 @@ legacy_database.init_db()
 
 @pytest.fixture(autouse=True)
 def reset_databases():
+    limiter._storage.reset()
     engine.dispose()
     with sqlite3.connect(TEST_DB_PATH) as conn:
         tables = [
