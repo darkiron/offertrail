@@ -39,6 +39,7 @@ def _ensure_sqlite_columns() -> None:
 
     required_columns = {
         "users": {
+            "role": "ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'user'",
             "plan_started_at": "ALTER TABLE users ADD COLUMN plan_started_at DATETIME",
             "plan_expires_at": "ALTER TABLE users ADD COLUMN plan_expires_at DATETIME",
             "stripe_customer_id": "ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR",
