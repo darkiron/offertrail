@@ -1,8 +1,10 @@
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from src.auth import (
@@ -26,6 +28,7 @@ from src.schemas.auth import (
 from src.services.email import send_password_reset
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _build_auth_response(user: User) -> TokenResponse:
@@ -37,7 +40,8 @@ def _build_auth_response(user: User) -> TokenResponse:
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenResponse:
+@limiter.limit("5/minute")
+def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)) -> TokenResponse:
     existing_user = db.query(User).filter(User.email == payload.email).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email deja utilise")
@@ -57,7 +61,9 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenRespons
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ) -> TokenResponse:
@@ -121,7 +127,9 @@ def change_password(
 
 
 @router.post("/forgot-password")
+@limiter.limit("3/minute")
 def forgot_password(
+    request: Request,
     body: ForgotPasswordRequest,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:

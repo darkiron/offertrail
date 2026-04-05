@@ -6,6 +6,9 @@ from fastapi import Depends, FastAPI, Request, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from . import legacy_database as database
 from sqlalchemy.orm import Session
 
@@ -37,6 +40,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+app.state.limiter = auth_router.limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +50,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SlowAPIMiddleware)
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router.router)
 app.include_router(etablissements_router.router, prefix="/etablissements", tags=["etablissements"])
