@@ -18,7 +18,7 @@ endif
 
 install:
 	$(PIP) install -r requirements.txt
-	cd frontend && $(NPM) install
+	@if command -v $(NPM) > /dev/null 2>&1; then cd frontend && $(NPM) install; else echo "npm not found, skipping frontend install"; fi
 
 run:
 	$(RUN_ALL)
