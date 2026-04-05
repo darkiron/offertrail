@@ -261,6 +261,7 @@ class User(Base):
     nom          = Column(String)
     prenom       = Column(String)
     plan         = Column(String, default="starter")   # starter | pro
+    role         = Column(String, default="user")      # user | admin
     plan_started_at = Column(DateTime, nullable=True)
     plan_expires_at = Column(DateTime, nullable=True)
     stripe_customer_id = Column(String, nullable=True)

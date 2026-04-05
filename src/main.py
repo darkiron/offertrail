@@ -13,6 +13,7 @@ from .auth import _user_can_see_contact, get_current_user_id, get_visible_contac
 from .database import get_db as get_saas_db, init_db as init_saas_db
 from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Relance
 from .routers import auth as auth_router
+from .routers import admin as admin_router
 from .routers import candidatures as candidatures_router
 from .routers import candidature_events as candidature_events_router
 from .routers import contact_interactions as contact_interactions_router
@@ -45,6 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(admin_router.router)
 app.include_router(etablissements_router.router, prefix="/etablissements", tags=["etablissements"])
 app.include_router(candidatures_router.router, prefix="/candidatures", tags=["candidatures"])
 app.include_router(relances_router.router, prefix="/relances", tags=["relances"])

@@ -101,6 +101,13 @@ def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
         raise credentials_exception from exc
 
 
+def get_admin_user(user: User = Depends(get_current_user)) -> User:
+    """Reserve aux admins. 403 pour tous les autres."""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Acces reserve aux administrateurs")
+    return user
+
+
 # ============================================================
 # DEPENDANCES RLS - Equivalent des policies Supabase
 # ============================================================
