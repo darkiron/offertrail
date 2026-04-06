@@ -239,7 +239,7 @@ export function LoginPage() {
       setFormError(null);
       clearErrors();
       await login(result.data.email, result.data.password);
-      const nextPath = (location.state as { from?: string } | null)?.from ?? '/';
+      const nextPath = (location.state as { from?: string } | null)?.from ?? '/dashboard';
       navigate(nextPath, { replace: true });
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Connexion impossible');
