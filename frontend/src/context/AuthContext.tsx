@@ -28,12 +28,18 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
+    if (error.response?.status === 409) {
+      return 'Cet email est déjà utilisé.';
+    }
+    if (error.response?.status === 429) {
+      return "Trop de tentatives. Réessaie dans quelques instants.";
+    }
     const detail = error.response?.data?.detail;
     if (typeof detail === 'string' && detail.trim()) {
       return detail;
     }
     if (!error.response) {
-      return "Impossible de joindre l'API OfferTrail. Verifie que le backend tourne sur http://localhost:8000.";
+      return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
     }
   }
   if (error instanceof Error && error.message.trim()) {

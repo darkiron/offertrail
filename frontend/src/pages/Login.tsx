@@ -191,8 +191,8 @@ const loginStyles = `
 `;
 
 const loginSchema = z.object({
-  email: z.email("Saisis une adresse email valide."),
-  password: z.string().min(8, "Saisis ton mot de passe complet."),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(8, 'Minimum 8 caracteres'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -207,6 +207,8 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     defaultValues: {
@@ -222,12 +224,20 @@ export function LoginPage() {
   const onSubmit = handleSubmit(async (values) => {
     const result = loginSchema.safeParse(values);
     if (!result.success) {
+      clearErrors();
+      result.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0];
+        if (fieldName === 'email' || fieldName === 'password') {
+          setError(fieldName, { type: 'manual', message: issue.message });
+        }
+      });
       setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
       return;
     }
 
     try {
       setFormError(null);
+      clearErrors();
       await login(result.data.email, result.data.password);
       const nextPath = (location.state as { from?: string } | null)?.from ?? '/';
       navigate(nextPath, { replace: true });
@@ -309,7 +319,7 @@ export function LoginPage() {
             <div className="auth-footer">
               <Link to="/forgot-password">Mot de passe oublié ?</Link>
               {' · '}
-              Pas encore de compte ? <Link to="/register">Creer un compte</Link>
+              Pas encore de compte ? <Link to="/register">Créer un compte</Link>
             </div>
           </div>
         </div>
