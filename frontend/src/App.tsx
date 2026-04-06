@@ -19,6 +19,9 @@ import { ResetPasswordPage } from './pages/ResetPassword';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Landing } from './pages/Landing';
+import { MentionsLegales } from './pages/MentionsLegales';
+import { CGV } from './pages/CGV';
+import { RGPD } from './pages/RGPD';
 
 const appStyles = `
   .app-shell {
@@ -250,6 +253,9 @@ const Navbar: React.FC = () => {
     navigate('/login');
   };
 
+  const STANDALONE_ROUTES = ['/', '/cgv', '/mentions-legales', '/rgpd'];
+  if (STANDALONE_ROUTES.includes(location.pathname)) return null;
+
   return (
     <nav className="app-nav">
       <div className="app-navInner">
@@ -316,42 +322,56 @@ const Navbar: React.FC = () => {
   );
 };
 
-function App() {
+const AppShell: React.FC = () => {
   const { t } = useI18n();
+  const location = useLocation();
+  const STANDALONE_ROUTES = ['/', '/cgv', '/mentions-legales', '/rgpd'];
+  const isStandalone = STANDALONE_ROUTES.includes(location.pathname);
+  const isLanding = location.pathname === '/';
+
+  return (
+    <div className="app-shell flex flex-col">
+      <Navbar />
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
+          <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
+          <Route path="/organizations" element={<ProtectedRoute><OrganizationsPage /></ProtectedRoute>} />
+          <Route path="/organizations/maintenance" element={<ProtectedRoute><OrganizationMaintenancePage /></ProtectedRoute>} />
+          <Route path="/organizations/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
+          <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
+          <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
+          <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
+          <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+          <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/cgv" element={<CGV />} />
+          <Route path="/rgpd" element={<RGPD />} />
+        </Routes>
+      </main>
+      {!isLanding ? (
+        <footer className="app-footer">
+          <div className="app-footerInner">{t('nav.footer')}</div>
+        </footer>
+      ) : null}
+    </div>
+  );
+};
+
+function App() {
   useRestoreAuth();
   return (
     <>
       <style>{appStyles}</style>
       <Router>
-        <div className="app-shell flex flex-col">
-          <Navbar />
-
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/" element={<Landing />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
-              <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
-              <Route path="/organizations" element={<ProtectedRoute><OrganizationsPage /></ProtectedRoute>} />
-              <Route path="/organizations/maintenance" element={<ProtectedRoute><OrganizationMaintenancePage /></ProtectedRoute>} />
-              <Route path="/organizations/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-              <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-              <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
-              <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
-              <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
-              <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
-            </Routes>
-          </main>
-
-          <footer className="app-footer">
-            <div className="app-footerInner">{t('nav.footer')}</div>
-          </footer>
-        </div>
+        <AppShell />
       </Router>
     </>
   );

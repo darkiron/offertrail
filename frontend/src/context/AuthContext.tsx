@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -8,7 +9,7 @@ import {
 } from 'react';
 import axios from 'axios';
 import { authService, setAuthToken } from '../services/api';
-import type { AuthResponse, AuthUser, LoginCredentials, RegisterPayload } from '../types';
+import type { AuthResponse, AuthUser, RegisterPayload } from '../types';
 
 const USER_STORAGE_KEY = 'offertrail.auth.user';
 const TOKEN_STORAGE_KEY = 'offertrail.auth.token';
@@ -67,6 +68,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [token]);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    setAuthToken(null);
+    setUser(null);
+    setToken(null);
+  }, []);
+
+  const setUserData = useCallback((nextUser: AuthUser | null) => {
+    if (nextUser) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+    setUser(nextUser);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -92,14 +110,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           throw new Error(getErrorMessage(error, 'Inscription impossible'));
         }
       },
-      setUserData: (nextUser: AuthUser | null) => {
-        if (nextUser) {
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-        } else {
-          localStorage.removeItem(USER_STORAGE_KEY);
-        }
-        setUser(nextUser);
-      },
+      setUserData,
       refreshUser: async () => {
         try {
           const me = await authService.me();
@@ -109,20 +120,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
           throw new Error(getErrorMessage(error, 'Impossible de rafraichir le profil'));
         }
       },
-      logout: () => {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(USER_STORAGE_KEY);
-        setAuthToken(null);
-        setUser(null);
-        setToken(null);
-      },
+      logout,
     }),
-    [token, user],
+    [token, user, logout, setUserData],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {
@@ -131,6 +137,7 @@ export function useAuth(): AuthContextValue {
   return context;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useRestoreAuth() {
   const { logout, setUserData } = useAuth();
 
