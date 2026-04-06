@@ -1,24 +1,41 @@
-NPM ?= npm
-
 ifeq ($(OS),Windows_NT)
-PYTHON ?= .venv\Scripts\python
-PIP ?= .venv\Scripts\pip
-RM_FILE = del /f /q
-RM_DIR = rmdir /s /q
-RUN_ALL = powershell -Command "Start-Process make run-back; Start-Process make run-front"
+PYTHON_BIN ?= python
+PYTHON      = .venv\Scripts\python
+RM_FILE     = del /f /q
+RM_DIR      = rmdir /s /q
+RUN_ALL     = powershell -Command "Start-Process make run-back; Start-Process make run-front"
+VENV_EXISTS = if not exist ".venv\Scripts\python.exe"
 else
-PYTHON ?= .venv/bin/python
-PIP ?= .venv/bin/pip
-RM_FILE = rm -f
-RM_DIR = rm -rf
-RUN_ALL = sh -c '$(MAKE) run-back & $(MAKE) run-front'
+PYTHON_BIN ?= python3
+PYTHON      = .venv/bin/python
+RM_FILE     = rm -f
+RM_DIR      = rm -rf
+RUN_ALL     = sh -c '$(MAKE) run-back & $(MAKE) run-front'
 endif
+
+NPM ?= npm
 
 .PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage
 
-install:
-	$(PIP) install -r requirements.txt
-	@if command -v $(NPM) > /dev/null 2>&1; then cd frontend && $(NPM) install; else echo "npm not found, skipping frontend install"; fi
+install: install-back install-front
+
+install-back:
+ifeq ($(OS),Windows_NT)
+	$(VENV_EXISTS) $(PYTHON_BIN) -m venv .venv
+	@$(PYTHON) -m pip --version >nul 2>&1 || ($(PYTHON) -m ensurepip --upgrade 2>nul || ($(PYTHON_BIN) -c "import urllib.request; urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', 'get-pip.py')" && $(PYTHON) get-pip.py && del get-pip.py))
+else
+	@[ -f "$(PYTHON)" ] || $(PYTHON_BIN) -m venv .venv
+	@$(PYTHON) -m pip --version > /dev/null 2>&1 || $(PYTHON) -m ensurepip --upgrade 2>/dev/null || ($(PYTHON_BIN) -c "import urllib.request; urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', '/tmp/get-pip.py')" && $(PYTHON) /tmp/get-pip.py)
+endif
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -r requirements.txt
+
+install-front:
+ifeq ($(OS),Windows_NT)
+	@$(NPM) --version >nul 2>&1 && (cd frontend && $(NPM) install) || echo "npm not found, skipping frontend install"
+else
+	@if $(NPM) --version > /dev/null 2>&1; then cd frontend && $(NPM) install; else echo "npm not found, skipping frontend install"; fi
+endif
 
 run:
 	$(RUN_ALL)
