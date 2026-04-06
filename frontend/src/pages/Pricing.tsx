@@ -48,30 +48,18 @@ const pricingStyles = `
     margin: 0;
   }
 
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 380px));
-    gap: 20px;
-    width: 100%;
-    max-width: 800px;
-  }
-
   .pricing-card {
-    padding: 28px;
+    width: min(420px, 100%);
+    padding: 32px;
     border-radius: 24px;
-    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-    background: color-mix(in srgb, var(--bg-mantle) 76%, transparent);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .pricing-card.is-featured {
-    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
     background:
       radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
       color-mix(in srgb, var(--bg-mantle) 76%, transparent);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
   }
 
   .pricing-cardTop {
@@ -91,7 +79,7 @@ const pricingStyles = `
   }
 
   .pricing-amount {
-    font-size: 2.4rem;
+    font-size: 2.8rem;
     font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -126,14 +114,14 @@ const pricingStyles = `
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
   .pricing-feature {
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--text-dim);
   }
 
@@ -144,34 +132,19 @@ const pricingStyles = `
     margin-top: 1px;
   }
 
-  .pricing-featureCheck.is-muted {
-    color: var(--text-dim);
-    opacity: 0.5;
-  }
-
   .pricing-cta {
-    margin-top: auto;
     display: block;
     width: 100%;
-    padding: 14px;
+    padding: 15px;
     border-radius: 14px;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 1rem;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
     transition: opacity 0.2s;
-  }
-
-  .pricing-cta.is-primary {
     background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-hover) 78%, white 22%));
     color: white;
-  }
-
-  .pricing-cta.is-secondary {
-    background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    color: var(--text-main);
   }
 
   .pricing-cta:hover {
@@ -184,35 +157,20 @@ const pricingStyles = `
   }
 
   .pricing-note {
-    margin-top: 32px;
+    margin-top: 28px;
     font-size: 12px;
     color: var(--text-dim);
     text-align: center;
   }
-
-  @media (max-width: 640px) {
-    .pricing-grid {
-      grid-template-columns: 1fr;
-    }
-  }
 `;
 
-const STARTER_FEATURES = [
-  { label: '25 candidatures', active: true },
-  { label: 'Suivi des statuts', active: true },
-  { label: 'Contacts & entreprises', active: true },
-  { label: 'Analytics complets', active: false },
-  { label: 'Export CSV', active: false },
-  { label: 'Relances automatiques', active: false },
-];
-
 const PRO_FEATURES = [
-  { label: 'Candidatures illimitées', active: true },
-  { label: 'Suivi des statuts', active: true },
-  { label: 'Contacts & entreprises', active: true },
-  { label: 'Analytics complets', active: true },
-  { label: 'Export CSV', active: true },
-  { label: 'Relances automatiques', active: true },
+  'Candidatures illimitées',
+  'Suivi des statuts',
+  'Contacts & entreprises',
+  'Analytics complets',
+  'Export CSV',
+  'Relances automatiques',
 ];
 
 export function Pricing() {
@@ -251,92 +209,53 @@ export function Pricing() {
 
         <div className="pricing-header">
           <div className="pricing-eyebrow">Tarification</div>
-          <h1 className="pricing-title">Simple, sans surprise.</h1>
+          <h1 className="pricing-title">Un seul plan.<br />Tout inclus.</h1>
           <p className="pricing-subtitle">
-            Commence gratuitement. Passe en Pro quand tu as besoin de plus.
+            Accès complet à toutes les fonctionnalités. Pas de limite artificielle.
           </p>
         </div>
 
-        <div className="pricing-grid">
-          {/* Starter */}
-          <div className="pricing-card">
-            <div>
-              <div className="pricing-cardTop">
-                <div>
-                  <p className="pricing-plan">Starter</p>
-                  <p className="pricing-amount">0€</p>
-                </div>
-                {isAuthenticated && !sub?.is_pro ? (
-                  <span className="pricing-badge is-active">Plan actuel</span>
-                ) : null}
+        <div className="pricing-card">
+          <div>
+            <div className="pricing-cardTop">
+              <div>
+                <p className="pricing-plan">Pro</p>
+                <p className="pricing-amount">
+                  9,99€<span className="pricing-period">/mois</span>
+                </p>
               </div>
+              {sub?.is_pro ? (
+                <span className="pricing-badge is-active">Actif</span>
+              ) : (
+                <span className="pricing-badge">Tout inclus</span>
+              )}
             </div>
-            <ul className="pricing-features">
-              {STARTER_FEATURES.map((f) => (
-                <li key={f.label} className="pricing-feature">
-                  <span className={`pricing-featureCheck ${f.active ? '' : 'is-muted'}`}>
-                    {f.active ? '✓' : '✕'}
-                  </span>
-                  {f.label}
-                </li>
-              ))}
-            </ul>
-            {isAuthenticated ? (
-              <span className="pricing-cta is-secondary" style={{ cursor: 'default', opacity: 0.6 }}>
-                {sub?.is_pro ? 'Plan Starter' : 'Plan actuel'}
-              </span>
-            ) : (
-              <Link to="/register" className="pricing-cta is-secondary">
-                Créer un compte gratuit
-              </Link>
-            )}
           </div>
 
-          {/* Pro */}
-          <div className="pricing-card is-featured">
-            <div>
-              <div className="pricing-cardTop">
-                <div>
-                  <p className="pricing-plan">Pro</p>
-                  <p className="pricing-amount">
-                    9,99€<span className="pricing-period">/mois</span>
-                  </p>
-                </div>
-                {sub?.is_pro ? (
-                  <span className="pricing-badge is-active">Actif</span>
-                ) : (
-                  <span className="pricing-badge">Recommandé</span>
-                )}
-              </div>
-            </div>
-            <ul className="pricing-features">
-              {PRO_FEATURES.map((f) => (
-                <li key={f.label} className="pricing-feature">
-                  <span className="pricing-featureCheck">✓</span>
-                  {f.label}
-                </li>
-              ))}
-            </ul>
-            {isAuthenticated ? (
-              sub?.is_pro ? (
-                <span className="pricing-cta is-primary" style={{ cursor: 'default' }}>
-                  Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
-                </span>
-              ) : (
-                <button
-                  onClick={handleUpgrade}
-                  disabled={loading}
-                  className="pricing-cta is-primary"
-                >
-                  {loading ? 'Activation...' : 'Passer en Pro — 9,99€/mois'}
-                </button>
-              )
+          <ul className="pricing-features">
+            {PRO_FEATURES.map((f) => (
+              <li key={f} className="pricing-feature">
+                <span className="pricing-featureCheck">✓</span>
+                {f}
+              </li>
+            ))}
+          </ul>
+
+          {isAuthenticated ? (
+            sub?.is_pro ? (
+              <span className="pricing-cta" style={{ cursor: 'default' }}>
+                Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
+              </span>
             ) : (
-              <Link to="/register" className="pricing-cta is-primary">
-                Commencer en Pro
-              </Link>
-            )}
-          </div>
+              <button onClick={handleUpgrade} disabled={loading} className="pricing-cta">
+                {loading ? 'Activation...' : 'Passer en Pro — 9,99€/mois'}
+              </button>
+            )
+          ) : (
+            <Link to="/register" className="pricing-cta">
+              Commencer maintenant
+            </Link>
+          )}
         </div>
 
         <p className="pricing-note">

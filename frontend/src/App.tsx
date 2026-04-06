@@ -19,6 +19,8 @@ import { ResetPasswordPage } from './pages/ResetPassword';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Landing } from './pages/Landing';
+import { MentionsLegales } from './pages/MentionsLegales';
+import { CGV } from './pages/CGV';
 
 const appStyles = `
   .app-shell {
@@ -345,6 +347,8 @@ function App() {
               <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
               <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
               <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
+              <Route path="/mentions-legales" element={<MentionsLegales />} />
+              <Route path="/cgv" element={<CGV />} />
             </Routes>
           </main>
 
