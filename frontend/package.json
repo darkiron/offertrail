@@ -10,14 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mantine/core": "^9.0.1",
+    "@mantine/hooks": "^9.0.1",
+    "@tabler/icons-react": "^3.41.1",
     "@tanstack/react-query": "^5.90.5",
     "axios": "^1.13.6",
-    "bulma": "^1.0.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.66.0",
-    "zod": "^4.1.12",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -28,23 +29,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    if (error.response?.status === 409) {
-      return 'Cet email est déjà utilisé.';
-    }
-    if (error.response?.status === 429) {
-      return "Trop de tentatives. Réessaie dans quelques instants.";
-    }
+    if (error.response?.status === 409) return 'Cet email est déjà utilisé.';
+    if (error.response?.status === 429) return "Trop de tentatives. Réessaie dans quelques instants.";
     const detail = error.response?.data?.detail;
-    if (typeof detail === 'string' && detail.trim()) {
-      return detail;
-    }
-    if (!error.response) {
-      return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
-    }
+    if (typeof detail === 'string' && detail.trim()) return detail;
+    if (!error.response) return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
   }
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
+  if (error instanceof Error && error.message.trim()) return error.message;
   return fallback;
 }
 
@@ -62,10 +53,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
 
   useEffect(() => {
-    if (token) {
-      setAuthToken(token);
-    }
+    if (token) setAuthToken(token);
   }, [token]);
+
+  // Stable refs — must not be defined inside useMemo to avoid infinite loop in useRestoreAuth
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    setAuthToken(null);
+    setUser(null);
+    setToken(null);
+  }, []);
+
+  const setUserData = useCallback((nextUser: AuthUser | null) => {
+    if (nextUser) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+    setUser(nextUser);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -92,14 +99,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           throw new Error(getErrorMessage(error, 'Inscription impossible'));
         }
       },
-      setUserData: (nextUser: AuthUser | null) => {
-        if (nextUser) {
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-        } else {
-          localStorage.removeItem(USER_STORAGE_KEY);
-        }
-        setUser(nextUser);
-      },
+      setUserData,
       refreshUser: async () => {
         try {
           const me = await authService.me();
@@ -109,15 +109,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
           throw new Error(getErrorMessage(error, 'Impossible de rafraichir le profil'));
         }
       },
-      logout: () => {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(USER_STORAGE_KEY);
-        setAuthToken(null);
-        setUser(null);
-        setToken(null);
-      },
+      logout,
     }),
-    [token, user],
+    [token, user, logout, setUserData],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -125,9 +119,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
 
@@ -137,9 +129,7 @@ export function useRestoreAuth() {
   useEffect(() => {
     const restore = async () => {
       const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (!storedToken) {
-        return;
-      }
+      if (!storedToken) return;
       try {
         const me = await authService.me();
         setUserData(me);
@@ -147,7 +137,6 @@ export function useRestoreAuth() {
         logout();
       }
     };
-
     void restore();
-  }, [logout, setUserData]);
+  }, [logout, setUserData]); // stable refs — won't re-run
 }
