@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LEGAL_CONFIG } from '../config/legal';
 
 const styles = `
   /* ─── Reset & base ─────────────────────────────────────── */
@@ -674,7 +675,7 @@ export function Landing() {
         <footer className="l-footer">
           <div className="l-footerInner">
             <div className="l-footerLeft">
-              <span className="l-footerCopy">© {new Date().getFullYear()} OfferTrail</span>
+              <span className="l-footerCopy">© {new Date().getFullYear()} {LEGAL_CONFIG.company.name} — {LEGAL_CONFIG.productName}</span>
             </div>
             <div className="l-footerLinks">
               <a href="#tarifs" className="l-footerLink">Tarifs</a>
@@ -683,7 +684,9 @@ export function Landing() {
               <span className="l-footerSep">·</span>
               <Link to="/mentions-legales" className="l-footerLink">Mentions légales</Link>
               <span className="l-footerSep">·</span>
-              <a href="mailto:contact@offertrail.com" className="l-footerLink">Contact</a>
+              <Link to="/rgpd" className="l-footerLink">RGPD</Link>
+              <span className="l-footerSep">·</span>
+              <a href={`mailto:${LEGAL_CONFIG.company.email}`} className="l-footerLink">Contact</a>
             </div>
           </div>
         </footer>

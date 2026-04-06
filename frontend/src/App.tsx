@@ -21,6 +21,7 @@ import { Pricing } from './pages/Pricing';
 import { Landing } from './pages/Landing';
 import { MentionsLegales } from './pages/MentionsLegales';
 import { CGV } from './pages/CGV';
+import { RGPD } from './pages/RGPD';
 
 const appStyles = `
   .app-shell {
@@ -252,7 +253,8 @@ const Navbar: React.FC = () => {
     navigate('/login');
   };
 
-  if (location.pathname === '/') return null;
+  const STANDALONE_ROUTES = ['/', '/cgv', '/mentions-legales', '/rgpd'];
+  if (STANDALONE_ROUTES.includes(location.pathname)) return null;
 
   return (
     <nav className="app-nav">
@@ -323,6 +325,8 @@ const Navbar: React.FC = () => {
 const AppShell: React.FC = () => {
   const { t } = useI18n();
   const location = useLocation();
+  const STANDALONE_ROUTES = ['/', '/cgv', '/mentions-legales', '/rgpd'];
+  const isStandalone = STANDALONE_ROUTES.includes(location.pathname);
   const isLanding = location.pathname === '/';
 
   return (
@@ -349,6 +353,7 @@ const AppShell: React.FC = () => {
           <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/cgv" element={<CGV />} />
+          <Route path="/rgpd" element={<RGPD />} />
         </Routes>
       </main>
       {!isLanding ? (
