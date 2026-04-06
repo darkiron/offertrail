@@ -1,0 +1,13 @@
+.shell {
+  max-width: 1400px;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 34%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--mantine-color-body) 92%, white 8%),
+      var(--mantine-color-body)
+    );
+}
