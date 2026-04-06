@@ -45,3 +45,9 @@ def activate_pro(db: Session, user: User) -> None:
     user.plan_started_at = datetime.utcnow()
     user.plan_expires_at = None
     db.commit()
+
+
+def _downgrade_to_starter(db: Session, user: User) -> None:
+    user.plan = "starter"
+    user.plan_expires_at = None
+    db.commit()
