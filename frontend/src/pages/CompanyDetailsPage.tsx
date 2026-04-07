@@ -395,7 +395,7 @@ export const CompanyDetailsPage: React.FC = () => {
         <style>{pageStyles}</style>
         <div className="company-contentCard company-error">
           <p>{error || 'ETS introuvable.'}</p>
-          <Link to="/organizations" className="company-backLink">Retour aux etablissements</Link>
+          <Link to="/app/etablissements" className="company-backLink">Retour aux etablissements</Link>
         </div>
       </div>
     );
@@ -412,7 +412,7 @@ export const CompanyDetailsPage: React.FC = () => {
     <div className="company-shell">
       <style>{pageStyles}</style>
 
-      <Link to="/organizations" className="company-backLink">
+      <Link to="/app/etablissements" className="company-backLink">
         Retour aux etablissements
       </Link>
 
@@ -433,7 +433,7 @@ export const CompanyDetailsPage: React.FC = () => {
           </p>
           <div className="company-actions">
             <Button variant="primary" onClick={() => setEditingOrganization(true)}>Modifier la fiche ETS</Button>
-            <Link to={`/organizations/maintenance?source=${data.id}`}>
+            <Link to={`/app/etablissements/maintenance?source=${data.id}`}>
               <Button variant="ghost">Maintenance ETS</Button>
             </Link>
             {data.website ? (
@@ -570,7 +570,7 @@ export const CompanyDetailsPage: React.FC = () => {
                       {application.next_followup_at ? (
                         <span className="company-pill">Relance: {formatDate(application.next_followup_at)}</span>
                       ) : null}
-                      <Link to={`/applications/${application.id}`} className="company-linkCta">
+                      <Link to={`/app/candidatures/${application.id}`} className="company-linkCta">
                         Ouvrir la candidature
                       </Link>
                     </div>

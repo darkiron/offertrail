@@ -277,7 +277,7 @@ export const ApplicationDetails: React.FC = () => {
         return;
       }
       if (fetchError.response?.status === 402) {
-        navigate('/pricing?reason=limit_reached');
+        navigate('/app/pricing?reason=limit_reached');
         return;
       }
       setError(fetchError.response?.data?.detail || 'Impossible de charger le detail de la candidature.');
@@ -481,7 +481,7 @@ export const ApplicationDetails: React.FC = () => {
         <div className="appdetail-mainCard appdetail-empty">
           <div>{error || 'Application not found.'}</div>
           <div style={{ marginTop: 12 }}>
-            <Link to="/">
+            <Link to="/app">
               <Button variant="ghost">Back to dashboard</Button>
             </Link>
           </div>
@@ -590,7 +590,7 @@ export const ApplicationDetails: React.FC = () => {
         </div>
       ) : null}
 
-      <Link to="/" className="appdetail-back">Back to dashboard</Link>
+      <Link to="/app" className="appdetail-back">Back to dashboard</Link>
 
       <section className="appdetail-hero">
         <div>
@@ -628,7 +628,7 @@ export const ApplicationDetails: React.FC = () => {
             <div className="appdetail-label">Organization</div>
             <div className="appdetail-muted" style={{ marginTop: 6 }}>
               {organization ? (
-                <Link to={`/organizations/${organization.id}`}>{organization.name}</Link>
+                <Link to={`/app/etablissements/${organization.id}`}>{organization.name}</Link>
               ) : 'No linked organization'}
             </div>
           </div>
@@ -637,7 +637,7 @@ export const ApplicationDetails: React.FC = () => {
               <div className="appdetail-label">Final customer</div>
               <div className="appdetail-muted" style={{ marginTop: 6 }}>
                 {final_customer_organization ? (
-                  <Link to={`/organizations/${final_customer_organization.id}`}>{final_customer_organization.name}</Link>
+                  <Link to={`/app/etablissements/${final_customer_organization.id}`}>{final_customer_organization.name}</Link>
                 ) : 'Not linked yet'}
               </div>
             </div>

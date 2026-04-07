@@ -572,7 +572,7 @@ export const OrganizationsPage: React.FC = () => {
           </p>
 
           <div className="organizations-heroActions">
-            <Link to="/organizations/maintenance" className="organizations-actionLink is-primary">
+            <Link to="/app/etablissements/maintenance" className="organizations-actionLink is-primary">
               <ToolIcon />
               Maintenance ETS
             </Link>
@@ -707,7 +707,7 @@ export const OrganizationsPage: React.FC = () => {
                 <article
                   key={organization.id}
                   className="organization-card"
-                  onClick={() => navigate(`/organizations/${organization.id}`)}
+                  onClick={() => navigate(`/app/etablissements/${organization.id}`)}
                 >
                   <div className="organization-cardHeader">
                     <span className="organization-typeBadge">{organizationTypeLabels[organization.type]}</span>

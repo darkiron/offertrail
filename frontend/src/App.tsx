@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationDetails } from './pages/ApplicationDetails';
@@ -16,6 +16,7 @@ import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { LandingPage } from './pages/LandingPage';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
@@ -225,7 +226,7 @@ const ThemeToggle: React.FC = () => {
 
 const Navbar: React.FC = () => {
   const { t } = useI18n();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { logout, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -254,66 +255,62 @@ const Navbar: React.FC = () => {
     <nav className="app-nav">
       <div className="app-navInner">
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-          <Link to="/" className="app-brand">
+          <Link to="/app" className="app-brand">
             <span className="app-brandMark">OT</span>
             <span>{t('nav.brand')}</span>
           </Link>
-          {isAuthenticated ? (
-            <div className="app-navLinks">
-              <Link
-                to="/"
-                className={`app-navLink ${isActive('/') && !isActive('/applications') && !isActive('/organizations') && !isActive('/contacts') && !isActive('/import') ? 'is-active' : ''}`}
-              >
-                {t('nav.dashboard')}
-              </Link>
-              <Link to="/applications" className={`app-navLink ${isActive('/applications') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
-              <Link to="/organizations" className={`app-navLink ${isActive('/organizations') || isActive('/companies') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
-              <Link to="/contacts" className={`app-navLink ${isActive('/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
-              <Link to="/import" className={`app-navLink ${isActive('/import') ? 'is-active' : ''}`}>{t('nav.import')}</Link>
-            </div>
-          ) : null}
+          <div className="app-navLinks">
+            <Link
+              to="/app"
+              className={`app-navLink ${location.pathname === '/app' ? 'is-active' : ''}`}
+            >
+              {t('nav.dashboard')}
+            </Link>
+            <Link to="/app/candidatures" className={`app-navLink ${isActive('/app/candidatures') ? 'is-active' : ''}`}>{t('nav.applications')}</Link>
+            <Link to="/app/etablissements" className={`app-navLink ${isActive('/app/etablissements') ? 'is-active' : ''}`}>{t('nav.organizations')}</Link>
+            <Link to="/app/contacts" className={`app-navLink ${isActive('/app/contacts') ? 'is-active' : ''}`}>{t('nav.contacts')}</Link>
+            <Link to="/app/import" className={`app-navLink ${isActive('/app/import') ? 'is-active' : ''}`}>{t('nav.import')}</Link>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {isAuthenticated ? (
-            <div className="app-userMenu" ref={dropdownRef}>
-              <button
-                className={`app-userBtn ${dropdownOpen ? 'is-open' : ''}`}
-                onClick={() => setDropdownOpen((o) => !o)}
-              >
-                {user?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
-                <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 1l4 4 4-4" />
-                </svg>
-              </button>
+          <div className="app-userMenu" ref={dropdownRef}>
+            <button
+              className={`app-userBtn ${dropdownOpen ? 'is-open' : ''}`}
+              onClick={() => setDropdownOpen((o) => !o)}
+            >
+              {user?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
+              <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
 
-              {dropdownOpen ? (
-                <div className="app-dropdown">
-                  <div style={{ padding: '8px 12px 6px', fontSize: '12px', color: 'var(--text-dim)' }}>
-                    {user?.email}
-                  </div>
-                  <div className="app-dropdownDivider" />
-
-                  <Link to="/mon-compte" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
-                    Mon compte
-                  </Link>
-                  {user?.role === 'admin' ? (
-                    <Link to="/admin" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
-                      Administration
-                    </Link>
-                  ) : null}
-                  <Link to="/pricing" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
-                    Abonnement
-                  </Link>
-
-                  <div className="app-dropdownDivider" />
-
-                  <button className="app-dropdownItem is-danger" onClick={handleLogout}>
-                    Se déconnecter
-                  </button>
+            {dropdownOpen ? (
+              <div className="app-dropdown">
+                <div style={{ padding: '8px 12px 6px', fontSize: '12px', color: 'var(--text-dim)' }}>
+                  {user?.email}
                 </div>
-              ) : null}
-            </div>
-          ) : null}
+                <div className="app-dropdownDivider" />
+
+                <Link to="/app/mon-compte" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                  Mon compte
+                </Link>
+                {user?.role === 'admin' ? (
+                  <Link to="/app/admin" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                    Administration
+                  </Link>
+                ) : null}
+                <Link to="/app/pricing" className="app-dropdownItem" onClick={() => setDropdownOpen(false)}>
+                  Abonnement
+                </Link>
+
+                <div className="app-dropdownDivider" />
+
+                <button className="app-dropdownItem is-danger" onClick={handleLogout}>
+                  Se déconnecter
+                </button>
+              </div>
+            ) : null}
+          </div>
           <ThemeToggle />
         </div>
       </div>
@@ -321,42 +318,54 @@ const Navbar: React.FC = () => {
   );
 };
 
-function App() {
+const AppLayout: React.FC = () => {
   const { t } = useI18n();
+  return (
+    <div className="app-shell flex flex-col">
+      <Navbar />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <footer className="app-footer">
+        <div className="app-footerInner">{t('nav.footer')}</div>
+      </footer>
+    </div>
+  );
+};
+
+function App() {
   useRestoreAuth();
   return (
     <>
       <style>{appStyles}</style>
       <Router>
-        <div className="app-shell flex flex-col">
-          <Navbar />
+        <Routes>
+          {/* Routes publiques */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
-              <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
-              <Route path="/organizations" element={<ProtectedRoute><OrganizationsPage /></ProtectedRoute>} />
-              <Route path="/organizations/maintenance" element={<ProtectedRoute><OrganizationMaintenancePage /></ProtectedRoute>} />
-              <Route path="/organizations/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-              <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-              <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
-              <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
-              <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
-              <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            </Routes>
-          </main>
+          {/* Routes protégées sous /app/ */}
+          <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="candidatures" element={<ApplicationsPage />} />
+            <Route path="candidatures/:id" element={<ApplicationDetails />} />
+            <Route path="etablissements" element={<OrganizationsPage />} />
+            <Route path="etablissements/maintenance" element={<OrganizationMaintenancePage />} />
+            <Route path="etablissements/:id" element={<CompanyDetailsPage />} />
+            <Route path="contacts" element={<ContactsPage />} />
+            <Route path="contacts/:id" element={<ContactDetailsPage />} />
+            <Route path="import" element={<Import />} />
+            <Route path="mon-compte" element={<MonCompte />} />
+            <Route path="pricing" element={<Pricing />} />
+            <Route path="admin" element={<Admin />} />
+          </Route>
 
-          <footer className="app-footer">
-            <div className="app-footerInner">{t('nav.footer')}</div>
-          </footer>
-        </div>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </Router>
     </>
   );

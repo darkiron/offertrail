@@ -36,7 +36,7 @@ export const Import: React.FC = () => {
     <div className="container mt-lg">
       <div className="flex justify-between items-center mb-lg">
         <h1 className="text-xxl font-bold">Import des candidatures</h1>
-        <Link to="/" className="btn-ghost">Retour au tableau de bord</Link>
+        <Link to="/app" className="btn-ghost">Retour au tableau de bord</Link>
       </div>
 
       {error ? (

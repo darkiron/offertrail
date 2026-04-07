@@ -245,7 +245,7 @@ export const NewApplicationModal: React.FC<NewApplicationModalProps> = ({ onClos
     } catch (submitError: any) {
       if (submitError.response?.status === 402) {
         onClose();
-        navigate('/pricing?reason=limit_reached');
+        navigate('/app/pricing?reason=limit_reached');
         return;
       }
       if (submitError.response?.status === 401) {

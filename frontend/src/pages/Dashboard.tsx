@@ -297,7 +297,7 @@ export const Dashboard: React.FC = () => {
         return;
       }
       if (fetchError.response?.status === 402) {
-        navigate('/pricing?reason=limit_reached');
+        navigate('/app/pricing?reason=limit_reached');
         return;
       }
       setError('Impossible de charger le tableau de bord.');
@@ -422,7 +422,7 @@ export const Dashboard: React.FC = () => {
           <p className="dashboard-copy">{t('dashboard.copy')}</p>
           <div className="dashboard-actions">
             <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-            <Link to="/import">
+            <Link to="/app/import">
               <Button variant="ghost">{t('dashboard.import')}</Button>
             </Link>
           </div>
@@ -530,7 +530,7 @@ export const Dashboard: React.FC = () => {
                         <td><StatusBadge status={app.status} /></td>
                         <td>{app.applied_at || '-'}</td>
                         <td>
-                          <Link to={`/applications/${app.id}`}>
+                          <Link to={`/app/candidatures/${app.id}`}>
                             <Button variant="ghost" size="small">{t('common.details')}</Button>
                           </Link>
                         </td>
@@ -573,7 +573,7 @@ export const Dashboard: React.FC = () => {
           followups.length > 0 ? (
             <div className="dashboard-followupList">
               {followups.map((app) => (
-                <div key={app.id} className="dashboard-followupCard" onClick={() => navigate(`/applications/${app.id}`)}>
+                <div key={app.id} className="dashboard-followupCard" onClick={() => navigate(`/app/candidatures/${app.id}`)}>
                   <div>
                     <div className="dashboard-companyTop">
                       <strong>{app.company}</strong>

@@ -218,7 +218,7 @@ export function LoginPage() {
   });
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -239,7 +239,7 @@ export function LoginPage() {
       setFormError(null);
       clearErrors();
       await login(result.data.email, result.data.password);
-      const nextPath = (location.state as { from?: string } | null)?.from ?? '/';
+      const nextPath = (location.state as { from?: string } | null)?.from ?? '/app';
       navigate(nextPath, { replace: true });
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Connexion impossible');

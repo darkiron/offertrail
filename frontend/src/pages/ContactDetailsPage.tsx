@@ -253,7 +253,7 @@ export const ContactDetailsPage: React.FC = () => {
     <div className="contactdetail-shell">
       <style>{pageStyles}</style>
 
-      <Link to="/contacts" className="contactdetail-back">{t('common.backToContacts')}</Link>
+      <Link to="/app/contacts" className="contactdetail-back">{t('common.backToContacts')}</Link>
 
       <section className="contactdetail-hero">
         <div>
@@ -287,7 +287,7 @@ export const ContactDetailsPage: React.FC = () => {
               {data.organization ? (
                 <button
                   type="button"
-                  onClick={() => navigate(`/organizations/${data.organization?.id}`)}
+                  onClick={() => navigate(`/app/etablissements/${data.organization?.id}`)}
                   style={{ background: 'transparent', padding: 0, color: 'var(--text-main)', border: 'none' }}
                 >
                   {data.organization.name}
@@ -355,7 +355,7 @@ export const ContactDetailsPage: React.FC = () => {
                       <StatusBadge status={application.status} />
                     </div>
                     <div style={{ marginTop: 12 }}>
-                      <Link to={`/applications/${application.id}`}>{t('contacts.openApplication')}</Link>
+                      <Link to={`/app/candidatures/${application.id}`}>{t('contacts.openApplication')}</Link>
                     </div>
                   </div>
                 ))}

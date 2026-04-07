@@ -284,7 +284,7 @@ export function Admin() {
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 403) {
           setAccessDenied(true);
-          window.setTimeout(() => navigate('/', { replace: true }), 1500);
+          window.setTimeout(() => navigate('/app', { replace: true }), 1500);
           return;
         }
         setError('Impossible de charger le backoffice admin.');
@@ -319,7 +319,7 @@ export function Admin() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 403) {
         setAccessDenied(true);
-        window.setTimeout(() => navigate('/', { replace: true }), 1500);
+        window.setTimeout(() => navigate('/app', { replace: true }), 1500);
         return;
       }
       setError("Impossible de mettre à jour l'abonnement.");
@@ -337,7 +337,7 @@ export function Admin() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 403) {
         setAccessDenied(true);
-        window.setTimeout(() => navigate('/', { replace: true }), 1500);
+        window.setTimeout(() => navigate('/app', { replace: true }), 1500);
         return;
       }
       setError('Impossible de désactiver cet utilisateur.');

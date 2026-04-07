@@ -201,7 +201,7 @@ export const ApplicationsPage: React.FC = () => {
         return;
       }
       if (fetchError.response?.status === 402) {
-        navigate('/pricing?reason=limit_reached');
+        navigate('/app/pricing?reason=limit_reached');
         return;
       }
       setError(fetchError.response?.data?.detail || 'Impossible de charger les candidatures.');
@@ -345,7 +345,7 @@ export const ApplicationsPage: React.FC = () => {
                       <td><StatusBadge status={app.status} size="md" /></td>
                       <td>{app.applied_at || '-'}</td>
                       <td>
-                        <Link to={`/applications/${app.id}`}>
+                        <Link to={`/app/candidatures/${app.id}`}>
                           <Button variant="ghost" size="small">{t('common.details')}</Button>
                         </Link>
                       </td>

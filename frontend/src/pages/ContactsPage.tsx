@@ -305,7 +305,7 @@ export const ContactsPage: React.FC = () => {
             {visibleContacts.map((contact) => {
               const organization = contact.organization_id ? organizationsMap.get(contact.organization_id) : null;
               return (
-                <article key={contact.id} className="contact-card" onClick={() => navigate(`/contacts/${contact.id}`)}>
+                <article key={contact.id} className="contact-card" onClick={() => navigate(`/app/contacts/${contact.id}`)}>
                   <div className="contact-top">
                     <div>
                       <h3 className="contact-name">{contact.first_name} {contact.last_name}</h3>

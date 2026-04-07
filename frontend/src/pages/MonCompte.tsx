@@ -245,7 +245,7 @@ export const MonCompte: React.FC = () => {
                 >
                   {sub?.is_pro ? 'Pro' : 'Starter'}
                 </span>
-                <button onClick={() => navigate('/pricing')} className="btn-ghost" style={{ fontSize: '12px', borderRadius: 999, padding: '0.35rem 0.7rem' }}>
+                <button onClick={() => navigate('/app/pricing')} className="btn-ghost" style={{ fontSize: '12px', borderRadius: 999, padding: '0.35rem 0.7rem' }}>
                   {sub?.is_pro ? 'Gérer' : 'Passer en Pro →'}
                 </button>
               </div>

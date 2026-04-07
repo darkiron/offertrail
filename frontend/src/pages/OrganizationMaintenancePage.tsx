@@ -634,7 +634,7 @@ export const OrganizationMaintenancePage: React.FC = () => {
     setError(null);
     try {
       await organizationService.merge(Number(sourceOrgId), Number(targetOrgId));
-      navigate(`/organizations/${targetOrgId}`);
+      navigate(`/app/etablissements/${targetOrgId}`);
     } catch {
       setError('La fusion a echoue. Verifie les ETS selectionnes puis recommence.');
     } finally {
@@ -655,7 +655,7 @@ export const OrganizationMaintenancePage: React.FC = () => {
         move_contacts: true,
       });
       resetSplitForm();
-      navigate(`/organizations/${created.id}`);
+      navigate(`/app/etablissements/${created.id}`);
     } catch {
       setError('La scission a echoue. Complete le nouvel ETS puis recommence.');
     } finally {
@@ -681,7 +681,7 @@ export const OrganizationMaintenancePage: React.FC = () => {
     <div className="org-maint-shell">
       <style>{pageStyles}</style>
 
-      <Link to="/organizations" className="org-maint-backLink">
+      <Link to="/app/etablissements" className="org-maint-backLink">
         Retour aux etablissements
       </Link>
 
