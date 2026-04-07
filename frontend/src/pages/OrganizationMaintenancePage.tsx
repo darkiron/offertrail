@@ -507,6 +507,8 @@ export const OrganizationMaintenancePage: React.FC = () => {
     notes: '',
   });
 
+  useEffect(() => { document.title = 'Maintenance entreprises — OfferTrail'; }, []);
+
   useEffect(() => {
     const fetchOrganizations = async () => {
       setLoading(true);

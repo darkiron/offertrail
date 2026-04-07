@@ -268,6 +268,8 @@ export function Admin() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'Administration — OfferTrail'; }, []);
+
   useEffect(() => {
     const load = async () => {
       try {

@@ -372,6 +372,8 @@ export const CompanyDetailsPage: React.FC = () => {
     }
   };
 
+  useEffect(() => { document.title = 'Entreprise — OfferTrail'; }, []);
+
   useEffect(() => {
     fetchCompany();
   }, [id]);

@@ -219,6 +219,8 @@ export const ContactDetailsPage: React.FC = () => {
     }
   };
 
+  useEffect(() => { document.title = 'Contact — OfferTrail'; }, []);
+
   useEffect(() => {
     fetchContact();
   }, [id]);
