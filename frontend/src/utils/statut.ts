@@ -40,3 +40,11 @@ export function getStatutLabel(statut: string): string {
 
   return labels[normalized] ?? (normalized ? normalized.replace(/_/g, ' ') : 'N/A');
 }
+
+export const statusLabelMap: Record<string, string> = {
+  INTERESTED: getStatutLabel('interested'),
+  APPLIED: getStatutLabel('applied'),
+  INTERVIEW: getStatutLabel('interview'),
+  OFFER: getStatutLabel('offer'),
+  REJECTED: getStatutLabel('rejected'),
+};

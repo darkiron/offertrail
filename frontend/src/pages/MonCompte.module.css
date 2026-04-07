@@ -1,6 +1,5 @@
 .shell {
-  max-width: 1200px;
-  margin: 0 auto;
+  composes: shellNarrow from '../styles/appShell.module.css';
 }
 
 .banner {

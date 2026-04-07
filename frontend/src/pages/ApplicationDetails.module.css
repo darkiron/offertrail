@@ -1,15 +1,9 @@
 .shell {
-  max-width: 1400px;
+  composes: shellWide from '../styles/appShell.module.css';
 }
 
 .hero {
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 34%),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--mantine-color-body) 92%, white 8%),
-      var(--mantine-color-body)
-    );
+  composes: hero from '../styles/appShell.module.css';
 }
 
 .back {
@@ -24,4 +18,39 @@
 
 .back:hover {
   color: var(--mantine-color-text);
+}
+
+.heroGrid {
+  align-items: start;
+}
+
+.statusSelect {
+  width: 160px;
+}
+
+.contentGrid {
+  align-items: start;
+}
+
+.noteForm {
+  margin-top: 24px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--mantine-color-text);
+  font-size: 0.95rem;
+}
+
+.linkList {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.linkItem {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 8px;
 }

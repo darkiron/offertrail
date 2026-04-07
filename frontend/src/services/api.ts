@@ -5,7 +5,6 @@ import type {
   Contact,
   DashboardData,
   LoginCredentials,
-  MonthlyInsights,
   Organization,
   PaginatedResponse,
   RegisterPayload,

@@ -134,7 +134,7 @@ export function ApplicationDetails() {
 
       {/* Hero */}
       <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" className={classes.heroGrid}>
           <Stack gap="sm">
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Application record</Text>
             <Title order={1}>{app.company}</Title>
@@ -150,7 +150,7 @@ export function ApplicationDetails() {
                 value={app.status}
                 onChange={(v) => v && handleUpdateStatus(v)}
                 size="xs"
-                style={{ width: 160 }}
+                className={classes.statusSelect}
               />
               <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>Réponse reçue</Button>
               <Button variant="primary" size="small" onClick={handleMarkFollowup}>Relance faite</Button>
@@ -186,7 +186,7 @@ export function ApplicationDetails() {
       </Paper>
 
       {/* Main layout */}
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" className={classes.contentGrid}>
         {/* Timeline + notes */}
         <Paper p="lg" radius="lg" withBorder>
           <Title order={3} mb="md">Timeline</Title>
@@ -205,7 +205,7 @@ export function ApplicationDetails() {
             <Text size="sm" c="dimmed" fs="italic">Aucun événement enregistré.</Text>
           )}
 
-          <form onSubmit={handleAddNote} style={{ marginTop: 24 }}>
+          <form onSubmit={handleAddNote} className={classes.noteForm}>
             <Stack gap="sm">
               <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Note rapide</Text>
               <Textarea
@@ -314,7 +314,7 @@ export function ApplicationDetails() {
                   <input className="mantine-Input-input" placeholder="Email" type="email" value={contactForm.email} onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))} />
                   <input className="mantine-Input-input" placeholder="Téléphone" value={contactForm.phone} onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))} />
                   <input className="mantine-Input-input" placeholder="Rôle" value={contactForm.role} onChange={(e) => setContactForm((f) => ({ ...f, role: e.target.value }))} />
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label className={classes.checkboxLabel}>
                     <input type="checkbox" checked={contactForm.is_recruiter === 1} onChange={(e) => setContactForm((f) => ({ ...f, is_recruiter: e.target.checked ? 1 : 0 }))} />
                     Est recruteur
                   </label>
@@ -325,12 +325,16 @@ export function ApplicationDetails() {
           </Tabs.Panel>
 
           <Tabs.Panel value="link">
-            <Stack gap="sm" style={{ maxHeight: 320, overflowY: 'auto' }}>
+            <Stack gap="sm" className={classes.linkList}>
               {all_contacts
                 ?.filter((c: Contact) => !contacts.some((r: Contact) => r.id === c.id))
                 .map((c: Contact) => (
-                  <Group key={c.id} justify="space-between" p="sm"
-                    style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
+                  <Group
+                    key={c.id}
+                    justify="space-between"
+                    p="sm"
+                    className={classes.linkItem}
+                  >
                     <div>
                       <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
                       <Text size="xs" c="dimmed">{c.role || 'Contact'}</Text>
