@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_current_user_id, own_candidature
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement, Relance
+from src.models import Candidature, CandidatureEvent, Etablissement, Relance, User
+from src.services.subscription import check_can_create
 from src.schemas.me import (
     CandidatureCreate,
     CandidatureSchema,
@@ -52,6 +53,11 @@ def create_my_candidature(
     etablissement = db.query(Etablissement).filter(Etablissement.id == payload.etablissement_id).first()
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    check_can_create(db, user)
 
     candidature = Candidature(
         **payload.model_dump(),
