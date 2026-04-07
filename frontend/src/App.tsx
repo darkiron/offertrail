@@ -17,6 +17,10 @@ import { RegisterPage } from './pages/Register';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
 import { LandingPage } from './pages/LandingPage';
+import { LegalNoticePage } from './pages/LegalNoticePage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsPage } from './pages/TermsPage';
+import { ContactPage } from './pages/ContactPage';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
@@ -346,6 +350,10 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/legal" element={<LegalNoticePage />} />
+          <Route path="/cgv" element={<TermsPage />} />
+          <Route path="/confidentialite" element={<PrivacyPolicyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Routes protégées sous /app/ */}
           <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
