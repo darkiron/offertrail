@@ -2,40 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import { Paper, Stack, Text } from '@mantine/core';
 import { authService } from '../services/api';
-
-const resetStyles = `
-  .signup-shell {
-    min-height: calc(100vh - 140px);
-    display: grid;
-    place-items: center;
-    padding: 48px 24px 72px;
-  }
-
-  .signup-card {
-    width: min(760px, 100%);
-    border-radius: 28px;
-    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
-    background:
-      radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 20%, transparent), transparent 35%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 95%, transparent), color-mix(in srgb, var(--bg-crust) 92%, transparent));
-    padding: 42px;
-    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.18);
-  }
-
-  .signup-head, .signup-form, .signup-field { display: grid; gap: 18px; }
-  .signup-kicker, .signup-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
-  .signup-kicker { display: inline-flex; padding: 8px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
-  .signup-title { margin: 16px 0 10px; font-size: clamp(2rem, 4vw, 3rem); line-height: 1; letter-spacing: -0.04em; }
-  .signup-copy, .signup-footer { color: var(--text-dim); }
-  .signup-input {
-    width: 100%; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-    background: color-mix(in srgb, var(--bg-base) 88%, transparent); color: var(--text-main); padding: 14px 16px; outline: none;
-  }
-  .signup-helper { color: var(--status-rejected); font-size: 0.84rem; }
-  .signup-error { padding: 12px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--status-rejected) 70%, transparent); background: color-mix(in srgb, var(--status-rejected) 10%, transparent); color: var(--status-rejected); }
-  .signup-submit { width: 100%; border-radius: 16px; padding: 15px 18px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-hover) 78%, white 22%)); color: white; font-weight: 800; }
-`;
+import classes from './Auth.module.css';
 
 const schema = z
   .object({
@@ -89,43 +58,50 @@ export function ResetPasswordPage() {
   });
 
   return (
-    <>
-      <style>{resetStyles}</style>
-      <section className="signup-shell">
-      <div className="signup-card" style={{ maxWidth: 640 }}>
-        <div className="signup-head" style={{ marginBottom: 20 }}>
-          <div>
-            <div className="signup-kicker">Nouveau mot de passe</div>
-            <h1 className="signup-title">Réinitialiser le mot de passe</h1>
-            <p className="signup-copy">Choisis un nouveau mot de passe sécurisé pour ton compte OfferTrail.</p>
-          </div>
-        </div>
+    <section className={classes.shell}>
+      <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42} maw={640}>
+        <Stack gap={4} mb="xl">
+          <span className={classes.kicker}>Nouveau mot de passe</span>
+          <h1 className={classes.title}>Réinitialiser le mot de passe</h1>
+          <Text c="dimmed">Choisis un nouveau mot de passe sécurisé pour ton compte OfferTrail.</Text>
+        </Stack>
 
-        <form className="signup-form" onSubmit={onSubmit}>
-          <div className="signup-field">
-            <label className="signup-label" htmlFor="password">Nouveau mot de passe</label>
-            <input id="password" className="signup-input" type="password" autoComplete="new-password" {...register('password')} />
-            {errors.password ? <div className="signup-helper">{errors.password.message}</div> : null}
-          </div>
-
-          <div className="signup-field">
-            <label className="signup-label" htmlFor="confirmPassword">Confirmation</label>
-            <input id="confirmPassword" className="signup-input" type="password" autoComplete="new-password" {...register('confirmPassword')} />
-            {errors.confirmPassword ? <div className="signup-helper">{errors.confirmPassword.message}</div> : null}
+        <Stack gap="md" component="form" onSubmit={onSubmit}>
+          <div className={classes.field}>
+            <label className={classes.label} htmlFor="password">Nouveau mot de passe</label>
+            <input
+              id="password"
+              className={classes.input}
+              type="password"
+              autoComplete="new-password"
+              {...register('password')}
+            />
+            {errors.password ? <div className={classes.helper}>{errors.password.message}</div> : null}
           </div>
 
-          {error ? <div className="signup-error">{error}</div> : null}
+          <div className={classes.field}>
+            <label className={classes.label} htmlFor="confirmPassword">Confirmation</label>
+            <input
+              id="confirmPassword"
+              className={classes.input}
+              type="password"
+              autoComplete="new-password"
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword ? <div className={classes.helper}>{errors.confirmPassword.message}</div> : null}
+          </div>
 
-          <button className="signup-submit" type="submit" disabled={isSubmitting}>
+          {error ? <div className={classes.error}>{error}</div> : null}
+
+          <button className={classes.submit} type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
           </button>
-        </form>
+        </Stack>
 
-        <div className="signup-footer">
+        <div className={classes.footer}>
           <Link to="/forgot-password">Demander un nouveau lien</Link>
         </div>
-      </div>
-      </section>
-    </>
+      </Paper>
+    </section>
   );
 }

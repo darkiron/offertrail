@@ -1,0 +1,11 @@
+.shell {
+  composes: shellStandard from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}
+
+.card {
+  composes: cardLift from '../styles/appShell.module.css';
+}

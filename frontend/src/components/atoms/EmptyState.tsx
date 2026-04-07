@@ -1,11 +1,13 @@
-import React from 'react';
+import { Stack, ThemeIcon, Text } from '@mantine/core';
+import { IconFolderOpen } from '@tabler/icons-react';
+import type { ReactNode } from 'react';
 import { Title } from './Title';
 import { Button } from './Button';
 
 interface EmptyStateProps {
   title: string;
   description?: string;
-  icon?: string;
+  icon?: ReactNode;
   action?: {
     label: string;
     onClick: () => void;
@@ -13,29 +15,23 @@ interface EmptyStateProps {
   className?: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  title,
-  description,
-  icon = 'fa-folder-open',
-  action,
-  className = '',
-}) => {
+export function EmptyState({ title, description, icon, action, className }: EmptyStateProps) {
   return (
-    <div className={`section has-text-centered p-6 ${className}`}>
-      <div className="mb-4">
-        <span className="icon is-large has-text-grey-light">
-          <i className={`fas ${icon} fa-3x`}></i>
-        </span>
-      </div>
+    <Stack align="center" justify="center" gap="md" py="xl" className={className}>
+      <ThemeIcon size={64} radius="xl" variant="light" color="gray">
+        {icon ?? <IconFolderOpen size={32} />}
+      </ThemeIcon>
       <Title level={4}>{title}</Title>
       {description && (
-        <p className="subtitle is-6 has-text-grey mb-5">{description}</p>
+        <Text c="dimmed" size="sm" ta="center">
+          {description}
+        </Text>
       )}
       {action && (
         <Button variant="primary" onClick={action.onClick}>
           {action.label}
         </Button>
       )}
-    </div>
+    </Stack>
   );
-};
+}

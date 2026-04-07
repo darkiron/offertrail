@@ -1,0 +1,13 @@
+.shell {
+  composes: shellNarrow from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}
+
+.tsvArea {
+  font-family: monospace;
+  font-size: 12px;
+  min-height: 300px;
+}

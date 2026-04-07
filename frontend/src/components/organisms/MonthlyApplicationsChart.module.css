@@ -1,0 +1,4 @@
+.bar:hover {
+  fill: var(--mantine-color-blue-5);
+  cursor: help;
+}

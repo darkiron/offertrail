@@ -1,0 +1,64 @@
+.shell {
+  background: var(--bg-base);
+  min-height: 100vh;
+}
+
+.header {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--bg-mantle) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.navbar {
+  background: color-mix(in srgb, var(--bg-mantle) 80%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-hover) 80%, white 20%));
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: white;
+  flex-shrink: 0;
+}
+
+.userBtn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  color: var(--text-main);
+}
+
+.userBtn:hover {
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+}
+
+.navLink {
+  border-radius: 8px;
+  margin-bottom: 2px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.navLink[data-active] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.main {
+  background: var(--bg-base);
+}

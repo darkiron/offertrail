@@ -1,37 +1,38 @@
-import React from 'react';
+import { Card, Group, Text, Badge } from '@mantine/core';
 import type { MonthlyStats } from '../../types';
+import classes from './MonthlyApplicationsChart.module.css';
 
 interface MonthlyApplicationsChartProps {
   data: MonthlyStats[];
   year: number;
 }
 
-const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ data, year }) => {
-  const maxCount = Math.max(...data.map(d => d.count), 1);
+export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChartProps) {
+  const maxCount = Math.max(...data.map((d) => d.count), 1);
   const chartHeight = 200;
   const barWidth = 40;
   const barGap = 10;
   const chartWidth = (barWidth + barGap) * data.length + barGap;
 
   return (
-    <div className="card" style={{ padding: 'var(--spacing-md)' }}>
-      <div style={{ marginBottom: 'var(--spacing-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--text-main)' }}>
-          Monthly Applications
-        </h3>
-        <span className="badge" style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
-          {year}
-        </span>
-      </div>
+    <Card radius="lg" padding="lg">
+      <Group justify="space-between" mb="md">
+        <Text fw={600}>Monthly Applications</Text>
+        <Badge variant="filled" size="sm">{year}</Badge>
+      </Group>
 
-      {data.every(d => d.count === 0) ? (
-        <div style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+      {data.every((d) => d.count === 0) ? (
+        <Text
+          c="dimmed"
+          fs="italic"
+          ta="center"
+          style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           No application data available for {year}
-        </div>
+        </Text>
       ) : (
-        <div style={{ overflowX: 'auto', paddingBottom: 'var(--spacing-sm)' }}>
+        <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
           <svg width={chartWidth} height={chartHeight + 40} viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`}>
-            {/* Horizontal Grid Lines */}
             {[0, 0.25, 0.5, 0.75, 1].map((percent, i) => (
               <line
                 key={i}
@@ -39,12 +40,11 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
                 y1={chartHeight * (1 - percent)}
                 x2={chartWidth}
                 y2={chartHeight * (1 - percent)}
-                stroke="var(--border)"
+                stroke="var(--mantine-color-default-border)"
                 strokeDasharray="4 2"
               />
             ))}
 
-            {/* Bars */}
             {data.map((d, i) => {
               const barHeight = (d.count / maxCount) * chartHeight;
               const x = barGap + i * (barWidth + barGap);
@@ -52,38 +52,34 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
 
               return (
                 <g key={d.month}>
-                  {/* Bar */}
                   <rect
                     x={x}
                     y={y}
                     width={barWidth}
                     height={barHeight}
-                    fill="var(--accent)"
+                    fill="var(--mantine-color-blue-6)"
                     rx="4"
-                    className="chart-bar"
+                    className={classes.bar}
                   >
                     <title>{`${d.month}: ${d.count} applications`}</title>
                   </rect>
-                  
-                  {/* Label (Month) */}
                   <text
                     x={x + barWidth / 2}
                     y={chartHeight + 20}
                     textAnchor="middle"
-                    fill="var(--text-dim)"
-                    style={{ fontSize: 'var(--font-size-xs)' }}
+                    fill="var(--mantine-color-dimmed)"
+                    fontSize="11"
                   >
                     {d.month}
                   </text>
-
-                  {/* Count on top of bar (if height allows) */}
                   {d.count > 0 && (
                     <text
                       x={x + barWidth / 2}
                       y={y - 5}
                       textAnchor="middle"
-                      fill="var(--text-main)"
-                      style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'bold' }}
+                      fill="var(--mantine-color-text)"
+                      fontSize="11"
+                      fontWeight="bold"
                     >
                       {d.count}
                     </text>
@@ -94,15 +90,8 @@ const MonthlyApplicationsChart: React.FC<MonthlyApplicationsChartProps> = ({ dat
           </svg>
         </div>
       )}
-      
-      <style>{`
-        .chart-bar:hover {
-          fill: var(--accent-hover);
-          cursor: help;
-        }
-      `}</style>
-    </div>
+    </Card>
   );
-};
+}
 
 export default MonthlyApplicationsChart;

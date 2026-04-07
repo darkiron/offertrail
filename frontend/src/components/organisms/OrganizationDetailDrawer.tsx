@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  Drawer, Tabs, Group, Stack, Text, ScrollArea, Center, Loader, Anchor,
+} from '@mantine/core';
 import { api } from '../../services/api';
-import { Title } from '../atoms/Title';
-import { Spinner } from '../atoms/Spinner';
-import OrganizationTypeBadge from '../atoms/OrganizationTypeBadge';
-import ProbityBadge from '../atoms/ProbityBadge';
+import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
+import { ProbityBadge } from '../atoms/ProbityBadge';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { Button } from '../atoms/Button';
 import OrganizationEditModal from './OrganizationEditModal';
@@ -14,155 +15,142 @@ interface OrganizationDetailDrawerProps {
   onUpdate: () => void;
 }
 
-export const OrganizationDetailDrawer: React.FC<OrganizationDetailDrawerProps> = ({ 
-  organizationId, 
-  onClose, 
-  onUpdate 
-}) => {
+export function OrganizationDetailDrawer({ organizationId, onClose }: OrganizationDetailDrawerProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
   const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    if (organizationId) {
-      setLoading(true);
-      api.getCompany(organizationId)
-        .then(setData)
-        .finally(() => setLoading(false));
-    } else {
-      setData(null);
+  const loadData = async () => {
+    if (!organizationId) { setData(null); return; }
+    setLoading(true);
+    try {
+      const result = await api.getCompany(organizationId);
+      setData(result);
+    } finally {
+      setLoading(false);
     }
-  }, [organizationId]);
+  };
 
-  if (!organizationId) return null;
+  useEffect(() => { loadData(); }, [organizationId]);
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} />
-      <div className="drawer" style={{ width: '520px' }}>
+      <Drawer
+        opened={!!organizationId}
+        onClose={onClose}
+        position="right"
+        size={520}
+        title={data ? (
+          <Stack gap={4}>
+            <Text fw={700} size="lg">{data.name}</Text>
+            <OrganizationTypeBadge type={data.type} size="sm" />
+          </Stack>
+        ) : null}
+      >
         {loading ? (
-          <div className="flex-grow flex items-center justify-center">
-            <Spinner />
-          </div>
+          <Center h={200}><Loader /></Center>
         ) : data ? (
-          <>
-            <div className="p-lg border-bottom">
-              <div className="flex justify-between items-start mb-md">
-                <div>
-                  <Title level={3} className="mb-1">{data.name}</Title>
-                  <OrganizationTypeBadge type={data.type} size="sm" />
-                </div>
-                <div className="flex gap-sm">
-                  {data.linkedin_url && (
-                    <a href={data.linkedin_url} target="_blank" rel="noreferrer" className="button is-small is-ghost">LinkedIn</a>
-                  )}
-                  {data.website && (
-                    <a href={data.website} target="_blank" rel="noreferrer" className="button is-small is-ghost">Site</a>
-                  )}
-                  <button className="delete" onClick={onClose}></button>
-                </div>
-              </div>
-            </div>
+          <Stack gap="md" h="100%">
+            <Group gap="xs">
+              {data.linkedin_url && (
+                <Anchor href={data.linkedin_url} target="_blank" size="sm">LinkedIn</Anchor>
+              )}
+              {data.website && (
+                <Anchor href={data.website} target="_blank" size="sm">Site</Anchor>
+              )}
+            </Group>
 
-            <div className="flex-grow overflow-y-auto">
-              <div className="tabs px-lg">
-                <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Aperçu</button>
-                <button className={`tab ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>Candidatures</button>
-                <button className={`tab ${activeTab === 'contacts' ? 'active' : ''}`} onClick={() => setActiveTab('contacts')}>Contacts</button>
-              </div>
+            <Tabs defaultValue="overview" style={{ flex: 1 }}>
+              <Tabs.List>
+                <Tabs.Tab value="overview">Aperçu</Tabs.Tab>
+                <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
+                <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
+              </Tabs.List>
 
-              <div className="p-lg">
-                {activeTab === 'overview' && (
-                  <div className="flex flex-col gap-lg">
-                    <ProbityBadge 
-                      score={data.metrics?.probity_score} 
-                      level={data.metrics?.probity_level || 'insuffisant'} 
+              <ScrollArea style={{ flex: 1 }}>
+                <Tabs.Panel value="overview" pt="md">
+                  <Stack gap="lg">
+                    <ProbityBadge
+                      score={data.metrics?.probity_score}
+                      level={data.metrics?.probity_level || 'insuffisant'}
                       size="md"
                     />
-
-                    <div className="detail-section">
-                      <h4 className="text-xs font-mono uppercase text-secondary mb-md">À propos</h4>
-                      <p className="text-sm text-secondary italic mb-md">{data.notes || "Aucune note."}</p>
-                      <div className="grid grid-cols-2 gap-md text-sm">
+                    <div>
+                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="sm">À propos</Text>
+                      <Text size="sm" c="dimmed" fs="italic" mb="sm">{data.notes || 'Aucune note.'}</Text>
+                      <Group grow>
                         <div>
-                          <p className="text-xs text-secondary font-mono uppercase">Localisation</p>
-                          <p>{data.city || "Non spécifié"}</p>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Localisation</Text>
+                          <Text size="sm">{data.city || 'Non spécifié'}</Text>
                         </div>
                         <div>
-                          <p className="text-xs text-secondary font-mono uppercase">Date création</p>
-                          <p>{new Date(data.created_at).toLocaleDateString()}</p>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Date création</Text>
+                          <Text size="sm">{new Date(data.created_at).toLocaleDateString()}</Text>
                         </div>
-                      </div>
+                      </Group>
                     </div>
-                  </div>
-                )}
+                  </Stack>
+                </Tabs.Panel>
 
-                {activeTab === 'applications' && (
-                  <div className="flex flex-col gap-sm">
+                <Tabs.Panel value="applications" pt="md">
+                  <Stack gap="xs">
                     {data.applications && data.applications.length > 0 ? (
-                      data.applications.map((app: any) => (
-                        <div key={app.id} className="card-secondary p-md rounded-sm flex justify-between items-center">
+                      data.applications.map((app: { id: number; title: string; applied_at: string; status: string }) => (
+                        <Group key={app.id} justify="space-between" p="sm"
+                          style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
                           <div>
-                            <p className="font-bold text-sm">{app.title}</p>
-                            <p className="text-xs text-secondary">{new Date(app.applied_at).toLocaleDateString()}</p>
+                            <Text size="sm" fw={700}>{app.title}</Text>
+                            <Text size="xs" c="dimmed">{new Date(app.applied_at).toLocaleDateString()}</Text>
                           </div>
                           <StatusBadge status={app.status} />
-                        </div>
+                        </Group>
                       ))
                     ) : (
-                      <p className="text-secondary italic text-sm text-center py-lg">Aucune candidature pour cet ETS.</p>
+                      <Text size="sm" c="dimmed" fs="italic" ta="center">Aucune candidature pour cet ETS.</Text>
                     )}
-                  </div>
-                )}
+                  </Stack>
+                </Tabs.Panel>
 
-                {activeTab === 'contacts' && (
-                  <div className="flex flex-col gap-sm">
-                    <div className="flex justify-end mb-md">
+                <Tabs.Panel value="contacts" pt="md">
+                  <Stack gap="xs">
+                    <Group justify="flex-end">
                       <Button variant="ghost" size="small">+ AJOUTER CONTACT</Button>
-                    </div>
+                    </Group>
                     {data.contacts && data.contacts.length > 0 ? (
-                      data.contacts.map((c: any) => (
-                        <div key={c.id} className="card-secondary p-md rounded-sm flex justify-between items-start">
-                          <div>
-                            <p className="font-bold text-sm">{c.first_name} {c.last_name}</p>
-                            <p className="text-xs text-secondary">{c.role}</p>
-                            <div className="flex gap-md mt-2">
-                              {c.email && <span className="text-[10px] font-mono text-secondary">{c.email}</span>}
-                              {c.is_recruiter && <span className="tag-status" style={{ backgroundColor: 'rgba(236, 72, 153, 0.1)', color: 'var(--ot-accent-pink)' }}>RECRUTEUR</span>}
-                            </div>
-                          </div>
-                        </div>
+                      data.contacts.map((c: { id: number; first_name: string; last_name: string; role: string; email?: string; is_recruiter?: boolean }) => (
+                        <Stack key={c.id} gap={4} p="sm"
+                          style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
+                          <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
+                          <Text size="xs" c="dimmed">{c.role}</Text>
+                          {c.email && <Text size="xs" ff="monospace" c="dimmed">{c.email}</Text>}
+                        </Stack>
                       ))
                     ) : (
-                      <p className="text-secondary italic text-sm text-center py-lg">Aucun contact enregistré.</p>
+                      <Text size="sm" c="dimmed" fs="italic" ta="center">Aucun contact enregistré.</Text>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
+                  </Stack>
+                </Tabs.Panel>
+              </ScrollArea>
+            </Tabs>
 
-            <div className="p-lg border-top flex gap-md">
-              <Button variant="primary" className="flex-grow" onClick={() => setEditing(true)}>MODIFIER ETS</Button>
-            </div>
-
-            {editing && data && (
-              <OrganizationEditModal 
-                organization={data}
-                onClose={() => setEditing(false)}
-                onSaved={async () => { 
-                  setEditing(false);
-                  // refresh data
-                  setLoading(true);
-                  try { const refreshed = await api.getCompany(organizationId); setData(refreshed); } finally { setLoading(false); }
-                }}
-              />
-            )}
-          </>
+            <Button variant="primary" onClick={() => setEditing(true)}>MODIFIER ETS</Button>
+          </Stack>
         ) : (
-          <div className="p-lg text-center text-secondary">Établissement introuvable.</div>
+          <Text c="dimmed" ta="center">Établissement introuvable.</Text>
         )}
-      </div>
+      </Drawer>
+
+      {editing && data && (
+        <OrganizationEditModal
+          organization={data}
+          onClose={() => setEditing(false)}
+          onSaved={async () => {
+            setEditing(false);
+            await loadData();
+          }}
+        />
+      )}
     </>
   );
-};
+}

@@ -1,0 +1,23 @@
+.shell {
+  composes: shellStandard from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}
+
+.noteCard {
+  composes: panelAccent from '../styles/appShell.module.css';
+}
+
+.statsValue {
+  composes: statsValue from '../styles/appShell.module.css';
+}
+
+.probitySlot {
+  margin-top: 8px;
+}
+
+.sectionDivider {
+  composes: sectionDivider from '../styles/appShell.module.css';
+}
