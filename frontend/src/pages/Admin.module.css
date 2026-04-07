@@ -1,0 +1,32 @@
+.shell {
+  composes: shellNarrow from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: heroWarm from '../styles/appShell.module.css';
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fbbf24;
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 16px 0 10px;
+}
+
+.statsValue {
+  composes: statsValue from '../styles/appShell.module.css';
+}

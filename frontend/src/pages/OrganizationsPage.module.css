@@ -1,0 +1,42 @@
+.shell {
+  composes: shellWide from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}
+
+.kpi {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.22);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.card {
+  composes: cardLift from '../styles/appShell.module.css';
+}
+
+.progressBar {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #3b82f6);
+  transition: width 0.3s ease;
+}
+
+.notePreview {
+  min-height: 42px;
+}
+
+.alertCard {
+  composes: alertCard from '../styles/appShell.module.css';
+}
+
+.progressTrack {
+  composes: progressTrack from '../styles/appShell.module.css';
+}
+
+.sectionFooter {
+  composes: softDivider from '../styles/appShell.module.css';
+}
