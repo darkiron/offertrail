@@ -31,7 +31,7 @@ import { useI18n } from '../i18n';
 import classes from './AppLayout.module.css';
 
 const NAV_LINKS = [
-  { label: 'Dashboard', to: '/', icon: IconLayoutDashboard },
+  { label: 'Dashboard', to: '/dashboard', icon: IconLayoutDashboard },
   { label: 'Candidatures', to: '/applications', icon: IconBriefcase },
   { label: 'Entreprises', to: '/organizations', icon: IconBuilding },
   { label: 'Contacts', to: '/contacts', icon: IconUsers },
@@ -46,8 +46,8 @@ export function AppLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
   const isActive = (to: string) =>
-    to === '/'
-      ? location.pathname === '/'
+    to === '/dashboard'
+      ? location.pathname === '/dashboard'
       : location.pathname.startsWith(to);
 
   const handleLogout = () => {
@@ -69,7 +69,7 @@ export function AppLayout() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Link to="/" className={classes.brand}>
+            <Link to="/dashboard" className={classes.brand}>
               <span className={classes.brandMark}>OT</span>
               <Text fw={800} size="sm" style={{ letterSpacing: '-0.02em' }}>OfferTrail</Text>
             </Link>

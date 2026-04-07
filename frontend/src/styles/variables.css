@@ -65,7 +65,9 @@
 }
 
 /* ─── Semantic tokens (light) ──────────────────────────────── */
-[data-theme='light'], :root {
+[data-theme='light'],
+[data-mantine-color-scheme='light'],
+:root {
   --bg-base:    var(--ctp-latte-base);
   --bg-mantle:  var(--ctp-latte-mantle);
   --bg-crust:   var(--ctp-latte-crust);
@@ -89,7 +91,8 @@
 }
 
 /* ─── Semantic tokens (dark) ───────────────────────────────── */
-[data-theme='dark'] {
+[data-theme='dark'],
+[data-mantine-color-scheme='dark'] {
   --bg-base:    var(--ctp-mocha-base);
   --bg-mantle:  var(--ctp-mocha-mantle);
   --bg-crust:   var(--ctp-mocha-crust);
