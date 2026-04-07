@@ -1,5 +1,6 @@
-import React from 'react';
+import { Badge } from '@mantine/core';
 import type { ProbityLevel } from '../../types';
+import classes from './ProbityBadge.module.css';
 
 interface ProbityBadgeProps {
   score: number | null;
@@ -8,56 +9,39 @@ interface ProbityBadgeProps {
   size?: 'sm' | 'md';
 }
 
-const ProbityBadge: React.FC<ProbityBadgeProps> = ({
-  score,
-  level,
-  showScore = true,
-  size = 'sm',
-}) => {
-  const normalizedLevel = level === 'insuffisant' ? 'insuffisant' : level;
+const LEVEL_CLASS_MAP: Record<string, string> = {
+  fiable:      classes.fiable,
+  moyen:       classes.moyen,
+  méfiance:    classes.danger,
+  insuffisant: classes.danger,
+};
 
-  const getColors = () => {
-    switch (normalizedLevel) {
-      case 'fiable':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'moyen':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'méfiance':
-      case 'insuffisant':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-red-100 text-red-800 border-red-200';
-    }
-  };
+const LEVEL_LABEL_MAP: Record<string, string> = {
+  fiable:      'Fiable',
+  moyen:       'Moyen',
+  méfiance:    'Méfiance',
+  insuffisant: 'Signal faible',
+};
 
-  const getLabel = () => {
-    switch (normalizedLevel) {
-      case 'fiable':
-        return 'Fiable';
-      case 'moyen':
-        return 'Moyen';
-      case 'méfiance':
-        return 'Méfiance';
-      case 'insuffisant':
-        return 'Signal faible';
-      default:
-        return 'Signal faible';
-    }
-  };
-
-  const sizeClass = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
+export function ProbityBadge({ score, level, showScore = true, size = 'sm' }: ProbityBadgeProps) {
+  const colorClass = LEVEL_CLASS_MAP[level] ?? classes.danger;
+  const label = LEVEL_LABEL_MAP[level] ?? 'Signal faible';
+  const title = score !== null ? `Score: ${score.toFixed(1)}/100` : 'Signal faible';
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full border font-medium ${getColors()} ${sizeClass}`}
-      title={score !== null ? `Score: ${score.toFixed(1)}/100` : 'Signal faible'}
+    <Badge
+      size={size === 'sm' ? 'sm' : 'md'}
+      radius="xl"
+      className={`${classes.badge} ${colorClass}`}
+      variant="light"
+      title={title}
     >
-      {getLabel()}
-      {showScore && score !== null ? (
-        <span className="ml-1 opacity-75">({score.toFixed(0)})</span>
-      ) : null}
-    </span>
+      {label}
+      {showScore && score !== null && (
+        <span className={classes.score}>({score.toFixed(0)})</span>
+      )}
+    </Badge>
   );
-};
+}
 
 export default ProbityBadge;

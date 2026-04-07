@@ -1,0 +1,41 @@
+.badge {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  border: 1px solid transparent;
+}
+
+/* Neutral — brouillon, abandonnee */
+.neutral {
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.34);
+}
+
+/* Applied — envoyee, en_attente, relancee */
+.applied {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.34);
+}
+
+/* Interview — entretien, test_technique */
+.interview {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
+/* Offer — offre_recue, acceptee */
+.offer {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.34);
+}
+
+/* Rejected — refusee, ghosting */
+.rejected {
+  background: rgba(244, 63, 94, 0.18);
+  color: #fb7185;
+  border-color: rgba(244, 63, 94, 0.34);
+}

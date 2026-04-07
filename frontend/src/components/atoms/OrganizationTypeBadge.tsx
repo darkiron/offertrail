@@ -1,33 +1,36 @@
-import React from 'react';
+import { Badge } from '@mantine/core';
 import type { OrganizationType } from '../../types';
+import classes from './OrganizationTypeBadge.module.css';
 
 interface OrganizationTypeBadgeProps {
   type: OrganizationType;
   size?: 'xs' | 'sm';
 }
 
-const organizationTypeConfig: Record<OrganizationType, { label: string; classes: string }> = {
-  CLIENT_FINAL: { label: 'Client final', classes: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  ESN: { label: 'ESN', classes: 'bg-blue-100 text-blue-800 border-blue-200' },
-  CABINET_RECRUTEMENT: { label: 'Cabinet', classes: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200' },
-  STARTUP: { label: 'Startup', classes: 'bg-orange-100 text-orange-800 border-orange-200' },
-  PME: { label: 'PME', classes: 'bg-teal-100 text-teal-800 border-teal-200' },
-  GRAND_COMPTE: { label: 'Grand compte', classes: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
-  PORTAGE: { label: 'Portage', classes: 'bg-rose-100 text-rose-800 border-rose-200' },
-  AUTRE: { label: 'Autre', classes: 'bg-slate-100 text-slate-700 border-slate-200' },
+const TYPE_CONFIG: Record<OrganizationType, { label: string; className: string }> = {
+  CLIENT_FINAL:        { label: 'Client final', className: classes.clientFinal },
+  ESN:                 { label: 'ESN',          className: classes.esn },
+  CABINET_RECRUTEMENT: { label: 'Cabinet',      className: classes.cabinetRecrutement },
+  STARTUP:             { label: 'Startup',      className: classes.startup },
+  PME:                 { label: 'PME',          className: classes.pme },
+  GRAND_COMPTE:        { label: 'Grand compte', className: classes.grandCompte },
+  PORTAGE:             { label: 'Portage',      className: classes.portage },
+  AUTRE:               { label: 'Autre',        className: classes.autre },
 };
 
-const OrganizationTypeBadge: React.FC<OrganizationTypeBadgeProps> = ({ type, size = 'sm' }) => {
-  const config = organizationTypeConfig[type] || organizationTypeConfig.AUTRE;
-  const sizeClass = size === 'xs' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
+export function OrganizationTypeBadge({ type, size = 'sm' }: OrganizationTypeBadgeProps) {
+  const config = TYPE_CONFIG[type] ?? TYPE_CONFIG.AUTRE;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full border font-semibold tracking-[0.08em] uppercase ${config.classes} ${sizeClass}`}
+    <Badge
+      size={size === 'xs' ? 'xs' : 'sm'}
+      radius="xl"
+      className={`${classes.badge} ${config.className}`}
+      variant="light"
     >
       {config.label}
-    </span>
+    </Badge>
   );
-};
+}
 
 export default OrganizationTypeBadge;

@@ -1,0 +1,7 @@
+.shell {
+  composes: shellWide from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}

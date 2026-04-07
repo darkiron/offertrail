@@ -1,0 +1,112 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px 72px;
+  background-color: var(--mantine-color-body);
+}
+
+.card {
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 35%),
+    var(--mantine-color-body);
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 16px 0 10px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--mantine-color-dimmed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.input {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--mantine-color-default-border);
+  background: color-mix(in srgb, var(--mantine-color-body) 84%, black 16%);
+  color: var(--mantine-color-text);
+  padding: 14px 16px;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--mantine-color-blue-5, #339af0);
+  box-shadow: 0 0 0 4px rgba(51, 154, 240, 0.12);
+}
+
+.helper {
+  color: var(--mantine-color-red-4, #ff6b6b);
+  font-size: 0.84rem;
+}
+
+.hint {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.84rem;
+}
+
+.error {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(250, 82, 82, 0.4);
+  background: rgba(250, 82, 82, 0.1);
+  color: var(--mantine-color-red-4, #ff6b6b);
+  font-size: 0.92rem;
+}
+
+.submit {
+  width: 100%;
+  border-radius: 16px;
+  padding: 15px 18px;
+  background: linear-gradient(135deg, var(--mantine-color-blue-7, #1971c2), var(--mantine-color-blue-5, #339af0));
+  color: white;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  font-size: 15px;
+}
+
+.submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.footer {
+  margin-top: 16px;
+  color: var(--mantine-color-dimmed);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 24px 16px 48px;
+    align-items: flex-start;
+  }
+}

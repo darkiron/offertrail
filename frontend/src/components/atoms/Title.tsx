@@ -1,4 +1,5 @@
-import React, {type JSX} from 'react';
+import { Title as MantineTitle, Text, type TitleProps as MantineTitleProps } from '@mantine/core';
+import type { JSX } from 'react';
 
 interface TitleProps {
   children: React.ReactNode;
@@ -7,21 +8,19 @@ interface TitleProps {
   className?: string;
 }
 
-export const Title: React.FC<TitleProps> = ({
-  children, 
-  level = 1, 
-  subtitle = false, 
-  className = '' 
-}) => {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
-  const baseClass = subtitle ? 'subtitle' : 'title';
-  const sizeClass = `is-${level}`;
-  
+export function Title({ children, level = 1, subtitle = false, className }: TitleProps) {
+  if (subtitle) {
+    return (
+      <Text c="dimmed" size="sm" className={className}>
+        {children}
+      </Text>
+    );
+  }
+
+  const order = level as MantineTitleProps['order'];
   return (
-    <Tag className={`${baseClass} ${sizeClass} ${className}`}>
+    <MantineTitle order={order} className={className}>
       {children}
-    </Tag>
+    </MantineTitle>
   );
-};
-
-
+}

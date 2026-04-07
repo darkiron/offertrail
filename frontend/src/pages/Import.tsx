@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import axios from 'axios';
+import {
+  Group, List, Paper, SimpleGrid, Stack, Text, Textarea, Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { applicationService } from '../services/api';
+import type { ImportResponse } from '../services/api';
+import { Button } from '../components/atoms/Button';
+import classes from './Import.module.css';
 
 export const Import: React.FC = () => {
   const [tsv, setTsv] = useState('');
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<ImportResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
     document.title = 'Import — OfferTrail';
@@ -18,101 +24,98 @@ export const Import: React.FC = () => {
       return;
     }
     setLoading(true);
-    setError(null);
     try {
       const response = await applicationService.importTsv(tsv);
       setResults(response);
       if (response.created > 0) {
         setTsv('');
+        notifications.show({ message: `${response.created} candidature(s) importée(s)`, color: 'green' });
       }
-    } catch (importError: any) {
-      setError(importError.response?.data?.detail || "Echec de l'import. Verifie le format TSV.");
+    } catch (importError: unknown) {
+      const detail = (axios.isAxiosError(importError) && importError.response?.data?.detail) || "Echec de l'import. Verifie le format TSV.";
+      notifications.show({ message: detail, color: 'red' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mt-lg">
-      <div className="flex justify-between items-center mb-lg">
-        <h1 className="text-xxl font-bold">Import des candidatures</h1>
-        <Link to="/" className="btn-ghost">Retour au tableau de bord</Link>
-      </div>
+    <Stack gap="lg" p="lg" className={classes.shell}>
+      <Paper className={classes.hero} p="xl" radius="lg" withBorder>
+        <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Import</Text>
+        <Title order={1} mt="xs">Import des candidatures</Title>
+        <Text c="dimmed" mt="sm">
+          Colle tes données TSV depuis Excel ou Google Sheets pour importer tes candidatures en masse.
+        </Text>
+      </Paper>
 
-      {error ? (
-        <div className="alert alert-error mb-lg">
-          <span>{error}</span>
-          <button className="btn-ghost" style={{ padding: '0.25rem 0.5rem' }} onClick={() => setError(null)}>Fermer</button>
-        </div>
-      ) : null}
-
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 'var(--spacing-lg)' }}>
-        <div className="card">
-          <h2 className="text-lg font-bold mb-md">Donnees TSV</h2>
-          <p className="text-sm text-dim mb-md">
-            Colle ici tes donnees TSV, par exemple depuis Excel ou Google Sheets.
-            La premiere ligne doit contenir les colonnes : Entreprise, Poste, Type, Source, Statut, etc.
-          </p>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Données TSV</Text>
+          <Text size="sm" c="dimmed" mb="md">
+            Colle ici tes données TSV, par exemple depuis Excel ou Google Sheets.
+            La première ligne doit contenir les colonnes : Entreprise, Poste, Type, Source, Statut, etc.
+          </Text>
           <form onSubmit={handleImport}>
-            <textarea
-              className="input"
-              style={{ minHeight: '300px', fontFamily: 'monospace', fontSize: '12px' }}
+            <Textarea
+              classNames={{ input: classes.tsvArea }}
               value={tsv}
               onChange={(event) => setTsv(event.target.value)}
               placeholder={'Entreprise\tPoste\tType\tSource\tStatut...'}
+              mb="md"
             />
-            <button type="submit" className="btn-primary mt-md w-full flex items-center justify-center gap-sm" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading}>
               {loading ? 'Import en cours...' : "Lancer l'import"}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Paper>
 
-        <div className="flex-col gap-lg">
+        <Stack gap="md">
           {results ? (
-            <div className="card">
-              <h2 className="text-lg font-bold mb-md">Resultats</h2>
-              <div className="flex-col gap-sm">
-                <div className="flex justify-between">
-                  <span>Lignes totales</span>
-                  <span className="font-bold">{results.total}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Creees</span>
-                  <span className="font-bold text-applied">{results.created}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ignorees / erreurs</span>
-                  <span className="font-bold text-rejected">{results.skipped}</span>
-                </div>
-              </div>
+            <Paper p="lg" radius="lg" withBorder>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Résultats</Text>
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text size="sm">Lignes totales</Text>
+                  <Text size="sm" fw={700}>{results.total}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm">Créées</Text>
+                  <Text size="sm" fw={700} c="green">{results.created}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm">Ignorées / erreurs</Text>
+                  <Text size="sm" fw={700} c="red">{results.skipped}</Text>
+                </Group>
+              </Stack>
 
               {results.errors?.length > 0 ? (
-                <div className="mt-lg">
-                  <h3 className="text-sm font-bold text-rejected mb-sm">Erreurs :</h3>
-                  <div className="text-xs flex-col gap-xs" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {results.errors.map((item: any, index: number) => (
-                      <div key={index} className="text-dim">Ligne {item.row} : {item.reason}</div>
+                <Stack gap="xs" mt="md">
+                  <Text size="sm" fw={700} c="red">Erreurs :</Text>
+                  <Stack gap={4} style={{ maxHeight: 200, overflowY: 'auto' }}>
+                    {results.errors.map((item: ImportResponse['errors'][number], index: number) => (
+                      <Text key={index} size="xs" c="dimmed">Ligne {item.row} : {item.reason}</Text>
                     ))}
-                  </div>
-                </div>
+                  </Stack>
+                </Stack>
               ) : null}
-            </div>
+            </Paper>
           ) : null}
 
-          <div className="card">
-            <h2 className="text-sm font-bold mb-md">Correspondance des colonnes</h2>
-            <ul className="text-sm text-dim flex-col gap-xs" style={{ paddingLeft: '1.2rem' }}>
-              <li>Entreprise (obligatoire)</li>
-              <li>Poste (obligatoire)</li>
-              <li>Type (CDI, Freelance)</li>
-              <li>Source (LinkedIn, etc.)</li>
-              <li>Statut (Applied, Interview...)</li>
-              <li>Date candidature</li>
-              <li>Notes</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+          <Paper p="lg" radius="lg" withBorder>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Correspondance des colonnes</Text>
+            <List size="sm" c="dimmed" spacing="xs">
+              <List.Item>Entreprise (obligatoire)</List.Item>
+              <List.Item>Poste (obligatoire)</List.Item>
+              <List.Item>Type (CDI, Freelance)</List.Item>
+              <List.Item>Source (LinkedIn, etc.)</List.Item>
+              <List.Item>Statut (Applied, Interview...)</List.Item>
+              <List.Item>Date candidature</List.Item>
+              <List.Item>Notes</List.Item>
+            </List>
+          </Paper>
+        </Stack>
+      </SimpleGrid>
+    </Stack>
   );
 };

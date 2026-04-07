@@ -1,22 +1,18 @@
-import React from 'react';
+import { Loader, type LoaderProps } from '@mantine/core';
+
+type SpinnerSize = 'small' | 'medium' | 'large';
 
 interface SpinnerProps {
-  size?: 'small' | 'medium' | 'large';
-  variant?: 'primary' | 'info' | 'success' | 'warning' | 'danger';
+  size?: SpinnerSize;
   className?: string;
 }
 
-export const Spinner: React.FC<SpinnerProps> = ({ 
-  size = 'medium', 
-  variant = 'primary',
-  className = '' 
-}) => {
-  const sizeClass = size === 'small' ? 'is-small' : size === 'large' ? 'is-large' : '';
-  const variantClass = variant ? `has-text-${variant}` : '';
-  
-  return (
-    <div className={`loading-spinner ${sizeClass} ${variantClass} ${className}`}></div>
-  );
+const SIZE_MAP: Record<SpinnerSize, LoaderProps['size']> = {
+  small: 'xs',
+  medium: 'sm',
+  large: 'md',
 };
 
-export default Spinner;
+export function Spinner({ size = 'medium', className }: SpinnerProps) {
+  return <Loader size={SIZE_MAP[size]} className={className} />;
+}

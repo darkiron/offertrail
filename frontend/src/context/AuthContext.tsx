@@ -9,7 +9,7 @@ import {
 } from 'react';
 import axios from 'axios';
 import { authService, setAuthToken } from '../services/api';
-import type { AuthResponse, AuthUser, RegisterPayload } from '../types';
+import type { AuthResponse, AuthUser, LoginCredentials, RegisterPayload } from '../types';
 
 const USER_STORAGE_KEY = 'offertrail.auth.user';
 const TOKEN_STORAGE_KEY = 'offertrail.auth.token';
@@ -29,23 +29,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    if (error.response?.status === 409) {
-      return 'Cet email est déjà utilisé.';
-    }
-    if (error.response?.status === 429) {
-      return "Trop de tentatives. Réessaie dans quelques instants.";
-    }
+    if (error.response?.status === 409) return 'Cet email est déjà utilisé.';
+    if (error.response?.status === 429) return "Trop de tentatives. Réessaie dans quelques instants.";
     const detail = error.response?.data?.detail;
-    if (typeof detail === 'string' && detail.trim()) {
-      return detail;
-    }
-    if (!error.response) {
-      return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
-    }
+    if (typeof detail === 'string' && detail.trim()) return detail;
+    if (!error.response) return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
   }
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
+  if (error instanceof Error && error.message.trim()) return error.message;
   return fallback;
 }
 
@@ -63,11 +53,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
 
   useEffect(() => {
-    if (token) {
-      setAuthToken(token);
-    }
+    if (token) setAuthToken(token);
   }, [token]);
 
+  // Stable refs — must not be defined inside useMemo to avoid infinite loop in useRestoreAuth
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -128,25 +117,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useRestoreAuth() {
   const { logout, setUserData } = useAuth();
 
   useEffect(() => {
     const restore = async () => {
       const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (!storedToken) {
-        return;
-      }
+      if (!storedToken) return;
       try {
         const me = await authService.me();
         setUserData(me);
@@ -154,7 +137,6 @@ export function useRestoreAuth() {
         logout();
       }
     };
-
     void restore();
-  }, [logout, setUserData]);
+  }, [logout, setUserData]); // stable refs — won't re-run
 }
