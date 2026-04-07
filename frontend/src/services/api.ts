@@ -281,7 +281,7 @@ async function ensureContactIdResolved(id: number | string): Promise<string> {
   if (resolved.includes('-')) {
     return resolved;
   }
-  const response = await axiosInstance.get<ContactApi[]>('/api/contacts');
+  const response = await axiosInstance.get<ContactApi[]>('/contacts');
   response.data.forEach((item) => {
     if (typeof item.id === 'string') {
       toLegacyContactId(item.id);
@@ -510,13 +510,13 @@ export const organizationService = {
     return mapEtablissementToOrganization(response.data);
   },
   merge: async (id: number, targetOrganizationId: number) => {
-    const response = await axiosInstance.post(`/api/organizations/${id}/merge`, {
+    const response = await axiosInstance.post(`/etablissements/${id}/merge`, {
       target_organization_id: targetOrganizationId,
     });
     return response.data;
   },
   split: async (id: number, data: Partial<Organization> & { move_contacts?: boolean }) => {
-    const response = await axiosInstance.post<{ id: number }>(`/api/organizations/${id}/split`, data);
+    const response = await axiosInstance.post<{ id: number }>(`/etablissements/${id}/split`, data);
     return response.data;
   },
   delete: async (id: number) => {
@@ -528,7 +528,7 @@ export const organizationService = {
 
 export const contactService = {
   getAll: async (params?: { organization_id?: number }) => {
-    const response = await axiosInstance.get<ContactApi[]>('/api/contacts', {
+    const response = await axiosInstance.get<ContactApi[]>('/contacts', {
       params: {
         organization_id: params?.organization_id ? resolveOrganizationId(params.organization_id) : undefined,
       },
@@ -537,7 +537,7 @@ export const contactService = {
   },
   getById: async (id: number) => {
     const resolvedId = await ensureContactIdResolved(id);
-    const response = await axiosInstance.get<ContactDetailsApi>(`/api/contacts/${resolvedId}`);
+    const response = await axiosInstance.get<ContactDetailsApi>(`/contacts/${resolvedId}`);
     return {
       ...mapContactApiToContact(response.data),
       organization: response.data.organization,
@@ -546,7 +546,7 @@ export const contactService = {
     };
   },
   create: async (data: Partial<Contact>) => {
-    const response = await axiosInstance.post<{ id: string }>('/api/contacts', {
+    const response = await axiosInstance.post<{ id: string }>('/contacts', {
       ...data,
       organization_id: data.organization_id ? resolveOrganizationId(data.organization_id) : null,
     });
@@ -554,7 +554,7 @@ export const contactService = {
   },
   update: async (id: number, data: Partial<Contact>) => {
     const resolvedId = await ensureContactIdResolved(id);
-    const response = await axiosInstance.patch(`/api/contacts/${resolvedId}`, {
+    const response = await axiosInstance.patch(`/contacts/${resolvedId}`, {
       ...data,
       organization_id: data.organization_id ? resolveOrganizationId(data.organization_id) : null,
     });
@@ -562,7 +562,7 @@ export const contactService = {
   },
   delete: async (id: number) => {
     const resolvedId = await ensureContactIdResolved(id);
-    const response = await axiosInstance.delete(`/api/contacts/${resolvedId}`);
+    const response = await axiosInstance.delete(`/contacts/${resolvedId}`);
     return response.data;
   },
   linkToApplication: async (contactId: number, applicationId: number) => {

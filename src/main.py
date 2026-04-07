@@ -1053,6 +1053,77 @@ async def add_note(app_id: int, text: str = Form(...)):
 async def health_check():
     return {"status": "ok", "version": APP_VERSION}
 
+
+# ─── Route aliases : /contacts/* ↔ /api/contacts/* ──────────────────────────
+# Le frontend appelle désormais /contacts au lieu de /api/contacts.
+
+@app.get("/contacts")
+async def list_contacts_alias(
+    organization_id: str = None,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_list_contacts(organization_id=organization_id, db=db, user_id=user_id)
+
+
+@app.get("/contacts/{contact_id}")
+async def get_contact_alias(
+    contact_id: str,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_get_contact(contact_id=contact_id, db=db, user_id=user_id)
+
+
+@app.post("/contacts", status_code=201)
+async def create_contact_alias(
+    data: dict,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_create_contact_standalone(data=data, db=db, user_id=user_id)
+
+
+@app.patch("/contacts/{contact_id}")
+async def update_contact_alias(
+    contact_id: str,
+    data: dict,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_update_contact(contact_id=contact_id, data=data, db=db, user_id=user_id)
+
+
+@app.delete("/contacts/{contact_id}")
+async def delete_contact_alias(
+    contact_id: str,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_delete_contact(contact_id=contact_id, db=db, user_id=user_id)
+
+
+# ─── Route aliases : /etablissements/{id}/merge|split ──────────────────────
+
+@app.post("/etablissements/{org_id}/merge")
+async def merge_etablissement_alias(
+    org_id: str,
+    data: dict,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_merge_organization(org_id=org_id, data=data, db=db, user_id=user_id)
+
+
+@app.post("/etablissements/{org_id}/split")
+async def split_etablissement_alias(
+    org_id: str,
+    data: dict,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await api_split_organization(org_id=org_id, data=data, db=db, user_id=user_id)
+
 def parse_date(date_str):
     if not date_str or not date_str.strip():
         return None
