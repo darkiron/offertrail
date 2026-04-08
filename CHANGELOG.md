@@ -9,6 +9,8 @@ Versionnage : [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [0.2.0] — 2026-04-07
 
 ### Added
+- Landing page rich avec pages légales (CGV, mentions légales, RGPD, contact)
+- Toutes les routes protégées préfixées sous `/app/*`
 - Backoffice admin : métriques SaaS, gestion des plans et désactivation de comptes (`/admin/*`)
 - Lien "Administration" dans le menu navbar conditionnel au role `admin`
 - Rate limiting sur les endpoints auth (register 5/min, login 10/min, forgot-password 3/min)
@@ -19,7 +21,7 @@ Versionnage : [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Limite d'abonnement Starter non vérifiée sur `POST /me/candidatures` (bypass possible)
 - Frontend appelait `/api/contacts` — migré vers `/contacts`
 - Frontend appelait `/api/organizations/merge|split` — migré vers `/etablissements`
-- Page Register : navigait vers `/dashboard` au lieu de `/` après inscription
+- Page Register : navigait vers `/dashboard` au lieu de `/app` après inscription
 - Validation zod avec messages d'erreur champ par champ sur Register et Login
 
 ### Changed

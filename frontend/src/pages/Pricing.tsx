@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Badge, Group, List, Paper, Stack, Text, Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
 import type { SubscriptionStatus } from '../types';
+import { Button } from '../components/atoms/Button';
 
 export function Pricing() {
   const navigate = useNavigate();
@@ -19,69 +24,48 @@ export function Pricing() {
       await subscriptionService.upgrade();
       const updated = await subscriptionService.getMe();
       setSub(updated);
+      notifications.show({ message: 'Plan Pro activé !', color: 'green' });
+    } catch {
+      notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <button onClick={() => navigate(-1)} className="btn-ghost" style={{ borderRadius: 999, padding: '0.45rem 0.75rem' }}>
-          {'<-'} Retour
-        </button>
-        <h1 style={{ marginTop: '1rem' }}>Passer en Pro</h1>
-        {sub ? (
-          <p>
-            Plan actuel : <strong>{sub.is_pro ? 'Pro' : 'Starter (gratuit)'}</strong>
-          </p>
-        ) : null}
-      </div>
+    <Stack gap="lg" p="lg" maw={520} mx="auto">
+      <Group>
+        <Button variant="ghost" onClick={() => navigate(-1)}>← Retour</Button>
+        <Title order={2}>Passer en Pro</Title>
+      </Group>
 
-      <div
-        style={{
-          border: '1px solid rgba(14, 165, 233, 0.35)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          background: 'var(--bg-mantle)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <p
-              style={{
-                fontSize: '11px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '.08em',
-                color: 'var(--text-dim)',
-                margin: '0 0 4px',
-              }}
-            >
-              Pro
-            </p>
-            <p style={{ fontSize: '28px', fontWeight: 500, margin: 0 }}>
+      {sub ? (
+        <Text c="dimmed" size="sm">
+          Plan actuel : <strong>{sub.is_pro ? 'Pro' : 'Aucun abonnement actif'}</strong>
+        </Text>
+      ) : null}
+
+      <Paper p="xl" radius="lg" withBorder style={{ borderColor: 'rgba(14, 165, 233, 0.35)' }}>
+        <Group justify="space-between" align="flex-start" mb="lg">
+          <Stack gap={4}>
+            <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">Pro</Text>
+            <Text size="xl" fw={500}>
               9,99€
-              <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text-dim)' }}>/mois</span>
-            </p>
-          </div>
+              <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
+            </Text>
+          </Stack>
           {sub?.is_pro ? (
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 500,
-                background: 'rgba(34, 197, 94, 0.18)',
-                color: '#86efac',
-                padding: '2px 10px',
-                borderRadius: '99px',
-              }}
-            >
-              Actif
-            </span>
+            <Badge variant="light" color="green" size="sm">Actif</Badge>
           ) : null}
-        </div>
+        </Group>
 
-        <ul style={{ listStyle: 'none', padding: 0, margin: '1.5rem 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <List
+          spacing="sm"
+          size="sm"
+          c="dimmed"
+          mb="xl"
+          icon={<Text c="green" size="sm">✓</Text>}
+        >
           {[
             'Candidatures illimitées',
             'Analytics complets',
@@ -89,31 +73,24 @@ export function Pricing() {
             'Relances',
             'Score de probité',
           ].map((feature) => (
-            <li key={feature} style={{ fontSize: '13px', color: 'var(--text-dim)', display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ color: '#86efac' }}>✓</span> {feature}
-            </li>
+            <List.Item key={feature}>{feature}</List.Item>
           ))}
-        </ul>
+        </List>
 
         {sub?.is_pro ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-dim)', margin: 0 }}>
+          <Text size="sm" c="dimmed">
             Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
-          </p>
+          </Text>
         ) : (
-          <button
-            onClick={handleUpgrade}
-            disabled={loading}
-            className="btn-primary"
-            style={{ width: '100%', padding: '10px', fontWeight: 500, borderRadius: 10 }}
-          >
+          <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
             {loading ? 'Activation...' : 'Passer en Pro — 9,99€/mois'}
-          </button>
+          </Button>
         )}
-      </div>
+      </Paper>
 
-      <p style={{ fontSize: '11px', color: 'var(--text-dim)', textAlign: 'center', marginTop: '1rem' }}>
+      <Text size="xs" c="dimmed" ta="center">
         Paiement simulé en local · Mollie sera intégré prochainement
-      </p>
-    </div>
+      </Text>
+    </Stack>
   );
 }

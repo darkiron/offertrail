@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  Anchor, Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, Title,
+} from '@mantine/core';
 import { contactService } from '../services/api';
 import type { Application, Contact, Organization } from '../types';
 import { Button } from '../components/atoms/Button';
@@ -8,6 +11,7 @@ import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
 import ProbityBadge from '../components/atoms/ProbityBadge';
 import ContactEditModal from '../components/organisms/ContactEditModal';
 import { useI18n } from '../i18n';
+import classes from './ContactDetailsPage.module.css';
 
 type ContactDetails = Contact & {
   organization: Organization | null;
@@ -24,172 +28,14 @@ type ContactDetails = Contact & {
 
 type ContactTab = 'overview' | 'applications' | 'activity';
 
-const pageStyles = `
-  .contactdetail-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 28px 32px 36px;
-  }
-
-  .contactdetail-hero,
-  .contactdetail-mainCard,
-  .contactdetail-sideCard,
-  .contactdetail-listItem {
-    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
-    border-radius: 20px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle));
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-  }
-
-  .contactdetail-hero {
-    padding: 28px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.85fr);
-    gap: 24px;
-    background:
-      radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
-      linear-gradient(135deg, color-mix(in srgb, var(--bg-mantle) 92%, white 8%), color-mix(in srgb, var(--bg-crust) 68%, var(--bg-mantle) 32%));
-  }
-
-  .contactdetail-kicker,
-  .contactdetail-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    font-weight: 700;
-  }
-
-  .contactdetail-title {
-    margin: 10px 0 0;
-    font-size: 34px;
-    line-height: 1.05;
-  }
-
-  .contactdetail-subtitle,
-  .contactdetail-muted {
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  .contactdetail-chipRow,
-  .contactdetail-actions,
-  .contactdetail-tabs,
-  .contactdetail-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .contactdetail-chipRow,
-  .contactdetail-actions {
-    margin-top: 16px;
-  }
-
-  .contactdetail-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.8fr);
-    gap: 20px;
-    align-items: start;
-  }
-
-  .contactdetail-mainCard,
-  .contactdetail-sideCard {
-    padding: 20px;
-  }
-
-  .contactdetail-tabs {
-    margin-bottom: 18px;
-  }
-
-  .contactdetail-tab {
-    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent 16%);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-dim);
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .contactdetail-tab.is-active {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-    color: var(--text-main);
-  }
-
-  .contactdetail-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .contactdetail-listItem {
-    padding: 18px;
-  }
-
-  .contactdetail-sideCard {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .contactdetail-sideSection {
-    padding-bottom: 16px;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
-  }
-
-  .contactdetail-sideSection:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .contactdetail-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-dim);
-  }
-
-  .contactdetail-empty {
-    padding: 36px 16px;
-    text-align: center;
-    color: var(--text-dim);
-  }
-
-  @media (max-width: 1100px) {
-    .contactdetail-hero,
-    .contactdetail-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .contactdetail-shell {
-      padding: 18px;
-      gap: 18px;
-    }
-  }
-`;
-
 const formatDate = (value?: string | null, withTime = false) => {
   if (!value) {
     return '-';
   }
   return new Date(value).toLocaleString('fr-FR', withTime ? {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   } : {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+    day: '2-digit', month: 'short', year: 'numeric',
   });
 };
 
@@ -204,9 +50,7 @@ export const ContactDetailsPage: React.FC = () => {
   const [editing, setEditing] = useState(false);
 
   const fetchContact = async () => {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
     setLoading(true);
     setError(null);
     try {
@@ -227,45 +71,45 @@ export const ContactDetailsPage: React.FC = () => {
 
   if (loading && !data) {
     return (
-      <div className="contactdetail-shell">
-        <style>{pageStyles}</style>
-        <div className="contactdetail-mainCard contactdetail-empty">{t('contacts.loadingDetail')}</div>
-      </div>
+      <Stack gap="lg" p="lg" className={classes.shell}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Text c="dimmed" ta="center">{t('contacts.loadingDetail')}</Text>
+        </Paper>
+      </Stack>
     );
   }
 
   if (!data) {
     return (
-      <div className="contactdetail-shell">
-        <style>{pageStyles}</style>
-        <div className="contactdetail-mainCard contactdetail-empty">{error || t('contacts.detailError')}</div>
-      </div>
+      <Stack gap="lg" p="lg" className={classes.shell}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Text c="dimmed" ta="center">{error || t('contacts.detailError')}</Text>
+        </Paper>
+      </Stack>
     );
   }
 
   const tabDefinitions: Array<{ id: ContactTab; label: string }> = [
-    { id: 'overview', label: `◌ ${t('contacts.overview')}` },
-    { id: 'applications', label: `◎ ${t('contacts.applications')}` },
-    { id: 'activity', label: `◷ ${t('contacts.activity')}` },
+    { id: 'overview', label: t('contacts.overview') },
+    { id: 'applications', label: t('contacts.applications') },
+    { id: 'activity', label: t('contacts.activity') },
   ];
 
   return (
-    <div className="contactdetail-shell">
-      <style>{pageStyles}</style>
+    <Stack gap="lg" p="lg" className={classes.shell}>
+      <Anchor component={Link} to="/contacts" c="dimmed" size="sm">← {t('common.backToContacts')}</Anchor>
 
-      <Link to="/app/contacts" className="contactdetail-back">{t('common.backToContacts')}</Link>
-
-      <section className="contactdetail-hero">
-        <div>
-          <div className="contactdetail-kicker">◌ {t('contacts.detailKicker')}</div>
-          <h1 className="contactdetail-title">{data.first_name} {data.last_name}</h1>
-          <p className="contactdetail-subtitle">{data.role || t('contacts.detailNoRole')}</p>
-          <div className="contactdetail-chipRow">
-            {data.is_recruiter ? <span className="contactdetail-label" style={{ color: '#fb7185' }}>◎ {t('contacts.recruiter')}</span> : null}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
+        <Paper className={classes.hero} p="xl" radius="lg" withBorder>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.detailKicker')}</Text>
+          <Title order={1} mt="xs">{data.first_name} {data.last_name}</Title>
+          <Text c="dimmed" mt={4}>{data.role || t('contacts.detailNoRole')}</Text>
+          <Group mt="md" gap="xs" wrap="wrap">
+            {data.is_recruiter ? <Badge variant="light" color="pink">{t('contacts.recruiter')}</Badge> : null}
             {data.organization ? <OrganizationTypeBadge type={data.organization.type} /> : null}
             {data.organization ? <ProbityBadge score={data.organization.probity_score} level={data.organization.probity_level} showScore={false} /> : null}
-          </div>
-          <div className="contactdetail-actions">
+          </Group>
+          <Group mt="lg" gap="xs" wrap="wrap">
             <Button variant="primary" onClick={() => setEditing(true)}>{t('common.edit')}</Button>
             {data.email ? (
               <a href={`mailto:${data.email}`}>
@@ -277,136 +121,147 @@ export const ContactDetailsPage: React.FC = () => {
                 <Button variant="ghost">{t('contacts.linkedin')}</Button>
               </a>
             ) : null}
-          </div>
-        </div>
+          </Group>
+        </Paper>
 
-        <div className="contactdetail-sideCard">
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.linkedOrg')}</div>
-            <div className="contactdetail-muted" style={{ marginTop: 6 }}>
-              {data.organization ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/app/etablissements/${data.organization?.id}`)}
-                  style={{ background: 'transparent', padding: 0, color: 'var(--text-main)', border: 'none' }}
-                >
-                  {data.organization.name}
-                </button>
-              ) : t('contacts.noLinkedOrg')}
-            </div>
-          </div>
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.applicationsLinked')}</div>
-            <div style={{ marginTop: 6, fontSize: 28, fontWeight: 700 }}>{data.applications.length}</div>
-          </div>
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.updatedAt')}</div>
-            <div className="contactdetail-muted" style={{ marginTop: 6 }}>{formatDate(data.updated_at, true)}</div>
-          </div>
-        </div>
-      </section>
+        <Paper p="xl" radius="lg" withBorder>
+          <Stack gap="md">
+            <Stack gap={4}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.linkedOrg')}</Text>
+              <Text size="sm" c="dimmed">
+                {data.organization ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/app/etablissements/${data.organization?.id}`)}
+                    className={classes.linkedOrgButton}
+                  >
+                    {data.organization.name}
+                  </button>
+                ) : t('contacts.noLinkedOrg')}
+              </Text>
+            </Stack>
+            <Stack gap={4}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.applicationsLinked')}</Text>
+              <Text size="xl" fw={700}>{data.applications.length}</Text>
+            </Stack>
+            <Stack gap={4}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.updatedAt')}</Text>
+              <Text size="sm" c="dimmed">{formatDate(data.updated_at, true)}</Text>
+            </Stack>
+          </Stack>
+        </Paper>
+      </SimpleGrid>
 
-      <section className="contactdetail-layout">
-        <div className="contactdetail-mainCard">
-          <div className="contactdetail-tabs">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Group gap="xs" mb="lg">
             {tabDefinitions.map((tab) => (
-              <button
+              <Chip
                 key={tab.id}
-                type="button"
-                className={`contactdetail-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                checked={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                size="sm"
               >
                 {tab.label}
-              </button>
+              </Chip>
             ))}
-          </div>
+          </Group>
 
           {activeTab === 'overview' ? (
-            <div className="contactdetail-list">
-              <div className="contactdetail-listItem">
-                <div className="contactdetail-label">✉ {t('contacts.email')}</div>
-                <div className="contactdetail-muted" style={{ marginTop: 8 }}>{data.email || t('contacts.notDefined')}</div>
-              </div>
-              <div className="contactdetail-listItem">
-                <div className="contactdetail-label">☎ {t('contacts.phone')}</div>
-                <div className="contactdetail-muted" style={{ marginTop: 8 }}>{data.phone || t('contacts.notDefined')}</div>
-              </div>
-              <div className="contactdetail-listItem">
-                <div className="contactdetail-label">{t('contacts.notes')}</div>
-                <div className="contactdetail-muted" style={{ marginTop: 8 }}>{data.notes || t('contacts.noNotes')}</div>
-              </div>
-            </div>
+            <Stack gap="sm">
+              {[
+                { label: t('contacts.email'), value: data.email || t('contacts.notDefined') },
+                { label: t('contacts.phone'), value: data.phone || t('contacts.notDefined') },
+                { label: t('contacts.notes'), value: data.notes || t('contacts.noNotes') },
+              ].map((item) => (
+                <Paper key={item.label} p="md" radius="md" withBorder>
+                  <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{item.label}</Text>
+                  <Text size="sm" c="dimmed" mt={6}>{item.value}</Text>
+                </Paper>
+              ))}
+            </Stack>
           ) : null}
 
           {activeTab === 'applications' ? (
             data.applications.length > 0 ? (
-              <div className="contactdetail-list">
+              <Stack gap="sm">
                 {data.applications.map((application) => (
-                  <div key={application.id} className="contactdetail-listItem">
-                    <div className="flex justify-between items-start gap-md">
-                      <div>
-                        <div className="font-bold">{application.title}</div>
-                        <div className="contactdetail-meta">
-                          <span className="contactdetail-muted">{application.company}</span>
-                          <span className="contactdetail-muted">{application.type}</span>
-                          <span className="contactdetail-muted">{t('dashboard.applied')} {formatDate(application.applied_at)}</span>
-                        </div>
-                      </div>
+                  <Paper key={application.id} p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap={2}>
+                        <Text fw={700} size="sm">{application.title}</Text>
+                        <Group gap="xs" wrap="wrap">
+                          <Text size="xs" c="dimmed">{application.company}</Text>
+                          <Text size="xs" c="dimmed">{application.type}</Text>
+                          <Text size="xs" c="dimmed">{t('dashboard.applied')} {formatDate(application.applied_at)}</Text>
+                        </Group>
+                      </Stack>
                       <StatusBadge status={application.status} />
-                    </div>
-                    <div style={{ marginTop: 12 }}>
-                      <Link to={`/app/candidatures/${application.id}`}>{t('contacts.openApplication')}</Link>
-                    </div>
-                  </div>
+                    </Group>
+                    <Group mt="sm">
+                      <Link to={`/app/candidatures/${application.id}`}>
+                        <Text size="xs" c="blue">{t('contacts.openApplication')}</Text>
+                      </Link>
+                    </Group>
+                  </Paper>
                 ))}
-              </div>
+              </Stack>
             ) : (
-              <div className="contactdetail-empty">{t('contacts.noApplications')}</div>
+              <Text c="dimmed" ta="center" py="xl">{t('contacts.noApplications')}</Text>
             )
           ) : null}
 
           {activeTab === 'activity' ? (
             data.events.length > 0 ? (
-              <div className="contactdetail-list">
+              <Stack gap="sm">
                 {data.events.map((event) => (
-                  <div key={`${event.id}-${event.ts}`} className="contactdetail-listItem">
-                    <div className="font-bold">{String(event.type || event.event_type).replace(/_/g, ' ')}</div>
-                    <div className="contactdetail-muted">{formatDate(event.ts, true)}</div>
+                  <Paper key={`${event.id}-${event.ts}`} p="md" radius="md" withBorder>
+                    <Text fw={700} size="sm">{String(event.type || event.event_type).replace(/_/g, ' ')}</Text>
+                    <Text size="xs" c="dimmed" mt={4}>{formatDate(event.ts, true)}</Text>
                     {event.application ? (
-                      <div className="contactdetail-meta" style={{ marginTop: 8 }}>
-                        <span className="contactdetail-muted">{event.application.title}</span>
+                      <Group gap="xs" mt="xs">
+                        <Text size="xs" c="dimmed">{event.application.title}</Text>
                         <StatusBadge status={event.application.status} size="sm" />
-                      </div>
+                      </Group>
                     ) : null}
                     {event.payload && Object.keys(event.payload).length > 0 ? (
-                      <div className="contactdetail-muted" style={{ marginTop: 10 }}>{JSON.stringify(event.payload)}</div>
+                      <Text size="xs" c="dimmed" mt={6}>{JSON.stringify(event.payload)}</Text>
                     ) : null}
-                  </div>
+                  </Paper>
                 ))}
-              </div>
+              </Stack>
             ) : (
-              <div className="contactdetail-empty">{t('contacts.noActivity')}</div>
+              <Text c="dimmed" ta="center" py="xl">{t('contacts.noActivity')}</Text>
             )
           ) : null}
-        </div>
+        </Paper>
 
-        <aside className="contactdetail-sideCard">
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.identity')}</div>
-            <div className="contactdetail-muted" style={{ marginTop: 6 }}>{data.first_name} {data.last_name}</div>
-            <div className="contactdetail-muted">{data.role || t('contacts.noRole')}</div>
-          </div>
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.channels')}</div>
-            <div className="contactdetail-muted" style={{ marginTop: 6 }}>{data.email || t('contacts.noEmail')}</div>
-            <div className="contactdetail-muted">{data.phone || t('contacts.noPhone')}</div>
-          </div>
-          <div className="contactdetail-sideSection">
-            <div className="contactdetail-label">{t('contacts.created')}</div>
-            <div className="contactdetail-muted" style={{ marginTop: 6 }}>{formatDate(data.created_at)}</div>
-          </div>
-        </aside>
-      </section>
+        <Paper p="xl" radius="lg" withBorder>
+          <Stack gap="md">
+            {[
+              {
+                label: t('contacts.identity'),
+                items: [`${data.first_name} ${data.last_name}`, data.role || t('contacts.noRole')],
+              },
+              {
+                label: t('contacts.channels'),
+                items: [data.email || t('contacts.noEmail'), data.phone || t('contacts.noPhone')],
+              },
+              {
+                label: t('contacts.created'),
+                items: [formatDate(data.created_at)],
+              },
+            ].map((section) => (
+              <Stack key={section.label} gap={4} pb="md" className={classes.sectionDivider}>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{section.label}</Text>
+                {section.items.map((item) => (
+                  <Text key={item} size="sm" c="dimmed">{item}</Text>
+                ))}
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
+      </SimpleGrid>
 
       {editing ? (
         <ContactEditModal
@@ -418,7 +273,7 @@ export const ContactDetailsPage: React.FC = () => {
           }}
         />
       ) : null}
-    </div>
+    </Stack>
   );
 };
 

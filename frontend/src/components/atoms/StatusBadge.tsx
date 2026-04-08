@@ -1,5 +1,6 @@
-import React from 'react';
-import { getStatutLabel, getStatutStyle } from '../../utils/statut';
+import { Badge } from '@mantine/core';
+import { getStatutLabel } from '../../utils/statut';
+import classes from './StatusBadge.module.css';
 
 type Status = 'INTERESTED' | 'APPLIED' | 'INTERVIEW' | 'OFFER' | 'REJECTED' | string;
 
@@ -9,44 +10,44 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export const statusLabelMap: Record<string, string> = {
-  INTERESTED: getStatutLabel('interested'),
-  APPLIED: getStatutLabel('applied'),
-  INTERVIEW: getStatutLabel('interview'),
-  OFFER: getStatutLabel('offer'),
-  REJECTED: getStatutLabel('rejected'),
+type StatusKey = 'brouillon' | 'envoyee' | 'en_attente' | 'relancee' | 'entretien' | 'test_technique'
+  | 'offre_recue' | 'acceptee' | 'refusee' | 'ghosting' | 'abandonnee' | 'interested' | 'applied'
+  | 'interview' | 'offer' | 'rejected';
+
+const STATUS_CLASS_MAP: Partial<Record<string, string>> = {
+  brouillon:      classes.neutral,
+  abandonnee:     classes.neutral,
+  envoyee:        classes.applied,
+  en_attente:     classes.applied,
+  relancee:       classes.applied,
+  applied:        classes.applied,
+  interested:     classes.applied,
+  entretien:      classes.interview,
+  test_technique: classes.interview,
+  interview:      classes.interview,
+  offre_recue:    classes.offer,
+  acceptee:       classes.offer,
+  offer:          classes.offer,
+  refusee:        classes.rejected,
+  ghosting:       classes.rejected,
+  rejected:       classes.rejected,
 };
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', className }) => {
+export function StatusBadge({ status, size = 'sm', className }: StatusBadgeProps) {
   const key = String(status || '').toLowerCase();
-  const style = getStatutStyle(key);
   const label = getStatutLabel(key);
-
-  const sizeStyle = size === 'sm'
-    ? { padding: '0.35rem 0.65rem', fontSize: '0.72rem' }
-    : { padding: '0.5rem 0.8rem', fontSize: '0.82rem' };
+  const colorClass = STATUS_CLASS_MAP[key] ?? classes.neutral;
 
   return (
-    <span
-      className={className || ''}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        borderRadius: 999,
-        borderStyle: 'solid',
-        borderWidth: 1,
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        lineHeight: 1,
-        ...sizeStyle,
-        backgroundColor: style.background,
-        color: style.color,
-        borderColor: style.borderColor,
-      }}
+    <Badge
+      size={size === 'sm' ? 'sm' : 'md'}
+      radius="xl"
+      className={`${classes.badge} ${colorClass} ${className ?? ''}`}
+      variant="light"
     >
       {label}
-    </span>
+    </Badge>
   );
-};
+}
 
 export default StatusBadge;

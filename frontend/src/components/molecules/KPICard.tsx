@@ -1,4 +1,5 @@
-import React from 'react';
+import { Card, Text, Stack } from '@mantine/core';
+import classes from './KPICard.module.css';
 
 interface KPICardProps {
   label: string;
@@ -6,24 +7,14 @@ interface KPICardProps {
   subValue?: string;
 }
 
-export const KPICard: React.FC<KPICardProps> = ({ label, value, subValue }) => {
+export function KPICard({ label, value, subValue }: KPICardProps) {
   return (
-    <div
-      className="card flex-col gap-sm"
-      style={{
-        borderRadius: 18,
-        padding: '1.25rem',
-        background:
-          'linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle))',
-      }}
-    >
-      <div className="text-sm text-dim font-bold" style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        {label}
-      </div>
-      <div className="text-xxl font-bold" style={{ lineHeight: 1 }}>
-        {value}
-      </div>
-      {subValue ? <div className="text-sm text-dim">{subValue}</div> : null}
-    </div>
+    <Card className={classes.card} radius="lg" padding="lg">
+      <Stack gap={4}>
+        <Text className={classes.label} c="dimmed">{label}</Text>
+        <Text size="xl" fw={700} lh={1}>{value}</Text>
+        {subValue && <Text size="sm" c="dimmed">{subValue}</Text>}
+      </Stack>
+    </Card>
   );
-};
+}

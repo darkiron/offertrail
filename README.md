@@ -53,6 +53,12 @@ Pour le frontend, créer `frontend/.env.local` :
 VITE_API_URL=http://localhost:8000
 ```
 
+## Décisions produit
+
+### Plan unique (Pro à 9,99€/mois)
+
+Un plan Starter gratuit avait été envisagé puis supprimé. Raison : un plan gratuit avec limitations artificielles (ex. 25 candidatures) crée de la friction inutile et nuit à la rétention. L'outil est focalisé sur les freelances et chercheurs d'emploi actifs — des utilisateurs qui ont besoin de toutes les fonctionnalités dès le départ. Un seul plan Pro à 9,99€/mois, sans restriction.
+
 ## Déploiement
 
 ### Backend — Railway

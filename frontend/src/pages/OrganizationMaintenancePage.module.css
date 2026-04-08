@@ -1,0 +1,50 @@
+.shell {
+  composes: shellStandard from '../styles/appShell.module.css';
+}
+
+.hero {
+  composes: hero from '../styles/appShell.module.css';
+}
+
+.searchItem {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mantine-color-dark-4, #373a40);
+  background: var(--mantine-color-dark-6, #2c2e33);
+  color: var(--mantine-color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.searchItem:hover,
+.searchItem[data-selected] {
+  border-color: var(--mantine-color-blue-5, #339af0);
+  background: color-mix(in srgb, var(--mantine-color-blue-9, #1971c2) 15%, var(--mantine-color-dark-6, #2c2e33) 85%);
+}
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.statsValue {
+  composes: statsValueCompact from '../styles/appShell.module.css';
+}
+
+.statsValueSmall {
+  composes: statsValueSmall from '../styles/appShell.module.css';
+}
+
+.infoCard {
+  composes: panelAccent from '../styles/appShell.module.css';
+}

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import {
+  Anchor, Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, Title,
+} from '@mantine/core';
 import { api } from '../services/api';
-import { Title } from '../components/atoms/Title';
 import { Spinner } from '../components/atoms/Spinner';
 import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
 import ProbityBadge from '../components/atoms/ProbityBadge';
@@ -10,6 +12,7 @@ import { Button } from '../components/atoms/Button';
 import OrganizationEditModal from '../components/organisms/OrganizationEditModal';
 import ContactEditModal from '../components/organisms/ContactEditModal';
 import type { Application, Contact, Organization } from '../types';
+import classes from './CompanyDetailsPage.module.css';
 
 type CompanyDetails = Organization & {
   applications: Application[];
@@ -27,276 +30,11 @@ type CompanyDetails = Organization & {
 
 type DetailTab = 'overview' | 'applications' | 'contacts' | 'activity';
 
-const pageStyles = `
-  .company-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 28px 32px 36px;
-    color: var(--text-main);
-  }
-
-  .company-backLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-dim);
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .company-hero,
-  .company-summaryCard,
-  .company-contentCard,
-  .company-sideCard,
-  .company-listItem,
-  .company-activityItem {
-    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
-    border-radius: 20px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-mantle) 88%, white 12%), var(--bg-mantle));
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-  }
-
-  .company-hero {
-    padding: 28px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
-    gap: 24px;
-    background:
-      radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
-      linear-gradient(135deg, color-mix(in srgb, var(--bg-mantle) 92%, white 8%), color-mix(in srgb, var(--bg-crust) 68%, var(--bg-mantle) 32%));
-  }
-
-  .company-heroTitleRow,
-  .company-chipRow,
-  .company-actions,
-  .company-tabs,
-  .company-metricGrid,
-  .company-metaGrid,
-  .company-linkedMeta,
-  .company-contactMeta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .company-chipRow {
-    margin-top: 12px;
-  }
-
-  .company-heroText {
-    max-width: 720px;
-    margin: 16px 0 0;
-    color: var(--text-dim);
-    line-height: 1.6;
-    font-size: 15px;
-  }
-
-  .company-actions {
-    margin-top: 22px;
-  }
-
-  .company-summaryRail {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-  }
-
-  .company-summaryCard {
-    padding: 18px;
-  }
-
-  .company-eyebrow,
-  .company-statLabel,
-  .company-sectionLabel {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-  }
-
-  .company-statValue {
-    margin-top: 10px;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .company-statHint {
-    margin-top: 8px;
-    color: var(--text-dim);
-    font-size: 13px;
-  }
-
-  .company-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.75fr);
-    gap: 20px;
-    align-items: start;
-  }
-
-  .company-contentCard,
-  .company-sideCard {
-    padding: 20px;
-  }
-
-  .company-tabs {
-    margin-bottom: 18px;
-  }
-
-  .company-tab {
-    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent 16%);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-dim);
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .company-tab.is-active {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-    color: var(--text-main);
-  }
-
-  .company-metricGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .company-metric {
-    padding: 16px;
-    border-radius: 16px;
-    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
-    background: color-mix(in srgb, var(--bg-base) 76%, var(--bg-mantle) 24%);
-  }
-
-  .company-noteCard {
-    margin-top: 18px;
-    padding: 18px;
-    border-radius: 18px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.18);
-    line-height: 1.7;
-  }
-
-  .company-list,
-  .company-activityList {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .company-listItem,
-  .company-activityItem {
-    padding: 18px;
-  }
-
-  .company-linkedTop {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .company-linkedTitle {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.25;
-  }
-
-  .company-linkedMeta,
-  .company-contactMeta {
-    margin-top: 10px;
-  }
-
-  .company-pill {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 7px 11px;
-    background: color-mix(in srgb, var(--bg-base) 78%, var(--bg-mantle) 22%);
-    border: 1px solid color-mix(in srgb, var(--border) 84%, transparent 16%);
-    color: var(--text-dim);
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .company-linkCta {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-main);
-  }
-
-  .company-sideCard {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .company-sideSection {
-    padding-bottom: 16px;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
-  }
-
-  .company-sideSection:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .company-metaGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .company-metaValue {
-    margin-top: 4px;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  .company-empty {
-    padding: 40px 16px;
-    text-align: center;
-    color: var(--text-dim);
-  }
-
-  .company-error {
-    padding: 48px 20px;
-    text-align: center;
-  }
-
-  @media (max-width: 1120px) {
-    .company-hero,
-    .company-layout,
-    .company-summaryRail {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .company-shell {
-      padding: 18px;
-      gap: 18px;
-    }
-
-    .company-metricGrid {
-      grid-template-columns: 1fr;
-    }
-  }
-`;
-
 const tabDefinitions: Array<{ id: DetailTab; label: string }> = [
-  { id: 'overview', label: 'Apercu' },
+  { id: 'overview', label: 'Aperçu' },
   { id: 'applications', label: 'Candidatures' },
   { id: 'contacts', label: 'Contacts' },
-  { id: 'activity', label: 'Activite' },
+  { id: 'activity', label: 'Activité' },
 ];
 
 const formatDate = (value?: string | null, withTime = false) => {
@@ -304,15 +42,9 @@ const formatDate = (value?: string | null, withTime = false) => {
     return '-';
   }
   return new Date(value).toLocaleString('fr-FR', withTime ? {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   } : {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+    day: '2-digit', month: 'short', year: 'numeric',
   });
 };
 
@@ -335,16 +67,11 @@ const formatEventLabel = (rawType?: string) => {
 
 const getProbityHint = (level: Organization['probity_level'], score: number | null) => {
   switch (level) {
-    case 'fiable':
-      return score !== null ? 'Signal favorable et documente.' : 'Signal favorable.';
-    case 'moyen':
-      return 'Signal mitige a surveiller.';
-    case 'méfiance':
-      return 'Signal de risque eleve.';
-    case 'insuffisant':
-      return 'Manque de donnees: a traiter comme signal faible.';
-    default:
-      return 'Signal faible.';
+    case 'fiable': return score !== null ? 'Signal favorable et documente.' : 'Signal favorable.';
+    case 'moyen': return 'Signal mitige a surveiller.';
+    case 'méfiance': return 'Signal de risque eleve.';
+    case 'insuffisant': return 'Manque de donnees: a traiter comme signal faible.';
+    default: return 'Signal faible.';
   }
 };
 
@@ -356,10 +83,9 @@ export const CompanyDetailsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const [editingOrganization, setEditingOrganization] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+
   const fetchCompany = async () => {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
     setLoading(true);
     setError(null);
     try {
@@ -380,24 +106,22 @@ export const CompanyDetailsPage: React.FC = () => {
 
   if (loading && !data) {
     return (
-      <div className="company-shell">
-        <style>{pageStyles}</style>
-        <div className="company-contentCard company-empty">
-          <Spinner />
-        </div>
-      </div>
+      <Stack gap="lg" p="lg" className={classes.shell}>
+        <Paper p="xl" radius="lg" withBorder><Spinner /></Paper>
+      </Stack>
     );
   }
 
   if (!data) {
     return (
-      <div className="company-shell">
-        <style>{pageStyles}</style>
-        <div className="company-contentCard company-error">
-          <p>{error || 'ETS introuvable.'}</p>
-          <Link to="/app/etablissements" className="company-backLink">Retour aux etablissements</Link>
-        </div>
-      </div>
+      <Stack gap="lg" p="lg" className={classes.shell}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Text c="dimmed" ta="center">{error || 'ETS introuvable.'}</Text>
+          <Group justify="center" mt="md">
+            <Anchor component={Link} to="/app/etablissements">Retour aux établissements</Anchor>
+          </Group>
+        </Paper>
+      </Stack>
     );
   }
 
@@ -405,37 +129,29 @@ export const CompanyDetailsPage: React.FC = () => {
   const positiveRate = data.positive_rate ?? 0;
   const rejectionRate = Math.max(0, Math.min(100, Math.round(responseRate - positiveRate)));
   const dueFollowups = data.applications.filter(
-    (application) => Boolean(application.next_followup_at) && application.status !== 'REJECTED' && application.status !== 'OFFER',
+    (app) => Boolean(app.next_followup_at) && app.status !== 'REJECTED' && app.status !== 'OFFER',
   ).length;
 
   return (
-    <div className="company-shell">
-      <style>{pageStyles}</style>
+    <Stack gap="lg" p="lg" className={classes.shell}>
+      <Anchor component={Link} to="/organizations" c="dimmed" size="sm">← Retour aux établissements</Anchor>
 
-      <Link to="/app/etablissements" className="company-backLink">
-        Retour aux etablissements
-      </Link>
-
-      <section className="company-hero">
-        <div>
-          <span className="company-eyebrow">Fiche detail ETS</span>
-          <div className="company-heroTitleRow">
-            <Title>{data.name}</Title>
-          </div>
-          <div className="company-chipRow">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
+        <Paper className={classes.hero} p="xl" radius="lg" withBorder>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Fiche detail ETS</Text>
+          <Title order={1} mt="xs">{data.name}</Title>
+          <Group mt="md" gap="xs" wrap="wrap">
             <OrganizationTypeBadge type={data.type} />
             <ProbityBadge score={data.probity_score} level={data.probity_level} />
-            {data.city ? <span className="company-pill">{data.city}</span> : null}
-          </div>
-          <p className="company-heroText">
-            Verifie les informations de l&apos;organisation, consulte les candidatures liees, ouvre les contacts utiles et
-            mets a jour la fiche ETS sans quitter la page.
-          </p>
-          <div className="company-actions">
+            {data.city ? <Badge variant="outline" size="sm">{data.city}</Badge> : null}
+          </Group>
+          <Text c="dimmed" mt="md" size="sm">
+            Vérifie les informations de l&apos;organisation, consulte les candidatures liées, ouvre les contacts utiles et
+            mets à jour la fiche ETS sans quitter la page.
+          </Text>
+          <Group mt="lg" gap="xs" wrap="wrap">
             <Button variant="primary" onClick={() => setEditingOrganization(true)}>Modifier la fiche ETS</Button>
-            <Link to={`/app/etablissements/maintenance?source=${data.id}`}>
-              <Button variant="ghost">Maintenance ETS</Button>
-            </Link>
+            <Button component={Link} to={`/app/etablissements/maintenance?source=${data.id}`} variant="ghost">Maintenance ETS</Button>
             {data.website ? (
               <a href={data.website} target="_blank" rel="noreferrer">
                 <Button variant="ghost">Site web</Button>
@@ -446,248 +162,222 @@ export const CompanyDetailsPage: React.FC = () => {
                 <Button variant="ghost">LinkedIn</Button>
               </a>
             ) : null}
-          </div>
-        </div>
+          </Group>
+        </Paper>
 
-        <div className="company-sideCard">
-          <div className="company-sideSection">
-            <span className="company-sectionLabel">Synthese rapide</span>
-            <div className="company-metaGrid">
-              <div>
-                <span className="company-statLabel">Derniere mise a jour</span>
-                <div className="company-metaValue">{formatDate(data.updated_at, true)}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Creation de la fiche</span>
-                <div className="company-metaValue">{formatDate(data.created_at)}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Contacts lies</span>
-                <div className="company-metaValue">{data.contacts.length}</div>
-              </div>
-            </div>
-          </div>
-          <div className="company-sideSection">
-            <span className="company-sectionLabel">Cadence</span>
-            <div className="company-metaValue">
-              {dueFollowups > 0 ? `${dueFollowups} relance(s) a surveiller` : 'Aucune relance en attente'}
-            </div>
-          </div>
-        </div>
-      </section>
+        <Paper p="xl" radius="lg" withBorder>
+          <Stack gap="md">
+            <Stack gap={4}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Synthèse rapide</Text>
+              <Stack gap="xs">
+                {[
+                  { label: 'Dernière mise à jour', value: formatDate(data.updated_at, true) },
+                  { label: 'Création de la fiche', value: formatDate(data.created_at) },
+                  { label: 'Contacts liés', value: String(data.contacts.length) },
+                ].map((item) => (
+                  <Group key={item.label} justify="space-between">
+                    <Text size="xs" c="dimmed">{item.label}</Text>
+                    <Text size="xs" fw={600}>{item.value}</Text>
+                  </Group>
+                ))}
+              </Stack>
+            </Stack>
+            <Stack gap={4}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Cadence</Text>
+              <Text size="sm" c="dimmed">
+                {dueFollowups > 0 ? `${dueFollowups} relance(s) à surveiller` : 'Aucune relance en attente'}
+              </Text>
+            </Stack>
+          </Stack>
+        </Paper>
+      </SimpleGrid>
 
-      <section className="company-summaryRail">
-        <div className="company-summaryCard">
-          <span className="company-statLabel">Candidatures</span>
-          <div className="company-statValue">{data.total_applications}</div>
-          <div className="company-statHint">volume cumule sur cette organisation</div>
-        </div>
-        <div className="company-summaryCard">
-          <span className="company-statLabel">Taux de reponse</span>
-          <div className="company-statValue">{responseRate}%</div>
-          <div className="company-statHint">retours detectes sur les candidatures</div>
-        </div>
-        <div className="company-summaryCard">
-          <span className="company-statLabel">Taux positif</span>
-          <div className="company-statValue">{positiveRate}%</div>
-          <div className="company-statHint">entretiens ou offres</div>
-        </div>
-        <div className="company-summaryCard">
-          <span className="company-statLabel">Ghosting</span>
-          <div className="company-statValue">{data.ghosting_count}</div>
-          <div className="company-statHint">dossiers sans retour apres 30 jours</div>
-        </div>
-      </section>
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
+        {[
+          { label: 'Candidatures', value: data.total_applications, hint: 'volume cumulé' },
+          { label: 'Taux de réponse', value: `${responseRate}%`, hint: 'retours détectés' },
+          { label: 'Taux positif', value: `${positiveRate}%`, hint: 'entretiens ou offres' },
+          { label: 'Ghosting', value: data.ghosting_count, hint: 'sans retour après 30j' },
+        ].map((stat) => (
+          <Paper key={stat.label} p="lg" radius="lg" withBorder>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
+            <Text size="xl" fw={700} mt="xs" className={classes.statsValue}>{stat.value}</Text>
+            <Text size="xs" c="dimmed" mt={4}>{stat.hint}</Text>
+          </Paper>
+        ))}
+      </SimpleGrid>
 
-      <section className="company-layout">
-        <div className="company-contentCard">
-          <div className="company-tabs">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
+        <Paper p="xl" radius="lg" withBorder>
+          <Group gap="xs" mb="lg" wrap="wrap">
             {tabDefinitions.map((tab) => (
-              <button
+              <Chip
                 key={tab.id}
-                type="button"
-                className={`company-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                checked={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                size="sm"
               >
                 {tab.label}
-              </button>
+              </Chip>
             ))}
-          </div>
+          </Group>
 
           {activeTab === 'overview' ? (
-            <>
-              <div className="company-metricGrid">
-                <div className="company-metric">
-                  <span className="company-statLabel">Temps moyen de reponse</span>
-                  <div className="company-statValue">{data.avg_response_days ?? '-'}</div>
-                  <div className="company-statHint">jours avant premier retour</div>
-                </div>
-                <div className="company-metric">
-                  <span className="company-statLabel">Taux de rejet estime</span>
-                  <div className="company-statValue">{rejectionRate}%</div>
-                  <div className="company-statHint">derive depuis les signaux de statut</div>
-                </div>
-                <div className="company-metric">
-                  <span className="company-statLabel">Reponses constatees</span>
-                  <div className="company-statValue">{data.total_responses}</div>
-                  <div className="company-statHint">sur l&apos;ensemble des candidatures</div>
-                </div>
-                <div className="company-metric">
-                  <span className="company-statLabel">Signal probite</span>
-                  <div style={{ marginTop: 10 }}>
-                    <ProbityBadge score={data.probity_score} level={data.probity_level} size="md" />
-                  </div>
-                  <div className="company-statHint">{getProbityHint(data.probity_level, data.probity_score)}</div>
-                </div>
-              </div>
+            <Stack gap="md">
+              <SimpleGrid cols={2} spacing="sm">
+                {[
+                  { label: 'Temps moyen de réponse', value: data.avg_response_days ?? '-', hint: 'jours avant premier retour' },
+                  { label: 'Taux de rejet estimé', value: `${rejectionRate}%`, hint: 'depuis les signaux de statut' },
+                  { label: 'Réponses constatées', value: data.total_responses, hint: 'sur l\'ensemble des candidatures' },
+                  { label: 'Signal probité', value: null, hint: getProbityHint(data.probity_level, data.probity_score), probity: true },
+                ].map((metric) => (
+                  <Paper key={metric.label} p="md" radius="md" withBorder>
+                    <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{metric.label}</Text>
+                    {metric.probity ? (
+                      <div className={classes.probitySlot}>
+                        <ProbityBadge score={data.probity_score} level={data.probity_level} size="md" />
+                      </div>
+                    ) : (
+                      <Text size="xl" fw={700} mt={6}>{metric.value}</Text>
+                    )}
+                    <Text size="xs" c="dimmed" mt={4}>{metric.hint}</Text>
+                  </Paper>
+                ))}
+              </SimpleGrid>
 
-              <div className="company-noteCard">
-                <span className="company-statLabel">Notes ETS</span>
-                <div className="company-metaValue">
-                  {data.notes?.trim() || 'Aucune note renseignee pour cet etablissement.'}
-                </div>
-              </div>
-            </>
+              <Paper p="md" radius="lg" className={classes.noteCard}>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="xs">Notes ETS</Text>
+                <Text size="sm" c="dimmed">
+                  {data.notes?.trim() || 'Aucune note renseignée pour cet établissement.'}
+                </Text>
+              </Paper>
+            </Stack>
           ) : null}
 
           {activeTab === 'applications' ? (
             data.applications.length > 0 ? (
-              <div className="company-list">
+              <Stack gap="sm">
                 {data.applications.map((application) => (
-                  <div key={application.id} className="company-listItem">
-                    <div className="company-linkedTop">
-                      <div>
-                        <h3 className="company-linkedTitle">{application.title}</h3>
-                        <div className="company-linkedMeta">
-                          <span className="company-pill">{application.type}</span>
-                          <span className="company-pill">{application.source || 'Source directe'}</span>
-                          <span className="company-pill">Postule le {formatDate(application.applied_at)}</span>
-                        </div>
-                      </div>
+                  <Paper key={application.id} p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap={4}>
+                        <Text fw={700} size="sm">{application.title}</Text>
+                        <Group gap="xs" wrap="wrap">
+                          <Badge variant="outline" size="xs">{application.type}</Badge>
+                          <Badge variant="outline" size="xs">{application.source || 'Source directe'}</Badge>
+                          <Text size="xs" c="dimmed">Postulé le {formatDate(application.applied_at)}</Text>
+                        </Group>
+                      </Stack>
                       <StatusBadge status={application.status} />
-                    </div>
-                    <div className="company-linkedMeta">
+                    </Group>
+                    <Group mt="sm" gap="xs">
                       {application.next_followup_at ? (
-                        <span className="company-pill">Relance: {formatDate(application.next_followup_at)}</span>
+                        <Badge variant="outline" size="xs">Relance: {formatDate(application.next_followup_at)}</Badge>
                       ) : null}
-                      <Link to={`/app/candidatures/${application.id}`} className="company-linkCta">
-                        Ouvrir la candidature
+                      <Link to={`/app/candidatures/${application.id}`}>
+                        <Text size="xs" c="blue">Ouvrir la candidature</Text>
                       </Link>
-                    </div>
-                  </div>
+                    </Group>
+                  </Paper>
                 ))}
-              </div>
+              </Stack>
             ) : (
-              <div className="company-empty">Aucune candidature liee a cet ETS.</div>
+              <Text c="dimmed" ta="center" py="xl">Aucune candidature liée à cet ETS.</Text>
             )
           ) : null}
 
           {activeTab === 'contacts' ? (
             data.contacts.length > 0 ? (
-              <div className="company-list">
+              <Stack gap="sm">
                 {data.contacts.map((contact) => (
-                  <div key={contact.id} className="company-listItem">
-                    <div className="company-linkedTop">
-                      <div>
-                        <h3 className="company-linkedTitle">{contact.first_name} {contact.last_name}</h3>
-                        <div className="company-contactMeta">
-                          {contact.role ? <span className="company-pill">{contact.role}</span> : null}
-                          {contact.is_recruiter ? <span className="company-pill">Recruteur</span> : null}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="small" onClick={() => setEditingContact(contact)}>Editer</Button>
-                    </div>
-                    <div className="company-contactMeta">
-                      {contact.email ? <span className="company-pill">{contact.email}</span> : null}
-                      {contact.phone ? <span className="company-pill">{contact.phone}</span> : null}
+                  <Paper key={contact.id} p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap={4}>
+                        <Text fw={700} size="sm">{contact.first_name} {contact.last_name}</Text>
+                        <Group gap="xs" wrap="wrap">
+                          {contact.role ? <Badge variant="outline" size="xs">{contact.role}</Badge> : null}
+                          {contact.is_recruiter ? <Badge variant="light" color="pink" size="xs">Recruteur</Badge> : null}
+                        </Group>
+                      </Stack>
+                      <Button variant="ghost" size="small" onClick={() => setEditingContact(contact)}>Éditer</Button>
+                    </Group>
+                    <Group mt="sm" gap="xs" wrap="wrap">
+                      {contact.email ? <Badge variant="outline" size="xs">{contact.email}</Badge> : null}
+                      {contact.phone ? <Badge variant="outline" size="xs">{contact.phone}</Badge> : null}
                       {contact.linkedin_url ? (
-                        <a href={contact.linkedin_url} target="_blank" rel="noreferrer" className="company-linkCta">
-                          LinkedIn
+                        <a href={contact.linkedin_url} target="_blank" rel="noreferrer">
+                          <Text size="xs" c="blue">LinkedIn</Text>
                         </a>
                       ) : null}
-                    </div>
-                  </div>
+                    </Group>
+                  </Paper>
                 ))}
-              </div>
+              </Stack>
             ) : (
-              <div className="company-empty">Aucun contact rattache a cet ETS.</div>
+              <Text c="dimmed" ta="center" py="xl">Aucun contact rattaché à cet ETS.</Text>
             )
           ) : null}
 
           {activeTab === 'activity' ? (
             data.events.length > 0 ? (
-              <div className="company-activityList">
+              <Stack gap="sm">
                 {data.events.map((event) => (
-                  <div key={`${event.id}-${event.ts}`} className="company-activityItem">
-                    <div className="company-linkedTop">
-                      <div>
-                        <h3 className="company-linkedTitle">{formatEventLabel(event.type || event.event_type)}</h3>
-                        <div className="company-contactMeta">
-                          <span className="company-pill">{formatDate(event.ts, true)}</span>
-                          {event.application ? <span className="company-pill">{event.application.title}</span> : null}
-                          {event.contact ? <span className="company-pill">{event.contact.name}</span> : null}
-                        </div>
-                      </div>
-                    </div>
+                  <Paper key={`${event.id}-${event.ts}`} p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap={4}>
+                        <Text fw={700} size="sm">{formatEventLabel(event.type || event.event_type)}</Text>
+                        <Group gap="xs" wrap="wrap">
+                          <Badge variant="outline" size="xs">{formatDate(event.ts, true)}</Badge>
+                          {event.application ? <Badge variant="outline" size="xs">{event.application.title}</Badge> : null}
+                          {event.contact ? <Badge variant="outline" size="xs">{event.contact.name}</Badge> : null}
+                        </Group>
+                      </Stack>
+                    </Group>
                     {event.payload && Object.keys(event.payload).length > 0 ? (
-                      <div className="company-metaValue">
-                        {JSON.stringify(event.payload)}
-                      </div>
+                      <Text size="xs" c="dimmed" mt={6}>{JSON.stringify(event.payload)}</Text>
                     ) : null}
-                  </div>
+                  </Paper>
                 ))}
-              </div>
+              </Stack>
             ) : (
-              <div className="company-empty">Aucune activite recente pour cet ETS.</div>
+              <Text c="dimmed" ta="center" py="xl">Aucune activité récente pour cet ETS.</Text>
             )
           ) : null}
-        </div>
+        </Paper>
 
-        <aside className="company-sideCard">
-          <div className="company-sideSection">
-            <span className="company-sectionLabel">Informations ETS</span>
-            <div className="company-metaGrid">
-              <div>
-                <span className="company-statLabel">Nom</span>
-                <div className="company-metaValue">{data.name}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Type</span>
-                <div className="company-metaValue">{data.type}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Ville</span>
-                <div className="company-metaValue">{data.city || 'Non renseignee'}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Site web</span>
-                <div className="company-metaValue">{data.website || 'Non renseigne'}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">LinkedIn</span>
-                <div className="company-metaValue">{data.linkedin_url || 'Non renseigne'}</div>
-              </div>
-            </div>
-          </div>
-          <div className="company-sideSection">
-            <span className="company-sectionLabel">Vue liee</span>
-            <div className="company-metaGrid">
-              <div>
-                <span className="company-statLabel">Candidatures</span>
-                <div className="company-metaValue">{data.applications.length}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Contacts</span>
-                <div className="company-metaValue">{data.contacts.length}</div>
-              </div>
-              <div>
-                <span className="company-statLabel">Evenements</span>
-                <div className="company-metaValue">{data.events.length}</div>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </section>
+        <Paper p="xl" radius="lg" withBorder>
+          <Stack gap="md">
+            <Stack gap="xs" pb="md" className={classes.sectionDivider}>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Informations ETS</Text>
+              {[
+                { label: 'Nom', value: data.name },
+                { label: 'Type', value: data.type },
+                { label: 'Ville', value: data.city || 'Non renseignée' },
+                { label: 'Site web', value: data.website || 'Non renseigné' },
+                { label: 'LinkedIn', value: data.linkedin_url || 'Non renseigné' },
+              ].map((item) => (
+                <Group key={item.label} justify="space-between">
+                  <Text size="xs" c="dimmed">{item.label}</Text>
+                  <Text size="xs" fw={600}>{item.value}</Text>
+                </Group>
+              ))}
+            </Stack>
+            <Stack gap="xs">
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Vue liée</Text>
+              {[
+                { label: 'Candidatures', value: data.applications.length },
+                { label: 'Contacts', value: data.contacts.length },
+                { label: 'Événements', value: data.events.length },
+              ].map((item) => (
+                <Group key={item.label} justify="space-between">
+                  <Text size="xs" c="dimmed">{item.label}</Text>
+                  <Text size="xs" fw={600}>{item.value}</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Stack>
+        </Paper>
+      </SimpleGrid>
 
       {editingOrganization ? (
         <OrganizationEditModal
@@ -710,7 +400,7 @@ export const CompanyDetailsPage: React.FC = () => {
           }}
         />
       ) : null}
-    </div>
+    </Stack>
   );
 };
 
