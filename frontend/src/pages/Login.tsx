@@ -86,6 +86,7 @@ export function LoginPage() {
         </aside>
 
         <div className={classes.panel}>
+          <Link to="/" className={classes.backLink}>← OfferTrail</Link>
           <h2 className={classes.title}>Connexion</h2>
           <Text c="dimmed" mt={4}>Entre dans ton workspace OfferTrail.</Text>
 
