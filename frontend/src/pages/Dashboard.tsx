@@ -88,7 +88,7 @@ export function Dashboard() {
             <Text c="dimmed" maw={640}>{t('dashboard.copy')}</Text>
             <Group mt="sm">
               <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-              <Link to="/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
+              <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
             </Group>
           </Stack>
           <Stack gap="md">
@@ -196,7 +196,7 @@ export function Dashboard() {
                           <Table.Td><StatusBadge status={app.status} /></Table.Td>
                           <Table.Td>{app.applied_at || '-'}</Table.Td>
                           <Table.Td>
-                            <Link to={`/applications/${app.id}`}>
+                            <Link to={`/app/candidatures/${app.id}`}>
                               <Button variant="ghost" size="small">{t('common.details')}</Button>
                             </Link>
                           </Table.Td>
@@ -233,7 +233,7 @@ export function Dashboard() {
                     radius="md"
                     withBorder
                     className={classes.followupCard}
-                    onClick={() => navigate(`/applications/${app.id}`)}
+                    onClick={() => navigate(`/app/candidatures/${app.id}`)}
                   >
                     <Group justify="space-between">
                       <div>

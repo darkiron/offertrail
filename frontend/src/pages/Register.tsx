@@ -36,7 +36,7 @@ export function RegisterPage() {
   });
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -57,7 +57,7 @@ export function RegisterPage() {
       setFormError(null);
       clearErrors();
       await registerUser(result.data);
-      navigate('/dashboard', { replace: true });
+      navigate('/app', { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         setFormError('Cet email est déjà utilisé.');

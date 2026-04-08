@@ -17,6 +17,11 @@ import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { LandingPage } from './pages/LandingPage';
+import { LegalNoticePage } from './pages/LegalNoticePage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsPage } from './pages/TermsPage';
+import { ContactPage } from './pages/ContactPage';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
@@ -33,10 +38,11 @@ function AppRoutes() {
     <Routes>
       {/* ── Landing public (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="/cgv" element={<LegalPage />} />
-        <Route path="/mentions-legales" element={<LegalPage />} />
-        <Route path="/rgpd" element={<LegalPage />} />
+        <Route index element={<LandingPage />} />
+        <Route path="/cgv" element={<TermsPage />} />
+        <Route path="/mentions-legales" element={<LegalNoticePage />} />
+        <Route path="/rgpd" element={<PrivacyPolicyPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Route>
 
       {/* ── Auth (standalone, pas de layout) ── */}
@@ -46,20 +52,20 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* ── App (AppLayout avec sidebar + header) ── */}
-      <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
-        <Route path="/applications/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
-        <Route path="/organizations" element={<ProtectedRoute><OrganizationsPage /></ProtectedRoute>} />
-        <Route path="/organizations/maintenance" element={<ProtectedRoute><OrganizationMaintenancePage /></ProtectedRoute>} />
-        <Route path="/organizations/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-        <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailsPage /></ProtectedRoute>} />
-        <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
-        <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetailsPage /></ProtectedRoute>} />
-        <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
-        <Route path="/mon-compte" element={<ProtectedRoute><MonCompte /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-        <Route path="/pricing" element={<Pricing />} />
+      <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        <Route index element={<Dashboard />} />
+        <Route path="candidatures" element={<ApplicationsPage />} />
+        <Route path="candidatures/:id" element={<ApplicationDetails />} />
+        <Route path="etablissements" element={<OrganizationsPage />} />
+        <Route path="etablissements/maintenance" element={<OrganizationMaintenancePage />} />
+        <Route path="etablissements/:id" element={<CompanyDetailsPage />} />
+        <Route path="companies/:id" element={<CompanyDetailsPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
+        <Route path="contacts/:id" element={<ContactDetailsPage />} />
+        <Route path="import" element={<Import />} />
+        <Route path="mon-compte" element={<MonCompte />} />
+        <Route path="admin" element={<Admin />} />
+        <Route path="pricing" element={<Pricing />} />
       </Route>
 
       {/* ── Redirects de compatibilité ── */}

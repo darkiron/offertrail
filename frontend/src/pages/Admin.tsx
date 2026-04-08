@@ -52,6 +52,9 @@ export function Admin() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'Administration — OfferTrail'; }, []);
+
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -66,7 +69,7 @@ export function Admin() {
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 403) {
           setAccessDenied(true);
-          window.setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
+          window.setTimeout(() => navigate('/app', { replace: true }), 1500);
           return;
         }
         setError('Impossible de charger le backoffice admin.');
@@ -101,7 +104,7 @@ export function Admin() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 403) {
         setAccessDenied(true);
-        window.setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
+        window.setTimeout(() => navigate('/app', { replace: true }), 1500);
         return;
       }
       setError("Impossible de mettre à jour l'abonnement.");
@@ -119,7 +122,7 @@ export function Admin() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 403) {
         setAccessDenied(true);
-        window.setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
+        window.setTimeout(() => navigate('/app', { replace: true }), 1500);
         return;
       }
       setError('Impossible de désactiver cet utilisateur.');

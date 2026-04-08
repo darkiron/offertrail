@@ -98,6 +98,8 @@ export const CompanyDetailsPage: React.FC = () => {
     }
   };
 
+  useEffect(() => { document.title = 'Entreprise — OfferTrail'; }, []);
+
   useEffect(() => {
     fetchCompany();
   }, [id]);
@@ -116,7 +118,7 @@ export const CompanyDetailsPage: React.FC = () => {
         <Paper p="xl" radius="lg" withBorder>
           <Text c="dimmed" ta="center">{error || 'ETS introuvable.'}</Text>
           <Group justify="center" mt="md">
-            <Anchor component={Link} to="/organizations">Retour aux établissements</Anchor>
+            <Anchor component={Link} to="/app/etablissements">Retour aux établissements</Anchor>
           </Group>
         </Paper>
       </Stack>
@@ -149,7 +151,7 @@ export const CompanyDetailsPage: React.FC = () => {
           </Text>
           <Group mt="lg" gap="xs" wrap="wrap">
             <Button variant="primary" onClick={() => setEditingOrganization(true)}>Modifier la fiche ETS</Button>
-            <Button component={Link} to={`/organizations/maintenance?source=${data.id}`} variant="ghost">Maintenance ETS</Button>
+            <Button component={Link} to={`/app/etablissements/maintenance?source=${data.id}`} variant="ghost">Maintenance ETS</Button>
             {data.website ? (
               <a href={data.website} target="_blank" rel="noreferrer">
                 <Button variant="ghost">Site web</Button>
@@ -272,7 +274,7 @@ export const CompanyDetailsPage: React.FC = () => {
                       {application.next_followup_at ? (
                         <Badge variant="outline" size="xs">Relance: {formatDate(application.next_followup_at)}</Badge>
                       ) : null}
-                      <Link to={`/applications/${application.id}`}>
+                      <Link to={`/app/candidatures/${application.id}`}>
                         <Text size="xs" c="blue">Ouvrir la candidature</Text>
                       </Link>
                     </Group>
