@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/landing.css';
@@ -14,13 +14,9 @@ const features = [
 
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     document.title = 'OfferTrail — Pilote ta recherche d\'emploi';
-    const handler = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
   }, []);
 
   if (isAuthenticated) {
@@ -29,20 +25,6 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="lp-root">
-
-      {/* ─── Nav ─── */}
-      <div className={`lp-nav-wrap${scrolled ? ' is-scrolled' : ''}`}>
-        <nav className="lp-nav">
-          <Link to="/" className="lp-brand">
-            <div className="lp-brand-mark">OT</div>
-            OfferTrail
-          </Link>
-          <div className="lp-nav-links">
-            <Link to="/login" className="lp-nav-ghost">Connexion</Link>
-            <Link to="/register" className="lp-nav-cta">Créer mon compte</Link>
-          </div>
-        </nav>
-      </div>
 
       {/* ─── Hero ─── */}
       <section className="lp-hero">
@@ -194,29 +176,6 @@ export const LandingPage: React.FC = () => {
         <p>Un outil propre, un prix clair, une recherche mieux pilotée.</p>
         <Link to="/register" className="lp-btn-primary">Passer à OfferTrail →</Link>
       </section>
-
-      {/* ─── Footer ─── */}
-      <footer className="lp-footer">
-        <div className="lp-footer-inner">
-          <div>
-            <Link to="/" className="lp-footer-brand">
-              <div className="lp-brand-mark" style={{ width: 28, height: 28, fontSize: 12 }}>OT</div>
-              OfferTrail
-            </Link>
-            <p className="lp-footer-tagline">
-              Pilote ta recherche d'emploi avec des données claires. Candidatures, relances, contacts — tout au même endroit.
-            </p>
-            <p className="lp-footer-copy">© {new Date().getFullYear()} OfferTrail · Tous droits réservés</p>
-          </div>
-          <div className="lp-footer-links">
-            <Link to="/app">Accéder à l'app</Link>
-            <Link to="/legal">Mentions légales</Link>
-            <Link to="/cgv">CGV</Link>
-            <Link to="/confidentialite">Politique de confidentialité</Link>
-            <Link to="/contact">Contact</Link>
-          </div>
-        </div>
-      </footer>
 
     </div>
   );

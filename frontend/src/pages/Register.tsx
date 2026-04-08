@@ -70,6 +70,7 @@ export function RegisterPage() {
   return (
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
+        <Link to="/" className={classes.backLink}>← OfferTrail</Link>
         <Stack gap={4} mb="xl">
           <span className={classes.kicker}>Nouveau compte</span>
           <h1 className={classes.title}>Creer ton espace OfferTrail.</h1>
