@@ -83,7 +83,7 @@ export function ApplicationDetails() {
       <Center h={300}>
         <EmptyState
           title={String(error) || 'Candidature introuvable.'}
-          action={{ label: 'Retour', onClick: () => navigate('/') }}
+          action={{ label: 'Retour', onClick: () => navigate('/app') }}
         />
       </Center>
     );

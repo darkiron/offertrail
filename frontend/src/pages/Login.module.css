@@ -89,6 +89,10 @@
   margin-top: 18px;
 }
 
+.backLink {
+  composes: backLink from '../styles/authSurface.module.css';
+}
+
 .title {
   composes: title from '../styles/authSurface.module.css';
   margin: 0;

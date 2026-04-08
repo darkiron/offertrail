@@ -63,6 +63,8 @@ export const ContactDetailsPage: React.FC = () => {
     }
   };
 
+  useEffect(() => { document.title = 'Contact — OfferTrail'; }, []);
+
   useEffect(() => {
     fetchContact();
   }, [id]);
@@ -130,7 +132,7 @@ export const ContactDetailsPage: React.FC = () => {
                 {data.organization ? (
                   <button
                     type="button"
-                    onClick={() => navigate(`/organizations/${data.organization?.id}`)}
+                    onClick={() => navigate(`/app/etablissements/${data.organization?.id}`)}
                     className={classes.linkedOrgButton}
                   >
                     {data.organization.name}
@@ -197,7 +199,7 @@ export const ContactDetailsPage: React.FC = () => {
                       <StatusBadge status={application.status} />
                     </Group>
                     <Group mt="sm">
-                      <Link to={`/applications/${application.id}`}>
+                      <Link to={`/app/candidatures/${application.id}`}>
                         <Text size="xs" c="blue">{t('contacts.openApplication')}</Text>
                       </Link>
                     </Group>

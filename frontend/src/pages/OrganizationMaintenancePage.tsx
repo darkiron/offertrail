@@ -84,6 +84,8 @@ export const OrganizationMaintenancePage: React.FC = () => {
     notes: '',
   });
 
+  useEffect(() => { document.title = 'Maintenance entreprises — OfferTrail'; }, []);
+
   useEffect(() => {
     const fetchOrganizations = async () => {
       setLoading(true);
@@ -185,7 +187,7 @@ export const OrganizationMaintenancePage: React.FC = () => {
     setError(null);
     try {
       await organizationService.merge(Number(sourceOrgId), Number(targetOrgId));
-      navigate(`/organizations/${targetOrgId}`);
+      navigate(`/app/etablissements/${targetOrgId}`);
     } catch {
       setError('La fusion a echoue. Verifie les ETS selectionnes puis recommence.');
     } finally {
@@ -200,7 +202,7 @@ export const OrganizationMaintenancePage: React.FC = () => {
     try {
       const created = await organizationService.split(Number(sourceOrgId), { ...splitForm, move_contacts: true });
       resetSplitForm();
-      navigate(`/organizations/${created.id}`);
+      navigate(`/app/etablissements/${created.id}`);
     } catch {
       setError('La scission a echoue. Complete le nouvel ETS puis recommence.');
     } finally {

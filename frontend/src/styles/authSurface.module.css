@@ -104,6 +104,23 @@
   font-size: 0.95rem;
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--mantine-color-dimmed);
+  text-decoration: none;
+  margin-bottom: 20px;
+  letter-spacing: 0.02em;
+  transition: color 0.15s ease;
+}
+
+.backLink:hover {
+  color: var(--mantine-color-text);
+}
+
 @media (max-width: 760px) {
   .shell {
     padding: 24px 16px 48px;

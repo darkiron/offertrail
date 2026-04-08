@@ -112,7 +112,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
       onClose();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        if (err.response?.status === 402) { onClose(); navigate('/pricing?reason=limit_reached'); return; }
+        if (err.response?.status === 402) { onClose(); navigate('/app/pricing?reason=limit_reached'); return; }
         if (err.response?.status === 401) { onClose(); navigate('/login'); return; }
         setError(err.response?.data?.detail || t('newApplication.createError'));
       }

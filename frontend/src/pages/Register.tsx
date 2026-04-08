@@ -36,7 +36,7 @@ export function RegisterPage() {
   });
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -57,7 +57,7 @@ export function RegisterPage() {
       setFormError(null);
       clearErrors();
       await registerUser(result.data);
-      navigate('/dashboard', { replace: true });
+      navigate('/app', { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         setFormError('Cet email est déjà utilisé.');
@@ -70,6 +70,7 @@ export function RegisterPage() {
   return (
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
+        <Link to="/" className={classes.backLink}>← OfferTrail</Link>
         <Stack gap={4} mb="xl">
           <span className={classes.kicker}>Nouveau compte</span>
           <h1 className={classes.title}>Creer ton espace OfferTrail.</h1>

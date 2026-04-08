@@ -31,6 +31,7 @@ else
 	@bash -lc '$(NVM_BOOTSTRAP); nvm install $(FRONT_NODE_VERSION) >/dev/null; nvm use $(FRONT_NODE_VERSION) >/dev/null; command -v npm >/dev/null 2>&1' || (echo "npm introuvable apres activation de Node $(FRONT_NODE_VERSION) via nvm."; exit 1)
 endif
 
+
 install-back:
 ifeq ($(OS),Windows_NT)
 	$(VENV_EXISTS) $(PYTHON_BIN) -m venv .venv

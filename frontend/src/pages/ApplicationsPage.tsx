@@ -152,7 +152,7 @@ export function ApplicationsPage() {
                       <Table.Td><StatusBadge status={app.status} size="md" /></Table.Td>
                       <Table.Td>{app.applied_at || '-'}</Table.Td>
                       <Table.Td>
-                        <Link to={`/applications/${app.id}`}>
+                        <Link to={`/app/candidatures/${app.id}`}>
                           <Button variant="ghost" size="small">{t('common.details')}</Button>
                         </Link>
                       </Table.Td>

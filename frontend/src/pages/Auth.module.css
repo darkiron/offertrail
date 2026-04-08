@@ -75,6 +75,10 @@
   composes: footer from '../styles/authSurface.module.css';
 }
 
+.backLink {
+  composes: backLink from '../styles/authSurface.module.css';
+}
+
 @media (max-width: 760px) {
   .grid {
     grid-template-columns: 1fr;

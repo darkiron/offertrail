@@ -149,7 +149,7 @@ export const ContactsPage: React.FC = () => {
                   radius="lg"
                   withBorder
                   className={classes.card}
-                  onClick={() => navigate(`/contacts/${contact.id}`)}
+                  onClick={() => navigate(`/app/contacts/${contact.id}`)}
                 >
                   <Group justify="space-between" align="flex-start">
                     <Stack gap={2}>

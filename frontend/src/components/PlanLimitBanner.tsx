@@ -39,7 +39,7 @@ export function PlanLimitBanner({ sub }: PlanLimitBannerProps) {
           : `${candidatures_count}/${candidatures_max} candidatures utilisees.`}
       </span>
       <button
-        onClick={() => navigate('/mon-compte')}
+        onClick={() => navigate('/app/mon-compte')}
         style={{
           fontSize: '12px',
           fontWeight: 700,

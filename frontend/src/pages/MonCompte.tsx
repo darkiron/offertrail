@@ -117,7 +117,7 @@ export function MonCompte() {
               >
                 {sub?.is_pro ? 'Pro' : 'Gratuit'}
               </Badge>
-              <Button variant="ghost" size="small" onClick={() => navigate('/pricing')}>
+              <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
                 {sub?.is_pro ? 'Gérer' : 'Passer en Pro →'}
               </Button>
             </Group>

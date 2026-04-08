@@ -259,7 +259,7 @@ export const OrganizationsPage: React.FC = () => {
                   radius="lg"
                   withBorder
                   className={classes.card}
-                  onClick={() => navigate(`/organizations/${organization.id}`)}
+                  onClick={() => navigate(`/app/etablissements/${organization.id}`)}
                 >
                   <Group justify="space-between" mb="xs">
                     <Badge variant="light" color="blue" size="sm">{organizationTypeLabels[organization.type]}</Badge>
