@@ -9,13 +9,17 @@ def test_get_subscription_starter(client, user_a):
 
 
 def test_upgrade_to_pro(client, user_a):
-    response = client.post("/subscription/upgrade", headers=user_a["headers"])
+    # Sans Stripe configuré → upgrade simulé directement
+    response = client.post("/subscription/checkout", headers=user_a["headers"])
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["plan"] == "pro"
-    assert payload["is_pro"] is True
-    assert payload["candidatures_max"] == 0
+    assert payload["mode"] == "simulated"
+
+    # Vérifier que l'upgrade a bien eu lieu
+    me = client.get("/subscription/me", headers=user_a["headers"])
+    assert me.json()["plan"] == "pro"
+    assert me.json()["is_pro"] is True
 
 
 def test_subscription_requires_auth(client):

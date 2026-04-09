@@ -69,7 +69,7 @@ export function Pricing() {
           {[
             'Candidatures illimitées',
             'Analytics complets',
-            'Export CSV',
+            'Import TSV',
             'Relances',
             'Score de probité',
           ].map((feature) => (

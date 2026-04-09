@@ -18,7 +18,7 @@ FRONT_NODE_VERSION ?= $(strip $(shell cat $(FRONTEND_DIR)/.nvmrc 2>/dev/null))
 NVM_BOOTSTRAP = export NVM_DIR="$(NVM_DIR)"; [ -s "$$NVM_DIR/nvm.sh" ] && . "$$NVM_DIR/nvm.sh"
 endif
 
-.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage check-front-env build-front lint-front
+.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage check-front-env build-front lint-front migrate-prod alembic-migrate alembic-revision db-shell
 
 install: install-back install-front
 
@@ -105,6 +105,18 @@ test-coverage:
 	$(PYTHON) -m pytest tests/test_auth.py tests/test_candidatures.py --cov=src.auth --cov=src.database --cov=src.models --cov=src.routers.auth --cov=src.routers.candidatures --cov=src.routers.etablissements --cov=src.routers.subscription --cov=src.services.subscription --cov-report=
 	$(PYTHON) -m pytest tests/test_etablissements.py tests/test_isolation.py tests/test_subscription.py --cov=src.auth --cov=src.database --cov=src.models --cov=src.routers.auth --cov=src.routers.candidatures --cov=src.routers.etablissements --cov=src.routers.subscription --cov=src.services.subscription --cov-report= --cov-append
 	$(PYTHON) -m coverage report --show-missing --fail-under=80
+
+migrate-prod:
+	$(PYTHON) scripts/migrate_sqlite_to_supabase.py
+
+alembic-migrate:
+	alembic upgrade head
+
+alembic-revision:
+	alembic revision --autogenerate -m "$(msg)"
+
+db-shell:
+	$(PYTHON) -c "from src.database import engine; print(engine.url)"
 
 reset-db:
 	$(RM_FILE) offertrail.db

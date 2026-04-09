@@ -115,7 +115,7 @@ export function MonCompte() {
                 color={sub?.is_pro ? 'green' : 'gray'}
                 size="lg"
               >
-                {sub?.is_pro ? 'Pro' : 'Gratuit'}
+                {sub?.is_pro ? 'Pro' : 'Accès limité'}
               </Badge>
               <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
                 {sub?.is_pro ? 'Gérer' : 'Passer en Pro →'}
