@@ -21,7 +21,9 @@ from src.database import SessionLocal, get_db
 # ============================================================
 # CONFIG (a mettre en .env)
 # ============================================================
-SECRET_KEY = os.getenv("SECRET_KEY", "changeme-avant-prod-utiliser-secrets-python")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY manquante dans les variables d'environnement")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE = 60 * 24 * 7  # 7 jours en minutes
 
