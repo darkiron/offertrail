@@ -1,125 +1,98 @@
 """
-OfferTrail - Auth JWT local + dependances FastAPI
-Remplace le RLS Supabase en local.
-Migration vers Supabase : remplacer verify_token() par la verification du JWT Supabase.
+OfferTrail — Auth via Supabase JWT
+FastAPI vérifie le token émis par Supabase Auth.
+Plus de gestion de passwords ni de register côté backend.
 """
 import os
-from datetime import datetime, timedelta
 from typing import List, Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from src.models import Candidature, Contact, Etablissement, User
-from src.services.probite import recompute_probite_scores
-from src.database import SessionLocal, get_db
+from src.database import get_db, SessionLocal
+from src.models import Candidature, Contact, Etablissement, Profile
 
-# ============================================================
-# CONFIG (a mettre en .env)
-# ============================================================
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY manquante dans les variables d'environnement")
-ALGORITHM = "HS256"
-TOKEN_EXPIRE = 60 * 24 * 7  # 7 jours en minutes
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
+# SUPABASE_JWT_SECRET se trouve dans :
+# Supabase Dashboard → Settings → API → JWT Settings → JWT Secret
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+bearer_scheme = HTTPBearer()
 
 
-# ============================================================
-# UTILITAIRES AUTH
-# ============================================================
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-
-def create_access_token(user_id: str, email: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
-    payload = {
-        "sub": user_id,
-        "email": email,
-        "exp": expire,
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def decode_token(token: str) -> dict:
+def get_jwt_payload(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    """Décode et retourne le payload complet du JWT Supabase."""
+    token = credentials.credentials
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError as exc:
+        return jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            options={"verify_aud": False},
+        )
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalide ou expire",
+            detail="Token invalide ou expiré",
             headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+        )
 
 
-# ============================================================
-# DEPENDANCE : utilisateur courant
-# Equivalent de auth.uid() dans Supabase RLS
-# ============================================================
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> User:
-    payload = decode_token(token)
-    user_id = payload.get("sub")
+def get_current_user_id(
+    payload: dict = Depends(get_jwt_payload),
+) -> str:
+    """
+    Vérifie le JWT Supabase et retourne le user_id (sub).
+    C'est le seul point d'entrée auth pour tous les endpoints privés.
+    """
+    user_id: str = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=401, detail="Token invalide")
-
-    user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
-    return user
+    return user_id
 
 
-def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
+def get_current_profile(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+) -> Profile:
     """
-    Decode le JWT et retourne le user_id.
-    JAMAIS de fallback, JAMAIS de valeur par defaut.
-    Si le token est absent ou invalide -> 401 immediat.
+    Retourne le profil complet du user connecté.
+    Crée le profil automatiquement s'il n'existe pas
+    (cas où le trigger Supabase n'aurait pas encore tourné).
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token invalide ou expiré",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id:
-            raise credentials_exception
-        return user_id
-    except JWTError as exc:
-        raise credentials_exception from exc
+    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    if not profile:
+        profile = Profile(id=user_id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    if not profile.is_active:
+        raise HTTPException(status_code=403, detail="Compte désactivé")
+    return profile
 
 
-def get_admin_user(user: User = Depends(get_current_user)) -> User:
-    """Reserve aux admins. 403 pour tous les autres."""
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Acces reserve aux administrateurs")
-    return user
+def get_admin_profile(
+    profile: Profile = Depends(get_current_profile),
+) -> Profile:
+    """Réservé aux admins."""
+    if profile.role != "admin":
+        raise HTTPException(status_code=403, detail="Accès admin requis")
+    return profile
 
 
-# ============================================================
-# DEPENDANCES RLS - Equivalent des policies Supabase
-# ============================================================
+# ── Dépendances RLS — équivalent des policies Supabase ──────────────────────
+
 def own_candidature(
     candidature_id: str,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ) -> Candidature:
     """
-    Equivalent RLS : user_id = auth.uid() sur candidatures.
+    Équivalent RLS : user_id = auth.uid() sur candidatures.
     Injecte la candidature si elle appartient au user courant, 404 sinon.
     """
     cand = db.query(Candidature).filter(
@@ -137,26 +110,26 @@ def contact_visible_by_user(
     db: Session = Depends(get_db),
 ) -> Contact:
     """
-    Equivalent de la policy contacts_visible_par_contexte.
+    Équivalent de la policy contacts_visible_par_contexte.
     Un contact est visible si le user a une candidature dans :
-    - la meme succursale
-    - le meme ETS
-    - un ETS du meme groupe (filiale du meme siege)
+    - la même succursale
+    - le même ETS
+    - un ETS du même groupe (filiale du même siège)
     """
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if not contact:
         raise HTTPException(status_code=404, detail="Contact introuvable")
 
     if not _user_can_see_contact(db, user_id, contact):
-        raise HTTPException(status_code=403, detail="Acces refuse")
+        raise HTTPException(status_code=403, detail="Accès refusé")
 
     return contact
 
 
 def _user_can_see_contact(db: Session, user_id: str, contact: Contact) -> bool:
     """
-    Logique de visibilite des contacts - miroir exact de la policy RLS Supabase.
-    Centralise ici pour etre reutilisable dans les listings et les details.
+    Logique de visibilité des contacts — miroir exact de la policy RLS Supabase.
+    Centralisée ici pour être réutilisable dans les listings et les détails.
     """
     user_candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
 
@@ -200,14 +173,14 @@ def get_visible_contacts(
 ) -> List[Contact]:
     """
     Retourne tous les contacts visibles pour un user.
-    Utilise dans les listings - equivalent du SELECT avec RLS actif.
+    Utilisé dans les listings — équivalent du SELECT avec RLS actif.
     """
     user_cands = db.query(Candidature).filter(Candidature.user_id == user_id).all()
     user_ets_ids = {c.etablissement_id for c in user_cands}
     user_succ_ids = {c.succursale_id for c in user_cands if c.succursale_id}
     owned_ets_ids = {
-        etablissement_id
-        for (etablissement_id,) in db.query(Etablissement.id).filter(Etablissement.created_by == user_id).all()
+        eid
+        for (eid,) in db.query(Etablissement.id).filter(Etablissement.created_by == user_id).all()
     }
 
     groupe_ets_ids: set[str] = set()
@@ -238,9 +211,8 @@ def get_visible_contacts(
     return query.all()
 
 
-# ============================================================
-# SCHEDULER - Remplace pg_cron en local
-# ============================================================
+# ── Scheduler APScheduler (probité) ─────────────────────────────────────────
+
 scheduler = BackgroundScheduler()
 
 
@@ -258,9 +230,9 @@ def start_scheduler() -> None:
 
 
 def _run_probite_recompute() -> None:
-    """Wrapper pour le scheduler - cree sa propre session."""
     db = SessionLocal()
     try:
+        from src.services.probite import recompute_probite_scores
         recompute_probite_scores(db)
     finally:
         db.close()
