@@ -1,6 +1,6 @@
 from src.auth import _user_can_see_contact, get_visible_contacts
 from src.database import SessionLocal, engine
-from src.models import Base, Candidature, Contact, Etablissement, User
+from src.models import Base, Candidature, Contact, Etablissement, Profile
 
 
 def test_contact_visible_when_target_organization_is_user_owned():
@@ -9,10 +9,8 @@ def test_contact_visible_when_target_organization_is_user_owned():
 
     db = SessionLocal()
     try:
-        user = User(
+        user = Profile(
             id="user-1",
-            email="user@example.com",
-            hashed_password="secret",
             is_active=True,
         )
         intermediary = Etablissement(
