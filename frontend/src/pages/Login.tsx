@@ -16,7 +16,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { signIn, isAuthenticated } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const successMessage =
     (location.state as { message?: string } | null)?.message ?? null;
@@ -54,7 +54,7 @@ export function LoginPage() {
     try {
       setFormError(null);
       clearErrors();
-      await login(result.data.email, result.data.password);
+      await signIn(result.data.email, result.data.password);
       const nextPath = (location.state as { from?: string } | null)?.from ?? '/app';
       navigate(nextPath, { replace: true });
     } catch (error) {
