@@ -1,6 +1,6 @@
 """
 OfferTrail — Modèles SQLAlchemy
-Base SQLite locale (migration Supabase plus tard sans changement de modèles)
+Auth gérée par Supabase — table profiles liée à auth.users.
 """
 import uuid
 from datetime import datetime
@@ -41,13 +41,11 @@ class Etablissement(Base):
     description = Column(Text)
 
     # Auto-référentiel : siege_id → parent (siège social)
-    # null  = cet établissement EST le siège (ou indépendant)
-    # non-null = c'est une filiale rattachée au siège
     siege_id    = Column(String, ForeignKey("etablissements.id"), nullable=True)
     type        = Column(String, default="independant")  # siege | filiale | independant
 
     verified    = Column(Boolean, default=False)
-    created_by  = Column(String, ForeignKey("users.id"), nullable=True)
+    created_by  = Column(String, ForeignKey("profiles.id"), nullable=True)
     created_at  = Column(DateTime, default=now)
     updated_at  = Column(DateTime, default=now, onupdate=now)
 
@@ -59,7 +57,6 @@ class Etablissement(Base):
     contacts    = relationship("Contact", back_populates="etablissement")
     probite     = relationship("ProbiteScore", back_populates="etablissement",
                                uselist=False)
-    createur    = relationship("User", foreign_keys=[created_by])
 
 
 class Succursale(Base):
@@ -74,13 +71,12 @@ class Succursale(Base):
     pays             = Column(String, default="FR")
     latitude         = Column(Float)
     longitude        = Column(Float)
-    created_by       = Column(String, ForeignKey("users.id"), nullable=True)
+    created_by       = Column(String, ForeignKey("profiles.id"), nullable=True)
     created_at       = Column(DateTime, default=now)
 
     # Relations
     etablissement = relationship("Etablissement", back_populates="succursales")
     contacts      = relationship("Contact", back_populates="succursale")
-    createur      = relationship("User", foreign_keys=[created_by])
 
 
 class Contact(Base):
@@ -100,7 +96,7 @@ class Contact(Base):
     poste            = Column(String)
     linkedin_url     = Column(String)
     email_pro        = Column(String)   # email générique/pro seulement — partagé
-    created_by       = Column(String, ForeignKey("users.id"), nullable=True)
+    created_by       = Column(String, ForeignKey("profiles.id"), nullable=True)
     created_at       = Column(DateTime, default=now)
     updated_at       = Column(DateTime, default=now, onupdate=now)
 
@@ -109,7 +105,6 @@ class Contact(Base):
     succursale    = relationship("Succursale", back_populates="contacts")
     interactions  = relationship("ContactInteraction", back_populates="contact",
                                  cascade="all, delete-orphan")
-    createur      = relationship("User", foreign_keys=[created_by])
 
 
 # ============================================================
@@ -133,7 +128,7 @@ class Candidature(Base):
     __tablename__ = "candidatures"
 
     id               = Column(String, primary_key=True, default=gen_uuid)
-    user_id          = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id          = Column(String, ForeignKey("profiles.id"), nullable=False)
     etablissement_id = Column(String, ForeignKey("etablissements.id"), nullable=False)
     client_final_id  = Column(String, ForeignKey("etablissements.id"), nullable=True)
     succursale_id    = Column(String, ForeignKey("succursales.id"), nullable=True)
@@ -150,7 +145,6 @@ class Candidature(Base):
     updated_at       = Column(DateTime, default=now, onupdate=now)
 
     # Relations
-    user          = relationship("User", foreign_keys=[user_id])
     etablissement = relationship("Etablissement", foreign_keys=[etablissement_id])
     client_final  = relationship("Etablissement", foreign_keys=[client_final_id])
     succursale    = relationship("Succursale")
@@ -167,7 +161,7 @@ class CandidatureEvent(Base):
 
     id             = Column(String, primary_key=True, default=gen_uuid)
     candidature_id = Column(String, ForeignKey("candidatures.id"), nullable=False)
-    user_id        = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id        = Column(String, ForeignKey("profiles.id"), nullable=False)
     type           = Column(String, nullable=False)
     ancien_statut  = Column(String)
     nouveau_statut = Column(String)
@@ -176,7 +170,6 @@ class CandidatureEvent(Base):
 
     # Relations
     candidature = relationship("Candidature", back_populates="events")
-    user        = relationship("User")
 
 
 class Relance(Base):
@@ -184,7 +177,7 @@ class Relance(Base):
 
     id             = Column(String, primary_key=True, default=gen_uuid)
     candidature_id = Column(String, ForeignKey("candidatures.id"), nullable=False)
-    user_id        = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id        = Column(String, ForeignKey("profiles.id"), nullable=False)
     contact_id     = Column(String, ForeignKey("contacts.id"), nullable=True)
     date_prevue    = Column(DateTime, nullable=False)
     date_effectuee = Column(DateTime)
@@ -195,7 +188,6 @@ class Relance(Base):
 
     # Relations
     candidature = relationship("Candidature", back_populates="relances")
-    user        = relationship("User")
     contact     = relationship("Contact")
 
 
@@ -208,7 +200,7 @@ class ContactInteraction(Base):
 
     id           = Column(String, primary_key=True, default=gen_uuid)
     contact_id   = Column(String, ForeignKey("contacts.id"), nullable=False)
-    user_id      = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id      = Column(String, ForeignKey("profiles.id"), nullable=False)
     appreciation = Column(String)   # positif | neutre | negatif
     notes        = Column(Text)     # strictement privé
     email_perso  = Column(String)   # strictement privé
@@ -219,7 +211,6 @@ class ContactInteraction(Base):
 
     # Relations
     contact = relationship("Contact", back_populates="interactions")
-    user    = relationship("User")
 
 
 # ============================================================
@@ -249,38 +240,26 @@ class ProbiteScore(Base):
 
 
 # ============================================================
-# AUTH
+# AUTH — Profile lié à auth.users Supabase
+# Remplace la table users SQLAlchemy.
+# Le profil est créé automatiquement par un trigger Supabase.
 # ============================================================
 
-class User(Base):
-    __tablename__ = "users"
+class Profile(Base):
+    __tablename__ = "profiles"
 
-    id           = Column(String, primary_key=True, default=gen_uuid)
-    email        = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    nom          = Column(String)
-    prenom       = Column(String)
-    plan         = Column(String, default="starter")   # starter | pro
-    role         = Column(String, default="user")      # user | admin
-    plan_started_at = Column(DateTime, nullable=True)
-    plan_expires_at = Column(DateTime, nullable=True)
-    stripe_customer_id = Column(String, nullable=True)
-    is_active    = Column(Boolean, default=True)
-    created_at   = Column(DateTime, default=now)
-    updated_at   = Column(DateTime, default=now, onupdate=now)
-
-
-class PasswordResetToken(Base):
-    __tablename__ = "password_reset_tokens"
-
-    id         = Column(String, primary_key=True, default=gen_uuid)
-    user_id    = Column(String, ForeignKey("users.id"), nullable=False)
-    token      = Column(String, unique=True, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
-    used       = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=now)
-
-    user = relationship("User")
+    id                     = Column(String, primary_key=True)  # = auth.users.id (UUID Supabase)
+    prenom                 = Column(String)
+    nom                    = Column(String)
+    plan                   = Column(String, default="starter")  # starter | pro
+    role                   = Column(String, default="user")      # user | admin
+    plan_started_at        = Column(DateTime, nullable=True)
+    plan_expires_at        = Column(DateTime, nullable=True)
+    stripe_customer_id     = Column(String, nullable=True)
+    stripe_subscription_id = Column(String, nullable=True)
+    is_active              = Column(Boolean, default=True)
+    created_at             = Column(DateTime, default=now)
+    updated_at             = Column(DateTime, default=now, onupdate=now)
 
 
 # ============================================================
@@ -292,8 +271,6 @@ class PasswordResetToken(Base):
 @event.listens_for(Candidature, "before_update")
 def log_statut_change(mapper, connection, target):
     """Enregistre automatiquement un event à chaque changement de statut."""
-    history = target.__dict__
-    # Récupération de l'ancienne valeur via l'inspect SQLAlchemy
     from sqlalchemy import inspect as sa_inspect
     insp = sa_inspect(target)
     attr = insp.attrs.statut
