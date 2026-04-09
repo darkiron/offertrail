@@ -136,10 +136,10 @@ export const LandingPage: React.FC = () => {
           <div className="lp-pricing-grid">
             <div className="lp-pricing-copy">
               {[
-                { title: 'Accès complet dès le départ',    desc: 'Dashboard, relances, contacts, établissements, historique — rien n\'est verrouillé derrière un tier supérieur.' },
-                { title: 'Sans engagement',                desc: 'Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie.' },
-                { title: 'Plan Starter gratuit pour commencer', desc: 'Crée ton compte gratuitement et ajoute tes premières candidatures avant de passer Pro.' },
-                { title: 'Données qui t\'appartiennent',   desc: 'Tes candidatures, contacts, historique — tes données restent les tiennes, accessibles et exportables.' },
+                { title: 'Accès complet dès le départ', desc: 'Dashboard, relances, contacts, établissements, historique — rien n\'est verrouillé derrière un tier supérieur.' },
+                { title: 'Sans engagement', desc: 'Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie.' },
+                { title: 'Un seul plan, sans ambiguïté', desc: 'OfferTrail fonctionne avec une offre Pro unique à 9,99 EUR par mois.' },
+                { title: 'Suivi structuré', desc: 'Tes candidatures, contacts et historique restent centralisés dans un seul espace clair.' },
               ].map((p) => (
                 <div key={p.title} className="lp-pricing-point">
                   <div className="lp-pricing-check">✓</div>
@@ -161,10 +161,10 @@ export const LandingPage: React.FC = () => {
                 <li>Relances, historique et timeline</li>
                 <li>Contacts et établissements liés</li>
                 <li>Score de probité des entreprises</li>
-                <li>Import TSV / export des données</li>
+                <li>Import TSV</li>
               </ul>
-              <Link to="/register" className="lp-plan-cta">Commencer gratuitement →</Link>
-              <p className="lp-plan-note">Plan Starter gratuit inclus · Pas de CB requise pour démarrer</p>
+              <Link to="/register" className="lp-plan-cta">Créer mon compte →</Link>
+              <p className="lp-plan-note">9,99 EUR / mois · Sans engagement</p>
             </div>
           </div>
         </div>

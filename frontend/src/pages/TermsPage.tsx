@@ -22,11 +22,11 @@ export const TermsPage: React.FC = () => {
 
       <div className="legal-section">
         <h2>Article 2 — Description du service</h2>
-        <p>Deux niveaux d'accès sont disponibles :</p>
-        <ul>
-          <li><strong>Plan Starter (gratuit)</strong> — accès limité en nombre de candidatures</li>
-          <li><strong>Plan Pro (9,99 EUR / mois)</strong> — accès complet, candidatures illimitées</li>
-        </ul>
+        <p>
+          OfferTrail est proposé sous la forme d'un abonnement unique
+          <strong> Plan Pro (9,99 EUR / mois)</strong>, donnant accès aux fonctionnalités
+          disponibles du service.
+        </p>
       </div>
 
       <div className="legal-section">

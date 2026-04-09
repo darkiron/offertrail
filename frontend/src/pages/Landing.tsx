@@ -556,7 +556,7 @@ const PRO_FEATURES = [
   'Pipeline & statuts',
   'Contacts & entreprises',
   'Analytics complets',
-  'Export CSV',
+  'Import TSV',
   'Relances',
 ];
 
@@ -663,7 +663,7 @@ export function Landing() {
             <h2 className="l-ctaBannerTitle">Prêt à reprendre le contrôle ?</h2>
             <p className="l-ctaBannerSub">Rejoignez OfferTrail et donnez une structure à votre recherche d'emploi.</p>
             <Link to="/register" className="l-heroPrimary" style={{ display: 'inline-flex' }}>
-              Créer un compte gratuitement
+              Créer un compte
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
