@@ -49,5 +49,6 @@ def activate_pro(db: Session, profile: Profile) -> None:
 
 def _downgrade_to_starter(db: Session, profile: Profile) -> None:
     profile.plan            = "starter"
+    profile.stripe_subscription_id = None
     profile.plan_expires_at = None
     db.commit()

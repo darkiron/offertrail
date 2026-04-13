@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Stack, Paper, SimpleGrid, Group, Text, Title, TextInput, Modal,
@@ -15,6 +15,7 @@ import classes from './MonCompte.module.css';
 
 export function MonCompte() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
 
   const { data: sub } = useQuery({
@@ -30,6 +31,25 @@ export function MonCompte() {
   const [passwordSaving, setPasswordSaving] = useState(false);
 
   useEffect(() => { document.title = 'Mon compte — OfferTrail'; }, []);
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (!paymentStatus) {
+      return;
+    }
+
+    if (paymentStatus === 'success') {
+      notifications.show({ message: 'Paiement confirmé. Mise à jour de ton abonnement en cours.', color: 'green' });
+    } else if (paymentStatus === 'cancelled') {
+      notifications.show({ message: 'Paiement annulé.', color: 'yellow' });
+    }
+
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('payment');
+      return next;
+    }, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Synchronise le formulaire quand le profil est chargé
   useEffect(() => {
@@ -78,7 +98,7 @@ export function MonCompte() {
         <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Mon compte</Text>
         <Title order={1} mt="xs">Profil, sécurité et abonnement au même endroit.</Title>
         <Text c="dimmed" mt="sm">
-          Le socle abonnement est prêt pour recevoir Mollie sans réécriture métier.
+          L&apos;abonnement est géré avec Stripe pour un passage au plan Pro sans friction.
         </Text>
       </Paper>
 
@@ -158,7 +178,7 @@ export function MonCompte() {
                   <Paper p="xs" radius="sm" withBorder style={{ width: 36, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Text size="xs" c="dimmed">CB</Text>
                   </Paper>
-                  <Text size="sm" c="dimmed">Disponible après activation Mollie</Text>
+                  <Text size="sm" c="dimmed">Abonnement actif via Stripe</Text>
                 </Group>
                 <Button variant="ghost" size="small" disabled>Modifier</Button>
               </Group>
@@ -174,7 +194,7 @@ export function MonCompte() {
               <Button variant="ghost" size="small" disabled>Exporter</Button>
             </Group>
             <Text size="sm" c="dimmed" ta="center" py="md">
-              Disponible après activation du paiement Mollie
+              Export de factures à brancher sur les données Stripe
             </Text>
           </Paper>
         </Stack>

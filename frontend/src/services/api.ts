@@ -579,8 +579,8 @@ export const subscriptionService = {
     const response = await axiosInstance.get<SubscriptionStatus>('/subscription/me');
     return response.data;
   },
-  upgrade: async () => {
-    const response = await axiosInstance.post<SubscriptionStatus>('/subscription/upgrade');
+  checkout: async () => {
+    const response = await axiosInstance.post<{ mode: 'simulated' | 'stripe'; checkout_url: string | null; message?: string }>('/subscription/checkout');
     return response.data;
   },
 };

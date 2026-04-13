@@ -31,11 +31,11 @@ import { useI18n } from '../i18n';
 import classes from './AppLayout.module.css';
 
 const NAV_LINKS = [
-  { label: 'Dashboard', to: '/dashboard', icon: IconLayoutDashboard },
-  { label: 'Candidatures', to: '/applications', icon: IconBriefcase },
-  { label: 'Entreprises', to: '/organizations', icon: IconBuilding },
-  { label: 'Contacts', to: '/contacts', icon: IconUsers },
-  { label: 'Import', to: '/import', icon: IconFileImport },
+  { label: 'Dashboard', to: '/app', icon: IconLayoutDashboard },
+  { label: 'Candidatures', to: '/app/candidatures', icon: IconBriefcase },
+  { label: 'Entreprises', to: '/app/etablissements', icon: IconBuilding },
+  { label: 'Contacts', to: '/app/contacts', icon: IconUsers },
+  { label: 'Import', to: '/app/import', icon: IconFileImport },
 ];
 
 export function AppLayout() {
@@ -46,8 +46,8 @@ export function AppLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
   const isActive = (to: string) =>
-    to === '/dashboard'
-      ? location.pathname === '/dashboard'
+    to === '/app'
+      ? location.pathname === '/app'
       : location.pathname.startsWith(to);
 
   const handleLogout = () => {
@@ -68,7 +68,7 @@ export function AppLayout() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Link to="/dashboard" className={classes.brand}>
+            <Link to="/app" className={classes.brand}>
               <span className={classes.brandMark}>OT</span>
               <Text fw={800} size="sm" style={{ letterSpacing: '-0.02em' }}>OfferTrail</Text>
             </Link>
@@ -99,15 +99,15 @@ export function AppLayout() {
               <Menu.Dropdown>
                 <Menu.Label>{user?.email}</Menu.Label>
                 <Menu.Divider />
-                <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/mon-compte">
+                <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/app/mon-compte">
                   Mon compte
                 </Menu.Item>
                 {profile?.role === 'admin' ? (
-                  <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/admin">
+                  <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/app/admin">
                     Administration
                   </Menu.Item>
                 ) : null}
-                <Menu.Item leftSection={<IconCreditCard size={14} />} component={Link} to="/pricing">
+                <Menu.Item leftSection={<IconCreditCard size={14} />} component={Link} to="/app/pricing">
                   Abonnement
                 </Menu.Item>
                 <Menu.Divider />

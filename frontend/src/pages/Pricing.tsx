@@ -26,10 +26,16 @@ export function Pricing() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      await subscriptionService.upgrade();
+      const checkout = await subscriptionService.checkout();
+
+      if (checkout.mode === 'stripe' && checkout.checkout_url) {
+        window.location.assign(checkout.checkout_url);
+        return;
+      }
+
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: 'Plan Pro activé !', color: 'green' });
+      notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
     } catch {
       notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
     } finally {
@@ -74,9 +80,9 @@ export function Pricing() {
           {[
             'Candidatures illimitées',
             'Analytics complets',
-            'Import TSV',
-            'Relances',
             'Score de probité',
+            'File de relances',
+            'Export CSV',
           ].map((feature) => (
             <List.Item key={feature}>{feature}</List.Item>
           ))}
@@ -88,7 +94,7 @@ export function Pricing() {
           </Text>
         ) : (
           <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Activation...' : 'Passer en Pro — 14,99€/mois'}
+            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
           </Button>
         )}
       </Paper>

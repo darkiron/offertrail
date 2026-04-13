@@ -8,19 +8,33 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 APP_BASE_URL          = os.getenv("APP_BASE_URL", "http://localhost:5173")
 
 
-def create_checkout_session(user_id: str, user_email: str) -> str:
+def create_checkout_session(
+    user_id: str,
+    user_email: str,
+    stripe_customer_id: str | None = None,
+) -> str:
     """
     Crée une session Stripe Checkout et retourne l'URL de paiement.
-    Mode abonnement mensuel à 14,99€.
+    Mode abonnement mensuel via le Price configuré dans Stripe.
     """
+    checkout_payload = {
+        "payment_method_types": ["card"],
+        "line_items": [{"price": STRIPE_PRICE_ID, "quantity": 1}],
+        "mode": "subscription",
+        "success_url": f"{APP_BASE_URL}/app/mon-compte?payment=success",
+        "cancel_url": f"{APP_BASE_URL}/app/mon-compte?payment=cancelled",
+        "client_reference_id": user_id,
+        "metadata": {"user_id": user_id},
+        "subscription_data": {"metadata": {"user_id": user_id}},
+    }
+
+    if stripe_customer_id:
+        checkout_payload["customer"] = stripe_customer_id
+    else:
+        checkout_payload["customer_email"] = user_email
+
     session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{"price": STRIPE_PRICE_ID, "quantity": 1}],
-        mode="subscription",
-        customer_email=user_email,
-        success_url=f"{APP_BASE_URL}/app/mon-compte?payment=success",
-        cancel_url=f"{APP_BASE_URL}/app/mon-compte?payment=cancelled",
-        metadata={"user_id": user_id},
+        **checkout_payload,
     )
     return session.url
 
