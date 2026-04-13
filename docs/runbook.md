@@ -57,6 +57,10 @@ Cela lance :
 - l'API sur `http://localhost:8000`
 - le front sur `http://localhost:5173`
 
+Notes d'environnement :
+- le backend charge les variables depuis `.env` à la racine
+- le frontend lancé via `make run` charge `frontend/.env.dev`
+
 ### Backend seul
 
 ```bash
