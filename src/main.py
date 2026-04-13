@@ -31,6 +31,31 @@ from datetime import datetime
 
 APP_VERSION = "0.1.0"
 logger = logging.getLogger(__name__)
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+DEFAULT_ALLOWED_ORIGIN_REGEX = r"^https://([a-z0-9-]+\.)?offertrail\.fr$"
+
+
+def _parse_allowed_origins(raw_value: str | None) -> list[str]:
+    if not raw_value or not raw_value.strip():
+        return DEFAULT_ALLOWED_ORIGINS
+
+    origins: list[str] = []
+    for origin in raw_value.split(","):
+        normalized = origin.strip().rstrip("/")
+        if normalized and normalized not in origins:
+            origins.append(normalized)
+
+    return origins or DEFAULT_ALLOWED_ORIGINS
+
+
+def _parse_allowed_origin_regex(raw_value: str | None) -> str | None:
+    if raw_value is None:
+        return DEFAULT_ALLOWED_ORIGIN_REGEX
+
+    normalized = raw_value.strip()
+    return normalized or None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,13 +65,15 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+origins = _parse_allowed_origins(os.getenv("ALLOWED_ORIGINS"))
+origin_regex = _parse_allowed_origin_regex(os.getenv("ALLOWED_ORIGIN_REGEX"))
 app.state.limiter = Limiter(key_func=get_remote_address)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -6,6 +6,7 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_PRICE_ID       = os.getenv("STRIPE_PRICE_ID", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 APP_BASE_URL          = os.getenv("APP_BASE_URL", "http://localhost:5173")
+ENABLE_STRIPE_CHECKOUT = os.getenv("ENABLE_STRIPE_CHECKOUT")
 
 
 def create_checkout_session(
@@ -50,5 +51,22 @@ def verify_webhook_signature(payload: bytes, sig_header: str) -> stripe.Event:
 
 
 def is_configured() -> bool:
-    """Vérifie si Stripe est configuré (clé API présente)."""
-    return bool(os.getenv("STRIPE_SECRET_KEY"))
+    """
+    Active Stripe seulement si la config est exploitable.
+    En local, on évite de partir chez Stripe par défaut.
+    """
+    secret_key = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    price_id = os.getenv("STRIPE_PRICE_ID", "").strip()
+    app_base_url = os.getenv("APP_BASE_URL", APP_BASE_URL).strip().lower()
+    enable_flag = (ENABLE_STRIPE_CHECKOUT or "").strip().lower()
+
+    if enable_flag in {"1", "true", "yes", "on"}:
+        return bool(secret_key and price_id.startswith("price_"))
+
+    if enable_flag in {"0", "false", "no", "off"}:
+        return False
+
+    if app_base_url.startswith("http://localhost") or app_base_url.startswith("http://127.0.0.1"):
+        return False
+
+    return bool(secret_key and price_id.startswith("price_"))
