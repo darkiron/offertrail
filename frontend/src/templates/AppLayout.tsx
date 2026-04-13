@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   AppShell,
   Burger,
@@ -28,6 +28,9 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { subscriptionService } from '../services/api';
+import { PlanLimitBanner } from '../components/PlanLimitBanner';
+import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.css';
 
 const NAV_LINKS = [
@@ -41,9 +44,16 @@ const NAV_LINKS = [
 export function AppLayout() {
   const [opened, { toggle }] = useDisclosure();
   const { isAuthenticated, signOut, user, profile } = useAuth();
+  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      subscriptionService.getMe().then(setSub).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const isActive = (to: string) =>
     to === '/app'
@@ -137,6 +147,7 @@ export function AppLayout() {
 
       {/* ── Content ── */}
       <AppShell.Main className={classes.main}>
+        <PlanLimitBanner sub={sub} />
         <Outlet />
       </AppShell.Main>
     </AppShell>

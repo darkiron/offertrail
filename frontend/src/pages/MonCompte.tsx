@@ -6,7 +6,7 @@ import {
   PasswordInput, Progress, Badge,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { authService, subscriptionService } from '../services/api';
@@ -17,6 +17,7 @@ export function MonCompte() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: sub } = useQuery({
     queryKey: ['subscription'],
@@ -40,6 +41,7 @@ export function MonCompte() {
 
     if (paymentStatus === 'success') {
       notifications.show({ message: 'Paiement confirmé. Mise à jour de ton abonnement en cours.', color: 'green' });
+      void queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (paymentStatus === 'cancelled') {
       notifications.show({ message: 'Paiement annulé.', color: 'yellow' });
     }
