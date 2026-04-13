@@ -16,6 +16,7 @@ import { Button } from '../components/atoms/Button';
 import { EmptyState } from '../components/atoms/EmptyState';
 import { statusLabelMap } from '../utils/statut';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import classes from './Dashboard.module.css';
 
@@ -31,6 +32,7 @@ const STATUS_OPTIONS = [
 export function Dashboard() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -52,7 +54,7 @@ export function Dashboard() {
   }, [activeTab]);
 
   if (error && (error as { response?: { status?: number } }).response?.status === 401) {
-    navigate('/login');
+    void signOut().finally(() => navigate('/login', { replace: true }));
     return null;
   }
 

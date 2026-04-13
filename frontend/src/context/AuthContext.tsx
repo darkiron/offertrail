@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import axiosInstance from '../services/api'
+import { setAxiosAuthToken } from '../services/api'
 
 interface Profile {
   id: string
@@ -45,12 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applySession = (s: Session | null) => {
     setSession(s)
     setUser(s?.user ?? null)
-    if (s?.access_token) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${s.access_token}`
-    } else {
-      delete axiosInstance.defaults.headers.common.Authorization
-      setProfile(null)
-    }
+    setAxiosAuthToken(s?.access_token ?? null)
+    if (!s) setProfile(null)
   }
 
   useEffect(() => {
