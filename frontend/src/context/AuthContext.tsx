@@ -81,8 +81,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    // Positionne le token immédiatement — onAuthStateChange est asynchrone,
+    // sans ça le navigate() qui suit en Login envoie des requêtes sans Authorization.
+    if (data.session) {
+      setAxiosAuthToken(data.session.access_token)
+    }
   }
 
   const signOut = async () => {
