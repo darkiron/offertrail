@@ -4,21 +4,22 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from jose import jwt
 
 TEST_DB_PATH = Path("test_runtime_offertrail.db").resolve()
+TEST_JWT_SECRET = "test-jwt-secret-for-testing-only"
 
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH.as_posix()}"
 os.environ["OFFERTAIL_DB_PATH"] = TEST_DB_PATH.as_posix()
+os.environ["SUPABASE_JWT_SECRET"] = TEST_JWT_SECRET
 
 import sqlite3
 
 import src.legacy_database as legacy_database
 import src.main as main_module
-from src.auth import create_access_token, hash_password
 from src.database import init_db as init_saas_db, engine, SessionLocal
 from src.main import app
-from src.models import Candidature, Etablissement, PasswordResetToken, User
-from src.routers.auth import limiter
+from src.models import Candidature, Etablissement, Profile
 
 legacy_database.DB_PATH = TEST_DB_PATH
 main_module.start_scheduler = lambda: None
@@ -27,9 +28,13 @@ init_saas_db()
 legacy_database.init_db()
 
 
+def make_token(user_id: str, email: str = "test@example.com") -> str:
+    """Crée un JWT Supabase-compatible signé avec le secret de test."""
+    return jwt.encode({"sub": user_id, "email": email}, TEST_JWT_SECRET, algorithm="HS256")
+
+
 @pytest.fixture(autouse=True)
 def reset_databases():
-    limiter._storage.reset()
     engine.dispose()
     with sqlite3.connect(TEST_DB_PATH) as conn:
         tables = [
@@ -65,25 +70,23 @@ def client():
 
 @pytest.fixture()
 def user_a(client):
+    user_id = str(uuid4())
     email = f"a-{uuid4().hex}@example.com"
     db = SessionLocal()
     try:
-        user = User(
-            email=email,
-            hashed_password=hash_password("password123"),
+        profile = Profile(
+            id=user_id,
             prenom="User",
             nom="A",
             plan="starter",
             is_active=True,
         )
-        db.add(user)
-        db.flush()
-        user_id = user.id
+        db.add(profile)
         db.commit()
     finally:
         db.close()
 
-    token = create_access_token(user_id, email)
+    token = make_token(user_id, email)
     return {
         "email": email,
         "token": token,
@@ -94,25 +97,23 @@ def user_a(client):
 
 @pytest.fixture()
 def user_b(client):
+    user_id = str(uuid4())
     email = f"b-{uuid4().hex}@example.com"
     db = SessionLocal()
     try:
-        user = User(
-            email=email,
-            hashed_password=hash_password("password123"),
+        profile = Profile(
+            id=user_id,
             prenom="User",
             nom="B",
             plan="starter",
             is_active=True,
         )
-        db.add(user)
-        db.flush()
-        user_id = user.id
+        db.add(profile)
         db.commit()
     finally:
         db.close()
 
-    token = create_access_token(user_id, email)
+    token = make_token(user_id, email)
     return {
         "email": email,
         "token": token,
@@ -166,32 +167,3 @@ def candidature_a(client, user_a, ets):
         }
     finally:
         db.close()
-
-
-@pytest.fixture()
-def reset_token_factory(db_session):
-    def factory(email: str | None = None, token: str = "valid-reset-token-123"):
-        from datetime import datetime, timedelta
-
-        if email is None:
-            email = f"reset-{uuid4().hex}@example.com"
-
-        user = User(
-            email=email,
-            hashed_password=hash_password("oldpassword123"),
-            plan="starter",
-            is_active=True,
-        )
-        db_session.add(user)
-        db_session.flush()
-
-        reset = PasswordResetToken(
-            user_id=user.id,
-            token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
-        )
-        db_session.add(reset)
-        db_session.commit()
-        return user, reset
-
-    return factory

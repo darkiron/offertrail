@@ -40,7 +40,7 @@ const NAV_LINKS = [
 
 export function AppLayout() {
   const [opened, { toggle }] = useDisclosure();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, signOut, user, profile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -51,8 +51,7 @@ export function AppLayout() {
       : location.pathname.startsWith(to);
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    void signOut().then(() => navigate('/login'));
   };
 
   if (!isAuthenticated) return <Outlet />;
@@ -91,7 +90,7 @@ export function AppLayout() {
                 <UnstyledButton className={classes.userBtn}>
                   <Group gap="xs">
                     <Text size="sm" fw={600}>
-                      {user?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
+                      {profile?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
                     </Text>
                     <IconChevronDown size={14} />
                   </Group>
@@ -103,7 +102,7 @@ export function AppLayout() {
                 <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/mon-compte">
                   Mon compte
                 </Menu.Item>
-                {user?.role === 'admin' ? (
+                {profile?.role === 'admin' ? (
                   <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/admin">
                     Administration
                   </Menu.Item>

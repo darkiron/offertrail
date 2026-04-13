@@ -47,11 +47,13 @@ RESEND_API_KEY=                         # optionnel — emails de reset password
 ALLOWED_ORIGINS=http://localhost:5173   # virgule-séparé en production
 ```
 
-Pour le frontend, créer `frontend/.env.local` :
+Pour le frontend en local, créer `frontend/.env.dev` :
 
 ```env
 VITE_API_URL=http://localhost:8000
 ```
+
+`make run` lance Vite avec le mode `dev`, donc `frontend/.env.dev` est chargé automatiquement.
 
 ## Décisions produit
 

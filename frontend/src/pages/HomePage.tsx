@@ -20,8 +20,8 @@ const FEATURES = [
   },
   {
     icon: '📊',
-    title: 'Analytics & exports',
-    desc: 'Visualise ton taux de réponse, tes points de blocage et exporte tout en CSV.',
+    title: 'Analytics',
+    desc: 'Visualise ton taux de réponse, tes points de blocage et tes leviers d’amélioration.',
   },
   {
     icon: '📇',
@@ -39,7 +39,7 @@ const PLAN_PRO = [
   'Candidatures illimitées',
   'Pipeline & statuts complets',
   'Contacts & entreprises',
-  'Analytics & export CSV',
+  'Analytics complets',
   'Relances automatiques',
   'Score de probité',
 ];

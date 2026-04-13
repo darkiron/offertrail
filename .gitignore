@@ -18,6 +18,7 @@ test_offertrail.db
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/.env.dev
 frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local

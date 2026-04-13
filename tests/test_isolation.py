@@ -1,5 +1,5 @@
 from src.database import SessionLocal
-from src.models import Candidature, User
+from src.models import Candidature, Profile
 
 
 class TestCandidatureIsolation:
@@ -131,7 +131,7 @@ class TestSubscriptionLimits:
     def test_pro_user_has_no_limit(self, client, user_a, ets):
         db = SessionLocal()
         try:
-            user = db.query(User).filter(User.id == user_a["user_id"]).first()
+            user = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
             user.plan = "pro"
             db.add_all(
                 [

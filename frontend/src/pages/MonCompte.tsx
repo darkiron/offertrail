@@ -8,13 +8,14 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { authService, subscriptionService } from '../services/api';
 import { Button } from '../components/atoms/Button';
 import classes from './MonCompte.module.css';
 
 export function MonCompte() {
   const navigate = useNavigate();
-  const { user, setUserData } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const { data: sub } = useQuery({
     queryKey: ['subscription'],
@@ -22,20 +23,27 @@ export function MonCompte() {
     staleTime: 60 * 1000,
   });
 
-  const [form, setForm] = useState({ prenom: user?.prenom || '', nom: user?.nom || '' });
+  const [form, setForm] = useState({ prenom: profile?.prenom || '', nom: profile?.nom || '' });
   const [saving, setSaving] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '' });
+  const [passwordForm, setPasswordForm] = useState({ new_password: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
 
   useEffect(() => { document.title = 'Mon compte — OfferTrail'; }, []);
+
+  // Synchronise le formulaire quand le profil est chargé
+  useEffect(() => {
+    if (profile) {
+      setForm({ prenom: profile.prenom || '', nom: profile.nom || '' });
+    }
+  }, [profile]);
 
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const updated = await authService.updateMe(form);
-      setUserData(updated);
+      await authService.updateMe(form);
+      await refreshProfile();
       notifications.show({ message: 'Profil enregistré', color: 'green' });
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) { navigate('/login'); return; }
@@ -49,10 +57,11 @@ export function MonCompte() {
     e.preventDefault();
     setPasswordSaving(true);
     try {
-      await authService.changePassword(passwordForm.current_password, passwordForm.new_password);
+      const { error } = await supabase.auth.updateUser({ password: passwordForm.new_password });
+      if (error) throw error;
       notifications.show({ message: 'Mot de passe mis à jour', color: 'green' });
       setPasswordOpen(false);
-      setPasswordForm({ current_password: '', new_password: '' });
+      setPasswordForm({ new_password: '' });
     } catch {
       notifications.show({ message: 'Impossible de modifier le mot de passe.', color: 'red' });
     } finally {
@@ -115,7 +124,7 @@ export function MonCompte() {
                 color={sub?.is_pro ? 'green' : 'gray'}
                 size="lg"
               >
-                {sub?.is_pro ? 'Pro' : 'Gratuit'}
+                {sub?.is_pro ? 'Pro' : 'Accès limité'}
               </Badge>
               <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
                 {sub?.is_pro ? 'Gérer' : 'Passer en Pro →'}
@@ -176,14 +185,10 @@ export function MonCompte() {
         <form onSubmit={changePassword}>
           <Stack gap="md">
             <PasswordInput
-              label="Mot de passe actuel"
-              value={passwordForm.current_password}
-              onChange={(e) => setPasswordForm((f) => ({ ...f, current_password: e.target.value }))}
-            />
-            <PasswordInput
               label="Nouveau mot de passe"
               value={passwordForm.new_password}
-              onChange={(e) => setPasswordForm((f) => ({ ...f, new_password: e.target.value }))}
+              onChange={(e) => setPasswordForm({ new_password: e.target.value })}
+              minLength={8}
             />
             <Button type="submit" variant="primary" disabled={passwordSaving}>
               {passwordSaving ? 'Mise à jour...' : 'Enregistrer le mot de passe'}

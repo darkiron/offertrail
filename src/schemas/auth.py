@@ -1,47 +1,20 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict
 
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8)
+class ProfileUpdate(BaseModel):
     prenom: Optional[str] = None
     nom: Optional[str] = None
 
 
-class UserUpdate(BaseModel):
-    prenom: Optional[str] = None
-    nom: Optional[str] = None
-
-
-class ChangePasswordRequest(BaseModel):
-    current_password: str = Field(min_length=8)
-    new_password: str = Field(min_length=8)
-
-
-class UserSchema(BaseModel):
+class ProfileSchema(BaseModel):
     id: str
-    email: str
     prenom: Optional[str]
     nom: Optional[str]
     plan: str
     role: str
-    created_at: datetime
+    plan_started_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
-    user: UserSchema
-
-
-class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
-
-
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str = Field(min_length=8)
