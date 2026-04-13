@@ -13,8 +13,9 @@ def test_get_subscription_starter(client, user_a):
     assert payload["candidatures_max"] == 25
 
 
-def test_upgrade_to_pro(client, user_a):
+def test_upgrade_to_pro(client, user_a, monkeypatch):
     # Sans Stripe configuré → upgrade simulé directement
+    monkeypatch.setattr("src.routers.subscription.is_configured", lambda: False)
     response = client.post("/subscription/checkout", headers=user_a["headers"])
 
     assert response.status_code == 200
