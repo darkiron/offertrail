@@ -11,7 +11,9 @@ import type {
   SubscriptionStatus,
 } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// En mode dev avec proxy Vite, VITE_API_URL est vide → baseURL "" = même origine → pas de CORS.
+// En prod, VITE_API_URL=https://api.offertrail.fr est utilisé directement.
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 export interface ApplicationListParams {
   status?: string;
