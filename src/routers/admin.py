@@ -17,7 +17,7 @@ def global_stats(
     total_profiles = db.query(Profile).count()
     pro_profiles   = db.query(Profile).filter(Profile.plan == "pro").count()
     total_cands    = db.query(Candidature).count()
-    mrr_estimate   = round(pro_profiles * 9.99, 2)
+    mrr_estimate   = round(pro_profiles * 14.99, 2)
 
     return {
         "total_users":       total_profiles,

@@ -637,7 +637,7 @@ export function Landing() {
             <div className="l-pricingTop">
               <div>
                 <p className="l-pricingPlan">Pro</p>
-                <p className="l-pricingAmount">9,99€<span className="l-pricingPeriod">/mois</span></p>
+                <p className="l-pricingAmount">14,99€<span className="l-pricingPeriod">/mois</span></p>
               </div>
               <span className="l-pricingChip">Tout inclus</span>
             </div>

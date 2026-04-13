@@ -11,7 +11,7 @@ APP_BASE_URL          = os.getenv("APP_BASE_URL", "http://localhost:5173")
 def create_checkout_session(user_id: str, user_email: str) -> str:
     """
     Crée une session Stripe Checkout et retourne l'URL de paiement.
-    Mode abonnement mensuel à 9,99€.
+    Mode abonnement mensuel à 14,99€.
     """
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],

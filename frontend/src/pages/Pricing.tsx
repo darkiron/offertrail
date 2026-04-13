@@ -50,7 +50,7 @@ export function Pricing() {
           <Stack gap={4}>
             <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">Pro</Text>
             <Text size="xl" fw={500}>
-              9,99€
+              14,99€
               <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
             </Text>
           </Stack>
@@ -83,7 +83,7 @@ export function Pricing() {
           </Text>
         ) : (
           <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Activation...' : 'Passer en Pro — 9,99€/mois'}
+            {loading ? 'Activation...' : 'Passer en Pro — 14,99€/mois'}
           </Button>
         )}
       </Paper>

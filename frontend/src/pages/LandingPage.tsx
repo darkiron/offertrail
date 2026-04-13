@@ -138,7 +138,7 @@ export const LandingPage: React.FC = () => {
               {[
                 { title: 'Accès complet dès le départ', desc: 'Dashboard, relances, contacts, établissements, historique — rien n\'est verrouillé derrière un tier supérieur.' },
                 { title: 'Sans engagement', desc: 'Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie.' },
-                { title: 'Un seul plan, sans ambiguïté', desc: 'OfferTrail fonctionne avec une offre Pro unique à 9,99 EUR par mois.' },
+                { title: 'Un seul plan, sans ambiguïté', desc: 'OfferTrail fonctionne avec une offre Pro unique à 14,99 EUR par mois.' },
                 { title: 'Suivi structuré', desc: 'Tes candidatures, contacts et historique restent centralisés dans un seul espace clair.' },
               ].map((p) => (
                 <div key={p.title} className="lp-pricing-point">
@@ -153,7 +153,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="lp-plan-card">
               <div className="lp-plan-name">Plan Pro</div>
-              <div className="lp-plan-price">9,99 EUR <span className="lp-plan-period">/ mois</span></div>
+              <div className="lp-plan-price">14,99 EUR <span className="lp-plan-period">/ mois</span></div>
               <div className="lp-plan-divider" />
               <ul className="lp-plan-features">
                 <li>Candidatures illimitées</li>
@@ -164,7 +164,7 @@ export const LandingPage: React.FC = () => {
                 <li>Import TSV</li>
               </ul>
               <Link to="/register" className="lp-plan-cta">Créer mon compte →</Link>
-              <p className="lp-plan-note">9,99 EUR / mois · Sans engagement</p>
+              <p className="lp-plan-note">14,99 EUR / mois · Sans engagement</p>
             </div>
           </div>
         </div>
