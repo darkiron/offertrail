@@ -88,9 +88,45 @@ export function Pricing() {
         )}
       </Paper>
 
-      <Text size="xs" c="dimmed" ta="center">
-        Paiement simulé en local · Mollie sera intégré prochainement
-      </Text>
+      <div style={{
+        marginTop: '0.5rem',
+        padding: '1.25rem',
+        borderRadius: '12px',
+        border: '0.5px solid var(--mantine-color-default-border)',
+        background: 'var(--mantine-color-default)',
+      }}>
+        <p style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          textTransform: 'uppercase' as const,
+          letterSpacing: '.08em',
+          color: 'var(--mantine-color-dimmed)',
+          margin: '0 0 12px',
+        }}>
+          Où va ton argent ?
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid var(--mantine-color-default-border)', fontSize: '13px' }}>
+          <span style={{ color: 'var(--mantine-color-dimmed)' }}>Stripe — traitement du paiement</span>
+          <span style={{ color: 'var(--mantine-color-dimmed)' }}>~0,47€</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid var(--mantine-color-default-border)', fontSize: '13px' }}>
+          <span style={{ color: 'var(--mantine-color-dimmed)' }}>URSSAF — charges sociales (33%)</span>
+          <span style={{ color: 'var(--mantine-color-dimmed)' }}>~4,79€</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '13px' }}>
+          <span style={{ fontWeight: 500 }}>Rémunération du développeur</span>
+          <span style={{ fontWeight: 500, color: 'var(--mantine-color-green-6)' }}>~9,73€</span>
+        </div>
+        <p style={{ fontSize: '12px', color: 'var(--mantine-color-dimmed)', marginTop: '12px', lineHeight: '1.6' }}>
+          OfferTrail est développé et maintenu par{' '}
+          <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer"
+            style={{ color: 'var(--mantine-color-blue-6)', textDecoration: 'none' }}>
+            CraftCodes
+          </a>
+          , une auto-entreprise indépendante. Pas d'équipe marketing,
+          pas d'investisseurs. Juste un développeur qui a construit l'outil dont il avait besoin.
+        </p>
+      </div>
     </Stack>
   );
 }
