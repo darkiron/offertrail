@@ -49,7 +49,15 @@ export function LandingLayout() {
       <footer className={classes.footer}>
         <div className={classes.footerInner}>
           <Text size="xs" c="dimmed">
-            © {new Date().getFullYear()} {LEGAL_CONFIG.company.name} — {LEGAL_CONFIG.productName}
+            © {new Date().getFullYear()} {LEGAL_CONFIG.productName} —{' '}
+            <a
+              href={LEGAL_CONFIG.company.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+            >
+              {LEGAL_CONFIG.company.name}
+            </a>
           </Text>
           <Group gap="lg">
             <a href="#tarifs" className={classes.footerLink}>Tarifs</a>

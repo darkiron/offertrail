@@ -1,8 +1,9 @@
 export const LEGAL_CONFIG = {
   productName: 'OfferTrail',
   company: {
-    name: 'OfferTrail SAS',
-    email: 'contact@offertrail.com',
+    name: 'CraftCodes',
+    email: 'contact@craftcodes.fr',
+    website: 'https://craftcodes.fr',
     siren: '',
     address: '',
   },
