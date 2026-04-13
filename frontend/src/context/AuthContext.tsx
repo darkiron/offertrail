@@ -1,142 +1,121 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type PropsWithChildren,
-} from 'react';
-import axios from 'axios';
-import { authService, setAuthToken } from '../services/api';
-import type { AuthResponse, AuthUser, LoginCredentials, RegisterPayload } from '../types';
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import type { User, Session } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
+import axiosInstance from '../services/api'
 
-const USER_STORAGE_KEY = 'offertrail.auth.user';
-const TOKEN_STORAGE_KEY = 'offertrail.auth.token';
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
-  setUserData: (user: AuthUser | null) => void;
-  refreshUser: () => Promise<void>;
-  logout: () => void;
+interface Profile {
+  id: string
+  prenom: string | null
+  nom: string | null
+  plan: string
+  role: string
+  plan_started_at: string | null
+  created_at: string | null
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 409) return 'Cet email est déjà utilisé.';
-    if (error.response?.status === 429) return "Trop de tentatives. Réessaie dans quelques instants.";
-    const detail = error.response?.data?.detail;
-    if (typeof detail === 'string' && detail.trim()) return detail;
-    if (!error.response) return "Impossible de joindre l'API OfferTrail. Vérifie que le backend tourne sur http://localhost:8000.";
-  }
-  if (error instanceof Error && error.message.trim()) return error.message;
-  return fallback;
+interface AuthContextType {
+  user: User | null
+  session: Session | null
+  profile: Profile | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  signUp: (email: string, password: string, meta?: { prenom?: string; nom?: string }) => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
-function persistAuth(response: AuthResponse): void {
-  localStorage.setItem(TOKEN_STORAGE_KEY, response.access_token);
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
-  setAuthToken(response.access_token);
-}
+const AuthContext = createContext<AuthContextType | null>(null)
 
-export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const stored = localStorage.getItem(USER_STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as AuthUser) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser]       = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    if (token) setAuthToken(token);
-  }, [token]);
-
-  // Stable refs — must not be defined inside useMemo to avoid infinite loop in useRestoreAuth
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    setAuthToken(null);
-    setUser(null);
-    setToken(null);
-  }, []);
-
-  const setUserData = useCallback((nextUser: AuthUser | null) => {
-    if (nextUser) {
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-    } else {
-      localStorage.removeItem(USER_STORAGE_KEY);
+  const fetchProfile = async () => {
+    try {
+      const res = await axiosInstance.get<Profile>('/auth/me')
+      setProfile(res.data)
+    } catch {
+      // profil pas encore créé ou token expiré — ignorer
     }
-    setUser(nextUser);
-  }, []);
+  }
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      token,
-      isAuthenticated: Boolean(user && token),
-      login: async (email: string, password: string) => {
-        try {
-          const response = await authService.login({ email, password });
-          persistAuth(response);
-          setUser(response.user);
-          setToken(response.access_token);
-        } catch (error) {
-          throw new Error(getErrorMessage(error, 'Connexion impossible'));
-        }
-      },
-      register: async (payload: RegisterPayload) => {
-        try {
-          const response = await authService.register(payload);
-          persistAuth(response);
-          setUser(response.user);
-          setToken(response.access_token);
-        } catch (error) {
-          throw new Error(getErrorMessage(error, 'Inscription impossible'));
-        }
-      },
-      setUserData,
-      refreshUser: async () => {
-        try {
-          const me = await authService.me();
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(me));
-          setUser(me);
-        } catch (error) {
-          throw new Error(getErrorMessage(error, 'Impossible de rafraichir le profil'));
-        }
-      },
-      logout,
-    }),
-    [token, user, logout, setUserData],
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
-}
-
-export function useRestoreAuth() {
-  const { logout, setUserData } = useAuth();
+  const applySession = (s: Session | null) => {
+    setSession(s)
+    setUser(s?.user ?? null)
+    if (s?.access_token) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${s.access_token}`
+    } else {
+      delete axiosInstance.defaults.headers.common.Authorization
+      setProfile(null)
+    }
+  }
 
   useEffect(() => {
-    const restore = async () => {
-      const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (!storedToken) return;
-      try {
-        const me = await authService.me();
-        setUserData(me);
-      } catch {
-        logout();
+    // Récupère la session au chargement
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      applySession(s)
+      if (s?.access_token) {
+        fetchProfile().finally(() => setIsLoading(false))
+      } else {
+        setIsLoading(false)
       }
-    };
-    void restore();
-  }, [logout, setUserData]); // stable refs — won't re-run
+    })
+
+    // Écoute les changements d'auth (login, logout, refresh token)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      applySession(s)
+      if (s?.access_token) {
+        void fetchProfile()
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signUp = async (email: string, password: string, meta?: { prenom?: string; nom?: string }) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: meta ?? {} },
+    })
+    if (error) throw error
+  }
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+  }
+
+  const refreshProfile = async () => {
+    await fetchProfile()
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      isAuthenticated: !!user,
+      isLoading,
+      signUp,
+      signIn,
+      signOut,
+      refreshProfile,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
 }

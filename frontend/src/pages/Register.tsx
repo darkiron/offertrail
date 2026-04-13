@@ -1,9 +1,8 @@
-import axios from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
-import { Group, Paper, Stack, Text } from '@mantine/core';
+import { Paper, Stack, Text } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import classes from './Auth.module.css';
 
@@ -17,9 +16,9 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function RegisterPage() {
-  const navigate = useNavigate();
-  const { register: registerUser, isAuthenticated } = useAuth();
+  const { signUp, isAuthenticated } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const {
     register,
     handleSubmit,
@@ -39,6 +38,24 @@ export function RegisterPage() {
     return <Navigate to="/app" replace />;
   }
 
+  if (confirmed) {
+    return (
+      <section className={classes.shell}>
+        <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42} maw={480}>
+          <Stack gap="md" ta="center">
+            <h1 className={classes.title}>Vérifie ta boîte email</h1>
+            <Text c="dimmed">
+              Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
+            </Text>
+            <Link to="/login" className={classes.submit} style={{ textAlign: 'center', display: 'block' }}>
+              Retour à la connexion
+            </Link>
+          </Stack>
+        </Paper>
+      </section>
+    );
+  }
+
   const onSubmit = handleSubmit(async (values) => {
     const result = registerSchema.safeParse(values);
     if (!result.success) {
@@ -56,13 +73,13 @@ export function RegisterPage() {
     try {
       setFormError(null);
       clearErrors();
-      await registerUser(result.data);
-      navigate('/app', { replace: true });
+      await signUp(result.data.email, result.data.password, {
+        prenom: result.data.prenom || undefined,
+        nom: result.data.nom || undefined,
+      });
+      setFormError(null);
+      setConfirmed(true);
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 409) {
-        setFormError('Cet email est déjà utilisé.');
-        return;
-      }
       setFormError(error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.');
     }
   });

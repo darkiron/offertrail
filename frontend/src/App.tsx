@@ -11,7 +11,7 @@ import { OrganizationsPage } from './pages/OrganizationsPage';
 import { OrganizationMaintenancePage } from './pages/OrganizationMaintenancePage';
 import { ContactsPage } from './pages/ContactsPage';
 import { I18nProvider } from './i18n';
-import { AuthProvider, useRestoreAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
@@ -32,8 +32,6 @@ import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
 
 function AppRoutes() {
-  useRestoreAuth();
-
   return (
     <Routes>
       {/* ── Landing public (LandingLayout) ── */}

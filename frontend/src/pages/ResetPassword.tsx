@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { Paper, Stack, Text } from '@mantine/core';
-import { authService } from '../services/api';
+import { supabase } from '../lib/supabase';
 import classes from './Auth.module.css';
 
 const schema = z
@@ -20,23 +20,26 @@ type ResetPasswordForm = z.infer<typeof schema>;
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const token = params.get('token');
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordForm>({
-    defaultValues: {
-      password: '',
-      confirmPassword: '',
-    },
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
-  if (!token) {
-    return <Navigate to="/forgot-password" replace />;
-  }
+  useEffect(() => {
+    // Supabase gère la session via le hash fragment #access_token=...&type=recovery
+    // onAuthStateChange reçoit PASSWORD_RECOVERY quand le token est valide
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const onSubmit = handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
@@ -47,15 +50,31 @@ export function ResetPasswordPage() {
 
     try {
       setError(null);
-      await authService.resetPassword(token, parsed.data.password);
+      const { error: supabaseError } = await supabase.auth.updateUser({
+        password: parsed.data.password,
+      });
+      if (supabaseError) throw supabaseError;
       navigate('/login', {
         replace: true,
         state: { message: 'Mot de passe mis à jour. Tu peux maintenant te connecter.' },
       });
-    } catch {
-      setError('Lien invalide ou expiré');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lien invalide ou expiré');
     }
   });
+
+  if (!ready) {
+    return (
+      <section className={classes.shell}>
+        <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42} maw={640}>
+          <Stack gap="md" ta="center">
+            <Text c="dimmed">Validation du lien de réinitialisation...</Text>
+            <Link to="/forgot-password">Demander un nouveau lien</Link>
+          </Stack>
+        </Paper>
+      </section>
+    );
+  }
 
   return (
     <section className={classes.shell}>

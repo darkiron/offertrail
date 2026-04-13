@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_current_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement, User
+from src.models import Candidature, CandidatureEvent, Etablissement, Profile
 from src.schemas.candidature_events import CandidatureEventSchema
 from src.schemas.candidatures import CandidatureCreate, CandidatureSchema, CandidatureUpdate
 from src.services.subscription import check_can_create
@@ -31,8 +31,8 @@ def create_candidature(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ) -> CandidatureSchema:
-    user = db.query(User.id, User.plan).filter(User.id == user_id).first()
-    if user is None:
+    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    if profile is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
 
     etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
@@ -43,8 +43,7 @@ def create_candidature(
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
-    plan_holder = db.query(User).filter(User.id == user_id).first()
-    check_can_create(db, plan_holder)
+    check_can_create(db, profile)
 
     cand = Candidature(
         **body.model_dump(exclude={"user_id"}),

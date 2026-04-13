@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { Paper, Stack, Text } from '@mantine/core';
-import { authService } from '../services/api';
+import { supabase } from '../lib/supabase';
 import classes from './Auth.module.css';
 
 const schema = z.object({
@@ -32,8 +32,12 @@ export function ForgotPasswordPage() {
 
     try {
       setError(null);
-      const response = await authService.forgotPassword(parsed.data.email);
-      setMessage(response.message);
+      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(
+        parsed.data.email,
+        { redirectTo: `${window.location.origin}/reset-password` },
+      );
+      if (supabaseError) throw supabaseError;
+      setMessage("Si cet email est enregistré, un lien de réinitialisation a été envoyé.");
     } catch {
       setError("Impossible d'envoyer la demande pour le moment.");
     }
