@@ -1,5 +1,8 @@
+import logging
 import os
 import stripe
+
+logger = logging.getLogger(__name__)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 
@@ -61,6 +64,13 @@ def is_configured() -> bool:
     enable_flag = (ENABLE_STRIPE_CHECKOUT or "").strip().lower()
 
     if enable_flag in {"1", "true", "yes", "on"}:
+        if secret_key and price_id and not price_id.startswith("price_"):
+            logger.warning(
+                "ENABLE_STRIPE_CHECKOUT=1 mais STRIPE_PRICE_ID='%s' est invalide. "
+                "Il faut un Price ID (commence par 'price_'), pas un Product ID (commence par 'prod_'). "
+                "Stripe Dashboard → Products → ton produit → copier l'ID du prix.",
+                price_id,
+            )
         return bool(secret_key and price_id.startswith("price_"))
 
     if enable_flag in {"0", "false", "no", "off"}:

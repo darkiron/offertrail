@@ -39,11 +39,13 @@ function AppRoutes() {
       {/* ── Landing public (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />
-        <Route path="/cgv" element={<TermsPage />} />
-        <Route path="/mentions-legales" element={<LegalNoticePage />} />
-        <Route path="/rgpd" element={<PrivacyPolicyPage />} />
-        <Route path="/contact" element={<ContactPage />} />
       </Route>
+
+      {/* ── Pages légales (layout intégré dans chaque page) ── */}
+      <Route path="/cgv" element={<TermsPage />} />
+      <Route path="/mentions-legales" element={<LegalNoticePage />} />
+      <Route path="/rgpd" element={<PrivacyPolicyPage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       {/* ── Auth (standalone, pas de layout) ── */}
       <Route path="/login" element={<LoginPage />} />
