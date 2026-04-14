@@ -181,9 +181,9 @@ export const LandingPage: React.FC = () => {
             <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
               CraftCodes
             </a>
-            , une auto-entreprise indépendante. J'ai construit cet outil en cherchant
-            du boulot moi-même — 43 candidatures, 69% de refus, un tableau Excel
-            qui devenait ingérable.
+            , une auto-entreprise indépendante. Un outil conçu pour les freelances et
+            chercheurs d'emploi qui veulent garder le contrôle de leur recherche,
+            sans usine à gaz.
           </p>
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
