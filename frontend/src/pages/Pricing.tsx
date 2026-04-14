@@ -12,6 +12,7 @@ export function Pricing() {
   const navigate = useNavigate();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const transparencyRows = [
     { label: 'Traitement du paiement', value: 'Stripe' },
     { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
@@ -25,6 +26,7 @@ export function Pricing() {
 
   const handleUpgrade = async () => {
     setLoading(true);
+    setCheckoutError(null);
     try {
       const checkout = await subscriptionService.checkout();
 
@@ -36,8 +38,12 @@ export function Pricing() {
       const updated = await subscriptionService.getMe();
       setSub(updated);
       notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
-    } catch {
-      notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        ?? "Impossible d'activer le plan Pro.";
+      setCheckoutError(detail);
+      notifications.show({ message: detail, color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -93,9 +99,14 @@ export function Pricing() {
             Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
           </Text>
         ) : (
-          <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
-          </Button>
+          <>
+            {checkoutError ? (
+              <Text size="sm" c="red" mb="sm">{checkoutError}</Text>
+            ) : null}
+            <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
+              {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
+            </Button>
+          </>
         )}
       </Paper>
 
