@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Paper, Stack, Text } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
@@ -15,8 +15,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { signIn, isAuthenticated, isLoading, profile } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const sessionExpired = searchParams.get('session') === 'expired';
   const successMessage =
     (location.state as { message?: string } | null)?.message ?? null;
   const {
@@ -95,7 +97,11 @@ export function LoginPage() {
           <Text c="dimmed" mt={4}>Entre dans ton workspace OfferTrail.</Text>
 
           <form className={classes.form} onSubmit={onSubmit}>
-            {successMessage ? <Text c="dimmed" size="sm">{successMessage}</Text> : null}
+            {sessionExpired ? (
+              <Text c="orange" size="sm">Session expirée — reconnecte-toi.</Text>
+            ) : successMessage ? (
+              <Text c="dimmed" size="sm">{successMessage}</Text>
+            ) : null}
             <div className={classes.field}>
               <label className={classes.label} htmlFor="email">Email</label>
               <input

@@ -421,18 +421,13 @@ axiosInstance.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Interceptor response — 401 global : affiche un toast et force un refresh de session.
-// Évite que les erreurs auth soient silencieuses.
+// Interceptor response — tout 401 = session invalide → déconnexion + redirect login.
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Tente un refresh de session Supabase avant de forcer le logout
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // Session réellement expirée → déconnexion propre
-        await supabase.auth.signOut();
-      }
+      await supabase.auth.signOut();
+      window.location.replace('/login?session=expired');
     }
     return Promise.reject(error);
   },

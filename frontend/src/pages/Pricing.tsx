@@ -100,7 +100,7 @@ export function Pricing() {
           </Text>
         ) : (
           <>
-            {checkoutError ? (
+            {checkoutError && !checkoutError.includes('expiré') ? (
               <Text size="sm" c="red" mb="sm">{checkoutError}</Text>
             ) : null}
             <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
