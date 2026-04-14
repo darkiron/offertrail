@@ -11,8 +11,9 @@ import type {
   SubscriptionStatus,
 } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const AUTH_STORAGE_KEY = 'offertrail.auth.token';
+// En mode dev avec proxy Vite, VITE_API_URL est vide → baseURL "" = même origine → pas de CORS.
+// En prod, VITE_API_URL=https://api.offertrail.fr est utilisé directement.
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 export interface ApplicationListParams {
   status?: string;
@@ -406,29 +407,17 @@ export const axiosInstance = axios.create({
   baseURL: API_URL,
 });
 
-export function setAuthToken(token: string | null): void {
+// Nettoyage de l'ancien token legacy (pré-Supabase) si présent en localStorage
+localStorage.removeItem('offertrail.auth.token');
+
+// Réexportée par AuthContext via applySession — pas de localStorage
+export function setAxiosAuthToken(token: string | null): void {
   if (token) {
     axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
-    localStorage.setItem(AUTH_STORAGE_KEY, token);
   } else {
     delete axiosInstance.defaults.headers.common.Authorization;
-    localStorage.removeItem(AUTH_STORAGE_KEY);
   }
 }
-
-const initialToken = localStorage.getItem(AUTH_STORAGE_KEY);
-if (initialToken) {
-  setAuthToken(initialToken);
-}
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem(AUTH_STORAGE_KEY);
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export const authService = {
   login: async (credentials: LoginCredentials) => {
@@ -579,8 +568,8 @@ export const subscriptionService = {
     const response = await axiosInstance.get<SubscriptionStatus>('/subscription/me');
     return response.data;
   },
-  upgrade: async () => {
-    const response = await axiosInstance.post<SubscriptionStatus>('/subscription/upgrade');
+  checkout: async () => {
+    const response = await axiosInstance.post<{ mode: 'simulated' | 'stripe'; checkout_url: string | null; message?: string }>('/subscription/checkout');
     return response.data;
   },
 };

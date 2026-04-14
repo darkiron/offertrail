@@ -26,7 +26,6 @@ import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
 import { HomePage } from './pages/HomePage';
-import { LegalPage } from './pages/LegalPage';
 import { CGU } from './pages/legal/CGU';
 import { Confidentialite } from './pages/legal/Confidentialite';
 
@@ -39,11 +38,16 @@ function AppRoutes() {
       {/* ── Landing public (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />
-        <Route path="/cgv" element={<TermsPage />} />
-        <Route path="/mentions-legales" element={<LegalNoticePage />} />
-        <Route path="/rgpd" element={<PrivacyPolicyPage />} />
-        <Route path="/contact" element={<ContactPage />} />
       </Route>
+
+      {/* ── Pages légales (layout intégré dans chaque page) ── */}
+      <Route path="/cgv" element={<TermsPage />} />
+      <Route path="/mentions-legales" element={<LegalNoticePage />} />
+      <Route path="/rgpd" element={<PrivacyPolicyPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      {/* Public — pas de ProtectedRoute, accessible sans connexion (requis Stripe live) */}
+      <Route path="/app/legal/cgu" element={<CGU />} />
+      <Route path="/app/legal/confidentialite" element={<Confidentialite />} />
 
       {/* ── Auth (standalone, pas de layout) ── */}
       <Route path="/login" element={<LoginPage />} />
@@ -66,8 +70,6 @@ function AppRoutes() {
         <Route path="mon-compte" element={<MonCompte />} />
         <Route path="admin" element={<Admin />} />
         <Route path="pricing" element={<Pricing />} />
-        <Route path="legal/cgu" element={<CGU />} />
-        <Route path="legal/confidentialite" element={<Confidentialite />} />
       </Route>
 
       {/* ── Redirects de compatibilité ── */}

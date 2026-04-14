@@ -16,7 +16,7 @@ export const PrivacyPolicyPage: React.FC = () => {
         <h2>Responsable du traitement</h2>
         <p>
           Le responsable du traitement est l'éditeur du service OfferTrail.<br />
-          Contact : <a href="mailto:contact@offertrail.fr">contact@offertrail.fr</a>
+          Contact : <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>
         </p>
       </div>
 
@@ -62,7 +62,7 @@ export const PrivacyPolicyPage: React.FC = () => {
         </ul>
         <p>
           Pour exercer vos droits, contactez-nous à{' '}
-          <a href="mailto:contact@offertrail.fr">contact@offertrail.fr</a>.
+          <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>.
           Vous disposez également du droit d'introduire une réclamation auprès de la{' '}
           <a href="https://www.cnil.fr" target="_blank" rel="noreferrer">CNIL</a>.
         </p>

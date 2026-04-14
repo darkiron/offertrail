@@ -16,7 +16,7 @@ export const TermsPage: React.FC = () => {
         <h2>Article 1 — Objet</h2>
         <p>
           Les présentes CGV régissent l'accès et l'utilisation du service OfferTrail,
-          un outil SaaS de suivi de candidatures. Elles s'appliquent à tout abonnement souscrit.
+          édité par CraftCodes, un outil SaaS de suivi de candidatures. Elles s'appliquent à tout abonnement souscrit.
         </p>
       </div>
 

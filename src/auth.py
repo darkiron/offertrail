@@ -22,6 +22,24 @@ SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
+def _extract_profile_names(payload: dict) -> tuple[Optional[str], Optional[str]]:
+    user_metadata = payload.get("user_metadata") or {}
+
+    prenom = (
+        payload.get("given_name")
+        or payload.get("first_name")
+        or user_metadata.get("prenom")
+        or user_metadata.get("first_name")
+    )
+    nom = (
+        payload.get("family_name")
+        or payload.get("last_name")
+        or user_metadata.get("nom")
+        or user_metadata.get("last_name")
+    )
+    return prenom, nom
+
+
 def get_jwt_payload(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> dict:
@@ -62,7 +80,7 @@ def get_current_user_id(
 
 
 def get_current_profile(
-    user_id: str = Depends(get_current_user_id),
+    payload: dict = Depends(get_jwt_payload),
     db: Session = Depends(get_db),
 ) -> Profile:
     """
@@ -70,12 +88,34 @@ def get_current_profile(
     Crée le profil automatiquement s'il n'existe pas
     (cas où le trigger Supabase n'aurait pas encore tourné).
     """
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token invalide")
+
     profile = db.query(Profile).filter(Profile.id == user_id).first()
+    prenom, nom = _extract_profile_names(payload)
+
     if not profile:
-        profile = Profile(id=user_id)
+        profile = Profile(
+            id=user_id,
+            prenom=prenom,
+            nom=nom,
+        )
         db.add(profile)
         db.commit()
         db.refresh(profile)
+    else:
+        updated = False
+        if not profile.prenom and prenom:
+            profile.prenom = prenom
+            updated = True
+        if not profile.nom and nom:
+            profile.nom = nom
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(profile)
+
     if not profile.is_active:
         raise HTTPException(status_code=403, detail="Compte désactivé")
     return profile
