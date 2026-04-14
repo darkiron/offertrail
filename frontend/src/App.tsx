@@ -13,6 +13,7 @@ import { ContactsPage } from './pages/ContactsPage';
 import { I18nProvider } from './i18n';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { SubscriptionGate } from './components/SubscriptionGate';
 import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
@@ -55,8 +56,17 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* ── App (AppLayout avec sidebar + header) ── */}
-      <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+      {/* ── Checkout (ProtectedRoute sans AppLayout — pas de menu bypassable) ── */}
+      <Route path="/app/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+
+      {/* ── App (AppLayout avec sidebar + header, Pro uniquement) ── */}
+      <Route path="/app" element={
+        <ProtectedRoute>
+          <SubscriptionGate>
+            <AppLayout />
+          </SubscriptionGate>
+        </ProtectedRoute>
+      }>
         <Route index element={<Dashboard />} />
         <Route path="candidatures" element={<ApplicationsPage />} />
         <Route path="candidatures/:id" element={<ApplicationDetails />} />
@@ -69,7 +79,6 @@ function AppRoutes() {
         <Route path="import" element={<Import />} />
         <Route path="mon-compte" element={<MonCompte />} />
         <Route path="admin" element={<Admin />} />
-        <Route path="pricing" element={<Pricing />} />
       </Route>
 
       {/* ── Redirects de compatibilité ── */}
