@@ -687,7 +687,7 @@ export function Landing() {
               <span className="l-footerSep">·</span>
               <Link to="/rgpd" className="l-footerLink">RGPD</Link>
               <span className="l-footerSep">·</span>
-              <a href={`mailto:${LEGAL_CONFIG.company.email}`} className="l-footerLink">Contact</a>
+              <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className="l-footerLink">Contact</a>
             </div>
           </div>
         </footer>
