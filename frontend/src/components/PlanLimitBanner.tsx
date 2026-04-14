@@ -52,7 +52,7 @@ export function PlanLimitBanner({ sub }: PlanLimitBannerProps) {
           whiteSpace: 'nowrap',
         }}
       >
-        Passer en Pro - 9,99EUR/mois {'->'}
+        Passer en Pro - 14,99EUR/mois {'->'}
       </button>
     </div>
   );

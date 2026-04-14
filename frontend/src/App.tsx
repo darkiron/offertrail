@@ -27,6 +27,8 @@ import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
 import { HomePage } from './pages/HomePage';
 import { LegalPage } from './pages/LegalPage';
+import { CGU } from './pages/legal/CGU';
+import { Confidentialite } from './pages/legal/Confidentialite';
 
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
@@ -64,6 +66,8 @@ function AppRoutes() {
         <Route path="mon-compte" element={<MonCompte />} />
         <Route path="admin" element={<Admin />} />
         <Route path="pricing" element={<Pricing />} />
+        <Route path="legal/cgu" element={<CGU />} />
+        <Route path="legal/confidentialite" element={<Confidentialite />} />
       </Route>
 
       {/* ── Redirects de compatibilité ── */}
