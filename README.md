@@ -6,7 +6,7 @@ CRM SaaS de suivi de candidatures — pipeline, relances, contacts et métriques
 
 | Couche | Technologie |
 |--------|-------------|
-| Backend | Python 3.12 · FastAPI · SQLite (SQLAlchemy) |
+| Backend | Python 3.12 · FastAPI · PostgreSQL (SQLAlchemy) · SQLite en local |
 | Frontend | React 19 · TypeScript · Vite · Mantine v7 |
 | Auth | JWT local (HS256, 7 jours) |
 | Rate limiting | slowapi |

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import axiosInstance from '../services/api'
+import axiosInstance, { setAxiosAuthToken } from '../services/api'
 
 interface Profile {
   id: string
@@ -45,12 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applySession = (s: Session | null) => {
     setSession(s)
     setUser(s?.user ?? null)
-    if (s?.access_token) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${s.access_token}`
-    } else {
-      delete axiosInstance.defaults.headers.common.Authorization
-      setProfile(null)
-    }
+    setAxiosAuthToken(s?.access_token ?? null)
+    if (!s) setProfile(null)
   }
 
   useEffect(() => {
@@ -68,7 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       applySession(s)
       if (s?.access_token) {
-        void fetchProfile()
+        fetchProfile().finally(() => setIsLoading(false))
+      } else {
+        setIsLoading(false)
       }
     })
 
@@ -85,8 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    setIsLoading(true)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setIsLoading(false)
+      throw error
+    }
+    // Positionne le token immédiatement — onAuthStateChange est asynchrone,
+    // sans ça les premières requêtes partent sans Authorization.
+    if (data.session) {
+      setAxiosAuthToken(data.session.access_token)
+    }
+    // isLoading sera mis à false par onAuthStateChange après fetchProfile()
   }
 
   const signOut = async () => {

@@ -40,6 +40,15 @@ def check_can_create(db: Session, profile: Profile) -> None:
         )
 
 
+def activate_plan(db: Session, profile: Profile, plan: str) -> None:
+    if plan not in ("starter", "pro"):
+        raise ValueError(f"Plan invalide : {plan!r}")
+    if plan == "pro":
+        activate_pro(db, profile)
+    else:
+        _downgrade_to_starter(db, profile)
+
+
 def activate_pro(db: Session, profile: Profile) -> None:
     profile.plan            = "pro"
     profile.plan_started_at = datetime.utcnow()
@@ -49,5 +58,6 @@ def activate_pro(db: Session, profile: Profile) -> None:
 
 def _downgrade_to_starter(db: Session, profile: Profile) -> None:
     profile.plan            = "starter"
+    profile.stripe_subscription_id = None
     profile.plan_expires_at = None
     db.commit()

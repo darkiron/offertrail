@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { CONFIG } from '../config';
 import '../styles/landing.css';
 
 const features = [
@@ -138,7 +139,7 @@ export const LandingPage: React.FC = () => {
               {[
                 { title: 'Accès complet dès le départ', desc: 'Dashboard, relances, contacts, établissements, historique — rien n\'est verrouillé derrière un tier supérieur.' },
                 { title: 'Sans engagement', desc: 'Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie.' },
-                { title: 'Un seul plan, sans ambiguïté', desc: 'OfferTrail fonctionne avec une offre Pro unique à 9,99 EUR par mois.' },
+                { title: 'Un seul plan, sans ambiguïté', desc: `OfferTrail fonctionne avec une offre Pro unique à ${CONFIG.PRO_PRICE} par mois.` },
                 { title: 'Suivi structuré', desc: 'Tes candidatures, contacts et historique restent centralisés dans un seul espace clair.' },
               ].map((p) => (
                 <div key={p.title} className="lp-pricing-point">
@@ -153,7 +154,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="lp-plan-card">
               <div className="lp-plan-name">Plan Pro</div>
-              <div className="lp-plan-price">9,99 EUR <span className="lp-plan-period">/ mois</span></div>
+              <div className="lp-plan-price">{CONFIG.PRO_PRICE} <span className="lp-plan-period">/ mois</span></div>
               <div className="lp-plan-divider" />
               <ul className="lp-plan-features">
                 <li>Candidatures illimitées</li>
@@ -164,8 +165,46 @@ export const LandingPage: React.FC = () => {
                 <li>Import TSV</li>
               </ul>
               <Link to="/register" className="lp-plan-cta">Créer mon compte →</Link>
-              <p className="lp-plan-note">9,99 EUR / mois · Sans engagement</p>
+              <p className="lp-plan-note">{CONFIG.PRO_PRICE} / mois · Sans engagement</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CraftCodes section ─── */}
+      <section className="lp-section-wrap" id="craftcodes">
+        <div className="lp-section-inner" style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto' }}>
+          <div className="lp-section-kicker">Qui est derrière OfferTrail ?</div>
+          <h2 className="lp-section-title">Un développeur. Pas une boîte.</h2>
+          <p style={{ fontSize: '16px', lineHeight: 1.7, marginBottom: '2rem', opacity: 0.75 }}>
+            OfferTrail est développé et maintenu par{' '}
+            <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
+              CraftCodes
+            </a>
+            , une auto-entreprise indépendante. Un outil conçu pour les freelances et
+            chercheurs d'emploi qui veulent garder le contrôle de leur recherche,
+            sans usine à gaz.
+          </p>
+
+          <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
+              Sur 14,99€/mois
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
+              <span style={{ opacity: 0.6 }}>Stripe (paiement)</span>
+              <span style={{ opacity: 0.6 }}>~0,47€</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
+              <span style={{ opacity: 0.6 }}>URSSAF (charges 33%)</span>
+              <span style={{ opacity: 0.6 }}>~4,79€</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px', fontWeight: 600 }}>
+              <span>Rémunération du développeur</span>
+              <span className="lp-link">~9,73€</span>
+            </div>
+            <p style={{ fontSize: '12px', opacity: 0.4, margin: '12px 0 0', lineHeight: 1.6 }}>
+              Pas d'investisseurs. Pas de padding. Le prix reflète un travail réel.
+            </p>
           </div>
         </div>
       </section>

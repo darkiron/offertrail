@@ -8,7 +8,8 @@
 4. Variables d'environnement à configurer dans Railway :
    - SECRET_KEY -> générer avec `python -c "import secrets; print(secrets.token_hex(32))"`
    - DATABASE_URL -> laisser vide pour SQLite local, ou URL PostgreSQL Railway
-   - ALLOWED_ORIGINS -> https://app.offertrail.fr
+   - ALLOWED_ORIGINS -> https://offertrail.fr,https://www.offertrail.fr
+   - ALLOWED_ORIGIN_REGEX -> ^https://([a-z0-9-]+\.)?offertrail\.fr$
    - RESEND_API_KEY -> clé Resend
 
 5. Railway détecte automatiquement Python via nixpacks

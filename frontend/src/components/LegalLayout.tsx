@@ -14,11 +14,11 @@ const FooterLinks: React.FC = () => (
     <div className="legal-footer-inner">
       <span>© {new Date().getFullYear()} OfferTrail</span>
       <span className="legal-footer-sep">·</span>
-      <Link to="/legal">Mentions légales</Link>
+      <Link to="/app/legal/cgu">CGU</Link>
       <span className="legal-footer-sep">·</span>
-      <Link to="/cgv">CGV</Link>
+      <Link to="/app/legal/confidentialite">Confidentialité</Link>
       <span className="legal-footer-sep">·</span>
-      <Link to="/confidentialite">Politique de confidentialité</Link>
+      <Link to="/mentions-legales">Mentions légales</Link>
       <span className="legal-footer-sep">·</span>
       <Link to="/contact">Contact</Link>
     </div>

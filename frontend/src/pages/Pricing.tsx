@@ -12,6 +12,11 @@ export function Pricing() {
   const navigate = useNavigate();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const transparencyRows = [
+    { label: 'Traitement du paiement', value: 'Stripe' },
+    { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
+    { label: 'Développement, maintenance et support', value: 'CraftCodes' },
+  ];
 
   useEffect(() => {
     document.title = 'Abonnement — OfferTrail';
@@ -21,10 +26,16 @@ export function Pricing() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      await subscriptionService.upgrade();
+      const checkout = await subscriptionService.checkout();
+
+      if (checkout.mode === 'stripe' && checkout.checkout_url) {
+        window.location.assign(checkout.checkout_url);
+        return;
+      }
+
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: 'Plan Pro activé !', color: 'green' });
+      notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
     } catch {
       notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
     } finally {
@@ -50,7 +61,7 @@ export function Pricing() {
           <Stack gap={4}>
             <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">Pro</Text>
             <Text size="xl" fw={500}>
-              9,99€
+              14,99€
               <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
             </Text>
           </Stack>
@@ -69,9 +80,9 @@ export function Pricing() {
           {[
             'Candidatures illimitées',
             'Analytics complets',
-            'Import TSV',
-            'Relances',
             'Score de probité',
+            'File de relances',
+            'Export CSV',
           ].map((feature) => (
             <List.Item key={feature}>{feature}</List.Item>
           ))}
@@ -83,13 +94,38 @@ export function Pricing() {
           </Text>
         ) : (
           <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Activation...' : 'Passer en Pro — 9,99€/mois'}
+            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
           </Button>
         )}
       </Paper>
 
+      <Paper p="lg" radius="lg" withBorder>
+        <Stack gap="sm">
+          <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">
+            Transparence sur le prix
+          </Text>
+
+          {transparencyRows.map((row, index) => (
+            <Group
+              key={row.label}
+              justify="space-between"
+              pb={index < transparencyRows.length - 1 ? 'sm' : 0}
+              style={index < transparencyRows.length - 1 ? { borderBottom: '1px solid var(--mantine-color-default-border)' } : undefined}
+            >
+              <Text size="sm" c="dimmed">{row.label}</Text>
+              <Text size="sm" fw={500}>{row.value}</Text>
+            </Group>
+          ))}
+
+          <Text size="sm" c="dimmed" lh={1.6}>
+            OfferTrail est édité et maintenu par CraftCodes. Le prix de l&apos;abonnement finance
+            le traitement du paiement, l&apos;exploitation du service et l&apos;évolution du produit.
+          </Text>
+        </Stack>
+      </Paper>
+
       <Text size="xs" c="dimmed" ta="center">
-        Paiement simulé en local · Mollie sera intégré prochainement
+        Paiement sécurisé via Stripe
       </Text>
     </Stack>
   );

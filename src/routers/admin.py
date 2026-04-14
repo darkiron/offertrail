@@ -17,7 +17,7 @@ def global_stats(
     total_profiles = db.query(Profile).count()
     pro_profiles   = db.query(Profile).filter(Profile.plan == "pro").count()
     total_cands    = db.query(Candidature).count()
-    mrr_estimate   = round(pro_profiles * 9.99, 2)
+    mrr_estimate   = round(pro_profiles * 14.99, 2)
 
     return {
         "total_users":       total_profiles,
@@ -68,12 +68,9 @@ def update_user_plan(
     if new_plan not in ("starter", "pro"):
         raise HTTPException(status_code=400, detail="Plan invalide")
 
-    from src.services.subscription import _downgrade_to_starter, activate_pro
+    from src.services.subscription import activate_plan
 
-    if new_plan == "pro":
-        activate_pro(db, profile)
-    else:
-        _downgrade_to_starter(db, profile)
+    activate_plan(db, profile, new_plan)
 
     db.refresh(profile)
     return {"id": profile.id, "plan": profile.plan}

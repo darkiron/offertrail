@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { CONFIG } from '../config';
 import classes from './HomePage.module.css';
 
 const FEATURES = [
@@ -76,7 +77,7 @@ export function HomePage() {
 
         <p className={classes.proof}>
           <span className={classes.proofDot} />
-          9,99€/mois · Sans engagement · Résiliable à tout moment
+          {CONFIG.PRO_PRICE}/mois · Sans engagement · Résiliable à tout moment
         </p>
       </section>
 
@@ -151,7 +152,7 @@ export function HomePage() {
             <span className={classes.planBadge}>Pro</span>
             <h3 className={classes.planName}>Pour les candidats sérieux</h3>
             <div className={classes.planPrice}>
-              9,99€<span className={classes.planPeriod}>/mois</span>
+              {CONFIG.PRO_PRICE}<span className={classes.planPeriod}>/mois</span>
             </div>
             <p className={classes.planDesc}>Tout ce qu'il faut pour piloter ta recherche d'emploi avec méthode.</p>
             <ul className={classes.planFeatures}>
@@ -173,7 +174,7 @@ export function HomePage() {
       <section className={classes.ctaSection}>
         <div className={classes.ctaInner}>
           <h2 className={classes.ctaTitle}>Prêt à structurer ta recherche ?</h2>
-          <p className={classes.ctaSub}>Rejoins OfferTrail. 9,99€/mois, sans engagement.</p>
+          <p className={classes.ctaSub}>Rejoins OfferTrail. {CONFIG.PRO_PRICE}/mois, sans engagement.</p>
           <Link to="/register" className={classes.btnHeroPrimary}>
             Créer mon compte →
           </Link>

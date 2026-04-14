@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LEGAL_CONFIG } from '../config/legal';
+import { CONFIG } from '../config';
 
 const styles = `
   /* ─── Reset & base ─────────────────────────────────────── */
@@ -637,7 +638,7 @@ export function Landing() {
             <div className="l-pricingTop">
               <div>
                 <p className="l-pricingPlan">Pro</p>
-                <p className="l-pricingAmount">9,99€<span className="l-pricingPeriod">/mois</span></p>
+                <p className="l-pricingAmount">{CONFIG.PRO_PRICE}<span className="l-pricingPeriod">/mois</span></p>
               </div>
               <span className="l-pricingChip">Tout inclus</span>
             </div>
@@ -653,7 +654,7 @@ export function Landing() {
               ))}
             </ul>
             <Link to="/register" className="l-pricingCta">Commencer maintenant</Link>
-            <p className="l-pricingNote">Paiement simulé en local · Mollie sera intégré prochainement</p>
+            <p className="l-pricingNote">Paiement sécurisé via Stripe · Sans engagement</p>
           </div>
         </section>
 
@@ -686,7 +687,7 @@ export function Landing() {
               <span className="l-footerSep">·</span>
               <Link to="/rgpd" className="l-footerLink">RGPD</Link>
               <span className="l-footerSep">·</span>
-              <a href={`mailto:${LEGAL_CONFIG.company.email}`} className="l-footerLink">Contact</a>
+              <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className="l-footerLink">Contact</a>
             </div>
           </div>
         </footer>

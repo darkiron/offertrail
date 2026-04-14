@@ -1,7 +1,7 @@
 import React from 'react';
-import { LegalLayout } from '../components/LegalLayout';
+import { LegalLayout } from '../../components/LegalLayout';
 
-export const PrivacyPolicyPage: React.FC = () => {
+export const Confidentialite: React.FC = () => {
   React.useEffect(() => {
     document.title = 'Politique de confidentialité — OfferTrail';
   }, []);
@@ -15,8 +15,19 @@ export const PrivacyPolicyPage: React.FC = () => {
       <div className="legal-section">
         <h2>Responsable du traitement</h2>
         <p>
-          Le responsable du traitement est l'éditeur du service OfferTrail.<br />
-          Contact : <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>
+          Le responsable du traitement des données personnelles est <strong>CraftCodes</strong>,
+          éditeur du service OfferTrail.<br />
+          Contact RGPD : <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>
+        </p>
+      </div>
+
+      <div className="legal-section">
+        <h2>Hébergement des données</h2>
+        <p>
+          Les données d'authentification et de profil sont hébergées via{' '}
+          <strong>Supabase</strong>, dont les serveurs sont situés dans l'
+          <strong>Union européenne</strong>, conformément aux exigences du RGPD.
+          Aucune donnée personnelle n'est transférée en dehors de l'UE sans garanties appropriées.
         </p>
       </div>
 
@@ -24,9 +35,10 @@ export const PrivacyPolicyPage: React.FC = () => {
         <h2>Données collectées</h2>
         <p>Dans le cadre de l'utilisation du service, les données suivantes peuvent être collectées :</p>
         <ul>
-          <li>Adresse e-mail et informations de profil (prénom, nom) lors de la création de compte</li>
-          <li>Données relatives aux candidatures, entreprises et contacts que vous saisissez</li>
-          <li>Données de connexion (adresse IP, logs d'accès) à des fins de sécurité</li>
+          <li>Adresse e-mail, prénom et nom lors de la création de compte</li>
+          <li>Données relatives aux candidatures, entreprises et contacts saisis par l'utilisateur</li>
+          <li>Données techniques de connexion (adresse IP, logs d'accès) à des fins de sécurité</li>
+          <li>Informations de paiement traitées par Stripe (non stockées par CraftCodes)</li>
         </ul>
       </div>
 
@@ -36,17 +48,18 @@ export const PrivacyPolicyPage: React.FC = () => {
         <ul>
           <li>Fournir et améliorer le service OfferTrail</li>
           <li>Gérer votre compte et votre abonnement</li>
-          <li>Assurer la sécurité du service</li>
+          <li>Assurer la sécurité et prévenir les abus</li>
           <li>Répondre à vos demandes de support</li>
         </ul>
+        <p>Aucune donnée n'est utilisée à des fins publicitaires ou de profilage commercial.</p>
       </div>
 
       <div className="legal-section">
         <h2>Conservation des données</h2>
         <p>
-          Vos données sont conservées pendant la durée de votre utilisation du service, et au maximum
-          3 ans après la dernière activité sur votre compte. À la résiliation, vos données personnelles
-          sont supprimées dans un délai de 30 jours.
+          Vos données sont conservées pendant la durée active de votre compte, et au maximum
+          3 ans après la dernière activité. À la résiliation ou suppression du compte,
+          les données personnelles sont supprimées dans un délai de 30 jours.
         </p>
       </div>
 
@@ -71,16 +84,17 @@ export const PrivacyPolicyPage: React.FC = () => {
       <div className="legal-section">
         <h2>Cookies</h2>
         <p>
-          OfferTrail utilise uniquement des cookies strictement nécessaires au fonctionnement du service
-          (authentification, préférences de thème). Aucun cookie publicitaire ou analytique tiers n'est utilisé.
+          OfferTrail utilise uniquement des cookies strictement nécessaires au fonctionnement
+          du service (authentification, préférences de thème). Aucun cookie publicitaire ou
+          analytique tiers n'est utilisé.
         </p>
       </div>
 
       <div className="legal-section">
-        <h2>Transferts de données</h2>
+        <h2>Paiement</h2>
         <p>
-          Les données sont hébergées sur l'infrastructure Vercel (États-Unis), encadrée par des garanties
-          appropriées au sens du RGPD (clauses contractuelles types). Aucune donnée n'est vendue ou cédée à des tiers.
+          Les paiements sont traités par <strong>Stripe</strong>, certifié PCI-DSS.
+          CraftCodes ne stocke jamais vos coordonnées bancaires.
         </p>
       </div>
     </LegalLayout>

@@ -3,6 +3,7 @@ import { IconSun, IconMoon } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
 import classes from './LandingLayout.module.css';
 import { LEGAL_CONFIG } from '../config/legal';
+import { CONFIG } from '../config';
 
 export function LandingLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -49,14 +50,22 @@ export function LandingLayout() {
       <footer className={classes.footer}>
         <div className={classes.footerInner}>
           <Text size="xs" c="dimmed">
-            © {new Date().getFullYear()} {LEGAL_CONFIG.company.name} — {LEGAL_CONFIG.productName}
+            © {new Date().getFullYear()} {LEGAL_CONFIG.productName} —{' '}
+            <a
+              href={CONFIG.CRAFTCODES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+            >
+              {LEGAL_CONFIG.company.name}
+            </a>
           </Text>
           <Group gap="lg">
             <a href="#tarifs" className={classes.footerLink}>Tarifs</a>
-            <Link to="/cgv" className={classes.footerLink}>CGV</Link>
+            <Link to="/app/legal/cgu" className={classes.footerLink}>CGU</Link>
+            <Link to="/app/legal/confidentialite" className={classes.footerLink}>Confidentialité</Link>
             <Link to="/mentions-legales" className={classes.footerLink}>Mentions légales</Link>
-            <Link to="/rgpd" className={classes.footerLink}>RGPD</Link>
-            <a href={`mailto:${LEGAL_CONFIG.company.email}`} className={classes.footerLink}>Contact</a>
+            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>Contact</a>
           </Group>
         </div>
       </footer>

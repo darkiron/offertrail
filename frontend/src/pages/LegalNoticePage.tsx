@@ -15,9 +15,9 @@ export const LegalNoticePage: React.FC = () => {
       <div className="legal-section">
         <h2>Éditeur du site</h2>
         <p>
-          OfferTrail est un service édité à titre personnel.<br />
+          OfferTrail est un service édité par CraftCodes.<br />
           Responsable de publication : Vincent<br />
-          Contact : <a href="mailto:contact@offertrail.fr">contact@offertrail.fr</a>
+          Contact : <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>
         </p>
       </div>
 

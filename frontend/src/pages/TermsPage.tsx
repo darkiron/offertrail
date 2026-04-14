@@ -16,7 +16,7 @@ export const TermsPage: React.FC = () => {
         <h2>Article 1 — Objet</h2>
         <p>
           Les présentes CGV régissent l'accès et l'utilisation du service OfferTrail,
-          un outil SaaS de suivi de candidatures. Elles s'appliquent à tout abonnement souscrit.
+          édité par CraftCodes, un outil SaaS de suivi de candidatures. Elles s'appliquent à tout abonnement souscrit.
         </p>
       </div>
 
@@ -24,7 +24,7 @@ export const TermsPage: React.FC = () => {
         <h2>Article 2 — Description du service</h2>
         <p>
           OfferTrail est proposé sous la forme d'un abonnement unique
-          <strong> Plan Pro (9,99 EUR / mois)</strong>, donnant accès aux fonctionnalités
+          <strong> Plan Pro (14,99 EUR / mois)</strong>, donnant accès aux fonctionnalités
           disponibles du service.
         </p>
       </div>
@@ -32,7 +32,7 @@ export const TermsPage: React.FC = () => {
       <div className="legal-section">
         <h2>Article 3 — Tarification et facturation</h2>
         <p>
-          Le Plan Pro est facturé <strong>9,99 EUR TTC par mois</strong>, sans engagement minimum.
+          Le Plan Pro est facturé <strong>14,99 EUR TTC par mois</strong>, sans engagement minimum.
           Le renouvellement est automatique à chaque période mensuelle.
         </p>
       </div>
