@@ -1,82 +1,102 @@
-import { useEffect } from 'react';
+import React from 'react';
+import { LegalLayout } from '../../components/LegalLayout';
 
 export const Confidentialite: React.FC = () => {
-  useEffect(() => { document.title = 'Confidentialité — OfferTrail'; }, []);
+  React.useEffect(() => {
+    document.title = 'Politique de confidentialité — OfferTrail';
+  }, []);
 
   return (
-    <div style={{ maxWidth: '720px', margin: '0 auto', padding: '3rem 1.5rem', lineHeight: '1.8' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 500, marginBottom: '2rem' }}>
-        Politique de confidentialité
-      </h1>
-      <p style={{ color: 'var(--mantine-color-dimmed)', marginBottom: '2rem', fontSize: '13px' }}>
-        Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}
-      </p>
-
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Responsable du traitement</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          CraftCodes — auto-entrepreneur<br />
-          contact@craftcodes.fr
+    <LegalLayout
+      eyebrow="RGPD & confidentialité"
+      title="Politique de confidentialité"
+      updated="Dernière mise à jour : janvier 2026"
+    >
+      <div className="legal-section">
+        <h2>Responsable du traitement</h2>
+        <p>
+          Le responsable du traitement des données personnelles est <strong>CraftCodes</strong>,
+          éditeur du service OfferTrail.<br />
+          Contact RGPD : <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>
         </p>
-      </section>
+      </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Données collectées</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          Email (pour l'authentification), données de candidatures saisies
-          volontairement (entreprises, postes, statuts, contacts, notes).
-          Aucune donnée n'est collectée sans action explicite de l'utilisateur.
+      <div className="legal-section">
+        <h2>Hébergement des données</h2>
+        <p>
+          Les données d'authentification et de profil sont hébergées via{' '}
+          <strong>Supabase</strong>, dont les serveurs sont situés dans l'
+          <strong>Union européenne</strong>, conformément aux exigences du RGPD.
+          Aucune donnée personnelle n'est transférée en dehors de l'UE sans garanties appropriées.
         </p>
-      </section>
+      </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Utilisation</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          Les données sont utilisées uniquement pour fournir le service OfferTrail.
-          Elles ne sont jamais vendues, revendues ou partagées à des tiers
-          à des fins commerciales ou publicitaires.
-        </p>
-      </section>
+      <div className="legal-section">
+        <h2>Données collectées</h2>
+        <p>Dans le cadre de l'utilisation du service, les données suivantes peuvent être collectées :</p>
+        <ul>
+          <li>Adresse e-mail, prénom et nom lors de la création de compte</li>
+          <li>Données relatives aux candidatures, entreprises et contacts saisis par l'utilisateur</li>
+          <li>Données techniques de connexion (adresse IP, logs d'accès) à des fins de sécurité</li>
+          <li>Informations de paiement traitées par Stripe (non stockées par CraftCodes)</li>
+        </ul>
+      </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Hébergement</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          Les données sont hébergées par Supabase (Union Européenne)
-          et Railway. Le paiement est traité par Stripe. Ces sous-traitants
-          sont conformes au RGPD.
-        </p>
-      </section>
+      <div className="legal-section">
+        <h2>Finalités du traitement</h2>
+        <p>Vos données sont traitées pour :</p>
+        <ul>
+          <li>Fournir et améliorer le service OfferTrail</li>
+          <li>Gérer votre compte et votre abonnement</li>
+          <li>Assurer la sécurité et prévenir les abus</li>
+          <li>Répondre à vos demandes de support</li>
+        </ul>
+        <p>Aucune donnée n'est utilisée à des fins publicitaires ou de profilage commercial.</p>
+      </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Score de probité</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          Les données de candidatures contribuent de manière anonymisée au calcul
-          du score de probité des établissements. Aucune donnée personnelle
-          (email, nom) n'est exposée dans ce calcul. Un minimum de 3 candidatures
-          est requis pour qu'un score soit affiché.
+      <div className="legal-section">
+        <h2>Conservation des données</h2>
+        <p>
+          Vos données sont conservées pendant la durée active de votre compte, et au maximum
+          3 ans après la dernière activité. À la résiliation ou suppression du compte,
+          les données personnelles sont supprimées dans un délai de 30 jours.
         </p>
-      </section>
+      </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Vos droits</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          Conformément au RGPD, vous disposez d'un droit d'accès, de rectification,
-          de suppression et de portabilité de vos données.
-          Pour exercer ces droits :{' '}
-          <a href="mailto:contact@craftcodes.fr" style={{ color: 'var(--mantine-color-blue-6)' }}>
-            contact@craftcodes.fr
-          </a>
+      <div className="legal-section">
+        <h2>Vos droits (RGPD)</h2>
+        <p>Conformément au RGPD, vous disposez des droits suivants :</p>
+        <ul>
+          <li><strong>Droit d'accès</strong> — obtenir une copie de vos données personnelles</li>
+          <li><strong>Droit de rectification</strong> — corriger vos données inexactes</li>
+          <li><strong>Droit à l'effacement</strong> — demander la suppression de vos données</li>
+          <li><strong>Droit à la portabilité</strong> — recevoir vos données dans un format structuré</li>
+          <li><strong>Droit d'opposition</strong> — vous opposer à certains traitements</li>
+        </ul>
+        <p>
+          Pour exercer vos droits, contactez-nous à{' '}
+          <a href="mailto:contact@craftcodes.fr">contact@craftcodes.fr</a>.
+          Vous disposez également du droit d'introduire une réclamation auprès de la{' '}
+          <a href="https://www.cnil.fr" target="_blank" rel="noreferrer">CNIL</a>.
         </p>
-      </section>
+      </div>
 
-      <section>
-        <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Cookies</h2>
-        <p style={{ color: 'var(--mantine-color-dimmed)', fontSize: '14px' }}>
-          OfferTrail n'utilise pas de cookies publicitaires ni de trackers tiers.
-          Un cookie de session est utilisé pour maintenir la connexion.
-          Aucun outil d'analytics tiers n'est actif à ce jour.
+      <div className="legal-section">
+        <h2>Cookies</h2>
+        <p>
+          OfferTrail utilise uniquement des cookies strictement nécessaires au fonctionnement
+          du service (authentification, préférences de thème). Aucun cookie publicitaire ou
+          analytique tiers n'est utilisé.
         </p>
-      </section>
-    </div>
+      </div>
+
+      <div className="legal-section">
+        <h2>Paiement</h2>
+        <p>
+          Les paiements sont traités par <strong>Stripe</strong>, certifié PCI-DSS.
+          CraftCodes ne stocke jamais vos coordonnées bancaires.
+        </p>
+      </div>
+    </LegalLayout>
   );
 };

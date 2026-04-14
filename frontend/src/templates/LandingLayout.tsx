@@ -61,9 +61,10 @@ export function LandingLayout() {
           </Text>
           <Group gap="lg">
             <a href="#tarifs" className={classes.footerLink}>Tarifs</a>
+            <Link to="/app/legal/cgu" className={classes.footerLink}>CGU</Link>
+            <Link to="/app/legal/confidentialite" className={classes.footerLink}>Confidentialité</Link>
             <Link to="/cgv" className={classes.footerLink}>CGV</Link>
             <Link to="/mentions-legales" className={classes.footerLink}>Mentions légales</Link>
-            <Link to="/rgpd" className={classes.footerLink}>RGPD</Link>
             <a href={`mailto:${LEGAL_CONFIG.company.email}`} className={classes.footerLink}>Contact</a>
           </Group>
         </div>
