@@ -57,6 +57,8 @@ def _parse_allowed_origin_regex(raw_value: str | None) -> str | None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not os.getenv("STRIPE_SECRET_KEY", "").strip():
+        raise RuntimeError("STRIPE_SECRET_KEY manquante")
     database.init_db()
     init_saas_db()
     start_scheduler()
