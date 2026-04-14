@@ -68,12 +68,9 @@ def update_user_plan(
     if new_plan not in ("starter", "pro"):
         raise HTTPException(status_code=400, detail="Plan invalide")
 
-    from src.services.subscription import _downgrade_to_starter, activate_pro
+    from src.services.subscription import activate_plan
 
-    if new_plan == "pro":
-        activate_pro(db, profile)
-    else:
-        _downgrade_to_starter(db, profile)
+    activate_plan(db, profile, new_plan)
 
     db.refresh(profile)
     return {"id": profile.id, "plan": profile.plan}

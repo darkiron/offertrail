@@ -3,6 +3,7 @@ import { IconSun, IconMoon } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
 import classes from './LandingLayout.module.css';
 import { LEGAL_CONFIG } from '../config/legal';
+import { CONFIG } from '../config';
 
 export function LandingLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -51,7 +52,7 @@ export function LandingLayout() {
           <Text size="xs" c="dimmed">
             © {new Date().getFullYear()} {LEGAL_CONFIG.productName} —{' '}
             <a
-              href={LEGAL_CONFIG.company.website}
+              href={CONFIG.CRAFTCODES_URL}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px' }}
@@ -64,7 +65,7 @@ export function LandingLayout() {
             <Link to="/app/legal/cgu" className={classes.footerLink}>CGU</Link>
             <Link to="/app/legal/confidentialite" className={classes.footerLink}>Confidentialité</Link>
             <Link to="/mentions-legales" className={classes.footerLink}>Mentions légales</Link>
-            <a href={`mailto:${LEGAL_CONFIG.company.email}`} className={classes.footerLink}>Contact</a>
+            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>Contact</a>
           </Group>
         </div>
       </footer>
