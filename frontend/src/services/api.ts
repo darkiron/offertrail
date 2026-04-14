@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../lib/supabase';
 import type {
   Application,
   AuthResponse,
@@ -410,7 +411,17 @@ export const axiosInstance = axios.create({
 // Nettoyage de l'ancien token legacy (pré-Supabase) si présent en localStorage
 localStorage.removeItem('offertrail.auth.token');
 
-// Réexportée par AuthContext via applySession — pas de localStorage
+// Interceptor — lit la session Supabase courante à chaque requête.
+// Élimine toute race condition entre onAuthStateChange et les appels API.
+axiosInstance.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return config;
+});
+
+// Conservé pour compatibilité — l'interceptor est désormais la source de vérité.
 export function setAxiosAuthToken(token: string | null): void {
   if (token) {
     axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;

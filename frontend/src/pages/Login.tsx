@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Paper, Stack, Text } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
@@ -14,9 +14,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, isAuthenticated, isLoading, profile } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const successMessage =
     (location.state as { message?: string } | null)?.message ?? null;
@@ -33,8 +32,13 @@ export function LoginPage() {
     },
   });
 
-  if (isAuthenticated) {
-    return <Navigate to="/app" replace />;
+  // Attend que isLoading=false + profil chargé avant de rediriger (évite la race condition)
+  if (!isLoading && isAuthenticated) {
+    const nextPath = (location.state as { from?: string } | null)?.from ?? null;
+    if (!profile || profile.plan !== 'pro') {
+      return <Navigate to="/app/pricing" replace />;
+    }
+    return <Navigate to={nextPath ?? '/app'} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -55,8 +59,8 @@ export function LoginPage() {
       setFormError(null);
       clearErrors();
       await signIn(result.data.email, result.data.password);
-      const nextPath = (location.state as { from?: string } | null)?.from ?? '/app';
-      navigate(nextPath, { replace: true });
+      // Pas de navigate — le garde en tête du composant prend le relais
+      // une fois isLoading=false + isAuthenticated=true + profil chargé.
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Connexion impossible');
     }
