@@ -421,13 +421,18 @@ axiosInstance.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Interceptor response — tout 401 = session invalide → déconnexion + redirect login.
+// Interceptor response — 401 avec session active = token rejeté par le backend.
+// Sans session = 401 attendu, on laisse l'appelant gérer.
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await supabase.auth.signOut();
-      window.location.replace('/login?session=expired');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !window.location.pathname.startsWith('/login')) {
+        // On avait un token valide côté Supabase mais le backend le rejette
+        await supabase.auth.signOut();
+        window.location.replace('/login?session=expired');
+      }
     }
     return Promise.reject(error);
   },
