@@ -153,13 +153,9 @@ export function MonCompte() {
           <Paper p="lg" radius="lg" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Abonnement</Text>
             <Group justify="space-between" mb="sm">
-              <Badge
-                variant="light"
-                color={sub?.is_pro ? 'green' : 'gray'}
-                size="lg"
-              >
-                {sub?.is_pro ? 'Pro' : 'Gratuit'}
-              </Badge>
+              {sub?.is_pro && (
+                <Badge variant="light" color="green" size="lg">Pro</Badge>
+              )}
               {sub?.is_pro ? (
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
                   {portalLoading ? 'Redirection...' : 'Gérer via Stripe →'}
