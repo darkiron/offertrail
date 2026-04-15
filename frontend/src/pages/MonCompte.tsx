@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Stack, Paper, SimpleGrid, Group, Text, Title, TextInput, Modal,
-  PasswordInput, Progress, Badge, Anchor,
+  PasswordInput, Badge, Anchor,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -92,8 +92,6 @@ export function MonCompte() {
     }
   };
 
-  const usagePercent = Math.min(((sub?.candidatures_count ?? 0) / 25) * 100, 100);
-
   const openStripePortal = async () => {
     setPortalLoading(true);
     try {
@@ -166,22 +164,10 @@ export function MonCompte() {
                 </Button>
               )}
             </Group>
-            {sub?.is_pro ? (
+            {sub?.is_pro && (
               <Text size="sm" c="dimmed">
                 Plan démarré le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
               </Text>
-            ) : (
-              <Stack gap="xs">
-                <Text size="sm" c="dimmed">
-                  {sub?.candidatures_count ?? 0} / 25 candidatures utilisées
-                </Text>
-                <Progress
-                  value={usagePercent}
-                  color={usagePercent >= 100 ? 'red' : 'blue'}
-                  size="sm"
-                  radius="xs"
-                />
-              </Stack>
             )}
           </Paper>
 
