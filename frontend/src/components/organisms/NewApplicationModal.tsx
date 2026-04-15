@@ -87,7 +87,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
     try {
       let organizationId = selectedOrg?.id || matchedOrg?.id || null;
 
-      if (!organizationId && showCreateOrg && newOrg.name.trim()) {
+      if (!organizationId && newOrg.name.trim()) {
         const created = await organizationService.create({
           ...newOrg,
           name: newOrg.name.trim(),

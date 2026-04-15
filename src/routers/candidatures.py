@@ -35,7 +35,13 @@ def create_candidature(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
 
-    etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
+    if not body.etablissement_id:
+        raise HTTPException(status_code=422, detail="etablissement_id requis")
+
+    try:
+        etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
+    except Exception:
+        raise HTTPException(status_code=422, detail="etablissement_id invalide")
     if not etablissement:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
     if body.client_final_id:
