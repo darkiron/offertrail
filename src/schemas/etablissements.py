@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from src.schemas._types import UuidStr, OptUuidStr
+
 
 class EtablissementCreate(BaseModel):
     nom: str
@@ -18,7 +20,7 @@ class EtablissementUpdate(BaseModel):
 
 
 class EtablissementSchema(BaseModel):
-    id: str
+    id: UuidStr
     nom: str
     type: str
     site_web: str | None
