@@ -14,6 +14,19 @@ router = APIRouter(prefix="/subscription", tags=["subscription"])
 ACTIVE_SUBSCRIPTION_STATUSES = {"active", "trialing"}
 
 
+def _s(obj, attr: str, default=None):
+    """
+    Accès sûr sur les objets Stripe SDK v5+ (classes typées sans .get())
+    ou sur de simples dicts (tests, fixtures).
+    """
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(attr, default)
+    val = getattr(obj, attr, default)
+    return val if val is not None else default
+
+
 def _activate_profile_subscription(
     db: Session,
     profile: Profile,
@@ -27,13 +40,13 @@ def _activate_profile_subscription(
     activate_pro(db, profile)
 
 
-def _find_profile_for_subscription_event(db: Session, subscription_data: dict) -> Profile | None:
-    metadata = subscription_data.get("metadata") or {}
-    user_id = metadata.get("user_id")
+def _find_profile_for_subscription_event(db: Session, subscription_data) -> Profile | None:
+    metadata = _s(subscription_data, "metadata")
+    user_id = _s(metadata, "user_id")
     if user_id:
         return db.query(Profile).filter(Profile.id == user_id).first()
 
-    customer_id = subscription_data.get("customer")
+    customer_id = _s(subscription_data, "customer")
     if customer_id:
         return db.query(Profile).filter(Profile.stripe_customer_id == customer_id).first()
 
@@ -98,9 +111,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        user_id = session.get("metadata", {}).get("user_id") or session.get("client_reference_id")
-        customer_id = session.get("customer")
-        subscription_id = session.get("subscription")
+        metadata = _s(session, "metadata")
+        user_id = _s(metadata, "user_id") or _s(session, "client_reference_id")
+        customer_id = _s(session, "customer")
+        subscription_id = _s(session, "subscription")
         if user_id:
             profile = db.query(Profile).filter(Profile.id == user_id).first()
             if profile:
@@ -115,20 +129,20 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         subscription = event["data"]["object"]
         profile = _find_profile_for_subscription_event(db, subscription)
         if profile:
-            status = subscription.get("status")
+            status = _s(subscription, "status")
             if status in ACTIVE_SUBSCRIPTION_STATUSES:
                 _activate_profile_subscription(
                     db,
                     profile,
-                    customer_id=subscription.get("customer"),
-                    subscription_id=subscription.get("id"),
+                    customer_id=_s(subscription, "customer"),
+                    subscription_id=_s(subscription, "id"),
                 )
             else:
                 _downgrade_to_starter(db, profile)
 
     elif event["type"] in {"customer.subscription.deleted", "invoice.payment_failed"}:
-        subscription = event["data"]["object"]
-        profile = _find_profile_for_subscription_event(db, subscription)
+        obj = event["data"]["object"]
+        profile = _find_profile_for_subscription_event(db, obj)
         if profile:
             _downgrade_to_starter(db, profile)
 
