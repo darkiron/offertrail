@@ -49,11 +49,20 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
+  const PRICING_EXEMPT = ['/app/pricing', '/app/mon-compte'];
+  const isPricingExempt = PRICING_EXEMPT.some((p) => location.pathname.startsWith(p));
+
   useEffect(() => {
     if (isAuthenticated) {
       subscriptionService.getMe().then(setSub).catch(() => {});
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (sub && !sub.is_pro && !isPricingExempt) {
+      navigate('/app/pricing', { replace: true });
+    }
+  }, [sub, isPricingExempt]);
 
   const isActive = (to: string) =>
     to === '/app'
