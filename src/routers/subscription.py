@@ -6,7 +6,8 @@ from src.auth import get_current_profile, get_db, get_jwt_payload
 from src.models import Profile
 from src.services.subscription import get_usage, activate_pro, _downgrade_to_starter
 from src.services.stripe_service import (
-    create_checkout_session, verify_webhook_signature, is_configured
+    create_checkout_session, verify_webhook_signature, is_configured,
+    APP_BASE_URL,
 )
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
@@ -92,6 +93,28 @@ def create_checkout(
         "mode": "stripe",
         "checkout_url": checkout_url,
     }
+
+
+@router.post("/portal")
+def create_billing_portal(
+    db: Session = Depends(get_db),
+    profile: Profile = Depends(get_current_profile),
+):
+    """
+    Crée une session Stripe Billing Portal et retourne l'URL.
+    Permet à l'utilisateur de gérer son abonnement et consulter ses factures.
+    """
+    if not is_configured():
+        raise HTTPException(status_code=400, detail="Stripe non configuré en local")
+
+    if not profile.stripe_customer_id:
+        raise HTTPException(status_code=400, detail="Aucun abonnement Stripe associé à ce compte")
+
+    portal_session = stripe.billing_portal.Session.create(
+        customer=profile.stripe_customer_id,
+        return_url=f"{APP_BASE_URL}/app/mon-compte",
+    )
+    return {"portal_url": portal_session.url}
 
 
 @router.post("/webhook")

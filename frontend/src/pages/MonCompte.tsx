@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Stack, Paper, SimpleGrid, Group, Text, Title, TextInput, Modal,
-  PasswordInput, Progress, Badge,
+  PasswordInput, Progress, Badge, Anchor,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +30,7 @@ export function MonCompte() {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ new_password: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => { document.title = 'Mon compte — OfferTrail'; }, []);
 
@@ -93,6 +94,17 @@ export function MonCompte() {
 
   const usagePercent = Math.min(((sub?.candidatures_count ?? 0) / 25) * 100, 100);
 
+  const openStripePortal = async () => {
+    setPortalLoading(true);
+    try {
+      const { portal_url } = await subscriptionService.portal();
+      window.location.assign(portal_url);
+    } catch {
+      notifications.show({ message: 'Impossible d\'ouvrir le portail Stripe.', color: 'red' });
+      setPortalLoading(false);
+    }
+  };
+
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
       {/* Banner */}
@@ -146,11 +158,17 @@ export function MonCompte() {
                 color={sub?.is_pro ? 'green' : 'gray'}
                 size="lg"
               >
-                {sub?.is_pro ? 'Pro' : 'Accès limité'}
+                {sub?.is_pro ? 'Pro' : 'Starter'}
               </Badge>
-              <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
-                {sub?.is_pro ? 'Gérer' : 'Passer en Pro →'}
-              </Button>
+              {sub?.is_pro ? (
+                <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
+                  {portalLoading ? 'Redirection...' : 'Gérer via Stripe →'}
+                </Button>
+              ) : (
+                <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
+                  Passer en Pro →
+                </Button>
+              )}
             </Group>
             {sub?.is_pro ? (
               <Text size="sm" c="dimmed">
@@ -171,33 +189,24 @@ export function MonCompte() {
             )}
           </Paper>
 
-          {/* Payment */}
+          {/* Factures — portail Stripe si abonnement actif */}
           <Paper p="lg" radius="lg" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Moyen de paiement</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Factures</Text>
             {sub?.is_pro ? (
-              <Group justify="space-between">
-                <Group gap="sm">
-                  <Paper p="xs" radius="sm" withBorder style={{ width: 36, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text size="xs" c="dimmed">CB</Text>
-                  </Paper>
-                  <Text size="sm" c="dimmed">Abonnement actif via Stripe</Text>
-                </Group>
-                <Button variant="ghost" size="small" disabled>Modifier</Button>
+              <Group justify="space-between" align="center">
+                <Text size="sm" c="dimmed">Historique et téléchargement via Stripe</Text>
+                <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
+                  {portalLoading ? '...' : 'Voir les factures →'}
+                </Button>
               </Group>
             ) : (
-              <Text size="sm" c="dimmed">Aucun moyen de paiement enregistré.</Text>
+              <Text size="sm" c="dimmed">
+                Disponible après souscription au plan Pro.{' '}
+                <Anchor size="sm" onClick={() => navigate('/app/pricing')} style={{ cursor: 'pointer' }}>
+                  Passer en Pro →
+                </Anchor>
+              </Text>
             )}
-          </Paper>
-
-          {/* Invoices */}
-          <Paper p="lg" radius="lg" withBorder>
-            <Group justify="space-between" mb="md">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Factures</Text>
-              <Button variant="ghost" size="small" disabled>Exporter</Button>
-            </Group>
-            <Text size="sm" c="dimmed" ta="center" py="md">
-              Export de factures à brancher sur les données Stripe
-            </Text>
           </Paper>
         </Stack>
       </SimpleGrid>
