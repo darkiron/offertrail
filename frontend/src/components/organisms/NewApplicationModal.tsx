@@ -170,7 +170,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
                 )}
               </div>
 
-              <Collapse in={showCreateOrg}>
+              <Collapse mounted={showCreateOrg}>
                 <Paper p="md" withBorder radius="md">
                   <Group justify="space-between" mb="sm">
                     <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">▣ Nouvel ETS</Text>
