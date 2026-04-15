@@ -158,7 +158,7 @@ export function MonCompte() {
                 color={sub?.is_pro ? 'green' : 'gray'}
                 size="lg"
               >
-                {sub?.is_pro ? 'Pro' : 'Starter'}
+                {sub?.is_pro ? 'Pro' : 'Gratuit'}
               </Badge>
               {sub?.is_pro ? (
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
