@@ -42,7 +42,7 @@ const NAV_LINKS = [
 ];
 
 export function AppLayout() {
-  const [opened, { toggle }] = useDisclosure();
+  const [opened, { toggle, close }] = useDisclosure();
   const { isAuthenticated, signOut, user, profile } = useAuth();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const location = useLocation();
@@ -150,6 +150,7 @@ export function AppLayout() {
             to={to}
             active={isActive(to)}
             className={classes.navLink}
+            onClick={close}
           />
         ))}
       </AppShell.Navbar>
