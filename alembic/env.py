@@ -24,8 +24,10 @@ load_dotenv()
 
 target_metadata = Base.metadata
 
-# Lire DATABASE_URL depuis l'env
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", "sqlite:///./offertrail.db"))
+# Alembic utilise DATABASE_DIRECT_URL (connexion directe port 5432) si disponible,
+# sinon DATABASE_URL (pooler port 6543). Railway ne supporte pas IPv6.
+url = os.getenv("DATABASE_DIRECT_URL") or os.getenv("DATABASE_URL", "sqlite:///./offertrail.db")
+config.set_main_option("sqlalchemy.url", url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
