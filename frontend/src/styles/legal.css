@@ -136,7 +136,7 @@
 }
 
 .legal-section a {
-  color: #38bdf8;
+  color: var(--accent);
   text-decoration: none;
 }
 
