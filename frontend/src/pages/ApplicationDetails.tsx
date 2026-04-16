@@ -69,6 +69,14 @@ export function ApplicationDetails() {
     if (data) setFinalCustomerSearch(data.final_customer_organization?.name || '');
   }, [data]);
 
+  const finalCustomerCandidates = useMemo(
+    () => organizations
+      .filter((o) => !['ESN', 'CABINET_RECRUTEMENT', 'PORTAGE'].includes(o.type))
+      .filter((o) => o.name.toLowerCase().includes(finalCustomerSearch.toLowerCase()))
+      .slice(0, 6),
+    [organizations, finalCustomerSearch],
+  );
+
   if (error && (error as { response?: { status?: number } }).response?.status === 401) {
     navigate('/login');
     return null;
@@ -90,14 +98,6 @@ export function ApplicationDetails() {
   }
 
   const { application: app, organization, final_customer_organization, events, contacts, all_contacts } = data!;
-
-  const finalCustomerCandidates = useMemo(
-    () => organizations
-      .filter((o) => !['ESN', 'CABINET_RECRUTEMENT', 'PORTAGE'].includes(o.type))
-      .filter((o) => o.name.toLowerCase().includes(finalCustomerSearch.toLowerCase()))
-      .slice(0, 6),
-    [organizations, finalCustomerSearch],
-  );
 
   const shouldShowFinalCustomer = organization?.type === 'ESN' || organization?.type === 'CABINET_RECRUTEMENT' || !!final_customer_organization;
 
