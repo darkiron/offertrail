@@ -5,6 +5,7 @@ import {
   Modal, TextInput, Select, Textarea, SimpleGrid, Stack, Group, Text,
   Autocomplete, Collapse, Paper,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { applicationService, organizationService } from '../../services/api';
 import type { Organization, OrganizationType } from '../../types';
 import { ProbityBadge } from '../atoms/ProbityBadge';
@@ -87,7 +88,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
     try {
       let organizationId = selectedOrg?.id || matchedOrg?.id || null;
 
-      if (!organizationId && showCreateOrg && newOrg.name.trim()) {
+      if (!organizationId && newOrg.name.trim()) {
         const created = await organizationService.create({
           ...newOrg,
           name: newOrg.name.trim(),
@@ -98,6 +99,8 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
         });
         const full = await organizationService.getById(created.id);
         setOrganizations((current) => [full, ...current]);
+        setShowCreateOrg(false);
+        notifications.show({ message: `Entreprise "${full.name}" créée`, color: 'green' });
         organizationId = full.id;
       }
 
@@ -170,7 +173,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
                 )}
               </div>
 
-              <Collapse in={showCreateOrg}>
+              <Collapse mounted={showCreateOrg}>
                 <Paper p="md" withBorder radius="md">
                   <Group justify="space-between" mb="sm">
                     <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">▣ Nouvel ETS</Text>

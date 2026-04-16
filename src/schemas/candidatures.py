@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from src.schemas._types import UuidStr, OptUuidStr
+
 
 class CandidatureCreate(BaseModel):
     etablissement_id: str
@@ -35,11 +37,11 @@ class CandidatureUpdate(BaseModel):
 
 
 class CandidatureSchema(BaseModel):
-    id: str
-    user_id: str
-    etablissement_id: str
-    client_final_id: Optional[str]
-    succursale_id: Optional[str]
+    id: UuidStr
+    user_id: UuidStr
+    etablissement_id: UuidStr
+    client_final_id: OptUuidStr
+    succursale_id: OptUuidStr
     poste: str
     url_offre: Optional[str]
     description: Optional[str]

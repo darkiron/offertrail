@@ -572,6 +572,10 @@ export const subscriptionService = {
     const response = await axiosInstance.post<{ mode: 'simulated' | 'stripe'; checkout_url: string | null; message?: string }>('/subscription/checkout');
     return response.data;
   },
+  portal: async () => {
+    const response = await axiosInstance.post<{ portal_url: string }>('/subscription/portal');
+    return response.data;
+  },
 };
 
 export const applicationService = {

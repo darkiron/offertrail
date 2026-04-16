@@ -7,8 +7,9 @@
     <title>OfferTrail</title>
     <script>
       (function () {
-        var t = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', t);
+        var stored = localStorage.getItem('offertrail.color-scheme');
+        var scheme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme);
       })();
     </script>
   </head>
