@@ -1,0 +1,66 @@
+.banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ── Warning (80%–99%) ── */
+.warning {
+  background: color-mix(in srgb, var(--ctp-mocha-yellow) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ctp-mocha-yellow) 30%, transparent);
+}
+
+/* ── Danger (100%) ── */
+.danger {
+  background: color-mix(in srgb, var(--ctp-mocha-red) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ctp-mocha-red) 30%, transparent);
+}
+
+/* ── Light mode ── */
+[data-mantine-color-scheme='light'] .warning {
+  background: color-mix(in srgb, var(--ctp-latte-yellow) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ctp-latte-yellow) 30%, transparent);
+}
+
+[data-mantine-color-scheme='light'] .danger {
+  background: color-mix(in srgb, var(--ctp-latte-red) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ctp-latte-red) 30%, transparent);
+}
+
+/* ── Message text ── */
+.message {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.warning .message { color: var(--ctp-mocha-yellow); }
+.danger  .message { color: var(--ctp-mocha-red); }
+
+[data-mantine-color-scheme='light'] .warning .message { color: var(--ctp-latte-yellow); }
+[data-mantine-color-scheme='light'] .danger  .message { color: var(--ctp-latte-red); }
+
+/* ── CTA button ── */
+.cta {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.cta:hover { opacity: 0.85; }
+
+.ctaWarning { background: var(--ctp-mocha-yellow); color: var(--ctp-mocha-base); }
+.ctaDanger  { background: var(--ctp-mocha-red);    color: var(--ctp-mocha-base); }
+
+[data-mantine-color-scheme='light'] .ctaWarning { background: var(--ctp-latte-yellow); color: var(--ctp-latte-base); }
+[data-mantine-color-scheme='light'] .ctaDanger  { background: var(--ctp-latte-red);    color: var(--ctp-latte-base); }
