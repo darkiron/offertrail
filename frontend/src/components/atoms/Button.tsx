@@ -10,7 +10,7 @@ interface ButtonProps extends Omit<MantineButtonProps, 'variant' | 'size'> {
 
 const VARIANT_MAP: Record<Variant, MantineButtonProps['variant']> = {
   primary: 'filled',
-  ghost: 'subtle',
+  ghost: 'outline',
   secondary: 'default',
 };
 
