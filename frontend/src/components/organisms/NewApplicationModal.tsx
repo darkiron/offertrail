@@ -5,6 +5,7 @@ import {
   Modal, TextInput, Select, Textarea, SimpleGrid, Stack, Group, Text,
   Autocomplete, Collapse, Paper,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { applicationService, organizationService } from '../../services/api';
 import type { Organization, OrganizationType } from '../../types';
 import { ProbityBadge } from '../atoms/ProbityBadge';
@@ -98,6 +99,8 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
         });
         const full = await organizationService.getById(created.id);
         setOrganizations((current) => [full, ...current]);
+        setShowCreateOrg(false);
+        notifications.show({ message: `Entreprise "${full.name}" créée`, color: 'green' });
         organizationId = full.id;
       }
 
