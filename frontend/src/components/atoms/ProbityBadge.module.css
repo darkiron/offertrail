@@ -12,21 +12,38 @@
 
 /* fiable */
 .fiable {
-  background: rgba(16, 185, 129, 0.18);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.34);
+  background: rgba(166, 227, 161, 0.14);
+  color: var(--ctp-mocha-green);
+  border-color: rgba(166, 227, 161, 0.30);
 }
 
 /* moyen */
 .moyen {
-  background: rgba(245, 158, 11, 0.18);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(249, 226, 175, 0.14);
+  color: var(--ctp-mocha-yellow);
+  border-color: rgba(249, 226, 175, 0.30);
 }
 
 /* mefiance / insuffisant */
 .danger {
-  background: rgba(244, 63, 94, 0.18);
-  color: #fb7185;
-  border-color: rgba(244, 63, 94, 0.34);
+  background: rgba(243, 139, 168, 0.14);
+  color: var(--ctp-mocha-red);
+  border-color: rgba(243, 139, 168, 0.30);
+}
+
+/* ── Light mode overrides ── */
+[data-mantine-color-scheme='light'] .fiable {
+  background: rgba(64, 160, 43, 0.10);
+  color: var(--ctp-latte-green);
+  border-color: rgba(64, 160, 43, 0.22);
+}
+[data-mantine-color-scheme='light'] .moyen {
+  background: rgba(223, 142, 29, 0.10);
+  color: var(--ctp-latte-yellow);
+  border-color: rgba(223, 142, 29, 0.22);
+}
+[data-mantine-color-scheme='light'] .danger {
+  background: rgba(210, 15, 57, 0.10);
+  color: var(--ctp-latte-red);
+  border-color: rgba(210, 15, 57, 0.22);
 }

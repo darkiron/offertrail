@@ -117,7 +117,7 @@
   margin: 0 0 20px;
 }
 
-.lp-h1 span { color: #38bdf8; }
+.lp-h1 span { color: var(--accent); }
 
 .lp-hero-sub {
   font-size: 18px;
@@ -220,7 +220,7 @@
 .lp-stat-num {
   font-size: 28px;
   font-weight: 800;
-  color: #38bdf8;
+  color: var(--accent);
 }
 
 .lp-stat-label {
@@ -232,7 +232,7 @@
 .lp-mock-body {
   padding: 24px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, #38bdf8 10%, transparent), transparent 30%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 30%),
     linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 8%, transparent), transparent);
 }
 
@@ -327,8 +327,8 @@
   margin-top: 14px;
   padding: 14px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, #38bdf8 20%, transparent);
-  background: color-mix(in srgb, #38bdf8 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .lp-signal strong {
@@ -393,7 +393,7 @@
 }
 
 .lp-feature:hover {
-  border-color: color-mix(in srgb, #38bdf8 36%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
   transform: translateY(-3px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
 }
@@ -402,8 +402,8 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: color-mix(in srgb, #38bdf8 12%, transparent);
-  border: 1px solid color-mix(in srgb, #38bdf8 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,13 +439,13 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: color-mix(in srgb, #38bdf8 14%, transparent);
-  border: 1px solid color-mix(in srgb, #38bdf8 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: #38bdf8;
+  color: var(--accent);
   font-weight: 900;
   margin-top: 2px;
 }
@@ -464,10 +464,10 @@
 
 .lp-plan-card {
   background: linear-gradient(145deg,
-    color-mix(in srgb, #38bdf8 10%, var(--bg-mantle)),
-    color-mix(in srgb, #2563eb 6%, var(--bg-crust))
+    color-mix(in srgb, var(--accent) 10%, var(--bg-mantle)),
+    color-mix(in srgb, var(--accent-hover) 6%, var(--bg-crust))
   );
-  border: 1px solid color-mix(in srgb, #38bdf8 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
   border-radius: 22px;
   padding: 30px;
   box-shadow: 0 28px 56px rgba(0, 0, 0, 0.2);
@@ -521,7 +521,7 @@
 
 .lp-plan-features li::before {
   content: "+";
-  color: #38bdf8;
+  color: var(--accent);
   font-weight: 900;
   font-size: 14px;
   flex-shrink: 0;
@@ -555,7 +555,7 @@
   text-align: center;
   padding: 88px 24px;
   border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, #38bdf8 4%, transparent));
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 4%, transparent));
 }
 
 .lp-cta-section h2 {

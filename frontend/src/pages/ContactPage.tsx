@@ -22,7 +22,7 @@ const contactStyles = `
 
   .contact-info-card a {
     font-size: 14px;
-    color: #38bdf8;
+    color: var(--accent);
     text-decoration: none;
   }
 
@@ -61,8 +61,8 @@ const contactStyles = `
   }
 
   .contact-input:focus, .contact-textarea:focus {
-    border-color: color-mix(in srgb, #38bdf8 72%, white 28%);
-    box-shadow: 0 0 0 4px color-mix(in srgb, #38bdf8 14%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
   }
 
   .contact-textarea { min-height: 120px; resize: vertical; }
