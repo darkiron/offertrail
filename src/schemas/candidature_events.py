@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from src.schemas._types import UuidStr, OptUuidStr
+
 
 class CandidatureEventCreate(BaseModel):
     candidature_id: str
@@ -20,9 +22,9 @@ class CandidatureEventUpdate(BaseModel):
 
 
 class CandidatureEventSchema(BaseModel):
-    id: str
-    candidature_id: str
-    user_id: str
+    id: UuidStr
+    candidature_id: UuidStr
+    user_id: UuidStr
     type: str
     ancien_statut: Optional[str]
     nouveau_statut: Optional[str]

@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from src.schemas._types import UuidStr, OptUuidStr
+
 
 class CandidatureCreate(BaseModel):
     etablissement_id: str
@@ -19,10 +21,10 @@ class CandidatureCreate(BaseModel):
 
 
 class CandidatureSchema(BaseModel):
-    id: str
-    user_id: str
-    etablissement_id: str
-    succursale_id: Optional[str]
+    id: UuidStr
+    user_id: UuidStr
+    etablissement_id: UuidStr
+    succursale_id: OptUuidStr
     poste: str
     url_offre: Optional[str]
     description: Optional[str]
@@ -38,7 +40,7 @@ class CandidatureSchema(BaseModel):
 
 
 class EventSchema(BaseModel):
-    id: str
+    id: UuidStr
     type: str
     ancien_statut: Optional[str]
     nouveau_statut: Optional[str]
@@ -75,10 +77,10 @@ class PipelineBucket(BaseModel):
 
 
 class RelanceSchema(BaseModel):
-    id: str
-    candidature_id: str
-    user_id: str
-    contact_id: Optional[str]
+    id: UuidStr
+    candidature_id: UuidStr
+    user_id: UuidStr
+    contact_id: OptUuidStr
     date_prevue: datetime
     date_effectuee: Optional[datetime]
     canal: Optional[str]
