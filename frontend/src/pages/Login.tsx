@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { Paper, Stack, Text } from '@mantine/core';
+import {
+  Alert, Anchor, Button, Paper, PasswordInput,
+  Stack, Text, TextInput, Title,
+} from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import classes from './Login.module.css';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caracteres'),
+  password: z.string().min(8, 'Minimum 8 caractères'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -26,13 +29,9 @@ export function LoginPage() {
     clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
-  // Redirige une fois l'auth + profil chargés (évite la race condition onAuthStateChange)
   if (!isLoading && isAuthenticated) {
     const nextPath = (location.state as { from?: string } | null)?.from ?? null;
     if (profile?.subscription_status !== 'active') {
@@ -59,8 +58,6 @@ export function LoginPage() {
       setFormError(null);
       clearErrors();
       await signIn(result.data.email, result.data.password);
-      // Pas de navigate ici — le garde en tête de composant prend le relais
-      // une fois isLoading=false + isAuthenticated=true + profile chargé.
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Connexion impossible');
     }
@@ -69,6 +66,7 @@ export function LoginPage() {
   return (
     <section className={classes.shell}>
       <Paper className={classes.frame} radius="xl" withBorder shadow="xl">
+        {/* ── Panneau gauche ── */}
         <aside className={classes.story}>
           <span className={classes.eyebrow}>OfferTrail Workspace</span>
           <h1 className={classes.storyTitle}>Reprends la main sur ton pipeline de candidatures.</h1>
@@ -89,55 +87,55 @@ export function LoginPage() {
           </Stack>
         </aside>
 
+        {/* ── Panneau droit ── */}
         <div className={classes.panel}>
-          <Link to="/" className={classes.backLink}>← OfferTrail</Link>
-          <h2 className={classes.title}>Connexion</h2>
-          <Text c="dimmed" mt={4}>Entre dans ton workspace OfferTrail.</Text>
+          <Anchor component={Link} to="/" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
+            ← OfferTrail
+          </Anchor>
 
-          <form className={classes.form} onSubmit={onSubmit}>
-            {successMessage ? <Text c="dimmed" size="sm">{successMessage}</Text> : null}
-            <div className={classes.field}>
-              <label className={classes.label} htmlFor="email">Email</label>
-              <input
-                id="email"
-                className={classes.input}
-                type="email"
-                placeholder="toi@exemple.fr"
-                autoComplete="email"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                {...register('email')}
-              />
-              {errors.email ? <div className={classes.helper}>{errors.email.message}</div> : null}
-            </div>
+          <Title order={2} mb={4}>Connexion</Title>
+          <Text c="dimmed" size="sm" mb="xl">Entre dans ton workspace OfferTrail.</Text>
 
-            <div className={classes.field}>
-              <label className={classes.label} htmlFor="password">Mot de passe</label>
-              <input
-                id="password"
-                className={classes.input}
-                type="password"
-                placeholder="Ton mot de passe"
-                autoComplete="current-password"
-                {...register('password')}
-              />
-              <div className={classes.hint}>Compatible avec les gestionnaires de mots de passe comme NordPass.</div>
-              {errors.password ? <div className={classes.helper}>{errors.password.message}</div> : null}
-            </div>
+          <Stack component="form" gap="md" onSubmit={onSubmit}>
+            {successMessage && (
+              <Text c="dimmed" size="sm">{successMessage}</Text>
+            )}
 
-            {formError ? <div className={classes.error}>{formError}</div> : null}
+            <TextInput
+              label="Email"
+              placeholder="toi@exemple.fr"
+              type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              error={errors.email?.message}
+              {...register('email')}
+            />
 
-            <button className={classes.submit} type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
+            <PasswordInput
+              label="Mot de passe"
+              placeholder="Ton mot de passe"
+              autoComplete="current-password"
+              description="Compatible avec les gestionnaires de mots de passe comme NordPass."
+              error={errors.password?.message}
+              {...register('password')}
+            />
 
-          <div className={classes.footer}>
-            <Link to="/forgot-password">Mot de passe oublié ?</Link>
+            {formError && (
+              <Alert color="red" variant="light">{formError}</Alert>
+            )}
+
+            <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
+              Se connecter
+            </Button>
+          </Stack>
+
+          <Text size="sm" c="dimmed" mt="lg">
+            <Anchor component={Link} to="/forgot-password" size="sm">Mot de passe oublié ?</Anchor>
             {' · '}
-            Pas encore de compte ? <Link to="/register">Créer un compte</Link>
-          </div>
+            Pas encore de compte ?{' '}
+            <Anchor component={Link} to="/register" size="sm">Créer un compte</Anchor>
+          </Text>
         </div>
       </Paper>
     </section>

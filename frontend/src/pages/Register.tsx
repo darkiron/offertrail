@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
-import { Paper, Stack, Text } from '@mantine/core';
+import {
+  Alert, Anchor, Badge, Button, Group, Paper,
+  PasswordInput, SimpleGrid, Stack, Text, TextInput, Title,
+} from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import classes from './Auth.module.css';
 
 const registerSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caracteres'),
+  password: z.string().min(8, 'Minimum 8 caractères'),
   prenom: z.string().trim().optional(),
   nom: z.string().trim().optional(),
 });
@@ -26,30 +29,23 @@ export function RegisterPage() {
     clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    defaultValues: {
-      email: '',
-      password: '',
-      prenom: '',
-      nom: '',
-    },
+    defaultValues: { email: '', password: '', prenom: '', nom: '' },
   });
 
-  if (isAuthenticated) {
-    return <Navigate to="/app" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/app" replace />;
 
   if (confirmed) {
     return (
       <section className={classes.shell}>
-        <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42} maw={480}>
+        <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <h1 className={classes.title}>Vérifie ta boîte email</h1>
+            <Title order={2}>Vérifie ta boîte email</Title>
             <Text c="dimmed">
               Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
             </Text>
-            <Link to="/login" className={classes.submit} style={{ textAlign: 'center', display: 'block' }}>
+            <Button component={Link} to="/login" variant="light" fullWidth>
               Retour à la connexion
-            </Link>
+            </Button>
           </Stack>
         </Paper>
       </section>
@@ -63,7 +59,7 @@ export function RegisterPage() {
       result.error.issues.forEach((issue) => {
         const fieldName = issue.path[0];
         if (fieldName === 'email' || fieldName === 'password' || fieldName === 'prenom' || fieldName === 'nom') {
-          setError(fieldName, { type: 'manual', message: issue.message });
+          setError(fieldName as keyof RegisterFormData, { type: 'manual', message: issue.message });
         }
       });
       setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
@@ -77,7 +73,6 @@ export function RegisterPage() {
         prenom: result.data.prenom || undefined,
         nom: result.data.nom || undefined,
       });
-      setFormError(null);
       setConfirmed(true);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.');
@@ -87,81 +82,69 @@ export function RegisterPage() {
   return (
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
-        <Link to="/" className={classes.backLink}>← OfferTrail</Link>
-        <Stack gap={4} mb="xl">
-          <span className={classes.kicker}>Nouveau compte</span>
-          <h1 className={classes.title}>Creer ton espace OfferTrail.</h1>
-          <Text c="dimmed">
-            Structure ta recherche d&apos;emploi avec un CRM conçu pour les candidats sérieux.
-          </Text>
+        <Anchor component={Link} to="/" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
+          ← OfferTrail
+        </Anchor>
+
+        <Group gap="xs" mb="xs">
+          <Badge variant="light" size="sm">Nouveau compte</Badge>
+        </Group>
+        <Title order={2} mb={4}>Créer ton espace OfferTrail</Title>
+        <Text c="dimmed" size="sm" mb="xl">
+          Structure ta recherche d&apos;emploi avec un CRM conçu pour les candidats sérieux.
+        </Text>
+
+        <Stack component="form" gap="md" onSubmit={onSubmit}>
+          <SimpleGrid cols={2} spacing="md">
+            <TextInput
+              label="Prénom"
+              placeholder="Vincent"
+              autoComplete="given-name"
+              error={errors.prenom?.message}
+              {...register('prenom')}
+            />
+            <TextInput
+              label="Nom"
+              placeholder="Dupont"
+              autoComplete="family-name"
+              error={errors.nom?.message}
+              {...register('nom')}
+            />
+          </SimpleGrid>
+
+          <TextInput
+            label="Email"
+            placeholder="toi@exemple.fr"
+            type="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+
+          <PasswordInput
+            label="Mot de passe"
+            placeholder="8 caractères minimum"
+            autoComplete="new-password"
+            description="Utilise un mot de passe unique. NordPass le proposera automatiquement."
+            error={errors.password?.message}
+            {...register('password')}
+          />
+
+          {formError && (
+            <Alert color="red" variant="light">{formError}</Alert>
+          )}
+
+          <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
+            Créer mon compte
+          </Button>
         </Stack>
 
-        <Stack gap="md" component="form" onSubmit={onSubmit}>
-          <div className={classes.grid}>
-            <div className={classes.field}>
-              <label className={classes.label} htmlFor="prenom">Prenom</label>
-              <input
-                id="prenom"
-                className={classes.input}
-                type="text"
-                placeholder="Vincent"
-                autoComplete="given-name"
-                {...register('prenom')}
-              />
-            </div>
-            <div className={classes.field}>
-              <label className={classes.label} htmlFor="nom">Nom</label>
-              <input
-                id="nom"
-                className={classes.input}
-                type="text"
-                placeholder="Dupont"
-                autoComplete="family-name"
-                {...register('nom')}
-              />
-            </div>
-          </div>
-
-          <div className={classes.field}>
-            <label className={classes.label} htmlFor="email">Email</label>
-            <input
-              id="email"
-              className={classes.input}
-              type="email"
-              placeholder="toi@exemple.fr"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              {...register('email')}
-            />
-            {errors.email ? <div className={classes.helper}>{errors.email.message}</div> : null}
-          </div>
-
-          <div className={classes.field}>
-            <label className={classes.label} htmlFor="password">Mot de passe</label>
-            <input
-              id="password"
-              className={classes.input}
-              type="password"
-              placeholder="8 caracteres minimum"
-              autoComplete="new-password"
-              {...register('password')}
-            />
-            <div className={classes.hint}>Utilise un mot de passe unique. NordPass devrait maintenant le proposer automatiquement.</div>
-            {errors.password ? <div className={classes.helper}>{errors.password.message}</div> : null}
-          </div>
-
-          {formError ? <div className={classes.error}>{formError}</div> : null}
-
-          <button className={classes.submit} type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creation...' : 'Creer mon compte'}
-          </button>
-        </Stack>
-
-        <div className={classes.footer}>
-          Déjà un compte ? <Link to="/login">Se connecter</Link>
-        </div>
+        <Text size="sm" c="dimmed" mt="lg">
+          Déjà un compte ?{' '}
+          <Anchor component={Link} to="/login" size="sm">Se connecter</Anchor>
+        </Text>
       </Paper>
     </section>
   );

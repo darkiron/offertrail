@@ -1,5 +1,9 @@
 .shell {
-  composes: shell from '../styles/authSurface.module.css';
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px 72px;
+  background-color: var(--mantine-color-body);
 }
 
 .frame {
@@ -12,9 +16,9 @@
 .story {
   padding: 44px;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.2), transparent 42%),
+    radial-gradient(circle at top left, rgba(137, 180, 250, 0.15), transparent 42%),
     color-mix(in srgb, var(--mantine-color-body) 70%, #000 30%);
-  border-right: 1px solid var(--mantine-color-dark-4, #373a40);
+  border-right: 1px solid var(--mantine-color-default-border);
 }
 
 .panel {
@@ -27,77 +31,29 @@
 .eyebrow {
   display: inline-flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(56, 189, 248, 0.14);
-  font-size: 12px;
+  background: rgba(137, 180, 250, 0.14);
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
 }
 
 .storyTitle {
   margin: 18px 0 14px;
-  font-size: clamp(2rem, 4vw, 3.3rem);
-  line-height: 1;
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  line-height: 1.05;
   letter-spacing: -0.04em;
+  font-weight: 900;
 }
 
 .point {
-  padding: 16px 18px;
-  border-radius: 18px;
+  padding: 14px 16px;
+  border-radius: var(--mantine-radius-md);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.form {
-  margin-top: 28px;
-  display: grid;
-  gap: 18px;
-}
-
-.field {
-  composes: field from '../styles/authSurface.module.css';
-}
-
-.label {
-  composes: label from '../styles/authSurface.module.css';
-}
-
-.input {
-  composes: input from '../styles/authSurface.module.css';
-}
-
-.helper {
-  composes: helper from '../styles/authSurface.module.css';
-}
-
-.hint {
-  composes: hint from '../styles/authSurface.module.css';
-}
-
-.error {
-  composes: error from '../styles/authSurface.module.css';
-}
-
-.submit {
-  composes: submit from '../styles/authSurface.module.css';
-}
-
-.footer {
-  composes: footer from '../styles/authSurface.module.css';
-  margin-top: 18px;
-}
-
-.backLink {
-  composes: backLink from '../styles/authSurface.module.css';
-}
-
-.title {
-  composes: title from '../styles/authSurface.module.css';
-  margin: 0;
-  font-size: 1.8rem;
-  letter-spacing: -0.03em;
 }
 
 @media (max-width: 920px) {
@@ -107,6 +63,27 @@
 
   .story {
     border-right: none;
-    border-bottom: 1px solid var(--mantine-color-dark-4, #373a40);
+    border-bottom: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+@media (max-width: 600px) {
+  .shell {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .frame {
+    border-radius: 0;
+    border: none;
+    min-height: 100dvh;
+  }
+
+  .story {
+    display: none;
+  }
+
+  .panel {
+    padding: 32px 24px;
   }
 }
