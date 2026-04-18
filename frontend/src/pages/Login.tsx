@@ -35,8 +35,8 @@ export function LoginPage() {
   // Redirige une fois l'auth + profil chargés (évite la race condition onAuthStateChange)
   if (!isLoading && isAuthenticated) {
     const nextPath = (location.state as { from?: string } | null)?.from ?? null;
-    if (!profile || profile.plan !== 'pro') {
-      return <Navigate to="/app/pricing" replace />;
+    if (profile?.subscription_status !== 'active') {
+      return <Navigate to="/app/checkout" replace />;
     }
     return <Navigate to={nextPath ?? '/app'} replace />;
   }

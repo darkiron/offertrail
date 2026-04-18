@@ -59,8 +59,8 @@ export function AppLayout() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (sub && !sub.is_pro && !isPricingExempt) {
-      navigate('/app/pricing', { replace: true });
+    if (sub && !sub.is_active && !isPricingExempt) {
+      navigate('/app/checkout', { replace: true });
     }
   }, [sub, isPricingExempt]);
 

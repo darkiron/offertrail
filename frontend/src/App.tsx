@@ -25,6 +25,7 @@ import { ContactPage } from './pages/ContactPage';
 import { MonCompte } from './pages/MonCompte';
 import { Pricing } from './pages/Pricing';
 import { Admin } from './pages/Admin';
+import { Checkout } from './pages/Checkout';
 import { HomePage } from './pages/HomePage';
 import { CGU } from './pages/legal/CGU';
 import { Confidentialite } from './pages/legal/Confidentialite';
@@ -54,6 +55,9 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* ── Checkout — protégé (auth) mais pas subscription_status gate ── */}
+      <Route path="/app/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
 
       {/* ── App (AppLayout avec sidebar + header) ── */}
       <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

@@ -7,7 +7,7 @@ interface Profile {
   id: string
   prenom: string | null
   nom: string | null
-  plan: string
+  subscription_status: string
   role: string
   plan_started_at: string | null
   created_at: string | null
