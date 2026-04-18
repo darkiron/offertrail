@@ -37,7 +37,7 @@ export const CGU: React.FC = () => {
         </p>
         <p>
           Le service est accessible via un abonnement mensuel <strong>Plan Pro (14,99 EUR TTC / mois)</strong>.
-          Un accès gratuit limité à 25 candidatures (Plan Starter) est disponible sans abonnement.
+          L'accès au service est conditionné à la souscription d'un abonnement actif.
         </p>
       </div>
 
