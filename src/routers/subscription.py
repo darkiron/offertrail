@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_current_profile, get_db, get_jwt_payload
 from src.models import Profile
-from src.services.subscription import get_usage, activate_pro, _downgrade_to_starter
+from src.services.subscription import get_usage, activate_pro, _set_cancelled
 from src.services.stripe_service import (
     create_checkout_session, verify_webhook_signature, is_configured,
     APP_BASE_URL,
@@ -161,12 +161,12 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                     subscription_id=_s(subscription, "id"),
                 )
             else:
-                _downgrade_to_starter(db, profile)
+                _set_cancelled(db, profile)
 
     elif event["type"] in {"customer.subscription.deleted", "invoice.payment_failed"}:
         obj = event["data"]["object"]
         profile = _find_profile_for_subscription_event(db, obj)
         if profile:
-            _downgrade_to_starter(db, profile)
+            _set_cancelled(db, profile)
 
     return {"status": "ok"}

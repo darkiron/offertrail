@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_active_user_id
 from src.database import get_db
 from src.models import Candidature, CandidatureEvent
 from src.schemas.candidature_events import (
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("", response_model=list[CandidatureEventSchema])
 def list_candidature_events(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureEventSchema]:
     events = (
         db.query(CandidatureEvent)
@@ -31,7 +31,7 @@ def list_candidature_events(
 def create_candidature_event(
     body: CandidatureEventCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
     candidature = (
         db.query(Candidature)
@@ -55,7 +55,7 @@ def create_candidature_event(
 def get_candidature_event(
     event_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
     event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
     if not event:
@@ -68,7 +68,7 @@ def update_candidature_event(
     event_id: str,
     body: CandidatureEventUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
     event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
     if not event:
@@ -88,7 +88,7 @@ def update_candidature_event(
 def delete_candidature_event(
     event_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> Response:
     event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
     if not event:

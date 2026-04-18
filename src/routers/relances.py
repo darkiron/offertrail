@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_active_user_id
 from src.database import get_db
 from src.models import Candidature, Relance
 from src.schemas.relances import RelanceCreate, RelanceSchema, RelanceUpdate
@@ -12,7 +12,7 @@ router = APIRouter()
 @router.get("", response_model=list[RelanceSchema])
 def list_relances(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[RelanceSchema]:
     relances = db.query(Relance).filter(Relance.user_id == user_id).order_by(Relance.date_prevue.asc()).all()
     return [RelanceSchema.model_validate(item) for item in relances]
@@ -22,7 +22,7 @@ def list_relances(
 def create_relance(
     body: RelanceCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> RelanceSchema:
     candidature = (
         db.query(Candidature)
@@ -46,7 +46,7 @@ def create_relance(
 def get_relance(
     relance_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> RelanceSchema:
     relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
     if not relance:
@@ -59,7 +59,7 @@ def update_relance(
     relance_id: str,
     body: RelanceUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> RelanceSchema:
     relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
     if not relance:
@@ -79,7 +79,7 @@ def update_relance(
 def delete_relance(
     relance_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> Response:
     relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
     if not relance:

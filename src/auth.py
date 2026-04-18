@@ -164,6 +164,26 @@ def get_current_profile(
     return profile
 
 
+def get_active_profile(
+    profile: Profile = Depends(get_current_profile),
+) -> Profile:
+    """Réservé aux abonnés actifs — lève 402 si subscription_status != 'active'.
+    Les admins bypassent cette vérification."""
+    if profile.role == "admin":
+        return profile
+    if profile.subscription_status != "active":
+        raise HTTPException(
+            status_code=402,
+            detail={"code": "PAYMENT_REQUIRED", "message": "Abonnement requis"},
+        )
+    return profile
+
+
+def get_active_user_id(profile: Profile = Depends(get_active_profile)) -> str:
+    """Version sécurisée de get_current_user_id — exige subscription_status='active'."""
+    return profile.id
+
+
 def get_admin_profile(
     profile: Profile = Depends(get_current_profile),
 ) -> Profile:

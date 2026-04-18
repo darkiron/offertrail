@@ -129,11 +129,7 @@ export interface AuthResponse {
 }
 
 export interface SubscriptionStatus {
-  plan: 'starter' | 'pro' | string;
-  is_pro: boolean;
-  candidatures_count: number;
-  candidatures_max: number;
-  limite_atteinte: boolean;
-  alerte_80: boolean;
+  subscription_status: 'pending' | 'active' | 'cancelled' | string;
+  is_active: boolean;
   plan_started_at: string | null;
 }

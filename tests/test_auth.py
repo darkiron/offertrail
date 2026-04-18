@@ -10,7 +10,7 @@ def test_me_authenticated(client, user_a):
     assert response.status_code == 200
     payload = response.json()
     assert payload["id"] == user_a["user_id"]
-    assert payload["plan"] == "starter"
+    assert payload["subscription_status"] == "active"
 
 
 def test_me_unauthenticated(client):

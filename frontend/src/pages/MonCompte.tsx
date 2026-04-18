@@ -151,10 +151,10 @@ export function MonCompte() {
           <Paper p="lg" radius="lg" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Abonnement</Text>
             <Group justify="space-between" mb="sm">
-              {sub?.is_pro && (
+              {sub?.is_active && (
                 <Badge variant="light" color="green" size="lg">Pro</Badge>
               )}
-              {sub?.is_pro ? (
+              {sub?.is_active ? (
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
                   {portalLoading ? 'Redirection...' : 'Gérer via Stripe →'}
                 </Button>
@@ -164,7 +164,7 @@ export function MonCompte() {
                 </Button>
               )}
             </Group>
-            {sub?.is_pro && (
+            {sub?.is_active && (
               <Text size="sm" c="dimmed">
                 Plan démarré le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
               </Text>
@@ -174,7 +174,7 @@ export function MonCompte() {
           {/* Factures — portail Stripe si abonnement actif */}
           <Paper p="lg" radius="lg" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Factures</Text>
-            {sub?.is_pro ? (
+            {sub?.is_active ? (
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed">Historique et téléchargement via Stripe</Text>
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>

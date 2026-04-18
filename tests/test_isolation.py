@@ -96,43 +96,43 @@ class TestEtablissementsAccess:
         assert response.status_code == 401
 
 
-class TestSubscriptionLimits:
-    def test_starter_limit_at_25(self, client, user_a, ets):
+class TestSubscriptionGate:
+    def test_pending_user_blocked_from_candidatures(self, client, ets):
+        """Un utilisateur pending reçoit 402 sur les endpoints protégés."""
+        from uuid import uuid4
+        from tests.conftest import make_token
+
+        user_id = str(uuid4())
+        email = f"pending-{uuid4().hex}@example.com"
         db = SessionLocal()
         try:
-            db.add_all(
-                [
-                    Candidature(
-                        user_id=user_a["user_id"],
-                        etablissement_id=ets["id"],
-                        poste=f"Poste {index}",
-                        statut="envoyee",
-                    )
-                    for index in range(25)
-                ]
-            )
+            profile = Profile(id=user_id, prenom="Pending", nom="User",
+                              subscription_status="pending", is_active=True)
+            db.add(profile)
             db.commit()
         finally:
             db.close()
 
+        token = make_token(user_id, email)
+        headers = {"Authorization": f"Bearer {token}"}
+
         response = client.post(
             "/candidatures",
-            headers=user_a["headers"],
+            headers=headers,
             json={
                 "etablissement_id": ets["id"],
-                "poste": "Poste limite",
+                "poste": "Poste test",
                 "statut": "envoyee",
             },
         )
 
         assert response.status_code == 402
-        assert response.json()["detail"]["code"] == "LIMIT_REACHED"
+        assert response.json()["detail"]["code"] == "PAYMENT_REQUIRED"
 
-    def test_pro_user_has_no_limit(self, client, user_a, ets):
+    def test_active_user_can_create_unlimited_candidatures(self, client, user_a, ets):
+        """Un utilisateur actif peut créer des candidatures sans limite."""
         db = SessionLocal()
         try:
-            user = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
-            user.plan = "pro"
             db.add_all(
                 [
                     Candidature(
@@ -141,7 +141,7 @@ class TestSubscriptionLimits:
                         poste=f"Poste {index}",
                         statut="envoyee",
                     )
-                    for index in range(25)
+                    for index in range(30)
                 ]
             )
             db.commit()
@@ -153,7 +153,7 @@ class TestSubscriptionLimits:
             headers=user_a["headers"],
             json={
                 "etablissement_id": ets["id"],
-                "poste": "Poste 26",
+                "poste": "Poste 31",
                 "statut": "envoyee",
             },
         )

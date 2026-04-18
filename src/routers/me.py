@@ -4,10 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id, own_candidature
+from src.auth import get_active_user_id, own_candidature
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement, Relance, Profile
-from src.services.subscription import check_can_create
+from src.models import Candidature, CandidatureEvent, Etablissement, Relance
 from src.schemas.me import (
     CandidatureCreate,
     CandidatureSchema,
@@ -26,7 +25,7 @@ def list_my_candidatures(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> PaginatedCandidatures:
     query = db.query(Candidature).filter(Candidature.user_id == user_id)
     total = query.count()
@@ -48,16 +47,11 @@ def list_my_candidatures(
 def create_my_candidature(
     payload: CandidatureCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
     etablissement = db.query(Etablissement).filter(Etablissement.id == payload.etablissement_id).first()
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
-
-    profile = db.query(Profile).filter(Profile.id == user_id).first()
-    if profile is None:
-        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
-    check_can_create(db, profile)
 
     candidature = Candidature(
         **payload.model_dump(),
@@ -101,7 +95,7 @@ def get_my_candidature_history(
 @router.get("/stats", response_model=MeStatsResponse)
 def get_my_stats(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> MeStatsResponse:
     candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
     total = len(candidatures)
@@ -159,7 +153,7 @@ def get_my_stats(
 @router.get("/relances/dues", response_model=list[RelanceSchema])
 def get_due_relances(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[RelanceSchema]:
     today_end = datetime.combine(date.today(), time.max)
     relances = (
@@ -178,7 +172,7 @@ def get_due_relances(
 @router.get("/pipeline", response_model=list[PipelineBucket])
 def get_pipeline(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[PipelineBucket]:
     rows = (
         db.query(Candidature.statut, func.count(Candidature.id))
