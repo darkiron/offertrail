@@ -129,7 +129,7 @@ export interface AuthResponse {
 }
 
 export interface SubscriptionStatus {
-  plan: 'starter' | 'pro' | string;
+  plan: 'free' | 'pro' | string;
   is_pro: boolean;
   candidatures_count: number;
   candidatures_max: number;

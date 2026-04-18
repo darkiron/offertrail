@@ -10,7 +10,7 @@ import classes from './Admin.module.css';
 interface AdminStats {
   total_users: number;
   pro_users: number;
-  starter_users: number;
+  free_users: number;
   total_candidatures: number;
   mrr_estimate: number;
 }
@@ -31,7 +31,7 @@ interface AdminUserRow {
 const defaultStats: AdminStats = {
   total_users: 0,
   pro_users: 0,
-  starter_users: 0,
+  free_users: 0,
   total_candidatures: 0,
   mrr_estimate: 0,
 };
@@ -95,7 +95,7 @@ export function Admin() {
     setUsers(usersResponse.data);
   };
 
-  const handlePlanChange = async (userId: string, plan: 'starter' | 'pro') => {
+  const handlePlanChange = async (userId: string, plan: 'free' | 'pro') => {
     try {
       setPendingAction(`${userId}:${plan}`);
       setError(null);
@@ -209,7 +209,7 @@ export function Admin() {
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={user.plan === 'pro' ? 'green' : 'gray'} size="sm">
-                      {user.plan}
+                      {user.plan === 'pro' ? 'Pro' : 'Gratuit'}
                     </Badge>
                   </Table.Td>
                   <Table.Td>
@@ -241,10 +241,11 @@ export function Admin() {
                         <Button
                           size="xs"
                           variant="light"
-                          disabled={pendingAction === `${user.id}:starter` || !user.is_active}
-                          onClick={() => void handlePlanChange(user.id, 'starter')}
+                          color="gray"
+                          disabled={pendingAction === `${user.id}:free` || !user.is_active}
+                          onClick={() => void handlePlanChange(user.id, 'free')}
                         >
-                          Révoquer Pro
+                          Passer en Gratuit
                         </Button>
                       )}
                       <Button
