@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_active_user_id
 from src.database import get_db
 from src.models import Contact, ContactInteraction
 from src.schemas.contact_interactions import (
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("", response_model=list[ContactInteractionSchema])
 def list_contact_interactions(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[ContactInteractionSchema]:
     interactions = (
         db.query(ContactInteraction)
@@ -31,7 +31,7 @@ def list_contact_interactions(
 def create_contact_interaction(
     body: ContactInteractionCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
     contact = db.query(Contact).filter(Contact.id == body.contact_id).first()
     if not contact:
@@ -51,7 +51,7 @@ def create_contact_interaction(
 def get_contact_interaction(
     interaction_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
     interaction = (
         db.query(ContactInteraction)
@@ -68,7 +68,7 @@ def update_contact_interaction(
     interaction_id: str,
     body: ContactInteractionUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
     interaction = (
         db.query(ContactInteraction)
@@ -92,7 +92,7 @@ def update_contact_interaction(
 def delete_contact_interaction(
     interaction_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> Response:
     interaction = (
         db.query(ContactInteraction)

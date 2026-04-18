@@ -52,7 +52,7 @@ export function Pricing() {
 
       {sub ? (
         <Text c="dimmed" size="sm">
-          Plan actuel : <strong>{sub.is_pro ? 'Pro' : 'Aucun abonnement actif'}</strong>
+          Plan actuel : <strong>{sub.is_active ? 'Pro' : 'Aucun abonnement actif'}</strong>
         </Text>
       ) : null}
 
@@ -65,7 +65,7 @@ export function Pricing() {
               <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
             </Text>
           </Stack>
-          {sub?.is_pro ? (
+          {sub?.is_active ? (
             <Badge variant="light" color="green" size="sm">Actif</Badge>
           ) : null}
         </Group>
@@ -88,7 +88,7 @@ export function Pricing() {
           ))}
         </List>
 
-        {sub?.is_pro ? (
+        {sub?.is_active ? (
           <Text size="sm" c="dimmed">
             Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
           </Text>

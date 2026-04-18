@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_active_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement, Profile
+from src.models import Candidature, CandidatureEvent, Etablissement
 from src.schemas.candidature_events import CandidatureEventSchema
 from src.schemas.candidatures import CandidatureCreate, CandidatureSchema, CandidatureUpdate
-from src.services.subscription import check_can_create
 
 router = APIRouter()
 
@@ -14,7 +13,7 @@ router = APIRouter()
 @router.get("", response_model=list[CandidatureSchema])
 def list_candidatures(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureSchema]:
     candidatures = (
         db.query(Candidature)
@@ -29,12 +28,8 @@ def list_candidatures(
 def create_candidature(
     body: CandidatureCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
-    profile = db.query(Profile).filter(Profile.id == user_id).first()
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
-
     if not body.etablissement_id:
         raise HTTPException(status_code=422, detail="etablissement_id requis")
 
@@ -48,8 +43,6 @@ def create_candidature(
         client_final = db.query(Etablissement).filter(Etablissement.id == body.client_final_id).first()
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
-
-    check_can_create(db, profile)
 
     cand = Candidature(
         **body.model_dump(exclude={"user_id"}),
@@ -75,7 +68,7 @@ def create_candidature(
 def get_candidature(
     candidature_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
     cand = (
         db.query(Candidature)
@@ -92,7 +85,7 @@ def update_candidature(
     candidature_id: str,
     body: CandidatureUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
     cand = (
         db.query(Candidature)
@@ -146,7 +139,7 @@ def update_candidature(
 def get_candidature_events(
     candidature_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureEventSchema]:
     cand = (
         db.query(Candidature)
@@ -172,7 +165,7 @@ def get_candidature_events(
 def delete_candidature(
     candidature_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> Response:
     cand = (
         db.query(Candidature)

@@ -1,86 +1,18 @@
 .shell {
-  composes: shell from '../styles/authSurface.module.css';
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px 72px;
+  background-color: var(--mantine-color-body);
 }
 
 .card {
-  composes: card from '../styles/authSurface.module.css';
-  width: min(760px, 100%);
+  width: min(560px, 100%);
 }
 
-.kicker {
-  composes: kicker from '../styles/authSurface.module.css';
-}
-
-.title {
-  composes: title from '../styles/authSurface.module.css';
-}
-
-.badge {
-  min-width: 180px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.badgeTitle {
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--mantine-color-dimmed);
-  font-weight: 800;
-}
-
-.badgeValue {
-  margin-top: 8px;
-  font-size: 1.5rem;
-  font-weight: 900;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.field {
-  composes: field from '../styles/authSurface.module.css';
-}
-
-.label {
-  composes: label from '../styles/authSurface.module.css';
-}
-
-.input {
-  composes: input from '../styles/authSurface.module.css';
-}
-
-.helper {
-  composes: helper from '../styles/authSurface.module.css';
-}
-
-.hint {
-  composes: hint from '../styles/authSurface.module.css';
-}
-
-.error {
-  composes: error from '../styles/authSurface.module.css';
-}
-
-.submit {
-  composes: submit from '../styles/authSurface.module.css';
-}
-
-.footer {
-  composes: footer from '../styles/authSurface.module.css';
-}
-
-.backLink {
-  composes: backLink from '../styles/authSurface.module.css';
-}
-
-@media (max-width: 760px) {
-  .grid {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+  .shell {
+    padding: 24px 16px 48px;
+    align-items: flex-start;
   }
 }

@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
-import { Paper, Stack, Text } from '@mantine/core';
+import {
+  Alert, Anchor, Badge, Button, Group, Paper,
+  Stack, Text, TextInput, Title,
+} from '@mantine/core';
 import { supabase } from '../lib/supabase';
 import classes from './Auth.module.css';
 
@@ -45,41 +48,42 @@ export function ForgotPasswordPage() {
 
   return (
     <section className={classes.shell}>
-      <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42} maw={640}>
-        <Stack gap={4} mb="xl">
-          <span className={classes.kicker}>Réinitialisation</span>
-          <h1 className={classes.title}>Mot de passe oublié</h1>
-          <Text c="dimmed">Entre ton email. Si un compte existe, un lien de réinitialisation sera envoyé.</Text>
+      <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
+        <Anchor component={Link} to="/login" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
+          ← Retour à la connexion
+        </Anchor>
+
+        <Group gap="xs" mb="xs">
+          <Badge variant="light" size="sm">Réinitialisation</Badge>
+        </Group>
+        <Title order={2} mb={4}>Mot de passe oublié</Title>
+        <Text c="dimmed" size="sm" mb="xl">
+          Entre ton email. Si un compte existe, un lien de réinitialisation sera envoyé.
+        </Text>
+
+        <Stack component="form" gap="md" onSubmit={onSubmit}>
+          <TextInput
+            label="Email"
+            placeholder="toi@exemple.fr"
+            type="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+
+          {message && (
+            <Alert color="green" variant="light">{message}</Alert>
+          )}
+          {error && (
+            <Alert color="red" variant="light">{error}</Alert>
+          )}
+
+          <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
+            Envoyer le lien
+          </Button>
         </Stack>
-
-        <Stack gap="md" component="form" onSubmit={onSubmit}>
-          <div className={classes.field}>
-            <label className={classes.label} htmlFor="email">Email</label>
-            <input
-              id="email"
-              className={classes.input}
-              type="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="toi@exemple.fr"
-              {...register('email')}
-            />
-            {errors.email ? <div className={classes.helper}>{errors.email.message}</div> : null}
-          </div>
-
-          {message ? <Text c="dimmed" size="sm">{message}</Text> : null}
-          {error ? <div className={classes.error}>{error}</div> : null}
-
-          <button className={classes.submit} type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Envoi...' : 'Envoyer le lien'}
-          </button>
-        </Stack>
-
-        <div className={classes.footer}>
-          <Link to="/login">Retour à la connexion</Link>
-        </div>
       </Paper>
     </section>
   );

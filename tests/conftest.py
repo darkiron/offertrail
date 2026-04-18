@@ -278,7 +278,7 @@ def user_a(client):
             id=user_id,
             prenom="User",
             nom="A",
-            plan="starter",
+            subscription_status="active",
             is_active=True,
         )
         db.add(profile)
@@ -305,7 +305,7 @@ def user_b(client):
             id=user_id,
             prenom="User",
             nom="B",
-            plan="starter",
+            subscription_status="active",
             is_active=True,
         )
         db.add(profile)

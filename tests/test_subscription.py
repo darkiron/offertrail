@@ -3,18 +3,51 @@ from src.database import SessionLocal
 from src.models import Profile
 
 
-def test_get_subscription_starter(client, user_a):
+def test_get_subscription_me(client, user_a):
     response = client.get("/subscription/me", headers=user_a["headers"])
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["plan"] == "starter"
-    assert payload["is_pro"] is False
-    assert payload["candidatures_max"] == 25
+    assert payload["subscription_status"] == "active"
+    assert payload["is_active"] is True
+
+
+def test_get_subscription_pending_user(client):
+    """Un utilisateur pending peut lire son statut mais est bloqué ailleurs."""
+    from uuid import uuid4
+    from tests.conftest import make_token
+
+    user_id = str(uuid4())
+    email = f"pending-{uuid4().hex}@example.com"
+    db = SessionLocal()
+    try:
+        profile = Profile(id=user_id, prenom="Pending", nom="User",
+                          subscription_status="pending", is_active=True)
+        db.add(profile)
+        db.commit()
+    finally:
+        db.close()
+
+    token = make_token(user_id, email)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.get("/subscription/me", headers=headers)
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["subscription_status"] == "pending"
+    assert payload["is_active"] is False
 
 
 def test_upgrade_to_pro(client, user_a, monkeypatch):
-    # Sans Stripe configuré → upgrade simulé directement
+    # Force subscription_status à pending pour tester l'upgrade
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.subscription_status = "pending"
+        db.commit()
+    finally:
+        db.close()
+
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: False)
     response = client.post("/subscription/checkout", headers=user_a["headers"])
 
@@ -22,10 +55,9 @@ def test_upgrade_to_pro(client, user_a, monkeypatch):
     payload = response.json()
     assert payload["mode"] == "simulated"
 
-    # Vérifier que l'upgrade a bien eu lieu
     me = client.get("/subscription/me", headers=user_a["headers"])
-    assert me.json()["plan"] == "pro"
-    assert me.json()["is_pro"] is True
+    assert me.json()["subscription_status"] == "active"
+    assert me.json()["is_active"] is True
 
 
 def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch):
@@ -71,19 +103,19 @@ def test_webhook_checkout_completion_activates_profile(client, user_a, monkeypat
     try:
         profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
         assert profile is not None
-        assert profile.plan == "pro"
+        assert profile.subscription_status == "active"
         assert profile.stripe_customer_id == "cus_test_123"
         assert profile.stripe_subscription_id == "sub_test_123"
     finally:
         db.close()
 
 
-def test_webhook_subscription_deleted_downgrades_profile(client, user_a, monkeypatch):
+def test_webhook_subscription_deleted_cancels_profile(client, user_a, monkeypatch):
     db = SessionLocal()
     try:
         profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
         assert profile is not None
-        profile.plan = "pro"
+        profile.subscription_status = "active"
         profile.stripe_customer_id = "cus_test_123"
         profile.stripe_subscription_id = "sub_test_123"
         db.commit()
@@ -115,7 +147,7 @@ def test_webhook_subscription_deleted_downgrades_profile(client, user_a, monkeyp
     try:
         profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
         assert profile is not None
-        assert profile.plan == "starter"
+        assert profile.subscription_status == "cancelled"
         assert profile.stripe_subscription_id is None
     finally:
         db.close()
