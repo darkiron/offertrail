@@ -59,10 +59,10 @@ export function AppLayout() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (sub && !sub.is_active && !isPricingExempt) {
+    if (sub && !sub.is_active && !isPricingExempt && profile?.role !== 'admin') {
       navigate('/app/checkout', { replace: true });
     }
-  }, [sub, isPricingExempt]);
+  }, [sub, isPricingExempt, profile]);
 
   const isActive = (to: string) =>
     to === '/app'

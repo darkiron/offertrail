@@ -14,9 +14,10 @@ export function ProtectedRoute({ children }: PropsWithChildren) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  // Abonnement requis pour tout chemin sauf /app/checkout lui-même
+  // Abonnement requis — les admins passent toujours
   if (
     profile &&
+    profile.role !== 'admin' &&
     profile.subscription_status !== 'active' &&
     location.pathname !== CHECKOUT_PATH
   ) {

@@ -6,7 +6,6 @@ import {
   Skeleton, Stack, Table, Text, TextInput, Title,
 } from '@mantine/core';
 import {
-  AreaChart, Area,
   BarChart, Bar,
   CartesianGrid,
   LineChart, Line,
@@ -24,6 +23,17 @@ const accentColor  = 'var(--mantine-color-blue-6)';
 const successColor = 'var(--mantine-color-green-6)';
 const warningColor = 'var(--mantine-color-orange-5)';
 const dangerColor  = 'var(--mantine-color-red-6)';
+
+const TICK  = { fill: 'var(--mantine-color-dimmed)', fontSize: 11 } as const;
+const GRID  = { stroke: 'var(--mantine-color-default-border)', strokeDasharray: '3 3' } as const;
+const TT_STYLE = {
+  background: 'var(--mantine-color-body)',
+  border: '1px solid var(--mantine-color-default-border)',
+  borderRadius: 8,
+  color: 'var(--mantine-color-text)',
+  fontSize: 12,
+} as const;
+const LEGEND_STYLE = { color: 'var(--mantine-color-text)', fontSize: 12 } as const;
 
 interface AdminStats {
   mrr: number;
@@ -346,10 +356,10 @@ export function Admin() {
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={mrrData} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(v) => [`${Number(v).toFixed(2)} €`, 'MRR']} />
+                    <CartesianGrid {...GRID} />
+                    <XAxis dataKey="month" tick={TICK} />
+                    <YAxis tick={TICK} />
+                    <Tooltip contentStyle={TT_STYLE} formatter={(v) => [`${Number(v).toFixed(2)} €`, 'MRR']} />
                     <Line type="monotone" dataKey="mrr" stroke={accentColor} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -362,11 +372,11 @@ export function Admin() {
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={signups} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
+                    <CartesianGrid {...GRID} />
+                    <XAxis dataKey="date" tick={TICK} interval={4} />
+                    <YAxis tick={TICK} allowDecimals={false} />
+                    <Tooltip contentStyle={TT_STYLE} />
+                    <Legend wrapperStyle={LEGEND_STYLE} />
                     <Line type="monotone" dataKey="signups" stroke={accentColor} strokeWidth={2} dot={false} name="Inscrits" />
                     <Line type="monotone" dataKey="paid" stroke={successColor} strokeWidth={2} dot={false} name="Payants" />
                   </LineChart>
@@ -380,10 +390,10 @@ export function Admin() {
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={cands} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
+                    <CartesianGrid {...GRID} />
+                    <XAxis dataKey="date" tick={TICK} interval={4} />
+                    <YAxis tick={TICK} allowDecimals={false} />
+                    <Tooltip contentStyle={TT_STYLE} />
                     <Bar dataKey="count" fill={accentColor} name="Candidatures" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -405,8 +415,8 @@ export function Admin() {
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip contentStyle={TT_STYLE} />
+                    <Legend wrapperStyle={LEGEND_STYLE} />
                   </PieChart>
                 </ResponsiveContainer>
               )}

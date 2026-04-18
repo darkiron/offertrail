@@ -167,7 +167,10 @@ def get_current_profile(
 def get_active_profile(
     profile: Profile = Depends(get_current_profile),
 ) -> Profile:
-    """Réservé aux abonnés actifs — lève 402 si subscription_status != 'active'."""
+    """Réservé aux abonnés actifs — lève 402 si subscription_status != 'active'.
+    Les admins bypassent cette vérification."""
+    if profile.role == "admin":
+        return profile
     if profile.subscription_status != "active":
         raise HTTPException(
             status_code=402,
