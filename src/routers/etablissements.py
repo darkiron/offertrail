@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_user_id
+from src.auth import get_active_user_id
 from src.database import get_db
 from src.models import Candidature, Etablissement
 from src.schemas.etablissements import (
@@ -77,7 +77,7 @@ def build_schema(etablissement: Etablissement, candidatures: list[Candidature]) 
 @router.get("", response_model=list[EtablissementSchema])
 def list_etablissements(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> list[EtablissementSchema]:
     etablissements = db.query(Etablissement).order_by(Etablissement.nom.asc()).all()
     candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
@@ -92,7 +92,7 @@ def list_etablissements(
 def get_etablissement(
     etablissement_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> EtablissementSchema:
     etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     if etablissement is None:
@@ -111,7 +111,7 @@ def get_etablissement(
 def create_etablissement(
     payload: EtablissementCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> EtablissementSchema:
     etablissement = Etablissement(
         nom=payload.nom,
@@ -133,7 +133,7 @@ def update_etablissement(
     etablissement_id: str,
     payload: EtablissementUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> EtablissementSchema:
     etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     if etablissement is None:
@@ -164,7 +164,7 @@ def update_etablissement(
 def delete_etablissement(
     etablissement_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ) -> dict[str, bool]:
     etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     if etablissement is None:

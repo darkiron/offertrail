@@ -22,7 +22,7 @@ class ProfileSchema(BaseModel):
     id: str
     prenom: Optional[str]
     nom: Optional[str]
-    plan: str
+    subscription_status: str
     role: str
     plan_started_at: Optional[str] = None
     created_at: Optional[str] = None
@@ -35,7 +35,7 @@ class ProfileSchema(BaseModel):
             id=profile.id,
             prenom=profile.prenom,
             nom=profile.nom,
-            plan=profile.plan,
+            subscription_status=profile.subscription_status,
             role=profile.role,
             plan_started_at=profile.plan_started_at.isoformat() if profile.plan_started_at else None,
             created_at=profile.created_at.isoformat() if profile.created_at else None,

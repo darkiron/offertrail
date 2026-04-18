@@ -251,7 +251,7 @@ class Profile(Base):
     id                     = Column(String, primary_key=True)  # = auth.users.id (UUID Supabase)
     prenom                 = Column(String)
     nom                    = Column(String)
-    plan                   = Column(String, default="starter")  # starter | pro
+    subscription_status    = Column(String, default="pending")  # pending | active | cancelled
     role                   = Column(String, default="user")      # user | admin
     plan_started_at        = Column(DateTime, nullable=True)
     plan_expires_at        = Column(DateTime, nullable=True)
