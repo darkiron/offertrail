@@ -4,8 +4,8 @@ import { Resend } from "npm:resend";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET")!;
 
-const FROM = "OfferTrail <noreply@offertrail.fr>";
-const BRAND_COLOR = "#89b4fa"; // Catppuccin blue
+const FROM = "OfferTrail <noreply@craftcodes.fr>";
+const BRAND_COLOR = "#89b4fa";
 
 function baseTemplate(content: string): string {
   return `<!DOCTYPE html>
@@ -187,10 +187,11 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { email_action_type, token_hash, redirect_to, site_url, token } = emailData;
-  const siteUrl = site_url ?? "https://offertrail.fr";
-  const redirectUrl = redirect_to ?? `${siteUrl}/app`;
-  const confirmUrl = `${siteUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirectUrl}`;
+  const { email_action_type, token_hash, redirect_to, site_url } = emailData;
+  // site_url from Supabase = "https://<project>.supabase.co/auth/v1" (already includes /auth/v1)
+  const authBase = site_url ?? "https://plctgoibhbbmozzagfcm.supabase.co/auth/v1";
+  const redirectUrl = redirect_to ?? "https://offertrail.craftcodes.fr/app";
+  const confirmUrl = `${authBase}/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirectUrl}`;
 
   const { subject, html } = buildEmail(
     email_action_type!,
