@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
-DEFAULT_ALLOWED_ORIGIN_REGEX = r"^https://([a-z0-9-]+\.)?offertrail\.fr$"
+DEFAULT_ALLOWED_ORIGIN_REGEX = r"^https://(([a-z0-9-]+\.)?offertrail\.fr|offertrail\.craftcodes\.fr)$"
 
 
 def _parse_allowed_origins(raw_value: str | None) -> list[str]:
