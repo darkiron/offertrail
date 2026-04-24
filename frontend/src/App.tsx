@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { supabase } from './lib/supabase';
 
 import { Dashboard } from './pages/Dashboard';
 import { ApplicationsPage } from './pages/ApplicationsPage';
@@ -34,6 +35,17 @@ import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
 
 function AppRoutes() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password', { replace: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   return (
     <Routes>
       {/* ── Landing public (LandingLayout) ── */}

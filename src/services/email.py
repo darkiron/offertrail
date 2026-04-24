@@ -20,7 +20,7 @@ def send_password_reset(to_email: str, reset_url: str) -> bool:
     try:
         resend.Emails.send(
             {
-                "from": "OfferTrail <noreply@offertrail.fr>",
+                "from": "OfferTrail <noreply@craftcodes.fr>",
                 "to": [to_email],
                 "subject": "Reinitialisation de ton mot de passe OfferTrail",
                 "html": f"""
