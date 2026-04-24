@@ -14,5 +14,16 @@ def _uuid_to_str(v: object) -> str | None:
     return str(v)
 
 
+def _empty_str_to_none(v: object) -> str | None:
+    """Coerce empty strings to None for nullable UUID input fields.
+
+    Prevents psycopg2 DataError when a form clears a UUID field and sends "".
+    """
+    if v == "" or v is None:
+        return None
+    return str(v)
+
+
 UuidStr = Annotated[str, BeforeValidator(str)]
 OptUuidStr = Annotated[str | None, BeforeValidator(_uuid_to_str)]
+NullableUuidStr = Annotated[str | None, BeforeValidator(_empty_str_to_none)]
