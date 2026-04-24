@@ -3,12 +3,12 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas._types import UuidStr, OptUuidStr
+from src.schemas._types import UuidStr, OptUuidStr, NullableUuidStr
 
 
 class RelanceCreate(BaseModel):
     candidature_id: str
-    contact_id: Optional[str] = None
+    contact_id: NullableUuidStr = None
     date_prevue: datetime
     canal: Optional[str] = None
     contenu: Optional[str] = None
@@ -16,7 +16,7 @@ class RelanceCreate(BaseModel):
 
 
 class RelanceUpdate(BaseModel):
-    contact_id: Optional[str] = None
+    contact_id: NullableUuidStr = None
     date_prevue: Optional[datetime] = None
     date_effectuee: Optional[datetime] = None
     canal: Optional[str] = None

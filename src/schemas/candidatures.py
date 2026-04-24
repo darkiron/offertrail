@@ -3,13 +3,13 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas._types import UuidStr, OptUuidStr
+from src.schemas._types import UuidStr, OptUuidStr, NullableUuidStr
 
 
 class CandidatureCreate(BaseModel):
     etablissement_id: str
-    client_final_id: Optional[str] = None
-    succursale_id: Optional[str] = None
+    client_final_id: NullableUuidStr = None
+    succursale_id: NullableUuidStr = None
     poste: str
     url_offre: Optional[str] = None
     description: Optional[str] = None
@@ -22,9 +22,9 @@ class CandidatureCreate(BaseModel):
 
 
 class CandidatureUpdate(BaseModel):
-    etablissement_id: Optional[str] = None
-    client_final_id: Optional[str] = None
-    succursale_id: Optional[str] = None
+    etablissement_id: NullableUuidStr = None
+    client_final_id: NullableUuidStr = None
+    succursale_id: NullableUuidStr = None
     poste: Optional[str] = None
     url_offre: Optional[str] = None
     description: Optional[str] = None
