@@ -52,7 +52,7 @@ export function ApplicationDetails() {
 
   const {
     data, organizations, loading, error, refetch,
-    updateStatus, addNote, markFollowup, addEvent,
+    isUpdatingStatus, updateStatus, addNote, markFollowup, addEvent,
     linkContact, createContact, setFinalCustomer,
   } = useApplicationDetail(numId);
 
@@ -130,7 +130,7 @@ export function ApplicationDetails() {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <Link to="/" className={classes.back}>← Retour au tableau de bord</Link>
+      <Link to="/app/candidatures" className={classes.back}>← Retour aux candidatures</Link>
 
       {/* Hero */}
       <Paper className={classes.hero} p="xl" radius="lg" withBorder>
@@ -151,6 +151,8 @@ export function ApplicationDetails() {
                 onChange={(v) => v && handleUpdateStatus(v)}
                 size="xs"
                 className={classes.statusSelect}
+                disabled={isUpdatingStatus}
+                rightSection={isUpdatingStatus ? <Loader size={12} /> : undefined}
               />
               <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>Réponse reçue</Button>
               <Button variant="primary" size="small" onClick={handleMarkFollowup}>Relance faite</Button>

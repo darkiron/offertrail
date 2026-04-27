@@ -40,7 +40,7 @@ def to_model_type(value: str | None) -> str:
 
 def build_schema(etablissement: Etablissement, candidatures: list[Candidature]) -> EtablissementSchema:
     total = len(candidatures)
-    responded = [cand for cand in candidatures if cand.date_reponse is not None or cand.statut in {"refusee", "entretien", "offre_recue", "acceptee"}]
+    responded = [cand for cand in candidatures if cand.date_reponse is not None or cand.statut in {"entretien", "offre_recue", "acceptee"}]
     positive = [cand for cand in candidatures if cand.statut in {"entretien", "offre_recue", "acceptee"}]
     ghosting = [cand for cand in candidatures if cand.statut == "ghosting"]
     delays = [

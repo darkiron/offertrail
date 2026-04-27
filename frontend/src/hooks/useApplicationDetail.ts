@@ -61,6 +61,7 @@ export function useApplicationDetail(id: number | undefined) {
     loading: detailQuery.isLoading,
     error: detailQuery.error,
     refetch: detailQuery.refetch,
+    isUpdatingStatus: updateStatus.isPending,
     updateStatus: updateStatus.mutateAsync,
     addNote: addNote.mutateAsync,
     markFollowup: markFollowup.mutateAsync,
