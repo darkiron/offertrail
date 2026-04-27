@@ -134,8 +134,16 @@
   color: var(--text-main);
 }
 
+.navBurger {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
 @media (max-width: 720px) {
   .navCenter { display: none; }
+  .navActions { display: none; }
+  .navBurger { display: flex; }
   .navInner, .footerInner { padding-left: 20px; padding-right: 20px; }
   .footerInner { flex-direction: column; align-items: flex-start; }
 }

@@ -184,7 +184,7 @@ def _map_etablissement_to_legacy(etablissement: Etablissement, candidatures: lis
         candidature
         for candidature in candidatures
         if candidature.date_reponse is not None
-        or candidature.statut in {"refusee", "entretien", "offre_recue", "acceptee"}
+        or candidature.statut in {"entretien", "offre_recue", "acceptee"}
     ]
     positive = [
         candidature

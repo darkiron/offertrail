@@ -136,7 +136,7 @@ export const OrganizationsPage: React.FC = () => {
           </Text>
 
           <Group mt="lg" mb="xl">
-            <Anchor component={Link} to="/organizations/maintenance">
+            <Anchor component={Link} to="/app/etablissements/maintenance">
               <Badge variant="filled" size="md" radius="xl">Maintenance ETS →</Badge>
             </Anchor>
           </Group>

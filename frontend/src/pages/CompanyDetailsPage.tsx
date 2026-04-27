@@ -134,7 +134,7 @@ export const CompanyDetailsPage: React.FC = () => {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <Anchor component={Link} to="/organizations" c="dimmed" size="sm">← Retour aux établissements</Anchor>
+      <Anchor component={Link} to="/app/etablissements" c="dimmed" size="sm">← Retour aux établissements</Anchor>
 
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
         <Paper className={classes.hero} p="xl" radius="lg" withBorder>
