@@ -104,10 +104,12 @@ def update_candidature(
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
+    # Skip None for NOT NULL columns — frontend may send "" for unchanged UUID fields
+    _not_nullable = {"etablissement_id", "poste"}
     updates = {
         field: value
         for field, value in body.model_dump(exclude_unset=True).items()
-        if field != "user_id"
+        if field != "user_id" and not (field in _not_nullable and value is None)
     }
     old_status = cand.statut
     if updates:
