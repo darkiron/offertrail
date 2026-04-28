@@ -12,6 +12,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
+from src.enums import CandidatureStatut
+
 
 def gen_uuid() -> str:
     return str(uuid.uuid4())
@@ -111,11 +113,7 @@ class Contact(Base):
 # COUCHE PRIVÉE
 # ============================================================
 
-STATUTS_CANDIDATURE = [
-    "brouillon", "envoyee", "en_attente", "relancee",
-    "entretien", "test_technique", "offre_recue",
-    "acceptee", "refusee", "ghosting", "abandonnee"
-]
+STATUTS_CANDIDATURE = [s.value for s in CandidatureStatut]
 
 TYPES_EVENT = [
     "creation", "statut_change", "contact_ajout",
@@ -135,7 +133,7 @@ class Candidature(Base):
     poste            = Column(String, nullable=False)
     url_offre        = Column(String)
     description      = Column(Text)
-    statut           = Column(String, default="brouillon")
+    statut           = Column(String, default=CandidatureStatut.EN_ATTENTE.value)
     date_candidature = Column(DateTime)
     date_reponse     = Column(DateTime)
     salaire_vise     = Column(Integer)

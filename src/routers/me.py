@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_user_id, own_candidature
 from src.database import get_db
+from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
 from src.models import Candidature, CandidatureEvent, Etablissement, Relance
 from src.schemas.me import (
     CandidatureCreate,
@@ -119,19 +120,15 @@ def get_my_stats(
             relances_dues=0,
         )
 
-    envoyees = [
-        cand for cand in candidatures if cand.statut != "brouillon" or cand.date_candidature is not None
-    ]
+    envoyees = [cand for cand in candidatures if cand.statut != CandidatureStatut.EN_ATTENTE or cand.date_candidature is not None]
     total_envoyees = len(envoyees)
-    refus = [cand for cand in candidatures if cand.statut == "refusee"]
+    refus = [cand for cand in candidatures if cand.statut == CandidatureStatut.REFUSEE]
     repondues = [
         cand
         for cand in candidatures
-        if cand.date_reponse is not None or cand.statut in {"refusee", "ghosting", "entretien", "offre_recue", "acceptee"}
+        if cand.date_reponse is not None or cand.statut in STATUTS_REPONSE_POSITIVE
     ]
-    pipeline_actif = len(
-        [cand for cand in candidatures if cand.statut not in {"refusee", "abandonnee", "acceptee"}]
-    )
+    pipeline_actif = len([cand for cand in candidatures if cand.statut in STATUTS_ACTIFS])
     delais = [
         (cand.date_reponse - cand.date_candidature).days
         for cand in repondues

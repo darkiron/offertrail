@@ -129,7 +129,7 @@ export const CompanyDetailsPage: React.FC = () => {
   const positiveRate = data.positive_rate ?? 0;
   const rejectionRate = Math.max(0, Math.min(100, Math.round(responseRate - positiveRate)));
   const dueFollowups = data.applications.filter(
-    (app) => Boolean(app.next_followup_at) && app.status !== 'REJECTED' && app.status !== 'OFFER',
+    (app) => Boolean(app.next_followup_at) && app.status !== 'refusee' && app.status !== 'offre_recue',
   ).length;
 
   return (

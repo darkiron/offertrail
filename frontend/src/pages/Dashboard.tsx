@@ -14,20 +14,13 @@ import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge
 import { StatusBadge } from '../components/atoms/StatusBadge';
 import { Button } from '../components/atoms/Button';
 import { EmptyState } from '../components/atoms/EmptyState';
-import { statusLabelMap } from '../utils/statut';
+import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import classes from './Dashboard.module.css';
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Tous' },
-  { value: 'INTERESTED', label: statusLabelMap.INTERESTED },
-  { value: 'APPLIED', label: statusLabelMap.APPLIED },
-  { value: 'INTERVIEW', label: statusLabelMap.INTERVIEW },
-  { value: 'OFFER', label: statusLabelMap.OFFER },
-  { value: 'REJECTED', label: statusLabelMap.REJECTED },
-];
+const STATUS_OPTIONS = STATUT_OPTIONS;
 
 export function Dashboard() {
   const { t } = useI18n();
