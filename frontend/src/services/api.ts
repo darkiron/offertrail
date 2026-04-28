@@ -161,27 +161,6 @@ export interface ImportResponse {
   errors: Array<{ row: number; reason: string }>;
 }
 
-const statusToLegacy: Record<string, Application['status']> = {
-  brouillon: 'INTERESTED',
-  envoyee: 'APPLIED',
-  en_attente: 'INTERESTED',
-  relancee: 'APPLIED',
-  entretien: 'INTERVIEW',
-  test_technique: 'INTERVIEW',
-  offre_recue: 'OFFER',
-  acceptee: 'OFFER',
-  refusee: 'REJECTED',
-  ghosting: 'REJECTED',
-  abandonnee: 'REJECTED',
-};
-
-const statusToSaas: Record<string, string> = {
-  INTERESTED: 'en_attente',
-  APPLIED: 'envoyee',
-  INTERVIEW: 'entretien',
-  OFFER: 'offre_recue',
-  REJECTED: 'refusee',
-};
 
 const candidatureNumericToUuid = new Map<number, string>();
 const organizationNumericToUuid = new Map<number, string>();
@@ -290,16 +269,6 @@ async function ensureContactIdResolved(id: number | string): Promise<string> {
   return resolveContactId(id);
 }
 
-function toLegacyStatus(status: string | null | undefined): Application['status'] {
-  return statusToLegacy[status ?? ''] ?? 'APPLIED';
-}
-
-function toSaasStatus(status: string | null | undefined): string | undefined {
-  if (!status) {
-    return undefined;
-  }
-  return statusToSaas[status] ?? status.toLowerCase();
-}
 
 function normalizeDate(value: string | null | undefined): string | null {
   if (!value) {
@@ -356,7 +325,7 @@ function mapCandidatureToApplication(
     company: etablissement?.nom ?? 'Etablissement',
     title: candidature.poste,
     type: candidature.description ?? 'CDI',
-    status: toLegacyStatus(candidature.statut),
+    status: candidature.statut ?? 'en_attente',
     source: candidature.source,
     job_url: candidature.url_offre,
     applied_at: normalizeDate(candidature.date_candidature),
@@ -373,7 +342,7 @@ function mapPayloadToSaas(data: ApplicationPayload): Partial<CandidatureApi> {
     client_final_id: data.final_customer_organization_id ? resolveOrganizationId(data.final_customer_organization_id) : null,
     poste: data.title ?? '',
     description: data.type ?? null,
-    statut: toSaasStatus(data.status),
+    statut: data.status ?? undefined,
     source: data.source ?? null,
     url_offre: data.job_url ?? null,
     date_candidature: data.applied_at ?? null,
@@ -641,8 +610,8 @@ export const applicationService = {
         type: event.type.toUpperCase(),
         ts: event.created_at,
         payload: {
-          old_status: event.ancien_statut ? toLegacyStatus(event.ancien_statut) : null,
-          new_status: event.nouveau_statut ? toLegacyStatus(event.nouveau_statut) : null,
+          old_status: event.ancien_statut ?? null,
+          new_status: event.nouveau_statut ?? null,
           text: event.contenu,
         },
       })),

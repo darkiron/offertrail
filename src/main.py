@@ -11,8 +11,9 @@ from slowapi.util import get_remote_address
 from . import legacy_database as database
 from sqlalchemy.orm import Session
 
-from .auth import _user_can_see_contact, get_current_user_id, get_visible_contacts, start_scheduler
+from .auth import _user_can_see_contact, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
 from .database import get_db as get_saas_db, init_db as init_saas_db
+from .enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
 from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Relance
 from .routers import auth as auth_router
 from .routers import admin as admin_router
@@ -121,26 +122,20 @@ def format_contact_for_legacy_views(contact: dict):
     return formatted
 
 
-HIDDEN_SAAS_STATUSES = {"refusee", "ghosting", "abandonnee", "offre_recue", "acceptee"}
+HIDDEN_SAAS_STATUSES = STATUTS_CLOS | {CandidatureStatut.OFFRE_RECUE}
 LEGACY_TO_SAAS_STATUS = {
-    "INTERESTED": "en_attente",
-    "APPLIED": "envoyee",
-    "INTERVIEW": "entretien",
-    "OFFER": "offre_recue",
-    "REJECTED": "refusee",
+    "INTERESTED": CandidatureStatut.EN_ATTENTE.value,
+    "APPLIED":    CandidatureStatut.ENVOYEE.value,
+    "INTERVIEW":  CandidatureStatut.ENTRETIEN.value,
+    "OFFER":      CandidatureStatut.OFFRE_RECUE.value,
+    "REJECTED":   CandidatureStatut.REFUSEE.value,
 }
 SAAS_TO_LEGACY_STATUS = {
-    "brouillon": "INTERESTED",
-    "envoyee": "APPLIED",
-    "en_attente": "INTERESTED",
-    "relancee": "APPLIED",
-    "entretien": "INTERVIEW",
-    "test_technique": "INTERVIEW",
-    "offre_recue": "OFFER",
-    "acceptee": "OFFER",
-    "refusee": "REJECTED",
-    "ghosting": "REJECTED",
-    "abandonnee": "REJECTED",
+    CandidatureStatut.EN_ATTENTE.value:  "INTERESTED",
+    CandidatureStatut.ENVOYEE.value:     "APPLIED",
+    CandidatureStatut.ENTRETIEN.value:   "INTERVIEW",
+    CandidatureStatut.OFFRE_RECUE.value: "OFFER",
+    CandidatureStatut.REFUSEE.value:     "REJECTED",
 }
 SAAS_TO_FRONT_TYPE = {
     "client_final": "CLIENT_FINAL",
@@ -184,14 +179,14 @@ def _map_etablissement_to_legacy(etablissement: Etablissement, candidatures: lis
         candidature
         for candidature in candidatures
         if candidature.date_reponse is not None
-        or candidature.statut in {"entretien", "offre_recue", "acceptee"}
+        or candidature.statut in STATUTS_REPONSE_POSITIVE
     ]
     positive = [
         candidature
         for candidature in candidatures
-        if candidature.statut in {"entretien", "offre_recue", "acceptee"}
+        if candidature.statut in STATUTS_REPONSE_POSITIVE
     ]
-    ghosting = [candidature for candidature in candidatures if candidature.statut == "ghosting"]
+    ghosting = [candidature for candidature in candidatures if candidature.statut == CandidatureStatut.REFUSEE]
     delays = [
         (candidature.date_reponse - candidature.date_candidature).days
         for candidature in candidatures

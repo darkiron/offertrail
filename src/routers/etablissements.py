@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_user_id
 from src.database import get_db
+from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE
 from src.models import Candidature, Etablissement
 from src.schemas.etablissements import (
     EtablissementCreate,
@@ -40,9 +41,9 @@ def to_model_type(value: str | None) -> str:
 
 def build_schema(etablissement: Etablissement, candidatures: list[Candidature]) -> EtablissementSchema:
     total = len(candidatures)
-    responded = [cand for cand in candidatures if cand.date_reponse is not None or cand.statut in {"entretien", "offre_recue", "acceptee"}]
-    positive = [cand for cand in candidatures if cand.statut in {"entretien", "offre_recue", "acceptee"}]
-    ghosting = [cand for cand in candidatures if cand.statut == "ghosting"]
+    responded = [cand for cand in candidatures if cand.date_reponse is not None or cand.statut in STATUTS_REPONSE_POSITIVE]
+    positive = [cand for cand in candidatures if cand.statut in STATUTS_REPONSE_POSITIVE]
+    ghosting = [cand for cand in candidatures if cand.statut == CandidatureStatut.REFUSEE]
     delays = [
         (cand.date_reponse - cand.date_candidature).days
         for cand in candidatures

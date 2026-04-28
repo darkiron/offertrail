@@ -8,6 +8,7 @@ import {
 import { notifications } from '@mantine/notifications';
 import { applicationService, organizationService } from '../../services/api';
 import type { Organization, OrganizationType } from '../../types';
+import { STATUT_FORM_OPTIONS } from '../../constants/statuts';
 import { ProbityBadge } from '../atoms/ProbityBadge';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
 import { Button } from '../atoms/Button';
@@ -39,7 +40,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
     company: '',
     title: '',
     type: 'CDI',
-    status: 'APPLIED',
+    status: 'envoyee',
     source: '',
     job_url: '',
     applied_at: new Date().toISOString().split('T')[0],
@@ -237,14 +238,10 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
                 <Select
                   label={t('newApplication.initialStatus')}
                   data={[
-                    { value: 'INTERESTED', label: 'INTERESTED' },
-                    { value: 'APPLIED', label: 'APPLIED' },
-                    { value: 'INTERVIEW', label: 'INTERVIEW' },
-                    { value: 'OFFER', label: 'OFFER' },
-                    { value: 'REJECTED', label: 'REJECTED' },
+                    ...STATUT_FORM_OPTIONS,
                   ]}
                   value={formData.status}
-                  onChange={(v) => setFormData((f) => ({ ...f, status: v || 'APPLIED' }))}
+                  onChange={(v) => setFormData((f) => ({ ...f, status: v || 'envoyee' }))}
                 />
               </SimpleGrid>
             </Stack>
