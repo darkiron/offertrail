@@ -7,11 +7,11 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
 
+from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE
 from src.models import Candidature, ProbiteScore
 
 
-# Statuts exclus du calcul (brouillons et abandons ne comptent pas)
-STATUTS_EXCLUS = {"brouillon", "abandonnee"}
+STATUTS_EXCLUS = {CandidatureStatut.EN_ATTENTE}
 
 # Seuil minimum pour afficher un score (confidentialité)
 SEUIL_FIABILITE = 3
@@ -105,7 +105,7 @@ def _compute_score(candidatures: list) -> dict:
         score_delai = 50.0  # valeur neutre si pas de données
 
     # --- Ghosting rate ---
-    ghostings    = [c for c in candidatures if c.statut == "ghosting"]
+    ghostings    = [c for c in candidatures if c.statut == CandidatureStatut.REFUSEE]
     ghosting_rate = len(ghostings) / total * 100
     score_anti_ghosting = (1 - ghosting_rate / 100) * 100
 

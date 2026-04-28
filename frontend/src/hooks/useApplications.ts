@@ -30,8 +30,8 @@ export function useApplications({
 
   const apps = useMemo(() => {
     const items = appsQuery.data?.items ?? [];
-    const includeRejected = showHidden || status === 'REJECTED';
-    return includeRejected ? items : items.filter((item) => item.status !== 'REJECTED');
+    const includeRejected = showHidden || status === 'refusee';
+    return includeRejected ? items : items.filter((item) => item.status !== 'refusee');
   }, [appsQuery.data, showHidden, status]);
 
   const orgMap = useMemo(
