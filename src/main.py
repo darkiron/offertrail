@@ -11,7 +11,7 @@ from slowapi.util import get_remote_address
 from . import legacy_database as database
 from sqlalchemy.orm import Session
 
-from .auth import _user_can_see_contact, get_current_user_id, get_visible_contacts, start_scheduler
+from .auth import _user_can_see_contact, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
 from .database import get_db as get_saas_db, init_db as init_saas_db
 from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Relance
 from .routers import auth as auth_router
@@ -1000,103 +1000,109 @@ def parse_date(date_str):
     return None
 
 @app.post("/api/import")
-async def api_process_import(data: dict):
+def api_process_import(
+    data: dict,
+    db: Session = Depends(get_saas_db),
+    user_id: str = Depends(get_active_user_id),
+):
     tsv_data = data.get("tsv", "")
     lines = tsv_data.strip().split("\n")
     if not lines:
         return {"error": "Empty data"}
-    
+
     header = lines[0].split("\t")
     rows = lines[1:]
-    
+
     mapping = {
         "Entreprise": "company",
         "Poste": "title",
         "Lien de l’offre": "job_url",
-        "Type": "type",
         "Source": "source",
         "Date candidature": "applied_at",
         "Statut": "status",
-        "Date relance prévue": "next_followup_at",
         "Notes": "notes",
         "Contact RH": "contact_rh",
         "Email RH": "email_rh",
-        "Téléphone": "phone"
+        "Téléphone": "phone",
     }
-    
+
     col_map = {}
     for i, h in enumerate(header):
         h_clean = h.strip()
         if h_clean in mapping:
             col_map[mapping[h_clean]] = i
 
-    results = {"total": len(rows), "created": 0, "skipped": 0, "errors": []}
-    
     status_map = {
-        "INTERESTED": "INTERESTED", "A CONTACTER": "INTERESTED",
-        "APPLIED": "APPLIED", "POSTULÉ": "APPLIED", "CANDIDATURE ENVOYÉE": "APPLIED",
-        "INTERVIEW": "INTERVIEW", "ENTRETIEN": "INTERVIEW",
-        "OFFER": "OFFER", "OFFRE": "OFFER",
-        "REJECTED": "REJECTED", "REFUSÉ": "REJECTED"
+        "INTERESTED": "brouillon", "A CONTACTER": "brouillon",
+        "APPLIED": "envoyee", "POSTULÉ": "envoyee", "CANDIDATURE ENVOYÉE": "envoyee",
+        "INTERVIEW": "entretien", "ENTRETIEN": "entretien",
+        "OFFER": "offre_recue", "OFFRE": "offre_recue",
+        "REJECTED": "refusee", "REFUSÉ": "refusee",
     }
+
+    results = {"total": len(rows), "created": 0, "skipped": 0, "errors": []}
 
     for idx, row_str in enumerate(rows):
         cols = row_str.split("\t")
         row_num = idx + 2
-        
+
         try:
-            def get_val(key):
-                if key in col_map and col_map[key] < len(cols):
-                    return cols[col_map[key]].strip()
+            def get_val(key, _cols=cols):
+                if key in col_map and col_map[key] < len(_cols):
+                    return _cols[col_map[key]].strip() or None
                 return None
 
             company = get_val("company")
             title = get_val("title")
-            
+
             if not company or not title:
                 results["skipped"] += 1
                 results["errors"].append({"row": row_num, "reason": "Missing Company or Job Title"})
                 continue
-            
-            job_url = get_val("job_url")
-            app_type = get_val("type") or "CDI"
-            if "FREE" in app_type.upper():
-                app_type = "FREELANCE"
-            else:
-                app_type = "CDI"
-            
-            source = get_val("source")
-            applied_at = parse_date(get_val("applied_at"))
-            next_followup_at = parse_date(get_val("next_followup_at"))
-            
-            raw_status = (get_val("status") or "APPLIED").upper()
-            status = status_map.get(raw_status, "APPLIED")
 
-            app_id = database.create_application(
-                company_name=company,
-                title=title,
-                app_type=app_type,
-                status=status,
-                applied_at=applied_at,
-                next_followup_at=next_followup_at,
-                source=source,
-                job_url=job_url
+            etablissement = db.query(Etablissement).filter(Etablissement.nom == company).first()
+            if not etablissement:
+                etablissement = Etablissement(nom=company, created_by=user_id)
+                db.add(etablissement)
+                db.flush()
+
+            raw_status = (get_val("status") or "APPLIED").upper()
+            statut = status_map.get(raw_status, "envoyee")
+
+            raw_date = get_val("applied_at")
+            date_candidature = parse_date(raw_date)
+
+            note_parts = []
+            if get_val("notes"):      note_parts.append(get_val("notes"))
+            if get_val("contact_rh"): note_parts.append("Contact RH: " + get_val("contact_rh"))
+            if get_val("email_rh"):   note_parts.append("Email RH: " + get_val("email_rh"))
+            if get_val("phone"):      note_parts.append("Telephone: " + get_val("phone"))
+
+            cand = Candidature(
+                user_id=user_id,
+                etablissement_id=etablissement.id,
+                poste=title,
+                url_offre=get_val("job_url"),
+                source=get_val("source"),
+                statut=statut,
+                date_candidature=datetime.fromisoformat(date_candidature) if date_candidature else None,
+                notes="\n".join(note_parts) if note_parts else None,
             )
-            
-            notes = []
-            if get_val("notes"): notes.append(f"Notes: {get_val('notes')}")
-            if get_val("contact_rh"): notes.append(f"Contact RH: {get_val('contact_rh')}")
-            if get_val("email_rh"): notes.append(f"Email RH: {get_val('email_rh')}")
-            if get_val("phone"): notes.append(f"Téléphone: {get_val('phone')}")
-            
-            if notes:
-                database.add_note(app_id, "\n".join(notes))
-                
+            db.add(cand)
+            db.flush()
+            db.add(CandidatureEvent(
+                candidature_id=cand.id,
+                user_id=user_id,
+                type="creation",
+                nouveau_statut=statut,
+                contenu="Importée",
+            ))
             results["created"] += 1
-            
+
         except Exception as e:
             results["skipped"] += 1
             results["errors"].append({"row": row_num, "reason": str(e)})
 
+    db.commit()
     return results
 
