@@ -1,6 +1,10 @@
+import logging
+
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from src.auth import get_current_profile, get_db, get_jwt_payload
 from src.models import Profile
@@ -84,11 +88,15 @@ def create_checkout(
     if not user_email:
         raise HTTPException(status_code=400, detail="Email utilisateur introuvable")
 
-    checkout_url = create_checkout_session(
-        profile.id,
-        user_email,
-        stripe_customer_id=profile.stripe_customer_id,
-    )
+    try:
+        checkout_url = create_checkout_session(
+            profile.id,
+            user_email,
+            stripe_customer_id=profile.stripe_customer_id,
+        )
+    except stripe.StripeError:
+        logger.exception("Stripe checkout session creation failed for profile %s", profile.id)
+        raise HTTPException(status_code=502, detail="Impossible d'initialiser le paiement Stripe.")
     return {
         "mode": "stripe",
         "checkout_url": checkout_url,
@@ -110,10 +118,14 @@ def create_billing_portal(
     if not profile.stripe_customer_id:
         raise HTTPException(status_code=400, detail="Aucun abonnement Stripe associé à ce compte")
 
-    portal_session = stripe.billing_portal.Session.create(
-        customer=profile.stripe_customer_id,
-        return_url=f"{APP_BASE_URL}/app/mon-compte",
-    )
+    try:
+        portal_session = stripe.billing_portal.Session.create(
+            customer=profile.stripe_customer_id,
+            return_url=f"{APP_BASE_URL}/app/mon-compte",
+        )
+    except stripe.StripeError:
+        logger.exception("Stripe billing portal session creation failed for profile %s", profile.id)
+        raise HTTPException(status_code=502, detail="Impossible d'ouvrir le portail Stripe.")
     return {"portal_url": portal_session.url}
 
 
