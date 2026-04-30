@@ -1,3 +1,5 @@
+import stripe
+
 from src.auth import get_current_profile
 from src.database import SessionLocal
 from src.models import Profile
@@ -73,6 +75,36 @@ def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch
     assert response.json() == {
         "mode": "stripe",
         "checkout_url": "https://checkout.stripe.test/session",
+    }
+
+
+def test_portal_returns_stripe_error_as_http_response(client, user_a, monkeypatch):
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.stripe_customer_id = "cus_test_123"
+        db.commit()
+    finally:
+        db.close()
+
+    def raise_stripe_error(**kwargs):
+        raise stripe.error.InvalidRequestError("No configuration provided", param=None)
+
+    monkeypatch.setattr("src.routers.subscription.is_configured", lambda: True)
+    monkeypatch.setattr(
+        "src.routers.subscription.stripe.billing_portal.Session.create",
+        raise_stripe_error,
+    )
+
+    response = client.post(
+        "/subscription/portal",
+        headers={**user_a["headers"], "Origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 502
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert response.json() == {
+        "detail": "Impossible d'ouvrir le portail Stripe pour le moment",
     }
 
 
