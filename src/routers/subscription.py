@@ -19,10 +19,6 @@ ACTIVE_SUBSCRIPTION_STATUSES = {"active", "trialing"}
 
 
 def _s(obj, attr: str, default=None):
-    """
-    Accès sûr sur les objets Stripe SDK v5+ (classes typées sans .get())
-    ou sur de simples dicts (tests, fixtures).
-    """
     if obj is None:
         return default
     if isinstance(obj, dict):
@@ -71,10 +67,6 @@ def create_checkout(
     profile: Profile = Depends(get_current_profile),
     payload: dict = Depends(get_jwt_payload),
 ):
-    """
-    En local sans Stripe → simule l'upgrade directement.
-    En prod avec Stripe configuré → retourne l'URL de checkout.
-    """
     if not is_configured():
         activate_pro(db, profile)
         return {
@@ -87,15 +79,16 @@ def create_checkout(
     if not user_email:
         raise HTTPException(status_code=400, detail="Email utilisateur introuvable")
 
-    checkout_url = create_checkout_session(
-        profile.id,
-        user_email,
-        stripe_customer_id=profile.stripe_customer_id,
-    )
-    return {
-        "mode": "stripe",
-        "checkout_url": checkout_url,
-    }
+    try:
+        checkout_url = create_checkout_session(
+            profile.id,
+            user_email,
+            stripe_customer_id=profile.stripe_customer_id,
+        )
+    except stripe.StripeError:
+        logger.exception("Stripe checkout failed for profile %s", profile.id)
+        raise HTTPException(status_code=502, detail="Impossible d'initialiser le paiement Stripe.")
+    return {"mode": "stripe", "checkout_url": checkout_url}
 
 
 @router.post("/portal")
@@ -103,10 +96,6 @@ def create_billing_portal(
     db: Session = Depends(get_db),
     profile: Profile = Depends(get_current_profile),
 ):
-    """
-    Crée une session Stripe Billing Portal et retourne l'URL.
-    Permet à l'utilisateur de gérer son abonnement et consulter ses factures.
-    """
     if not is_configured():
         raise HTTPException(status_code=400, detail="Stripe non configuré en local")
 
@@ -133,17 +122,12 @@ def create_billing_portal(
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
-    """
-    Reçoit les événements Stripe.
-    NE PAS authentifier cet endpoint — Stripe n'envoie pas de token.
-    Vérifier la signature avec le webhook secret.
-    """
-    body       = await request.body()
+    body = await request.body()
     sig_header = request.headers.get("stripe-signature", "")
 
     try:
         event = verify_webhook_signature(body, sig_header)
-    except stripe.error.SignatureVerificationError:
+    except stripe.StripeError:
         raise HTTPException(status_code=400, detail="Signature webhook invalide")
 
     if event["type"] == "checkout.session.completed":
@@ -156,8 +140,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             profile = db.query(Profile).filter(Profile.id == user_id).first()
             if profile:
                 _activate_profile_subscription(
-                    db,
-                    profile,
+                    db, profile,
                     customer_id=customer_id,
                     subscription_id=subscription_id,
                 )
@@ -169,8 +152,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             status = _s(subscription, "status")
             if status in ACTIVE_SUBSCRIPTION_STATUSES:
                 _activate_profile_subscription(
-                    db,
-                    profile,
+                    db, profile,
                     customer_id=_s(subscription, "customer"),
                     subscription_id=_s(subscription, "id"),
                 )
