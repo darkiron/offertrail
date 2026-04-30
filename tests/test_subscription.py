@@ -103,9 +103,7 @@ def test_portal_returns_stripe_error_as_http_response(client, user_a, monkeypatc
 
     assert response.status_code == 502
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
-    assert response.json() == {
-        "detail": "Impossible d'ouvrir le portail Stripe pour le moment",
-    }
+    assert response.json()["detail"].startswith("Stripe:")
 
 
 def test_webhook_checkout_completion_activates_profile(client, user_a, monkeypatch):
