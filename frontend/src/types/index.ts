@@ -132,4 +132,5 @@ export interface SubscriptionStatus {
   subscription_status: 'pending' | 'active' | 'cancelled' | string;
   is_active: boolean;
   plan_started_at: string | null;
+  has_stripe_customer: boolean;
 }

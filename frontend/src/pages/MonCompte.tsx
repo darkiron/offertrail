@@ -155,11 +155,11 @@ export function MonCompte() {
               {sub?.is_active && (
                 <Badge variant="light" color="green" size="lg">Pro</Badge>
               )}
-              {sub?.is_active ? (
+              {sub?.is_active && sub?.has_stripe_customer ? (
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
                   {portalLoading ? 'Redirection...' : 'Gérer via Stripe →'}
                 </Button>
-              ) : (
+              ) : sub?.is_active ? null : (
                 <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
                   Passer en Pro →
                 </Button>
@@ -175,7 +175,7 @@ export function MonCompte() {
           {/* Factures — portail Stripe si abonnement actif */}
           <Paper p="lg" radius="lg" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Factures</Text>
-            {sub?.is_active ? (
+            {sub?.is_active && sub?.has_stripe_customer ? (
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed">Historique et téléchargement via Stripe</Text>
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>

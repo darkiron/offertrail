@@ -18,6 +18,7 @@ def get_usage(db: Session, profile: Profile) -> dict:
         "subscription_status": profile.subscription_status,
         "is_active":           is_active,
         "plan_started_at":     profile.plan_started_at.isoformat() if profile.plan_started_at else None,
+        "has_stripe_customer": bool(profile.stripe_customer_id),
     }
 
 
