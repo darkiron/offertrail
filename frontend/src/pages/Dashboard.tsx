@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Stack, SimpleGrid, Group, Text, Title, Paper, Table, TextInput, Select,
-  Checkbox, Tabs, Center, Loader, Alert,
+  Stack, SimpleGrid, Group, Paper, Table, TextInput, Select,
+  Checkbox, Tabs, Center, Loader, Text,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useDashboard } from '../hooks/useDashboard';
 import { KPICard } from '../components/molecules/KPICard';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import { MonthlyApplicationsChart } from '../components/organisms/MonthlyApplicationsChart';
 import { ProbityBadge } from '../components/atoms/ProbityBadge';
@@ -17,7 +18,6 @@ import { EmptyState } from '../components/atoms/EmptyState';
 import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
-import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import classes from './Dashboard.module.css';
 
 const STATUS_OPTIONS = STATUT_OPTIONS;
@@ -37,7 +37,7 @@ export function Dashboard() {
 
   const {
     kpis, followups, apps, total, orgMap, sub, insights,
-    loading, isFirstLoad, loadingInsights, error, refetch, markFollowup, loadInsights,
+    loading, loadingInsights, error, refetch, markFollowup, loadInsights,
   } = useDashboard({ search: searchTerm, status: statusFilter, page, limit, showHidden });
 
   useEffect(() => { document.title = 'Tableau de bord — OfferTrail'; }, []);
@@ -72,23 +72,16 @@ export function Dashboard() {
         />
       )}
 
-      <PlanLimitBanner sub={sub} />
-
-      {/* Header compact */}
-      <Group justify="space-between" align="center">
-        <Title order={2}>{t('dashboard.title')}</Title>
-        <Group gap="sm">
-          <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
-          <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-        </Group>
-      </Group>
-
-      {/* Avertissement premier chargement */}
-      {isFirstLoad && (
-        <Alert variant="light" color="blue" title="Chargement en cours">
-          Le premier chargement peut prendre quelques secondes selon l'activité du serveur.
-        </Alert>
-      )}
+      <PageHeader
+        title={t('dashboard.title')}
+        count={loading ? null : kpis.total_count}
+        actions={
+          <>
+            <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
+            <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
+          </>
+        }
+      />
 
       {/* KPIs */}
       <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="md">

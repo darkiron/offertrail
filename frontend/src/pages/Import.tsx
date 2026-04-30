@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-  Group, List, Paper, SimpleGrid, Stack, Text, Textarea, Title,
+  Group, List, Paper, SimpleGrid, Stack, Text, Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { applicationService } from '../services/api';
 import type { ImportResponse } from '../services/api';
 import { Button } from '../components/atoms/Button';
+import { PageHeader } from '../components/molecules/PageHeader';
 import classes from './Import.module.css';
 
 export const Import: React.FC = () => {
@@ -41,13 +42,10 @@ export const Import: React.FC = () => {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-        <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Import</Text>
-        <Title order={1} mt="xs">Import des candidatures</Title>
-        <Text c="dimmed" mt="sm">
-          Colle tes données TSV depuis Excel ou Google Sheets pour importer tes candidatures en masse.
-        </Text>
-      </Paper>
+      <PageHeader
+        title="Import des candidatures"
+        description="Colle tes données TSV depuis Excel ou Google Sheets pour importer tes candidatures en masse."
+      />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
         <Paper p="xl" radius="lg" withBorder>

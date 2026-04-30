@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Anchor, Badge, Group, Chip, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title,
+  Anchor, Badge, Group, Chip, Paper, Select, SimpleGrid, Stack, Text, TextInput,
 } from '@mantine/core';
 import { organizationService } from '../services/api';
 import { Spinner } from '../components/atoms/Spinner';
 import type { Organization, OrganizationType } from '../types';
+import { PageHeader } from '../components/molecules/PageHeader';
 import classes from './OrganizationsPage.module.css';
 
 type OrganizationTab = 'all' | 'engaged' | 'responsive' | 'watchlist';
@@ -125,60 +126,29 @@ export const OrganizationsPage: React.FC = () => {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      {/* Hero + Sidebar */}
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
-        <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Pipeline organisations</Text>
-          <Title order={1} mt="xs">Etablissements</Title>
-          <Text c="dimmed" mt="sm" maw={640}>
-            Une vue opérationnelle du portefeuille : filtres utiles, onglets pour prioriser, et cartes
-            resserrées pour repérer rapidement qui mérite de l&apos;attention.
-          </Text>
+      <PageHeader
+        title="Etablissements"
+        count={loading ? null : organizations.length}
+        actions={
+          <Anchor component={Link} to="/app/etablissements/maintenance">
+            <Badge variant="filled" size="md" radius="xl">Maintenance ETS →</Badge>
+          </Anchor>
+        }
+      />
 
-          <Group mt="lg" mb="xl">
-            <Anchor component={Link} to="/app/etablissements/maintenance">
-              <Badge variant="filled" size="md" radius="xl">Maintenance ETS →</Badge>
-            </Anchor>
-          </Group>
-
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-            {[
-              { label: 'Total', value: organizations.length, hint: 'établissements chargés' },
-              { label: 'Actifs', value: engagedOrganizations.length, hint: 'avec au moins une candidature' },
-              { label: 'Taux moyen', value: `${averageResponseRate}%`, hint: 'réponse moyenne' },
-              { label: 'Volume', value: totalApplications, hint: 'candidatures cumulées' },
-            ].map((kpi) => (
-              <div key={kpi.label} className={classes.kpi}>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{kpi.label}</Text>
-                <Text size="xl" fw={700} mt={6}>{kpi.value}</Text>
-                <Text size="xs" c="dimmed" mt={4}>{kpi.hint}</Text>
-              </div>
-            ))}
-          </SimpleGrid>
-        </Paper>
-
-        <Paper p="xl" radius="lg" withBorder>
-          <Stack gap="lg">
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Priorité du moment</Text>
-              <Text size="xl" fw={700}>{watchlistOrganizations.length}</Text>
-              <Text size="sm" c="dimmed">organisations à surveiller ou relancer</Text>
-            </Stack>
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Lecture rapide</Text>
-              <Text size="sm" c="dimmed">
-                Utilise les onglets pour séparer les comptes engagés, ceux qui répondent, et les relations plus froides.
-              </Text>
-            </Stack>
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Filtre appliqué</Text>
-              <Text size="sm" c="dimmed">
-                {typeFilter ? organizationTypeLabels[typeFilter as OrganizationType] : 'Tous les types'}
-                {search ? ` · recherche "${search}"` : ''}
-              </Text>
-            </Stack>
-          </Stack>
-        </Paper>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        {[
+          { label: 'Total', value: organizations.length, hint: 'établissements chargés' },
+          { label: 'Actifs', value: engagedOrganizations.length, hint: 'avec au moins une candidature' },
+          { label: 'Taux moyen', value: `${averageResponseRate}%`, hint: 'réponse moyenne' },
+          { label: 'Volume', value: totalApplications, hint: 'candidatures cumulées' },
+        ].map((kpi) => (
+          <Paper key={kpi.label} p="md" radius="md" withBorder>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{kpi.label}</Text>
+            <Text size="xl" fw={700} mt={4}>{kpi.value}</Text>
+            <Text size="xs" c="dimmed">{kpi.hint}</Text>
+          </Paper>
+        ))}
       </SimpleGrid>
 
       {/* Filters */}

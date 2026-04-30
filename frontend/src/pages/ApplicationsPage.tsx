@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Stack, Paper, Group, Text, Badge, Table, TextInput, Select,
-  Checkbox, Center, Loader, Alert,
+  Stack, Paper, Group, Table, TextInput, Select,
+  Checkbox, Center, Loader, Text,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useApplications } from '../hooks/useApplications';
@@ -12,6 +12,7 @@ import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge
 import { StatusBadge } from '../components/atoms/StatusBadge';
 import { EmptyState } from '../components/atoms/EmptyState';
 import { Button } from '../components/atoms/Button';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import classes from './ApplicationsPage.module.css';
@@ -29,7 +30,7 @@ export function ApplicationsPage() {
   const [showHidden, setShowHidden] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const { apps, total, orgMap, loading, isFirstLoad, error, refetch } = useApplications({
+  const { apps, total, orgMap, loading, error, refetch } = useApplications({
     search: searchTerm,
     status: statusFilter,
     page,
@@ -57,27 +58,16 @@ export function ApplicationsPage() {
         />
       )}
 
-      {/* Header compact */}
-      <Group justify="space-between" align="center">
-        <Group gap="sm" align="baseline">
-          <Text size="xl" fw={700}>Candidatures</Text>
-          {!loading && (
-            <Badge variant="light" size="md">{total}</Badge>
-          )}
-        </Group>
-        <Button variant="primary" onClick={() => setShowModal(true)}>
-          {t('dashboard.newApplication')}
-        </Button>
-      </Group>
+      <PageHeader
+        title="Candidatures"
+        count={loading ? null : total}
+        actions={
+          <Button variant="primary" onClick={() => setShowModal(true)}>
+            {t('dashboard.newApplication')}
+          </Button>
+        }
+      />
 
-      {/* Avertissement premier chargement */}
-      {isFirstLoad && (
-        <Alert variant="light" color="blue" title="Chargement en cours">
-          Le premier chargement peut prendre quelques secondes selon l'activité du serveur.
-        </Alert>
-      )}
-
-      {/* Table */}
       <Paper p="lg" radius="lg" withBorder>
         <Group gap="sm" mb="md" wrap="wrap">
           <TextInput
