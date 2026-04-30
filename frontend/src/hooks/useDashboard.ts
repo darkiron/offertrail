@@ -24,9 +24,11 @@ export function useDashboard({
     queryFn: () => dashboardService.getDashboardData(),
   });
 
+  // Clé stable — le backend ne pagine pas côté serveur, on récupère tout une fois.
   const appsQuery = useQuery({
-    queryKey: ['applications', { search, status, page, limit }],
-    queryFn: () => applicationService.getApplications({ search, status, page, limit }),
+    queryKey: ['applications'],
+    queryFn: () => applicationService.getApplications(),
+    staleTime: 2 * 60 * 1000,
   });
 
   const orgsQuery = useQuery({
@@ -47,11 +49,34 @@ export function useDashboard({
     enabled: false,
   });
 
-  const apps = useMemo(() => {
-    const items = appsQuery.data?.items ?? [];
-    const includeRejected = showHidden || status === 'refusee';
-    return includeRejected ? items : items.filter((item) => item.status !== 'refusee');
-  }, [appsQuery.data, showHidden, status]);
+  const filtered = useMemo(() => {
+    let items = appsQuery.data?.items ?? [];
+
+    if (!showHidden && status !== 'refusee') {
+      items = items.filter((item) => item.status !== 'refusee');
+    }
+
+    if (status) {
+      items = items.filter((item) => item.status === status);
+    }
+
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.company.toLowerCase().includes(needle) ||
+          item.title.toLowerCase().includes(needle),
+      );
+    }
+
+    return items;
+  }, [appsQuery.data, showHidden, status, search]);
+
+  // Pagination client-side
+  const paginatedApps = useMemo(
+    () => filtered.slice((page - 1) * limit, page * limit),
+    [filtered, page, limit],
+  );
 
   const orgMap = useMemo(
     () => new Map((orgsQuery.data ?? []).map((o) => [o.id, o])),
@@ -76,12 +101,13 @@ export function useDashboard({
       responded_count: 0, avg_response_time: null,
     },
     followups: dashboardQuery.data?.followups ?? [],
-    apps,
-    total: apps.length,
+    apps: paginatedApps,
+    total: filtered.length,
     orgMap,
     sub: subQuery.data ?? null,
     insights: insightsQuery.data ?? null,
     loading: dashboardQuery.isLoading || appsQuery.isLoading,
+    isFirstLoad: (dashboardQuery.isLoading && !dashboardQuery.data) || (appsQuery.isLoading && !appsQuery.data),
     loadingInsights: insightsQuery.isFetching,
     error: dashboardQuery.error ?? appsQuery.error,
     refetch: () => {

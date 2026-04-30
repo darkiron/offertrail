@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Stack, Paper, SimpleGrid, Group, Text, Title, Table, TextInput, Select,
-  Checkbox, Center, Loader,
+  Stack, Paper, Group, Text, Badge, Table, TextInput, Select,
+  Checkbox, Center, Loader, Alert,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useApplications } from '../hooks/useApplications';
@@ -29,7 +29,7 @@ export function ApplicationsPage() {
   const [showHidden, setShowHidden] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const { apps, total, orgMap, loading, error, refetch } = useApplications({
+  const { apps, total, orgMap, loading, isFirstLoad, error, refetch } = useApplications({
     search: searchTerm,
     status: statusFilter,
     page,
@@ -57,41 +57,42 @@ export function ApplicationsPage() {
         />
       )}
 
-      {/* Hero */}
-      <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
-          <Stack gap="sm">
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">◎ {t('nav.applications')}</Text>
-            <Title order={1}>Candidatures</Title>
-            <Text c="dimmed">
-              Liste dédiée aux candidatures avec badges de statut, filtres simples, et accès direct aux fiches détail.
-            </Text>
-            <Group mt="sm">
-              <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-            </Group>
-          </Stack>
-          <Paper p="lg" radius="md" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Volume</Text>
-            <Text size={28} fw={700} mt={4}>{total}</Text>
-            <Text size="sm" c="dimmed">candidatures dans la liste courante</Text>
-          </Paper>
-        </SimpleGrid>
-      </Paper>
+      {/* Header compact */}
+      <Group justify="space-between" align="center">
+        <Group gap="sm" align="baseline">
+          <Text size="xl" fw={700}>Candidatures</Text>
+          {!loading && (
+            <Badge variant="light" size="md">{total}</Badge>
+          )}
+        </Group>
+        <Button variant="primary" onClick={() => setShowModal(true)}>
+          {t('dashboard.newApplication')}
+        </Button>
+      </Group>
+
+      {/* Avertissement premier chargement */}
+      {isFirstLoad && (
+        <Alert variant="light" color="blue" title="Chargement en cours">
+          Le premier chargement peut prendre quelques secondes selon l'activité du serveur.
+        </Alert>
+      )}
 
       {/* Table */}
       <Paper p="lg" radius="lg" withBorder>
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" mb="md">
+        <Group gap="sm" mb="md" wrap="wrap">
           <TextInput
             label={t('dashboard.search')}
-            placeholder="Entreprise, poste, contact..."
+            placeholder="Entreprise, poste..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, minWidth: 180 }}
           />
           <Select
             label={t('dashboard.status')}
             data={STATUS_OPTIONS}
             value={statusFilter}
             onChange={(v) => setStatusFilter(v ?? '')}
+            style={{ minWidth: 160 }}
           />
           <Checkbox
             mt="xl"
@@ -99,7 +100,7 @@ export function ApplicationsPage() {
             checked={showHidden}
             onChange={(e) => setShowHidden(e.target.checked)}
           />
-        </SimpleGrid>
+        </Group>
 
         {loading ? (
           <Center h={120}><Loader /></Center>
