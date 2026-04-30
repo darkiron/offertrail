@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   Stack, Paper, SimpleGrid, Group, Text, Title, Select, Autocomplete,
-  Textarea, Modal, Tabs, Center, Loader, Timeline, Anchor,
+  Textarea, Modal, Tabs, Center, Loader, Timeline, Anchor, ActionIcon, Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { IconPencil } from '@tabler/icons-react';
 import { useApplicationDetail } from '../hooks/useApplicationDetail';
 import { ProbityBadge } from '../components/atoms/ProbityBadge';
 import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge';
 import { StatusBadge } from '../components/atoms/StatusBadge';
 import { EmptyState } from '../components/atoms/EmptyState';
 import { Button } from '../components/atoms/Button';
+import { ApplicationEditModal } from '../components/organisms/ApplicationEditModal';
+import { EventEditModal } from '../components/organisms/EventEditModal';
 import type { Contact } from '../types';
 import type { ApplicationDetailsResponse } from '../services/api';
 import { statusLabelMap } from '../utils/statut';
@@ -52,12 +55,14 @@ export function ApplicationDetails() {
 
   const {
     data, organizations, loading, error, refetch,
-    isUpdatingStatus, updateStatus, addNote, markFollowup, addEvent,
-    linkContact, createContact, setFinalCustomer,
+    isUpdatingStatus, updateStatus, updateApplication, addNote, markFollowup, addEvent,
+    linkContact, createContact, setFinalCustomer, updateEvent, deleteEvent,
   } = useApplicationDetail(numId);
 
   const [newNote, setNewNote] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ApplicationDetailsResponse['events'][number] | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [finalCustomerSearch, setFinalCustomerSearch] = useState('');
   const [contactForm, setContactForm] = useState({
@@ -156,6 +161,7 @@ export function ApplicationDetails() {
               />
               <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>Réponse reçue</Button>
               <Button variant="primary" size="small" onClick={handleMarkFollowup}>Relance faite</Button>
+              <Button variant="ghost" size="small" onClick={() => setShowEditModal(true)}>Modifier</Button>
             </Group>
           </Stack>
 
@@ -195,7 +201,27 @@ export function ApplicationDetails() {
           {events.length > 0 ? (
             <Timeline active={events.length - 1} bulletSize={12} lineWidth={2}>
               {events.map((event: ApplicationDetailsResponse['events'][number], index: number) => (
-                <Timeline.Item key={`${event.id || index}-${event.ts}`} title={formatEventType(event.type || event.event_type)}>
+                <Timeline.Item
+                  key={`${event.id || index}-${event.ts}`}
+                  title={
+                    <Group gap={4} align="center">
+                      <Text size="sm" fw={500}>{formatEventType(event.type || event.event_type)}</Text>
+                      {event.id && (
+                        <Tooltip label="Modifier cet événement" withArrow>
+                          <ActionIcon
+                            size="xs"
+                            variant="subtle"
+                            color="dimmed"
+                            onClick={() => setEditingEvent(event)}
+                            aria-label="Modifier l'événement"
+                          >
+                            <IconPencil size={12} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
+                  }
+                >
                   <Text size="xs" c="dimmed">{new Date(event.ts).toLocaleString()}</Text>
                   {renderEventPayload(event) && (
                     <Text size="xs" c="dimmed" mt={2}>{renderEventPayload(event)}</Text>
@@ -353,6 +379,32 @@ export function ApplicationDetails() {
           </Tabs.Panel>
         </Tabs>
       </Modal>
+
+      {showEditModal && (
+        <ApplicationEditModal
+          application={app}
+          onClose={() => setShowEditModal(false)}
+          onSaved={async (payload) => {
+            await updateApplication(payload);
+            notifications.show({ message: 'Candidature mise à jour', color: 'green' });
+          }}
+        />
+      )}
+
+      {editingEvent && (
+        <EventEditModal
+          event={editingEvent as { id: string; type: string; ts: string; payload?: { text?: string | null; old_status?: string | null; new_status?: string | null } }}
+          onClose={() => setEditingEvent(null)}
+          onSaved={async (eventId, data) => {
+            await updateEvent({ eventId, data });
+            notifications.show({ message: 'Événement mis à jour', color: 'green' });
+          }}
+          onDeleted={async (eventId) => {
+            await deleteEvent(eventId);
+            notifications.show({ message: 'Événement supprimé', color: 'green' });
+          }}
+        />
+      )}
     </Stack>
   );
 }

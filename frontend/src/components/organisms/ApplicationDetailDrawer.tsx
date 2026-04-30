@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Drawer, Tabs, Group, Stack, Text, SimpleGrid, ScrollArea,
   Timeline, Center, Loader,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { applicationService } from '../../services/api';
 import type { ApplicationDetailsResponse } from '../../services/api';
 import type { Contact } from '../../types';
@@ -10,6 +12,7 @@ import { StatusBadge } from '../atoms/StatusBadge';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
 import { ProbityBadge } from '../atoms/ProbityBadge';
 import { Button } from '../atoms/Button';
+import { ApplicationEditModal } from './ApplicationEditModal';
 
 interface ApplicationDetailDrawerProps {
   appId: number | null;
@@ -17,9 +20,11 @@ interface ApplicationDetailDrawerProps {
   onUpdate: () => void;
 }
 
-export function ApplicationDetailDrawer({ appId, onClose }: ApplicationDetailDrawerProps) {
+export function ApplicationDetailDrawer({ appId, onClose, onUpdate }: ApplicationDetailDrawerProps) {
+  const navigate = useNavigate();
   const [data, setData] = useState<ApplicationDetailsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (!appId) { setData(null); return; }
@@ -136,12 +141,27 @@ export function ApplicationDetailDrawer({ appId, onClose }: ApplicationDetailDra
           </Tabs>
 
           <Group>
-            <Button variant="ghost" style={{ flex: 1 }}>MODIFIER</Button>
-            <Button variant="ghost" style={{ flex: 1 }}>ARCHIVER</Button>
+            <Button variant="ghost" style={{ flex: 1 }} onClick={() => setShowEditModal(true)}>MODIFIER</Button>
+            <Button variant="ghost" style={{ flex: 1 }} onClick={() => navigate(`/app/candidatures/${appId}`)}>DÉTAILS</Button>
           </Group>
         </Stack>
       ) : (
         <Text c="dimmed" ta="center">Candidature introuvable.</Text>
+      )}
+
+      {showEditModal && data && (
+        <ApplicationEditModal
+          application={data.application}
+          onClose={() => setShowEditModal(false)}
+          onSaved={async (payload) => {
+            await applicationService.updateApplication(appId!, payload);
+            notifications.show({ message: 'Candidature mise à jour', color: 'green' });
+            const refreshed = await applicationService.getApplication(appId!);
+            setData(refreshed);
+            setShowEditModal(false);
+            onUpdate();
+          }}
+        />
       )}
     </Drawer>
   );
