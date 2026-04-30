@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, TextInput, Title,
+  Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, TextInput,
 } from '@mantine/core';
 import { contactService, organizationService } from '../services/api';
 import { Spinner } from '../components/atoms/Spinner';
@@ -9,6 +9,7 @@ import type { Contact, Organization } from '../types';
 import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
 import ProbityBadge from '../components/atoms/ProbityBadge';
 import { Button } from '../components/atoms/Button';
+import { PageHeader } from '../components/molecules/PageHeader';
 import ContactCreateModal from '../components/organisms/ContactCreateModal';
 import { useI18n } from '../i18n';
 import classes from './ContactsPage.module.css';
@@ -79,31 +80,28 @@ export const ContactsPage: React.FC = () => {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
-        <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.kicker')}</Text>
-          <Title order={1} mt="xs">{t('contacts.title')}</Title>
-          <Text c="dimmed" mt="sm">{t('contacts.copy')}</Text>
-          <Group mt="lg">
-            <Button variant="primary" onClick={() => setShowCreateModal(true)}>{t('contacts.newContact')}</Button>
-          </Group>
-        </Paper>
+      <PageHeader
+        title={t('contacts.title')}
+        count={loading ? null : contacts.length}
+        actions={
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            {t('contacts.newContact')}
+          </Button>
+        }
+      />
 
-        <Paper p="xl" radius="lg" withBorder>
-          <SimpleGrid cols={3} spacing="md">
-            {[
-              { label: t('contacts.total'), value: contacts.length, hint: t('contacts.totalHint') },
-              { label: t('contacts.recruiters'), value: recruitersCount, hint: t('contacts.recruitersHint') },
-              { label: t('contacts.linked'), value: linkedCount, hint: t('contacts.linkedHint') },
-            ].map((stat) => (
-              <Stack key={stat.label} gap={4}>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
-                <Text size="xl" fw={700}>{stat.value}</Text>
-                <Text size="xs" c="dimmed">{stat.hint}</Text>
-              </Stack>
-            ))}
-          </SimpleGrid>
-        </Paper>
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+        {[
+          { label: t('contacts.total'), value: contacts.length, hint: t('contacts.totalHint') },
+          { label: t('contacts.recruiters'), value: recruitersCount, hint: t('contacts.recruitersHint') },
+          { label: t('contacts.linked'), value: linkedCount, hint: t('contacts.linkedHint') },
+        ].map((stat) => (
+          <Paper key={stat.label} p="md" radius="md" withBorder>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
+            <Text size="xl" fw={700} mt={4}>{stat.value}</Text>
+            <Text size="xs" c="dimmed">{stat.hint}</Text>
+          </Paper>
+        ))}
       </SimpleGrid>
 
       <Paper p="lg" radius="lg" withBorder>

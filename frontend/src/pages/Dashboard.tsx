@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Stack, SimpleGrid, Group, Text, Title, Paper, Table, TextInput, Select,
-  Checkbox, Tabs, Notification, Center, Loader,
+  Stack, SimpleGrid, Group, Paper, Table, TextInput, Select,
+  Checkbox, Tabs, Center, Loader, Text,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useDashboard } from '../hooks/useDashboard';
 import { KPICard } from '../components/molecules/KPICard';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import { MonthlyApplicationsChart } from '../components/organisms/MonthlyApplicationsChart';
 import { ProbityBadge } from '../components/atoms/ProbityBadge';
@@ -17,7 +18,6 @@ import { EmptyState } from '../components/atoms/EmptyState';
 import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
-import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import classes from './Dashboard.module.css';
 
 const STATUS_OPTIONS = STATUT_OPTIONS;
@@ -72,39 +72,16 @@ export function Dashboard() {
         />
       )}
 
-      <PlanLimitBanner sub={sub} />
-
-      {/* Hero */}
-      <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
-          <Stack gap="sm">
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('dashboard.kicker')}</Text>
-            <Title order={1} className={classes.heroTitle}>{t('dashboard.title')}</Title>
-            <Text c="dimmed" maw={640}>{t('dashboard.copy')}</Text>
-            <Group mt="sm">
-              <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-              <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
-            </Group>
-          </Stack>
-          <Stack gap="md">
-            <div className={classes.sideStat}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('dashboard.active')}</Text>
-              <Text size={28} fw={700} lh={1} mt={4}>{kpis.active_count}</Text>
-              <Text size="sm" c="dimmed">{t('dashboard.activeHint')}</Text>
-            </div>
-            <div className={classes.sideStat}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('dashboard.responses')}</Text>
-              <Text size={28} fw={700} lh={1} mt={4}>{kpis.response_rate}%</Text>
-              <Text size="sm" c="dimmed">{kpis.responded_count} {t('dashboard.responsesHint')}</Text>
-            </div>
-            <div className={classes.sideStat}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('dashboard.followups')}</Text>
-              <Text size={28} fw={700} lh={1} mt={4}>{kpis.due_followups}</Text>
-              <Text size="sm" c="dimmed">{t('dashboard.followupsHint')}</Text>
-            </div>
-          </Stack>
-        </SimpleGrid>
-      </Paper>
+      <PageHeader
+        title={t('dashboard.title')}
+        count={loading ? null : kpis.total_count}
+        actions={
+          <>
+            <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
+            <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
+          </>
+        }
+      />
 
       {/* KPIs */}
       <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="md">
