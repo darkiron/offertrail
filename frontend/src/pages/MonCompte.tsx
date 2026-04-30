@@ -97,8 +97,9 @@ export function MonCompte() {
     try {
       const { portal_url } = await subscriptionService.portal();
       window.location.assign(portal_url);
-    } catch {
-      notifications.show({ message: 'Impossible d\'ouvrir le portail Stripe.', color: 'red' });
+    } catch (err: unknown) {
+      const detail = (axios.isAxiosError(err) && err.response?.data?.detail) || 'Impossible d\'ouvrir le portail Stripe.';
+      notifications.show({ message: detail, color: 'red' });
       setPortalLoading(false);
     }
   };
