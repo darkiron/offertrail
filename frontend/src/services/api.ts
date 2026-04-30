@@ -42,6 +42,17 @@ export interface ApplicationPayload {
   org_type?: string;
   organization_id?: number | null;
   final_customer_organization_id?: number | null;
+  notes?: string | null;
+  salary?: number | null;
+  response_date?: string | null;
+}
+
+export interface EventUpdatePayload {
+  type?: string;
+  contenu?: string | null;
+  created_at?: string | null;
+  ancien_statut?: string | null;
+  nouveau_statut?: string | null;
 }
 
 interface CandidatureApi {
@@ -346,6 +357,9 @@ function mapPayloadToSaas(data: ApplicationPayload): Partial<CandidatureApi> {
     source: data.source ?? null,
     url_offre: data.job_url ?? null,
     date_candidature: data.applied_at ?? null,
+    date_reponse: data.response_date ?? null,
+    salaire_vise: data.salary ?? null,
+    notes: data.notes ?? null,
   };
 }
 
@@ -698,6 +712,13 @@ export const applicationService = {
   importTsv: async (tsv: string) => {
     const response = await axiosInstance.post<ImportResponse>('/api/import', { tsv });
     return response.data;
+  },
+  updateEvent: async (eventId: string, data: EventUpdatePayload) => {
+    const response = await axiosInstance.patch(`/candidature-events/${eventId}`, data);
+    return response.data;
+  },
+  deleteEvent: async (eventId: string) => {
+    await axiosInstance.delete(`/candidature-events/${eventId}`);
   },
 };
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { applicationService, organizationService } from '../services/api';
+import type { ApplicationPayload, EventUpdatePayload } from '../services/api';
 
 export function useApplicationDetail(id: number | undefined) {
   const queryClient = useQueryClient();
@@ -55,6 +56,22 @@ export function useApplicationDetail(id: number | undefined) {
     onSuccess: invalidate,
   });
 
+  const updateApplication = useMutation({
+    mutationFn: (payload: ApplicationPayload) => applicationService.updateApplication(id!, payload),
+    onSuccess: invalidate,
+  });
+
+  const updateEvent = useMutation({
+    mutationFn: ({ eventId, data }: { eventId: string; data: EventUpdatePayload }) =>
+      applicationService.updateEvent(eventId, data),
+    onSuccess: invalidate,
+  });
+
+  const deleteEvent = useMutation({
+    mutationFn: (eventId: string) => applicationService.deleteEvent(eventId),
+    onSuccess: invalidate,
+  });
+
   return {
     data: detailQuery.data ?? null,
     organizations: orgsQuery.data ?? [],
@@ -63,11 +80,14 @@ export function useApplicationDetail(id: number | undefined) {
     refetch: detailQuery.refetch,
     isUpdatingStatus: updateStatus.isPending,
     updateStatus: updateStatus.mutateAsync,
+    updateApplication: updateApplication.mutateAsync,
     addNote: addNote.mutateAsync,
     markFollowup: markFollowup.mutateAsync,
     addEvent: addEvent.mutateAsync,
     linkContact: linkContact.mutateAsync,
     createContact: createContact.mutateAsync,
     setFinalCustomer: setFinalCustomer.mutateAsync,
+    updateEvent: updateEvent.mutateAsync,
+    deleteEvent: deleteEvent.mutateAsync,
   };
 }

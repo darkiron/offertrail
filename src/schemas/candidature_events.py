@@ -19,6 +19,7 @@ class CandidatureEventUpdate(BaseModel):
     ancien_statut: Optional[str] = None
     nouveau_statut: Optional[str] = None
     contenu: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 class CandidatureEventSchema(BaseModel):

@@ -1,3 +1,49 @@
+def test_update_event_created_at(client, user_a, candidature_a):
+    cand = client.post(
+        "/candidatures",
+        headers=user_a["headers"],
+        json={"etablissement_id": candidature_a["etablissement_id"], "poste": "Edit event date"},
+    )
+    candidature_id = cand.json()["id"]
+
+    events_resp = client.get(f"/candidatures/{candidature_id}/events", headers=user_a["headers"])
+    event_id = events_resp.json()[0]["id"]
+
+    new_date = "2024-01-15T10:30:00"
+    patch_resp = client.patch(
+        f"/candidature-events/{event_id}",
+        headers=user_a["headers"],
+        json={"contenu": "note editee", "created_at": new_date},
+    )
+    assert patch_resp.status_code == 200
+    data = patch_resp.json()
+    assert data["contenu"] == "note editee"
+    assert data["created_at"].startswith("2024-01-15")
+
+
+def test_delete_event(client, user_a, candidature_a):
+    cand = client.post(
+        "/candidatures",
+        headers=user_a["headers"],
+        json={"etablissement_id": candidature_a["etablissement_id"], "poste": "Delete event"},
+    )
+    candidature_id = cand.json()["id"]
+
+    note_resp = client.post(
+        "/candidature-events",
+        headers=user_a["headers"],
+        json={"candidature_id": candidature_id, "type": "note_ajout", "contenu": "a supprimer"},
+    )
+    event_id = note_resp.json()["id"]
+
+    del_resp = client.delete(f"/candidature-events/{event_id}", headers=user_a["headers"])
+    assert del_resp.status_code == 204
+
+    events_after = client.get(f"/candidatures/{candidature_id}/events", headers=user_a["headers"])
+    ids_after = [e["id"] for e in events_after.json()]
+    assert event_id not in ids_after
+
+
 def test_create_candidature(client, user_a, ets):
     response = client.post(
         "/candidatures",
