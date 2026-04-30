@@ -107,9 +107,16 @@ def create_billing_portal(
             customer=profile.stripe_customer_id,
             return_url=f"{APP_BASE_URL}/app/mon-compte",
         )
-    except stripe.StripeError:
-        logger.exception("Stripe portal failed for profile %s", profile.id)
-        raise HTTPException(status_code=502, detail="Impossible d'ouvrir le portail Stripe pour le moment")
+    except stripe.error.StripeError:
+        logger.exception(
+            "Stripe billing portal session creation failed for profile %s",
+            profile.id,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Impossible d'ouvrir le portail Stripe pour le moment",
+        )
+
     return {"portal_url": portal_session.url}
 
 
