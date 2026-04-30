@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import {
   AppShell,
+  Alert,
   Burger,
   Group,
   NavLink,
@@ -11,6 +12,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { useIsFetching } from '@tanstack/react-query';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconLayoutDashboard,
@@ -40,6 +42,46 @@ const NAV_LINKS = [
   { label: 'Contacts', to: '/app/contacts', icon: IconUsers },
   { label: 'Import', to: '/app/import', icon: IconFileImport },
 ];
+
+function SlowApiNotice() {
+  const isFetching = useIsFetching();
+  const [visible, setVisible] = useState(false);
+  const alreadyShown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
+
+  useEffect(() => {
+    if (alreadyShown.current) return;
+    const timer = setTimeout(() => {
+      if (isFetching > 0) {
+        setVisible(true);
+        alreadyShown.current = true;
+        sessionStorage.setItem('ot_coldstart_shown', '1');
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  // Intentionally run only on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (isFetching === 0) setVisible(false);
+  }, [isFetching]);
+
+  if (!visible) return null;
+  return (
+    <Alert
+      variant="light"
+      color="yellow"
+      withCloseButton
+      mb="md"
+      onClose={() => setVisible(false)}
+      title="Démarrage en cours"
+    >
+      L'API et le frontend sont sur des plans gratuits (Railway + Vercel) —
+      après une période d'inactivité, le cold start peut prendre 10–30 secondes.
+      C'est normal, la suite sera fluide.
+    </Alert>
+  );
+}
 
 export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure();
@@ -158,6 +200,7 @@ export function AppLayout() {
       {/* ── Content ── */}
       <AppShell.Main className={classes.main}>
         <PlanLimitBanner sub={sub} />
+        <SlowApiNotice />
         <Outlet />
       </AppShell.Main>
     </AppShell>

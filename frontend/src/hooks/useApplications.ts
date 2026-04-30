@@ -17,9 +17,11 @@ export function useApplications({
   limit = 20,
   showHidden = false,
 }: UseApplicationsOptions = {}) {
+  // Clé stable — le backend ne pagine pas côté serveur, on récupère tout une fois.
   const appsQuery = useQuery({
-    queryKey: ['applications', { search, status, page, limit }],
-    queryFn: () => applicationService.getApplications({ search, status, page, limit }),
+    queryKey: ['applications'],
+    queryFn: () => applicationService.getApplications(),
+    staleTime: 2 * 60 * 1000,
   });
 
   const orgsQuery = useQuery({
@@ -28,11 +30,37 @@ export function useApplications({
     staleTime: 5 * 60 * 1000,
   });
 
-  const apps = useMemo(() => {
-    const items = appsQuery.data?.items ?? [];
-    const includeRejected = showHidden || status === 'refusee';
-    return includeRejected ? items : items.filter((item) => item.status !== 'refusee');
-  }, [appsQuery.data, showHidden, status]);
+  const filtered = useMemo(() => {
+    let items = appsQuery.data?.items ?? [];
+
+    // Filtre refusée : masquée par défaut, visible si showHidden ou filtre statut = refusee
+    if (!showHidden && status !== 'refusee') {
+      items = items.filter((item) => item.status !== 'refusee');
+    }
+
+    // Filtre statut
+    if (status) {
+      items = items.filter((item) => item.status === status);
+    }
+
+    // Filtre recherche (company + title)
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.company.toLowerCase().includes(needle) ||
+          item.title.toLowerCase().includes(needle),
+      );
+    }
+
+    return items;
+  }, [appsQuery.data, showHidden, status, search]);
+
+  // Pagination client-side
+  const paginatedApps = useMemo(
+    () => filtered.slice((page - 1) * limit, page * limit),
+    [filtered, page, limit],
+  );
 
   const orgMap = useMemo(
     () => new Map((orgsQuery.data ?? []).map((o) => [o.id, o])),
@@ -40,11 +68,12 @@ export function useApplications({
   );
 
   return {
-    apps,
-    total: apps.length,
+    apps: paginatedApps,
+    total: filtered.length,
     organizations: orgsQuery.data ?? [],
     orgMap,
     loading: appsQuery.isLoading,
+    isFirstLoad: appsQuery.isLoading && !appsQuery.data,
     error: appsQuery.error,
     refetch: appsQuery.refetch,
   };
