@@ -1,16 +1,18 @@
 import React from 'react';
 import { LegalLayout } from '../components/LegalLayout';
+import { useI18n } from '../i18n';
 
 export const LegalNoticePage: React.FC = () => {
+  const { t } = useI18n();
   React.useEffect(() => {
-    document.title = 'Mentions légales — OfferTrail';
-  }, []);
+    document.title = t('legal.mentions') + ' — OfferTrail';
+  }, [t]);
 
   return (
     <LegalLayout
-      eyebrow="Informations légales"
-      title="Mentions légales"
-      updated="Dernière mise à jour : janvier 2026"
+      eyebrow={t('legal.eyebrowInfo')}
+      title={t('legal.mentions')}
+      updated={t('legal.updated')}
     >
       <div className="legal-section">
         <h2>Éditeur du site</h2>

@@ -1,83 +1,85 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { CONFIG } from '../config';
+import { useI18n } from '../i18n';
 import classes from './HomePage.module.css';
 
-const FEATURES = [
-  {
-    icon: '⚡',
-    title: 'Pipeline en temps réel',
-    desc: 'Retrouve instantanément ce qui est en attente, ce qui ghoste et ce qui nécessite une relance.',
-  },
-  {
-    icon: '🏢',
-    title: 'Contexte entreprise complet',
-    desc: 'Score de probité, historique des interactions et contacts rattachés à chaque candidature.',
-  },
-  {
-    icon: '🔔',
-    title: 'Relances intelligentes',
-    desc: "Ne laisse plus passer une opportunité. Suis tes relances avec des rappels contextuels.",
-  },
-  {
-    icon: '📊',
-    title: 'Analytics',
-    desc: 'Visualise ton taux de réponse, tes points de blocage et tes leviers d’amélioration.',
-  },
-  {
-    icon: '📇',
-    title: 'CRM candidature',
-    desc: 'Un espace structuré pour chaque offre : poste, salaire, recruteur, notes et timeline.',
-  },
-  {
-    icon: '☁️',
-    title: 'Accès partout',
-    desc: "Tes données sont synchronisées et accessibles depuis n'importe quel appareil, à tout moment.",
-  },
-];
-
-const PLAN_PRO = [
-  'Candidatures illimitées',
-  'Pipeline & statuts complets',
-  'Contacts & entreprises',
-  'Analytics complets',
-  'Relances automatiques',
-  'Score de probité',
-];
-
 export function HomePage() {
+  const { t } = useI18n();
+
+  const FEATURES = useMemo(() => [
+    {
+      icon: '⚡',
+      title: t('landing.mockup.pipeline.title'),
+      desc: t('auth.story.point1.desc'),
+    },
+    {
+      icon: '🏢',
+      title: t('landing.features.items.probity.title'),
+      desc: t('landing.features.items.probity.desc'),
+    },
+    {
+      icon: '🔔',
+      title: t('landing.features.items.followups.title'),
+      desc: t('landing.features.items.followups.desc'),
+    },
+    {
+      icon: '📊',
+      title: t('landing.features.items.kpis.title'),
+      desc: t('landing.features.items.kpis.desc'),
+    },
+    {
+      icon: '📇',
+      title: t('landing.features.items.contacts.title'),
+      desc: t('landing.features.items.contacts.desc'),
+    },
+    {
+      icon: '☁️',
+      title: t('landing.features.items.immediate.title'),
+      desc: t('landing.features.items.immediate.desc'),
+    },
+  ], [t]);
+
+  const PLAN_PRO = useMemo(() => [
+    t('landing.pricing.card.features.unlimited'),
+    t('landing.pricing.card.features.dashboard'),
+    t('landing.pricing.card.features.linked'),
+    t('landing.pricing.card.features.probity'),
+    t('landing.pricing.card.features.tracking'),
+    t('landing.pricing.card.features.import'),
+  ], [t]);
+
   useEffect(() => {
-    document.title = 'OfferTrail — Reprends la main sur ton pipeline';
-  }, []);
+    document.title = 'OfferTrail — ' + t('auth.story.title');
+  }, [t]);
 
   return (
     <>
       {/* ── Hero ── */}
       <section className={classes.hero}>
-        <span className={classes.eyebrow}>🚀 CRM de candidatures</span>
+        <span className={classes.eyebrow}>🚀 {t('auth.story.copy').split('—')[0].trim()}</span>
 
         <h1 className={classes.heroTitle}>
-          Reprends la main sur<br />
-          <em>ton pipeline de candidatures.</em>
+          {t('auth.story.title').split(' ').slice(0, 3).join(' ')}<br />
+          <em>{t('auth.story.title').split(' ').slice(3).join(' ')}</em>
         </h1>
 
         <p className={classes.heroSub}>
-          OfferTrail centralise toutes tes offres, relances, entreprises et contacts dans un
-          espace structuré comme un CRM — conçu pour les candidats sérieux.
+          {t('auth.story.copy')}
         </p>
 
         <div className={classes.heroCta}>
           <Link to="/register" className={classes.btnHeroPrimary}>
-            Démarrer maintenant →
+            {t('landing.hero.ctaPrimary')}
           </Link>
           <a href="#fonctionnalites" className={classes.btnHeroOutline}>
-            Voir les fonctionnalités
+            {t('landing.hero.ctaSecondary')}
           </a>
         </div>
 
         <p className={classes.proof}>
           <span className={classes.proofDot} />
-          {CONFIG.PRO_PRICE}/mois · Sans engagement · Résiliable à tout moment
+          {CONFIG.PRO_PRICE}{t('landing.pricing.card.period')} · {t('landing.pricing.card.note', { price: '' }).split('·')[1].trim()}
         </p>
       </section>
 

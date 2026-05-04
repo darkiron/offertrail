@@ -7,6 +7,7 @@ import {
   PasswordInput, Stack, Text, Title,
 } from '@mantine/core';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
 const schema = z
@@ -22,6 +23,7 @@ const schema = z
 type ResetPasswordForm = z.infer<typeof schema>;
 
 export function ResetPasswordPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -55,10 +57,10 @@ export function ResetPasswordPage() {
       if (supabaseError) throw supabaseError;
       navigate('/login', {
         replace: true,
-        state: { message: 'Mot de passe mis à jour. Tu peux maintenant te connecter.' },
+        state: { message: t('auth.resetPassword.success') },
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lien invalide ou expiré');
+    } catch {
+      setError(t('auth.forgotPassword.error') || t('auth.login.error'));
     }
   });
 
@@ -67,9 +69,9 @@ export function ResetPasswordPage() {
       <section className={classes.shell}>
         <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <Text c="dimmed">Validation du lien de réinitialisation…</Text>
+            <Text c="dimmed">{t('auth.resetPassword.validating')}</Text>
             <Anchor component={Link} to="/forgot-password" size="sm">
-              Demander un nouveau lien
+              {t('auth.resetPassword.requestNew')}
             </Anchor>
           </Stack>
         </Paper>
@@ -81,23 +83,23 @@ export function ResetPasswordPage() {
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Nouveau mot de passe</Badge>
+          <Badge variant="light" size="sm">{t('auth.resetPassword.badge')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Réinitialiser le mot de passe</Title>
+        <Title order={2} mb={4}>{t('auth.resetPassword.title')}</Title>
         <Text c="dimmed" size="sm" mb="xl">
-          Choisis un nouveau mot de passe sécurisé pour ton compte OfferTrail.
+          {t('auth.resetPassword.subtitle')}
         </Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <PasswordInput
-            label="Nouveau mot de passe"
+            label={t('auth.resetPassword.newLabel')}
             autoComplete="new-password"
             error={errors.password?.message}
             {...register('password')}
           />
 
           <PasswordInput
-            label="Confirmation"
+            label={t('auth.resetPassword.confirmLabel')}
             autoComplete="new-password"
             error={errors.confirmPassword?.message}
             {...register('confirmPassword')}
@@ -108,13 +110,13 @@ export function ResetPasswordPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Mettre à jour le mot de passe
+            {t('auth.resetPassword.submit')}
           </Button>
         </Stack>
 
         <Text size="sm" c="dimmed" mt="lg">
           <Anchor component={Link} to="/forgot-password" size="sm">
-            Demander un nouveau lien
+            {t('auth.resetPassword.requestNew')}
           </Anchor>
         </Text>
       </Paper>

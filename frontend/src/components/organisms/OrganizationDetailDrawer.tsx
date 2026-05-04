@@ -9,6 +9,8 @@ import { StatusBadge } from '../atoms/StatusBadge';
 import { Button } from '../atoms/Button';
 import OrganizationEditModal from './OrganizationEditModal';
 
+import { useI18n } from '../../i18n';
+
 interface OrganizationDetailDrawerProps {
   organizationId: number | null;
   onClose: () => void;
@@ -16,6 +18,7 @@ interface OrganizationDetailDrawerProps {
 }
 
 export function OrganizationDetailDrawer({ organizationId, onClose }: OrganizationDetailDrawerProps) {
+  const { t, locale } = useI18n();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -63,9 +66,9 @@ export function OrganizationDetailDrawer({ organizationId, onClose }: Organizati
 
             <Tabs defaultValue="overview" style={{ flex: 1 }}>
               <Tabs.List>
-                <Tabs.Tab value="overview">Aperçu</Tabs.Tab>
-                <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
-                <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
+                <Tabs.Tab value="overview">{t('organization.overview')}</Tabs.Tab>
+                <Tabs.Tab value="applications">{t('organization.applications')}</Tabs.Tab>
+                <Tabs.Tab value="contacts">{t('organization.contacts')}</Tabs.Tab>
               </Tabs.List>
 
               <ScrollArea style={{ flex: 1 }}>
@@ -77,16 +80,16 @@ export function OrganizationDetailDrawer({ organizationId, onClose }: Organizati
                       size="md"
                     />
                     <div>
-                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="sm">À propos</Text>
-                      <Text size="sm" c="dimmed" fs="italic" mb="sm">{data.notes || 'Aucune note.'}</Text>
+                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="sm">{t('organization.about')}</Text>
+                      <Text size="sm" c="dimmed" fs="italic" mb="sm">{data.notes || t('organization.noNotes')}</Text>
                       <Group grow>
                         <div>
-                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Localisation</Text>
-                          <Text size="sm">{data.city || 'Non spécifié'}</Text>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('organization.location')}</Text>
+                          <Text size="sm">{data.city || t('contacts.notDefined')}</Text>
                         </div>
                         <div>
-                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Date création</Text>
-                          <Text size="sm">{new Date(data.created_at).toLocaleDateString()}</Text>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('organization.creationDate')}</Text>
+                          <Text size="sm">{new Date(data.created_at).toLocaleDateString(locale.startsWith('fr') ? 'fr-FR' : 'en-US')}</Text>
                         </div>
                       </Group>
                     </div>
@@ -101,13 +104,13 @@ export function OrganizationDetailDrawer({ organizationId, onClose }: Organizati
                           style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
                           <div>
                             <Text size="sm" fw={700}>{app.title}</Text>
-                            <Text size="xs" c="dimmed">{new Date(app.applied_at).toLocaleDateString()}</Text>
+                            <Text size="xs" c="dimmed">{new Date(app.applied_at).toLocaleDateString(locale.startsWith('fr') ? 'fr-FR' : 'en-US')}</Text>
                           </div>
                           <StatusBadge status={app.status} />
                         </Group>
                       ))
                     ) : (
-                      <Text size="sm" c="dimmed" fs="italic" ta="center">Aucune candidature pour cet ETS.</Text>
+                      <Text size="sm" c="dimmed" fs="italic" ta="center">{t('organization.noApplications')}</Text>
                     )}
                   </Stack>
                 </Tabs.Panel>
@@ -115,7 +118,7 @@ export function OrganizationDetailDrawer({ organizationId, onClose }: Organizati
                 <Tabs.Panel value="contacts" pt="md">
                   <Stack gap="xs">
                     <Group justify="flex-end">
-                      <Button variant="ghost" size="small">+ AJOUTER CONTACT</Button>
+                      <Button variant="ghost" size="small">{t('organization.addContactAction')}</Button>
                     </Group>
                     {data.contacts && data.contacts.length > 0 ? (
                       data.contacts.map((c: { id: number; first_name: string; last_name: string; role: string; email?: string; is_recruiter?: boolean }) => (
@@ -127,17 +130,17 @@ export function OrganizationDetailDrawer({ organizationId, onClose }: Organizati
                         </Stack>
                       ))
                     ) : (
-                      <Text size="sm" c="dimmed" fs="italic" ta="center">Aucun contact enregistré.</Text>
+                      <Text size="sm" c="dimmed" fs="italic" ta="center">{t('organization.noContacts')}</Text>
                     )}
                   </Stack>
                 </Tabs.Panel>
               </ScrollArea>
             </Tabs>
 
-            <Button variant="primary" onClick={() => setEditing(true)}>MODIFIER ETS</Button>
+            <Button variant="primary" onClick={() => setEditing(true)}>{t('organization.editAction')}</Button>
           </Stack>
         ) : (
-          <Text c="dimmed" ta="center">Établissement introuvable.</Text>
+          <Text c="dimmed" ta="center">{t('organization.notFound')}</Text>
         )}
       </Drawer>
 
