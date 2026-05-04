@@ -7,6 +7,7 @@ import {
   Stack, Text, TextInput, Title,
 } from '@mantine/core';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
 const schema = z.object({
@@ -16,6 +17,7 @@ const schema = z.object({
 type ForgotPasswordForm = z.infer<typeof schema>;
 
 export function ForgotPasswordPage() {
+  const { t } = useI18n();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -27,22 +29,16 @@ export function ForgotPasswordPage() {
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Formulaire invalide');
-      return;
-    }
-
     try {
       setError(null);
       const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(
-        parsed.data.email,
+        values.email,
         { redirectTo: `${window.location.origin}/reset-password` },
       );
       if (supabaseError) throw supabaseError;
-      setMessage("Si cet email est enregistré, un lien de réinitialisation a été envoyé.");
+      setMessage(t('auth.forgotPassword.success'));
     } catch {
-      setError("Impossible d'envoyer la demande pour le moment.");
+      setError(t('auth.forgotPassword.error') || t('auth.login.error'));
     }
   });
 
@@ -50,21 +46,21 @@ export function ForgotPasswordPage() {
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
         <Anchor component={Link} to="/login" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
-          ← Retour à la connexion
+          ← {t('auth.forgotPassword.backToLogin')}
         </Anchor>
 
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Réinitialisation</Badge>
+          <Badge variant="light" size="sm">{t('auth.resetPassword.title')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Mot de passe oublié</Title>
+        <Title order={2} mb={4}>{t('auth.forgotPassword.title')}</Title>
         <Text c="dimmed" size="sm" mb="xl">
-          Entre ton email. Si un compte existe, un lien de réinitialisation sera envoyé.
+          {t('auth.forgotPassword.subtitle')}
         </Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <TextInput
-            label="Email"
-            placeholder="toi@exemple.fr"
+            label={t('auth.login.emailLabel')}
+            placeholder={t('auth.login.emailPlaceholder')}
             type="email"
             autoComplete="email"
             autoCapitalize="none"
@@ -81,7 +77,7 @@ export function ForgotPasswordPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Envoyer le lien
+            {t('auth.forgotPassword.submit')}
           </Button>
         </Stack>
       </Paper>

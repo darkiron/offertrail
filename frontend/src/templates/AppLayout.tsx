@@ -37,6 +37,7 @@ import classes from './AppLayout.module.css';
 
 
 function SlowApiNotice() {
+  const { t } = useI18n();
   const isFetching = useIsFetching();
   const [visible, setVisible] = useState(false);
   const alreadyShown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
@@ -67,11 +68,9 @@ function SlowApiNotice() {
       withCloseButton
       mb="md"
       onClose={() => setVisible(false)}
-      title="Démarrage en cours"
+      title={t('nav.slowApi.title')}
     >
-      L'API et le frontend sont sur des plans gratuits (Railway + Vercel) —
-      après une période d'inactivité, le cold start peut prendre 10–30 secondes.
-      C'est normal, la suite sera fluide.
+      {t('nav.slowApi.copy')}
     </Alert>
   );
 }
@@ -155,14 +154,14 @@ export function AppLayout() {
                   onClick={() => changeLanguage('fr')}
                   active={locale.startsWith('fr')}
                 >
-                  Français
+                  {t('nav.langs.fr')}
                 </Menu.Item>
                 <Menu.Item
                   leftSection={<Text size="sm">🇬🇧</Text>}
                   onClick={() => changeLanguage('en')}
                   active={locale.startsWith('en')}
                 >
-                  English
+                  {t('nav.langs.en')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>

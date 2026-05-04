@@ -5,13 +5,15 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { MantineProvider } from '@mantine/core';
 
+import { useI18n } from '../i18n';
+
 // Mocks
 vi.mock('../i18n', () => ({
-  useI18n: () => ({
+  useI18n: vi.fn(() => ({
     t: (key: string) => key,
     locale: 'fr',
     changeLanguage: vi.fn(),
-  }),
+  })),
 }));
 
 vi.mock('@mantine/core', async (importOriginal) => {
@@ -28,6 +30,7 @@ vi.mock('@mantine/core', async (importOriginal) => {
       toggleColorScheme: vi.fn(),
     }),
     Menu: MockMenu,
+    Burger: ({ opened, onClick }: any) => <button role="burger" onClick={onClick}>{opened ? 'Close' : 'Open'}</button>,
   };
 });
 
@@ -68,7 +71,7 @@ describe('LandingLayout', () => {
     expect(flags.length).toBeGreaterThan(0);
   });
 
-  it('toggles mobile menu', async () => {
+  it('toggles mobile menu and handles link clicks', async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -77,15 +80,68 @@ describe('LandingLayout', () => {
         { wrapper }
       );
     });
-    // In Mantine, Burger is a button. We can find it by its class or just find the third button (lang, theme, burger)
-    const buttons = screen.getAllByRole('button');
-    const burger = buttons.find(b => b.className.includes('Burger')) || buttons[buttons.length - 1];
+    // In Mantine, Burger is a button.
+    const burger = screen.getByRole('burger'); // MockBurger uses role burger
     
     await act(async () => {
       fireEvent.click(burger);
     });
     // Drawer title should be visible
     expect(screen.getAllByText(/OfferTrail/i).length).toBeGreaterThan(0);
+
+    // Click a link in mobile menu to close it
+    const featuresLink = screen.getByText('nav.features');
+    await act(async () => {
+      fireEvent.click(featuresLink);
+    });
+    // The drawer would close in a real app
+  });
+
+  it('handles theme toggle in both desktop and mobile views', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <LandingLayout />
+        </MemoryRouter>,
+        { wrapper }
+      );
+    });
+    const themeButtons = screen.getAllByTitle('nav.switchTheme');
+    expect(themeButtons.length).toBe(2); // Desktop and mobile
+
+    await act(async () => {
+      fireEvent.click(themeButtons[0]);
+    });
+  });
+
+  it('handles language change in LandingLayout', async () => {
+    const mockChangeLanguage = vi.fn();
+    vi.mocked(useI18n).mockReturnValue({
+      t: (k: string) => k,
+      locale: 'fr',
+      changeLanguage: mockChangeLanguage,
+    } as any);
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <LandingLayout />
+        </MemoryRouter>,
+        { wrapper }
+      );
+    });
+
+    const enOptions = screen.getAllByText('nav.langs.en');
+    await act(async () => {
+      fireEvent.click(enOptions[0]);
+    });
+    expect(mockChangeLanguage).toHaveBeenCalledWith('en');
+
+    const frOptions = screen.getAllByText('nav.langs.fr');
+    await act(async () => {
+      fireEvent.click(frOptions[0]);
+    });
+    expect(mockChangeLanguage).toHaveBeenCalledWith('fr');
   });
 
   it('renders footer links', async () => {

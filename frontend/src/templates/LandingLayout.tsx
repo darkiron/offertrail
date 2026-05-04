@@ -30,14 +30,14 @@ export function LandingLayout() {
           onClick={() => changeLanguage('fr')}
           active={locale.startsWith('fr')}
         >
-          Français
+          {t('nav.langs.fr')}
         </Menu.Item>
         <Menu.Item
           leftSection={<Text size="sm">🇬🇧</Text>}
           onClick={() => changeLanguage('en')}
           active={locale.startsWith('en')}
         >
-          English
+          {t('nav.langs.en')}
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>

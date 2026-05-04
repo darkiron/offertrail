@@ -115,11 +115,17 @@ describe('AppLayout', () => {
     expect(flagBtn).toBeInTheDocument();
     
     // In our MockMenu, the dropdown items are rendered directly
-    const enOption = screen.getByText('English');
+    const enOption = screen.getByText('nav.langs.en');
     await act(async () => {
       fireEvent.click(enOption);
     });
     expect(mockChangeLanguage).toHaveBeenCalledWith('en');
+
+    const frOption = screen.getByText('nav.langs.fr');
+    await act(async () => {
+      fireEvent.click(frOption);
+    });
+    expect(mockChangeLanguage).toHaveBeenCalledWith('fr');
   });
 
   it('handles theme toggle', async () => {
@@ -181,13 +187,13 @@ describe('AppLayout', () => {
       vi.advanceTimersByTime(2000);
     });
 
-    expect(screen.getByText(/Démarrage en cours/i)).toBeInTheDocument();
+    expect(screen.getByText('nav.slowApi.title')).toBeInTheDocument();
     
     const closeAlert = screen.getByText('Close Alert');
     await act(async () => {
       fireEvent.click(closeAlert);
     });
-    expect(screen.queryByText(/Démarrage en cours/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('nav.slowApi.title')).not.toBeInTheDocument();
 
     vi.useRealTimers();
   });
