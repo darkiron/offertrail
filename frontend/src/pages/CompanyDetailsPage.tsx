@@ -31,7 +31,7 @@ type CompanyDetails = Organization & {
 
 type DetailTab = 'overview' | 'applications' | 'contacts' | 'activity';
 
-const tabDefinitions: Array<{ id: DetailTab; label: string }> = [
+const tabDefinitions = (t: (k: string) => string): Array<{ id: DetailTab; label: string }> => [
   { id: 'overview', label: t('organization.overview') },
   { id: 'applications', label: t('organization.applications') },
   { id: 'contacts', label: t('organization.contacts') },
@@ -201,7 +201,7 @@ export const CompanyDetailsPage: React.FC = () => {
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
         <Paper p="xl" radius="lg" withBorder>
           <Group gap="xs" mb="lg" wrap="wrap">
-            {tabDefinitions.map((tab) => (
+            {tabDefinitions(t).map((tab) => (
               <Chip
                 key={tab.id}
                 checked={activeTab === tab.id}
