@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
 import {
   AppShell,
   Alert,
@@ -136,6 +137,7 @@ export function AppLayout() {
           </Group>
 
           <Group gap="xs">
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"

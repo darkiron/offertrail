@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/legal.css';
 import { LegalLayout } from '../components/LegalLayout';
+import { useI18n } from '../i18n';
 
 const contactStyles = `
   .contact-cards {
@@ -99,13 +100,14 @@ const contactStyles = `
 `;
 
 export const ContactPage: React.FC = () => {
+  const { t } = useI18n();
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
 
   React.useEffect(() => {
-    document.title = 'Contact — OfferTrail';
-  }, []);
+    document.title = t('legal.contactPage.title') + ' — OfferTrail';
+  }, [t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,40 +120,40 @@ export const ContactPage: React.FC = () => {
 
   return (
     <LegalLayout
-      eyebrow="Support & assistance"
-      title="Nous contacter"
-      updated="Une question, un bug, une demande RGPD ? On vous répond sous 48h ouvrées."
+      eyebrow={t('legal.contactPage.eyebrow')}
+      title={t('legal.contactPage.title')}
+      updated={t('legal.contactPage.updated')}
     >
       <style>{contactStyles}</style>
 
       <div className="contact-cards">
         <div className="contact-info-card">
           <div className="contact-info-card-icon">✉️</div>
-          <h3>Email direct</h3>
+          <h3>{t('legal.contactPage.emailTitle')}</h3>
           <a href="mailto:contact@offertrail.fr">contact@offertrail.fr</a>
         </div>
         <div className="contact-info-card">
           <div className="contact-info-card-icon">⏱️</div>
-          <h3>Délai de réponse</h3>
-          <p>Sous 48h ouvrées en général.</p>
+          <h3>{t('legal.contactPage.delayTitle')}</h3>
+          <p>{t('legal.contactPage.delayText')}</p>
         </div>
       </div>
 
       <div className="legal-section">
-        <h2>Envoyer un message</h2>
+        <h2>{t('legal.contactPage.formTitle')}</h2>
         {sent ? (
           <div className="contact-success">
-            Message envoyé — merci ! On vous répond dès que possible.
+            {t('legal.contactPage.successMessage')}
           </div>
         ) : (
           <form className="contact-form" onSubmit={handleSubmit}>
             <div className="contact-row">
               <div className="contact-field">
-                <label className="contact-label">Nom</label>
+                <label className="contact-label">{t('legal.contactPage.nameLabel')}</label>
                 <input
                   className="contact-input"
                   type="text"
-                  placeholder="Votre nom"
+                  placeholder={t('legal.contactPage.namePlaceholder')}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
@@ -162,7 +164,7 @@ export const ContactPage: React.FC = () => {
                 <input
                   className="contact-input"
                   type="email"
-                  placeholder="vous@exemple.fr"
+                  placeholder={t('legal.contactPage.emailPlaceholder')}
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
@@ -171,11 +173,11 @@ export const ContactPage: React.FC = () => {
             </div>
 
             <div className="contact-field">
-              <label className="contact-label">Sujet</label>
+              <label className="contact-label">{t('legal.contactPage.subjectLabel')}</label>
               <input
                 className="contact-input"
                 type="text"
-                placeholder="Question sur l'abonnement, bug, demande RGPD..."
+                placeholder={t('legal.contactPage.subjectPlaceholder')}
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 required
@@ -183,10 +185,10 @@ export const ContactPage: React.FC = () => {
             </div>
 
             <div className="contact-field">
-              <label className="contact-label">Message</label>
+              <label className="contact-label">{t('legal.contactPage.messageLabel')}</label>
               <textarea
                 className="contact-textarea"
-                placeholder="Décrivez votre demande..."
+                placeholder={t('legal.contactPage.messagePlaceholder')}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 required
@@ -194,7 +196,7 @@ export const ContactPage: React.FC = () => {
             </div>
 
             <button className="contact-submit" type="submit" disabled={loading}>
-              {loading ? 'Envoi...' : 'Envoyer le message'}
+              {loading ? t('legal.contactPage.sending') : t('legal.contactPage.submitAction')}
             </button>
           </form>
         )}

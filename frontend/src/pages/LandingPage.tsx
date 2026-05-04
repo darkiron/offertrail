@@ -113,7 +113,7 @@ export const LandingPage: React.FC = () => {
       </div>
 
       {/* ─── Features ─── */}
-      <section id="features" className="lp-section-wrap lp-alt">
+      <section id="fonctionnalites" className="lp-section-wrap lp-alt">
         <div className="lp-section-inner">
           <div className="lp-section-kicker">Fonctionnalités</div>
           <h2 className="lp-section-title">Tout ce qu'il faut. Rien de superflu.</h2>
@@ -130,7 +130,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ─── Pricing ─── */}
-      <section className="lp-section-wrap">
+      <section id="tarifs" className="lp-section-wrap">
         <div className="lp-section-inner">
           <div className="lp-section-kicker">Tarif</div>
           <h2 className="lp-section-title">Simple. Transparent. Un seul plan.</h2>
