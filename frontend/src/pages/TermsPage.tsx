@@ -1,16 +1,18 @@
 import React from 'react';
 import { LegalLayout } from '../components/LegalLayout';
+import { useI18n } from '../i18n';
 
 export const TermsPage: React.FC = () => {
+  const { t } = useI18n();
   React.useEffect(() => {
-    document.title = 'Conditions générales de vente — OfferTrail';
-  }, []);
+    document.title = t('legal.terms') + ' — OfferTrail';
+  }, [t]);
 
   return (
     <LegalLayout
-      eyebrow="Conditions commerciales"
-      title="Conditions Générales de Vente"
-      updated="Dernière mise à jour : janvier 2026"
+      eyebrow={t('legal.eyebrowTerms')}
+      title={t('legal.terms')}
+      updated={t('legal.updated')}
     >
       <div className="legal-section">
         <h2>Article 1 — Objet</h2>

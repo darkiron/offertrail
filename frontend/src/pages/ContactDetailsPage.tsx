@@ -28,11 +28,11 @@ type ContactDetails = Contact & {
 
 type ContactTab = 'overview' | 'applications' | 'activity';
 
-const formatDate = (value?: string | null, withTime = false) => {
+const formatDate = (value: string | null | undefined, withTime: boolean, locale: string) => {
   if (!value) {
     return '-';
   }
-  return new Date(value).toLocaleString('fr-FR', withTime ? {
+  return new Date(value).toLocaleString(locale.startsWith('fr') ? 'fr-FR' : 'en-US', withTime ? {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   } : {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -40,7 +40,7 @@ const formatDate = (value?: string | null, withTime = false) => {
 };
 
 export const ContactDetailsPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<ContactDetails | null>(null);
@@ -63,7 +63,7 @@ export const ContactDetailsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { document.title = 'Contact — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('nav.contacts') + ' — OfferTrail'; }, [t]);
 
   useEffect(() => {
     fetchContact();
@@ -146,7 +146,7 @@ export const ContactDetailsPage: React.FC = () => {
             </Stack>
             <Stack gap={4}>
               <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.updatedAt')}</Text>
-              <Text size="sm" c="dimmed">{formatDate(data.updated_at, true)}</Text>
+              <Text size="sm" c="dimmed">{formatDate(data.updated_at, true, locale)}</Text>
             </Stack>
           </Stack>
         </Paper>
@@ -192,8 +192,8 @@ export const ContactDetailsPage: React.FC = () => {
                         <Text fw={700} size="sm">{application.title}</Text>
                         <Group gap="xs" wrap="wrap">
                           <Text size="xs" c="dimmed">{application.company}</Text>
-                          <Text size="xs" c="dimmed">{application.type}</Text>
-                          <Text size="xs" c="dimmed">{t('dashboard.applied')} {formatDate(application.applied_at)}</Text>
+                          <Text size="xs" c="dimmed">{t(`newApplication.jobTypes.${application.type}`) || application.type}</Text>
+                          <Text size="xs" c="dimmed">{t('dashboard.applied')} {formatDate(application.applied_at, false, locale)}</Text>
                         </Group>
                       </Stack>
                       <StatusBadge status={application.status} />
@@ -216,8 +216,8 @@ export const ContactDetailsPage: React.FC = () => {
               <Stack gap="sm">
                 {data.events.map((event) => (
                   <Paper key={`${event.id}-${event.ts}`} p="md" radius="md" withBorder>
-                    <Text fw={700} size="sm">{String(event.type || event.event_type).replace(/_/g, ' ')}</Text>
-                    <Text size="xs" c="dimmed" mt={4}>{formatDate(event.ts, true)}</Text>
+                    <Text fw={700} size="sm">{t(`organization.events.${String(event.type || event.event_type).toLowerCase()}`) !== `organization.events.${String(event.type || event.event_type).toLowerCase()}` ? t(`organization.events.${String(event.type || event.event_type).toLowerCase()}`) : String(event.type || event.event_type).replace(/_/g, ' ')}</Text>
+                    <Text size="xs" c="dimmed" mt={4}>{formatDate(event.ts, true, locale)}</Text>
                     {event.application ? (
                       <Group gap="xs" mt="xs">
                         <Text size="xs" c="dimmed">{event.application.title}</Text>
@@ -249,7 +249,7 @@ export const ContactDetailsPage: React.FC = () => {
               },
               {
                 label: t('contacts.created'),
-                items: [formatDate(data.created_at)],
+                items: [formatDate(data.created_at, false, locale)],
               },
             ].map((section) => (
               <Stack key={section.label} gap={4} pb="md" className={classes.sectionDivider}>

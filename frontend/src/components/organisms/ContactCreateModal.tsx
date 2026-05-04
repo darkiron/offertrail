@@ -153,7 +153,7 @@ export function ContactCreateModal({ onClose, onCreated }: ContactCreateModalPro
             <Group justify="space-between">
               <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
               <Button type="submit" variant="primary" disabled={loading}>
-                {loading ? 'Création...' : t('contacts.createContact')}
+                {loading ? t('common.loading') : t('contacts.createContact')}
               </Button>
             </Group>
           </Stack>

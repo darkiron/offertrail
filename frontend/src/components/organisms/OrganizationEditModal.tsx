@@ -6,6 +6,7 @@ import {
 } from '@mantine/core';
 import type { Contact, Organization, OrganizationType } from '../../types';
 import { contactService, organizationService } from '../../services/api';
+import { useI18n } from '../../i18n';
 import { Button } from '../atoms/Button';
 
 interface OrganizationEditModalProps {
@@ -16,19 +17,6 @@ interface OrganizationEditModalProps {
   onSaved: (org?: Organization) => void;
 }
 
-const ORG_TYPE_OPTIONS = [
-  { value: 'CLIENT_FINAL', label: 'Client final' },
-  { value: 'ESN', label: 'ESN' },
-  { value: 'CABINET_RECRUTEMENT', label: 'Cabinet' },
-  { value: 'STARTUP', label: 'Startup' },
-  { value: 'PME', label: 'PME' },
-  { value: 'GRAND_COMPTE', label: 'Grand compte' },
-  { value: 'PORTAGE', label: 'Portage' },
-  { value: 'AUTRE', label: 'Autre' },
-];
-
-const EMPTY_CONTACT = { first_name: '', last_name: '', role: '', email: '', phone: '', linkedin_url: '', notes: '' };
-
 export function OrganizationEditModal({
   organization,
   initialName,
@@ -36,7 +24,21 @@ export function OrganizationEditModal({
   onClose,
   onSaved,
 }: OrganizationEditModalProps) {
+  const { t } = useI18n();
   const isCreate = !organization;
+
+  const ORG_TYPE_OPTIONS = useMemo(() => [
+    { value: 'CLIENT_FINAL', label: t('newApplication.orgTypes.CLIENT_FINAL') },
+    { value: 'ESN', label: t('newApplication.orgTypes.ESN') },
+    { value: 'CABINET_RECRUTEMENT', label: t('newApplication.orgTypes.CABINET_RECRUTEMENT') },
+    { value: 'STARTUP', label: t('newApplication.orgTypes.STARTUP') },
+    { value: 'PME', label: t('newApplication.orgTypes.PME') },
+    { value: 'GRAND_COMPTE', label: t('newApplication.orgTypes.GRAND_COMPTE') },
+    { value: 'PORTAGE', label: t('newApplication.orgTypes.PORTAGE') },
+    { value: 'AUTRE', label: t('newApplication.orgTypes.AUTRE') },
+  ], [t]);
+
+  const EMPTY_CONTACT = { first_name: '', last_name: '', role: '', email: '', phone: '', linkedin_url: '', notes: '' };
 
   const [form, setForm] = useState<Partial<Organization>>({
     name: initialName || organization?.name || '',
@@ -80,7 +82,7 @@ export function OrganizationEditModal({
       setLinkedContacts(current);
       setAvailableContacts(all.filter((c) => !current.some((x) => x.id === c.id)));
     } catch (e: unknown) {
-      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || 'Impossible de charger les contacts.');
+      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || t('contacts.loadError'));
     } finally {
       setContactsLoading(false);
     }
@@ -114,7 +116,7 @@ export function OrganizationEditModal({
         onSaved();
       }
     } catch (err: unknown) {
-      setError((axios.isAxiosError(err) && err.response?.data?.detail) || "Échec de la sauvegarde de l'ETS.");
+      setError((axios.isAxiosError(err) && err.response?.data?.detail) || t('organization.saveError'));
     } finally {
       setLoading(false);
     }
@@ -129,7 +131,7 @@ export function OrganizationEditModal({
       await loadContacts();
       onSaved();
     } catch (e: unknown) {
-      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || 'Impossible de rattacher ce contact.');
+      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || t('organization.linkContactError'));
     } finally {
       setLinkingContactId(null);
     }
@@ -144,7 +146,7 @@ export function OrganizationEditModal({
       await loadContacts();
       onSaved();
     } catch (e: unknown) {
-      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || 'Impossible de créer le contact.');
+      setContactError((axios.isAxiosError(e) && e.response?.data?.detail) || t('organization.createContactError'));
     } finally {
       setCreatingContact(false);
     }
@@ -158,10 +160,10 @@ export function OrganizationEditModal({
       title={
         <Stack gap={2}>
           <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">
-            {isCreate ? 'Création ETS' : 'Édition ETS'}
+            {isCreate ? t('organization.createKicker') : t('organization.editKicker')}
           </Text>
           <Text size="xl" fw={700}>
-            {isCreate ? 'Créer un établissement' : "Modifier l'ETS"}
+            {isCreate ? t('organization.createTitle') : t('organization.editTitle')}
           </Text>
         </Stack>
       }
@@ -172,35 +174,35 @@ export function OrganizationEditModal({
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
-              label="Nom"
+              label={t('newApplication.orgLabels.name')}
               required
               value={form.name || ''}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               style={{ gridColumn: '1 / -1' }}
             />
             <Select
-              label="Type"
+              label={t('newApplication.orgLabels.type')}
               data={ORG_TYPE_OPTIONS}
               value={(form.type as string) || 'AUTRE'}
               onChange={(val) => setForm((f) => ({ ...f, type: (val as OrganizationType) || 'AUTRE' }))}
             />
             <TextInput
-              label="Ville"
+              label={t('newApplication.orgLabels.city')}
               value={(form.city as string) || ''}
               onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             />
             <TextInput
-              label="Site web"
+              label={t('newApplication.orgLabels.website')}
               value={(form.website as string) || ''}
               onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
             />
             <TextInput
-              label="LinkedIn"
+              label={t('newApplication.orgLabels.linkedin')}
               value={(form.linkedin_url as string) || ''}
               onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
             />
             <Textarea
-              label="Notes"
+              label={t('newApplication.orgLabels.notes')}
               rows={4}
               value={(form.notes as string) || ''}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -210,7 +212,7 @@ export function OrganizationEditModal({
 
           {!isCreate && organization && (
             <Stack gap="md">
-              <Text size="sm" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Contacts liés</Text>
+              <Text size="sm" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.linkedContacts')}</Text>
 
               {contactError && <Text c="red" size="sm">{contactError}</Text>}
 
@@ -229,13 +231,13 @@ export function OrganizationEditModal({
                   ))}
                 </Stack>
               ) : (
-                <Text size="sm" c="dimmed" fs="italic">Aucun contact rattaché à cet ETS.</Text>
+                <Text size="sm" c="dimmed" fs="italic">{t('organization.noLinkedContacts')}</Text>
               )}
 
               <div>
                 <Autocomplete
-                  label="Lier un contact existant"
-                  placeholder="Rechercher un nom ou un email…"
+                  label={t('organization.linkContactTitle')}
+                  placeholder={t('organization.linkContactPlaceholder')}
                   value={contactQuery}
                   onChange={setContactQuery}
                   data={filteredContacts.map((c) => `${c.first_name} ${c.last_name}`)}
@@ -244,19 +246,19 @@ export function OrganizationEditModal({
                     if (found) handleLinkContact(found);
                   }}
                 />
-                {linkingContactId !== null && <Text size="xs" c="dimmed" mt="xs">Ajout en cours…</Text>}
+                {linkingContactId !== null && <Text size="xs" c="dimmed" mt="xs">{t('organization.linking')}</Text>}
               </div>
 
               <Stack gap="xs">
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Créer un nouveau contact</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.createNewContact')}</Text>
                 <SimpleGrid cols={2} spacing="sm">
-                  <TextInput placeholder="Prénom" value={newContact.first_name} onChange={(e) => setNewContact((n) => ({ ...n, first_name: e.target.value }))} />
-                  <TextInput placeholder="Nom" value={newContact.last_name} onChange={(e) => setNewContact((n) => ({ ...n, last_name: e.target.value }))} />
-                  <TextInput placeholder="Rôle" value={newContact.role} onChange={(e) => setNewContact((n) => ({ ...n, role: e.target.value }))} />
-                  <TextInput placeholder="Email" type="email" value={newContact.email} onChange={(e) => setNewContact((n) => ({ ...n, email: e.target.value }))} />
-                  <TextInput placeholder="Téléphone" value={newContact.phone} onChange={(e) => setNewContact((n) => ({ ...n, phone: e.target.value }))} />
-                  <TextInput placeholder="LinkedIn" value={newContact.linkedin_url} onChange={(e) => setNewContact((n) => ({ ...n, linkedin_url: e.target.value }))} />
-                  <Textarea placeholder="Notes" rows={2} value={newContact.notes} onChange={(e) => setNewContact((n) => ({ ...n, notes: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
+                  <TextInput placeholder={t('contacts.firstName')} value={newContact.first_name} onChange={(e) => setNewContact((n) => ({ ...n, first_name: e.target.value }))} />
+                  <TextInput placeholder={t('contacts.lastName')} value={newContact.last_name} onChange={(e) => setNewContact((n) => ({ ...n, last_name: e.target.value }))} />
+                  <TextInput placeholder={t('contacts.role')} value={newContact.role} onChange={(e) => setNewContact((n) => ({ ...n, role: e.target.value }))} />
+                  <TextInput placeholder={t('contacts.email')} type="email" value={newContact.email} onChange={(e) => setNewContact((n) => ({ ...n, email: e.target.value }))} />
+                  <TextInput placeholder={t('contacts.phone')} value={newContact.phone} onChange={(e) => setNewContact((n) => ({ ...n, phone: e.target.value }))} />
+                  <TextInput placeholder={t('contacts.linkedin')} value={newContact.linkedin_url} onChange={(e) => setNewContact((n) => ({ ...n, linkedin_url: e.target.value }))} />
+                  <Textarea placeholder={t('contacts.notes')} rows={2} value={newContact.notes} onChange={(e) => setNewContact((n) => ({ ...n, notes: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
                 </SimpleGrid>
                 <Button
                   type="button"
@@ -264,16 +266,16 @@ export function OrganizationEditModal({
                   disabled={creatingContact || !newContact.first_name.trim() || !newContact.last_name.trim()}
                   onClick={handleCreateContact}
                 >
-                  {creatingContact ? 'Création…' : 'Créer et rattacher'}
+                  {creatingContact ? t('organization.creating') : t('organization.createAndLink')}
                 </Button>
               </Stack>
             </Stack>
           )}
 
           <Group justify="space-between">
-            <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Sauvegarde…' : isCreate ? "Créer l'ETS" : 'Enregistrer'}
+              {loading ? t('account.saving') : isCreate ? t('organization.createTitle') : t('common.save')}
             </Button>
           </Group>
         </Stack>

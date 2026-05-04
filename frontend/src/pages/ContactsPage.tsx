@@ -28,8 +28,8 @@ export const ContactsPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Contacts — OfferTrail';
-  }, []);
+    document.title = t('nav.contacts') + ' — OfferTrail';
+  }, [t]);
 
   const tabs: Array<{ id: ContactTab; label: string; hint: string }> = [
     { id: 'all', label: t('contacts.tabAll'), hint: t('contacts.tabAllHint') },
