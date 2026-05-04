@@ -19,6 +19,12 @@ interface NewApplicationModalProps {
   onCreated: () => void;
 }
 
+const EMPTY_ORG = { name: '', type: 'AUTRE' as OrganizationType, city: '', website: '', linkedin_url: '', notes: '' };
+
+export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalProps) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+
   const ORG_TYPE_OPTIONS = useMemo(() => [
     { value: 'CLIENT_FINAL', label: t('newApplication.orgTypes.CLIENT_FINAL') },
     { value: 'ESN', label: t('newApplication.orgTypes.ESN') },
@@ -40,12 +46,6 @@ interface NewApplicationModalProps {
     { value: 'CDD', label: t('newApplication.jobTypes.CDD') },
     { value: 'INTERN', label: t('newApplication.jobTypes.INTERN') },
   ], [t]);
-
-const EMPTY_ORG = { name: '', type: 'AUTRE' as OrganizationType, city: '', website: '', linkedin_url: '', notes: '' };
-
-export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalProps) {
-  const { t } = useI18n();
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     company: '',
