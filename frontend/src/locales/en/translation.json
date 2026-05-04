@@ -255,7 +255,19 @@
       "total": "Organizations",
       "engaged": "Active",
       "responsive": "Responsive",
-      "responsiveHint": "Average response rate"
+      "responsiveHint": "Average response rate",
+      "totalApplicationsHint": "cumulative volume",
+      "responseRateHint": "detected feedbacks",
+      "positiveRate": "Positive rate",
+      "positiveRateHint": "interviews or offers",
+      "ghosting": "Ghosting",
+      "ghostingHint": "no feedback after 30d",
+      "avgResponseHint": "days before first feedback",
+      "rejectionRate": "Estimated rejection rate",
+      "rejectionRateHint": "from status signals",
+      "totalResponses": "Recorded responses",
+      "totalResponsesHint": "over all applications",
+      "volume": "Volume"
     },
     "health": {
       "healthy": "Healthy dynamic",
@@ -276,8 +288,8 @@
     "loadError": "Unable to load organizations.",
     "detailError": "Unable to load organization sheet.",
     "detailCopy": "Check organization details, view linked applications, open useful contacts and update the ORG record without leaving the page.",
-    "editAction": "Edit ORG sheet",
-    "maintenanceAction": "ORG Maintenance",
+    "editAction": "EDIT ORG",
+    "maintenanceAction": "ORG Maintenance →",
     "summaryTitle": "Quick summary",
     "lastUpdate": "Last update",
     "createdAt": "Record creation",
@@ -288,24 +300,6 @@
     "applications": "Applications",
     "contacts": "Contacts",
     "activity": "Activity",
-    "stats": {
-      "total": "Organizations",
-      "engaged": "Active",
-      "responsive": "Responsive",
-      "responsiveHint": "Average response rate",
-      "totalApplicationsHint": "cumulative volume",
-      "responseRateHint": "detected feedbacks",
-      "positiveRate": "Positive rate",
-      "positiveRateHint": "interviews or offers",
-      "ghosting": "Ghosting",
-      "ghostingHint": "no feedback after 30d",
-      "avgResponseHint": "days before first feedback",
-      "rejectionRate": "Estimated rejection rate",
-      "rejectionRateHint": "from status signals",
-      "totalResponses": "Recorded responses",
-      "totalResponsesHint": "over all applications",
-      "volume": "Volume"
-    },
     "noNotes": "No notes recorded for this organization.",
     "noLinkedApplications": "No linked applications for this ORG.",
     "noLinkedContacts": "No linked contacts for this ORG.",
@@ -313,7 +307,6 @@
     "infoTitle": "ORG Information",
     "linkedViewTitle": "Linked view",
     "eventsTitle": "Events",
-    "maintenanceAction": "ORG Maintenance →",
     "visualSort": "Visual sort",
     "noMatch": "No organization matches current filters.",
     "statsVolumeHint": "cumulative activity",
@@ -403,8 +396,7 @@
     "noApplications": "No applications for this ORG.",
     "addContactAction": "+ ADD CONTACT",
     "noContacts": "No contacts recorded.",
-    "notFound": "Organization not found.",
-    "editAction": "EDIT ORG"
+    "notFound": "Organization not found."
   },
   "newApplication": {
     "kicker": "New opportunity",
@@ -505,12 +497,30 @@
       "kicker": "Features",
       "title": "Everything you need. Nothing you don't.",
       "items": {
-        "kpis": { "title": "Real-time KPIs", "desc": "Rejection rate, response rate, average delay. Understand what works in your search, supported by numbers." },
-        "followups": { "title": "Follow-up queue", "desc": "Don't leave any application without a follow-up. OfferTrail reminds you when to follow up and which contact to reach out to." },
-        "probity": { "title": "Probity score", "desc": "Each company receives a signal based on collective feedback. Know what to expect before applying." },
-        "history": { "title": "Complete history", "desc": "Every status change is tracked. Find the exact history of each application, effortlessly." },
-        "contacts": { "title": "Centralized contacts", "desc": "Link your recruiters to their companies. Your network builds up application after application." },
-        "immediate": { "title": "Immediate start", "desc": "Open it, add your first applications, and your tracking takes shape immediately. No heavy setup." }
+        "kpis": {
+          "title": "Real-time KPIs",
+          "desc": "Rejection rate, response rate, average delay. Understand what works in your search, supported by numbers."
+        },
+        "followups": {
+          "title": "Follow-up queue",
+          "desc": "Don't leave any application without a follow-up. OfferTrail reminds you when to follow up and which contact to reach out to."
+        },
+        "probity": {
+          "title": "Probity score",
+          "desc": "Each company receives a signal based on collective feedback. Know what to expect before applying."
+        },
+        "history": {
+          "title": "Complete history",
+          "desc": "Every status change is tracked. Find the exact history of each application, effortlessly."
+        },
+        "contacts": {
+          "title": "Centralized contacts",
+          "desc": "Link your recruiters to their companies. Your network builds up application after application."
+        },
+        "immediate": {
+          "title": "Immediate start",
+          "desc": "Open it, add your first applications, and your tracking takes shape immediately. No heavy setup."
+        }
       }
     },
     "pricing": {
@@ -610,7 +620,10 @@
       "lastnameLabel": "Last name",
       "submit": "Sign up",
       "alreadyHaveAccount": "Already have an account?",
-      "login": "Login"
+      "login": "Login",
+      "confirmTitle": "Check your inbox",
+      "confirmText": "A confirmation email has been sent. Click the link to activate your account.",
+      "backToLogin": "Back to login"
     },
     "forgotPassword": {
       "title": "Forgot password",
@@ -633,9 +646,18 @@
     "story": {
       "title": "Take back control of your application pipeline.",
       "copy": "A SaaS application CRM — your history, follow-ups and contacts centralized in one space.",
-      "point1": { "title": "Actionable pipeline view", "desc": "Quickly find what's pending, who's ghosting and what needs a follow-up." },
-      "point2": { "title": "Company + contact context", "desc": "Each application keeps its context, notes and interaction history." },
-      "point3": { "title": "Clean local base", "desc": "Your data stays with you, with a SaaS structure ready for what's next." }
+      "point1": {
+        "title": "Actionable pipeline view",
+        "desc": "Quickly find what's pending, who's ghosting and what needs a follow-up."
+      },
+      "point2": {
+        "title": "Company + contact context",
+        "desc": "Each application keeps its context, notes and interaction history."
+      },
+      "point3": {
+        "title": "Clean local base",
+        "desc": "Your data stays with you, with a SaaS structure ready for what's next."
+      }
     },
     "validation": {
       "email": "Invalid email",
@@ -803,7 +825,89 @@
       "messageLabel": "Message",
       "messagePlaceholder": "Describe your request...",
       "submitAction": "Send message",
-      "sending": "Sending..."
+      "sending": "Sending...",
+      "emailLabel": "Email"
+    },
+    "mentionsPage": {
+      "editorTitle": "Publisher",
+      "editorText": "OfferTrail is a service published by CraftCodes. Publication manager: Vincent.",
+      "hostingTitle": "Hosting",
+      "hostingText": "This service is hosted by Vercel Inc., 340 Pine Street, Suite 900 — San Francisco, CA 94104, United States.",
+      "ipTitle": "Intellectual Property",
+      "ipText": "All content on this site (structure, texts, code, design) is protected by copyright. Any reproduction, even partial, is prohibited without prior written authorization from the publisher.",
+      "liabilityTitle": "Liability",
+      "liabilityText": "OfferTrail strives to ensure the accuracy of information on this site. However, the publisher cannot be held responsible for errors, omissions or unavailability of the service. Use of the service is solely at the user's own risk.",
+      "lawTitle": "Applicable Law",
+      "lawText": "This site is governed by French law. Any dispute relating to its use falls under the exclusive jurisdiction of French courts."
+    },
+    "privacyPage": {
+      "controllerTitle": "Data Controller",
+      "controllerText": "The data controller is CraftCodes, publisher of the OfferTrail service.",
+      "hostingTitle": "Data Hosting",
+      "hostingText": "Authentication and profile data are hosted via Supabase, whose servers are located in the European Union, in compliance with GDPR requirements. No personal data is transferred outside the EU without appropriate safeguards.",
+      "dataTitle": "Data Collected",
+      "dataIntro": "In the context of using the service, the following data may be collected:",
+      "dataItems": [
+        "Email address, first name and last name upon account creation",
+        "Data related to applications, companies and contacts entered by the user",
+        "Technical connection data (IP address, access logs) for security purposes",
+        "Payment information processed by Stripe (not stored by CraftCodes)"
+      ],
+      "purposeTitle": "Processing Purposes",
+      "purposeIntro": "Your data is processed to:",
+      "purposeItems": [
+        "Provide and improve the OfferTrail service",
+        "Manage your account and subscription",
+        "Ensure security and prevent abuse",
+        "Respond to your support requests"
+      ],
+      "purposeNote": "No data is used for advertising or commercial profiling purposes.",
+      "retentionTitle": "Data Retention",
+      "retentionText": "Your data is retained for the active duration of your account, and for a maximum of 3 years after the last activity. Upon cancellation or deletion of the account, personal data is deleted within 30 days.",
+      "rightsTitle": "Your Rights (GDPR)",
+      "rightsIntro": "In accordance with GDPR, you have the following rights:",
+      "rightsItems": [
+        "Right of access — obtain a copy of your personal data",
+        "Right of rectification — correct your inaccurate data",
+        "Right to erasure — request deletion of your data",
+        "Right to portability — receive your data in a structured format",
+        "Right to object — object to certain processing"
+      ],
+      "rightsContact": "To exercise your rights, contact us at contact@craftcodes.fr.",
+      "cookiesTitle": "Cookies",
+      "cookiesText": "OfferTrail only uses cookies strictly necessary for the operation of the service (authentication, theme preferences). No third-party advertising or analytics cookies are used.",
+      "paymentTitle": "Payment",
+      "paymentText": "Payments are processed by Stripe, PCI-DSS certified. CraftCodes never stores your banking details."
+    },
+    "cguPage": {
+      "s1Title": "Article 1 — Service Publisher",
+      "s1Text": "OfferTrail is published by CraftCodes. Contact: contact@craftcodes.fr",
+      "s2Title": "Article 2 — Purpose",
+      "s2Text": "These General Terms of Use (GTU) govern access to and use of the OfferTrail service, a SaaS job application tracking tool. By creating an account, the user unconditionally accepts these GTU.",
+      "s3Title": "Article 3 — Service Description",
+      "s3Text": "OfferTrail allows you to manage an application pipeline, track companies and contacts, schedule follow-ups and view job search statistics.",
+      "s3Pricing": "The service is accessible via a monthly subscription Pro Plan (€14.99 incl. VAT / month). Access to the service is conditional on an active subscription.",
+      "s4Title": "Article 4 — User Account",
+      "s4Text": "Access to the service requires creating an account with a valid email address. The user is solely responsible for the confidentiality of their credentials. Any access via the account is deemed to have been made by the account holder.",
+      "s5Title": "Article 5 — Acceptable Use",
+      "s5Intro": "The user agrees to:",
+      "s5Items": [
+        "Use the service for personal and lawful purposes only",
+        "Not attempt to access other users' data",
+        "Not compromise the security or performance of the service",
+        "Not resell or redistribute access to the service"
+      ],
+      "s6Title": "Article 6 — Subscription and Cancellation",
+      "s6Text": "The subscription renews automatically each month. The user can cancel at any time from \"My Account\". Cancellation takes effect at the end of the current monthly period. No pro-rata refund is made.",
+      "s7Title": "Article 7 — Data and Hosting",
+      "s7Text": "User data (authentication, profile) is hosted via Supabase on infrastructure located in the European Union, in compliance with GDPR.",
+      "s7Note": "Data entered in the service remains the exclusive property of the user. CraftCodes undertakes not to exploit, transfer or resell it to third parties.",
+      "s8Title": "Article 8 — Availability",
+      "s8Text": "CraftCodes strives to ensure maximum availability of the service, without guarantee of permanent continuity. Interruptions may occur for maintenance or force majeure, without compensation.",
+      "s9Title": "Article 9 — GTU Modifications",
+      "s9Text": "CraftCodes reserves the right to modify these GTU at any time. Users are notified by email 30 days before the new conditions come into force. Continued use of the service constitutes acceptance.",
+      "s10Title": "Article 10 — Applicable Law",
+      "s10Text": "These GTU are governed by French law. In the event of a dispute, an amicable solution will be sought first. Failing that, French courts will have jurisdiction."
     }
   }
 }

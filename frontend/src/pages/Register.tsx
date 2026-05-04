@@ -41,12 +41,12 @@ export function RegisterPage() {
       <section className={classes.shell}>
         <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <Title order={2}>Vérifie ta boîte email</Title>
+            <Title order={2}>{t('auth.register.confirmTitle')}</Title>
             <Text c="dimmed">
-              Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
+              {t('auth.register.confirmText')}
             </Text>
             <Button component={Link} to="/login" variant="light" fullWidth>
-              Retour à la connexion
+              {t('auth.register.backToLogin')}
             </Button>
           </Stack>
         </Paper>

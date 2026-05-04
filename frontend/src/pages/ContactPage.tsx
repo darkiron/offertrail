@@ -160,7 +160,7 @@ export const ContactPage: React.FC = () => {
                 />
               </div>
               <div className="contact-field">
-                <label className="contact-label">Email</label>
+                <label className="contact-label">{t('legal.contactPage.emailLabel')}</label>
                 <input
                   className="contact-input"
                   type="email"

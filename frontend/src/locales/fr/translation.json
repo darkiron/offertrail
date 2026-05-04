@@ -255,7 +255,19 @@
       "total": "Établissements",
       "engaged": "Actifs",
       "responsive": "Répondants",
-      "responsiveHint": "Taux de réponse moyen"
+      "responsiveHint": "Taux de réponse moyen",
+      "totalApplicationsHint": "volume cumulé",
+      "responseRateHint": "retours détectés",
+      "positiveRate": "Taux positif",
+      "positiveRateHint": "entretiens ou offres",
+      "ghosting": "Ghosting",
+      "ghostingHint": "sans retour après 30j",
+      "avgResponseHint": "jours avant premier retour",
+      "rejectionRate": "Taux de rejet estimé",
+      "rejectionRateHint": "depuis les signaux de statut",
+      "totalResponses": "Réponses constatées",
+      "totalResponsesHint": "sur l'ensemble des candidatures",
+      "volume": "Volume"
     },
     "health": {
       "healthy": "Dynamique saine",
@@ -276,8 +288,8 @@
     "loadError": "Impossible de charger les établissements.",
     "detailError": "Impossible de charger la fiche ETS.",
     "detailCopy": "Vérifie les informations de l'organisation, consulte les candidatures liées, ouvre les contacts utiles et mets à jour la fiche ETS sans quitter la page.",
-    "editAction": "Modifier la fiche ETS",
-    "maintenanceAction": "Maintenance ETS",
+    "editAction": "MODIFIER ETS",
+    "maintenanceAction": "Maintenance ETS →",
     "summaryTitle": "Synthèse rapide",
     "lastUpdate": "Dernière mise à jour",
     "createdAt": "Création de la fiche",
@@ -288,24 +300,6 @@
     "applications": "Candidatures",
     "contacts": "Contacts",
     "activity": "Activité",
-    "stats": {
-      "total": "Établissements",
-      "engaged": "Actifs",
-      "responsive": "Répondants",
-      "responsiveHint": "Taux de réponse moyen",
-      "totalApplicationsHint": "volume cumulé",
-      "responseRateHint": "retours détectés",
-      "positiveRate": "Taux positif",
-      "positiveRateHint": "entretiens ou offres",
-      "ghosting": "Ghosting",
-      "ghostingHint": "sans retour après 30j",
-      "avgResponseHint": "jours avant premier retour",
-      "rejectionRate": "Taux de rejet estimé",
-      "rejectionRateHint": "depuis les signaux de statut",
-      "totalResponses": "Réponses constatées",
-      "totalResponsesHint": "sur l'ensemble des candidatures",
-      "volume": "Volume"
-    },
     "noNotes": "Aucune note renseignée pour cet établissement.",
     "noLinkedApplications": "Aucune candidature liée à cet ETS.",
     "noLinkedContacts": "Aucun contact rattaché à cet ETS.",
@@ -313,7 +307,6 @@
     "infoTitle": "Informations ETS",
     "linkedViewTitle": "Vue liée",
     "eventsTitle": "Événements",
-    "maintenanceAction": "Maintenance ETS →",
     "visualSort": "Tri visuel",
     "noMatch": "Aucun établissement ne correspond aux filtres actuels.",
     "statsVolumeHint": "activité cumulée",
@@ -403,8 +396,7 @@
     "noApplications": "Aucune candidature pour cet ETS.",
     "addContactAction": "+ AJOUTER CONTACT",
     "noContacts": "Aucun contact enregistré.",
-    "notFound": "Établissement introuvable.",
-    "editAction": "MODIFIER ETS"
+    "notFound": "Établissement introuvable."
   },
   "newApplication": {
     "kicker": "Nouvelle opportunité",
@@ -505,12 +497,30 @@
       "kicker": "Fonctionnalités",
       "title": "Tout ce qu'il faut. Rien de superflu.",
       "items": {
-        "kpis": { "title": "KPIs en temps réel", "desc": "Taux de refus, taux de réponse, délai moyen. Comprends ce qui fonctionne dans ta recherche, chiffres à l'appui." },
-        "followups": { "title": "File de relances", "desc": "Ne laisse plus une candidature sans suite. OfferTrail te rappelle quand relancer et quel contact solliciter." },
-        "probity": { "title": "Score de probité", "desc": "Chaque entreprise reçoit un signal basé sur les retours collectifs. Sache à quoi t'attendre avant de postuler." },
-        "history": { "title": "Historique complet", "desc": "Chaque changement de statut est tracé. Retrouve l'historique exact de chaque candidature, sans effort." },
-        "contacts": { "title": "Contacts centralisés", "desc": "Rattache tes recruteurs à leurs entreprises. Le réseau se construit candidature après candidature." },
-        "immediate": { "title": "Démarrage immédiat", "desc": "Tu ouvres, tu ajoutes tes premières candidatures, et ton suivi prend forme tout de suite. Pas de setup lourd." }
+        "kpis": {
+          "title": "KPIs en temps réel",
+          "desc": "Taux de refus, taux de réponse, délai moyen. Comprends ce qui fonctionne dans ta recherche, chiffres à l'appui."
+        },
+        "followups": {
+          "title": "File de relances",
+          "desc": "Ne laisse plus une candidature sans suite. OfferTrail te rappelle quand relancer et quel contact solliciter."
+        },
+        "probity": {
+          "title": "Score de probité",
+          "desc": "Chaque entreprise reçoit un signal basé sur les retours collectifs. Sache à quoi t'attendre avant de postuler."
+        },
+        "history": {
+          "title": "Historique complet",
+          "desc": "Chaque changement de statut est tracé. Retrouve l'historique exact de chaque candidature, sans effort."
+        },
+        "contacts": {
+          "title": "Contacts centralisés",
+          "desc": "Rattache tes recruteurs à leurs entreprises. Le réseau se construit candidature après candidature."
+        },
+        "immediate": {
+          "title": "Démarrage immédiat",
+          "desc": "Tu ouvres, tu ajoutes tes premières candidatures, et ton suivi prend forme tout de suite. Pas de setup lourd."
+        }
       }
     },
     "pricing": {
@@ -610,7 +620,10 @@
       "lastnameLabel": "Nom",
       "submit": "S'inscrire",
       "alreadyHaveAccount": "Déjà un compte ?",
-      "login": "Se connecter"
+      "login": "Se connecter",
+      "confirmTitle": "Vérifie ta boîte email",
+      "confirmText": "Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.",
+      "backToLogin": "Retour à la connexion"
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
@@ -633,9 +646,18 @@
     "story": {
       "title": "Reprends la main sur ton pipeline de candidatures.",
       "copy": "Un CRM de candidatures SaaS — ton historique, tes relances et tes contacts centralisés dans un seul espace.",
-      "point1": { "title": "Vue pipeline exploitable", "desc": "Retrouve rapidement ce qui est en attente, ce qui ghoste et ce qui demande une relance." },
-      "point2": { "title": "Contexte entreprise + contact", "desc": "Chaque candidature garde son contexte, ses notes et son historique d'interactions." },
-      "point3": { "title": "Base locale propre", "desc": "Tes données restent chez toi, avec une structure SaaS prête pour la suite." }
+      "point1": {
+        "title": "Vue pipeline exploitable",
+        "desc": "Retrouve rapidement ce qui est en attente, ce qui ghoste et ce qui demande une relance."
+      },
+      "point2": {
+        "title": "Contexte entreprise + contact",
+        "desc": "Chaque candidature garde son contexte, ses notes et son historique d'interactions."
+      },
+      "point3": {
+        "title": "Base locale propre",
+        "desc": "Tes données restent chez toi, avec une structure SaaS prête pour la suite."
+      }
     },
     "validation": {
       "email": "Email invalide",
@@ -803,7 +825,89 @@
       "messageLabel": "Message",
       "messagePlaceholder": "Décrivez votre demande...",
       "submitAction": "Envoyer le message",
-      "sending": "Envoi..."
+      "sending": "Envoi...",
+      "emailLabel": "Email"
+    },
+    "mentionsPage": {
+      "editorTitle": "Éditeur du site",
+      "editorText": "OfferTrail est un service édité par CraftCodes. Responsable de publication : Vincent.",
+      "hostingTitle": "Hébergement",
+      "hostingText": "Ce service est hébergé par Vercel Inc., 340 Pine Street, Suite 900 — San Francisco, CA 94104, États-Unis.",
+      "ipTitle": "Propriété intellectuelle",
+      "ipText": "L'ensemble du contenu de ce site (structure, textes, code, design) est protégé par le droit d'auteur. Toute reproduction, même partielle, est interdite sans autorisation préalable écrite de l'éditeur.",
+      "liabilityTitle": "Responsabilité",
+      "liabilityText": "OfferTrail s'efforce d'assurer l'exactitude des informations présentes sur ce site. Toutefois, l'éditeur ne peut être tenu responsable des erreurs, omissions ou de l'indisponibilité du service. L'utilisation du service se fait sous la seule responsabilité de l'utilisateur.",
+      "lawTitle": "Droit applicable",
+      "lawText": "Le présent site est soumis au droit français. Tout litige relatif à son utilisation relève de la compétence exclusive des tribunaux français."
+    },
+    "privacyPage": {
+      "controllerTitle": "Responsable du traitement",
+      "controllerText": "Le responsable du traitement des données personnelles est CraftCodes, éditeur du service OfferTrail.",
+      "hostingTitle": "Hébergement des données",
+      "hostingText": "Les données d'authentification et de profil sont hébergées via Supabase, dont les serveurs sont situés dans l'Union européenne, conformément aux exigences du RGPD. Aucune donnée personnelle n'est transférée en dehors de l'UE sans garanties appropriées.",
+      "dataTitle": "Données collectées",
+      "dataIntro": "Dans le cadre de l'utilisation du service, les données suivantes peuvent être collectées :",
+      "dataItems": [
+        "Adresse e-mail, prénom et nom lors de la création de compte",
+        "Données relatives aux candidatures, entreprises et contacts saisis par l'utilisateur",
+        "Données techniques de connexion (adresse IP, logs d'accès) à des fins de sécurité",
+        "Informations de paiement traitées par Stripe (non stockées par CraftCodes)"
+      ],
+      "purposeTitle": "Finalités du traitement",
+      "purposeIntro": "Vos données sont traitées pour :",
+      "purposeItems": [
+        "Fournir et améliorer le service OfferTrail",
+        "Gérer votre compte et votre abonnement",
+        "Assurer la sécurité et prévenir les abus",
+        "Répondre à vos demandes de support"
+      ],
+      "purposeNote": "Aucune donnée n'est utilisée à des fins publicitaires ou de profilage commercial.",
+      "retentionTitle": "Conservation des données",
+      "retentionText": "Vos données sont conservées pendant la durée active de votre compte, et au maximum 3 ans après la dernière activité. À la résiliation ou suppression du compte, les données personnelles sont supprimées dans un délai de 30 jours.",
+      "rightsTitle": "Vos droits (RGPD)",
+      "rightsIntro": "Conformément au RGPD, vous disposez des droits suivants :",
+      "rightsItems": [
+        "Droit d'accès — obtenir une copie de vos données personnelles",
+        "Droit de rectification — corriger vos données inexactes",
+        "Droit à l'effacement — demander la suppression de vos données",
+        "Droit à la portabilité — recevoir vos données dans un format structuré",
+        "Droit d'opposition — vous opposer à certains traitements"
+      ],
+      "rightsContact": "Pour exercer vos droits, contactez-nous à contact@craftcodes.fr.",
+      "cookiesTitle": "Cookies",
+      "cookiesText": "OfferTrail utilise uniquement des cookies strictement nécessaires au fonctionnement du service (authentification, préférences de thème). Aucun cookie publicitaire ou analytique tiers n'est utilisé.",
+      "paymentTitle": "Paiement",
+      "paymentText": "Les paiements sont traités par Stripe, certifié PCI-DSS. CraftCodes ne stocke jamais vos coordonnées bancaires."
+    },
+    "cguPage": {
+      "s1Title": "Article 1 — Éditeur du service",
+      "s1Text": "OfferTrail est édité par CraftCodes. Contact : contact@craftcodes.fr",
+      "s2Title": "Article 2 — Objet",
+      "s2Text": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation du service OfferTrail, outil SaaS de suivi de candidatures. En créant un compte, l'utilisateur accepte sans réserve les présentes CGU.",
+      "s3Title": "Article 3 — Description du service",
+      "s3Text": "OfferTrail permet de gérer un pipeline de candidatures, de suivre les entreprises et contacts, de planifier des relances et de visualiser des statistiques de recherche d'emploi.",
+      "s3Pricing": "Le service est accessible via un abonnement mensuel Plan Pro (14,99 EUR TTC / mois). L'accès au service est conditionné à la souscription d'un abonnement actif.",
+      "s4Title": "Article 4 — Compte utilisateur",
+      "s4Text": "L'accès au service requiert la création d'un compte avec une adresse e-mail valide. L'utilisateur est seul responsable de la confidentialité de ses identifiants. Tout accès via le compte est réputé effectué par l'utilisateur titulaire.",
+      "s5Title": "Article 5 — Utilisation acceptable",
+      "s5Intro": "L'utilisateur s'engage à :",
+      "s5Items": [
+        "Utiliser le service à des fins personnelles et licites uniquement",
+        "Ne pas tenter d'accéder aux données d'autres utilisateurs",
+        "Ne pas compromettre la sécurité ou les performances du service",
+        "Ne pas revendre ou redistribuer l'accès au service"
+      ],
+      "s6Title": "Article 6 — Abonnement et résiliation",
+      "s6Text": "L'abonnement est à renouvellement automatique mensuel. L'utilisateur peut résilier à tout moment depuis \"Mon compte\". La résiliation prend effet à la fin de la période mensuelle en cours. Aucun remboursement prorata temporis n'est effectué.",
+      "s7Title": "Article 7 — Données et hébergement",
+      "s7Text": "Les données utilisateur (authentification, profil) sont hébergées via Supabase sur des infrastructures situées dans l'Union européenne, conformément au RGPD.",
+      "s7Note": "Les données saisies dans le service restent la propriété exclusive de l'utilisateur. CraftCodes s'engage à ne pas les exploiter, céder ou revendre à des tiers.",
+      "s8Title": "Article 8 — Disponibilité",
+      "s8Text": "CraftCodes s'efforce d'assurer une disponibilité maximale du service, sans garantie de continuité permanente. Des interruptions peuvent survenir pour maintenance ou cas de force majeure, sans compensation due.",
+      "s9Title": "Article 9 — Modification des CGU",
+      "s9Text": "CraftCodes se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs sont informés par e-mail 30 jours avant l'entrée en vigueur des nouvelles conditions. L'utilisation continue du service vaut acceptation.",
+      "s10Title": "Article 10 — Droit applicable",
+      "s10Text": "Les présentes CGU sont soumises au droit français. En cas de litige, une solution amiable sera recherchée en priorité. À défaut, les tribunaux français seront compétents."
     }
   }
 }
