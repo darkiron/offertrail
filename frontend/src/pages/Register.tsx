@@ -7,21 +7,23 @@ import {
   PasswordInput, SimpleGrid, Stack, Text, TextInput, Title,
 } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
-const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caractères'),
-  prenom: z.string().trim().optional(),
-  nom: z.string().trim().optional(),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
-
 export function RegisterPage() {
+  const { t } = useI18n();
   const { signUp, isAuthenticated } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+
+  const registerSchema = z.object({
+    email: z.string().email(t('auth.validation.email')),
+    password: z.string().min(8, t('auth.validation.passwordMin')),
+    prenom: z.string().trim().optional(),
+    nom: z.string().trim().optional(),
+  });
+
+  type RegisterFormData = z.infer<typeof registerSchema>;
   const {
     register,
     handleSubmit,
@@ -39,12 +41,12 @@ export function RegisterPage() {
       <section className={classes.shell}>
         <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <Title order={2}>Vérifie ta boîte email</Title>
+            <Title order={2}>{t('auth.register.confirmTitle')}</Title>
             <Text c="dimmed">
-              Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
+              {t('auth.register.confirmText')}
             </Text>
             <Button component={Link} to="/login" variant="light" fullWidth>
-              Retour à la connexion
+              {t('auth.register.backToLogin')}
             </Button>
           </Stack>
         </Paper>
@@ -62,7 +64,7 @@ export function RegisterPage() {
           setError(fieldName as keyof RegisterFormData, { type: 'manual', message: issue.message });
         }
       });
-      setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
+      setFormError(result.error.issues[0]?.message ?? t('auth.login.invalidForm'));
       return;
     }
 
@@ -75,7 +77,7 @@ export function RegisterPage() {
       });
       setConfirmed(true);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.');
+      setFormError(error instanceof Error ? error.message : t('common.retry'));
     }
   });
 
@@ -87,24 +89,24 @@ export function RegisterPage() {
         </Anchor>
 
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Nouveau compte</Badge>
+          <Badge variant="light" size="sm">{t('auth.register.title')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Créer ton espace OfferTrail</Title>
+        <Title order={2} mb={4}>{t('auth.register.subtitle')}</Title>
         <Text c="dimmed" size="sm" mb="xl">
-          Structure ta recherche d&apos;emploi avec un CRM conçu pour les candidats sérieux.
+          {t('auth.story.copy')}
         </Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <SimpleGrid cols={2} spacing="md">
             <TextInput
-              label="Prénom"
+              label={t('auth.register.firstnameLabel')}
               placeholder="Vincent"
               autoComplete="given-name"
               error={errors.prenom?.message}
               {...register('prenom')}
             />
             <TextInput
-              label="Nom"
+              label={t('auth.register.lastnameLabel')}
               placeholder="Dupont"
               autoComplete="family-name"
               error={errors.nom?.message}
@@ -113,8 +115,8 @@ export function RegisterPage() {
           </SimpleGrid>
 
           <TextInput
-            label="Email"
-            placeholder="toi@exemple.fr"
+            label={t('auth.login.emailLabel')}
+            placeholder={t('auth.login.emailPlaceholder')}
             type="email"
             autoComplete="email"
             autoCapitalize="none"
@@ -124,10 +126,10 @@ export function RegisterPage() {
           />
 
           <PasswordInput
-            label="Mot de passe"
-            placeholder="8 caractères minimum"
+            label={t('auth.login.passwordLabel')}
+            placeholder={t('auth.validation.passwordMin')}
             autoComplete="new-password"
-            description="Utilise un mot de passe unique. NordPass le proposera automatiquement."
+            description={t('auth.login.passwordDesc')}
             error={errors.password?.message}
             {...register('password')}
           />
@@ -137,13 +139,13 @@ export function RegisterPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Créer mon compte
+            {t('auth.register.submit')}
           </Button>
         </Stack>
 
         <Text size="sm" c="dimmed" mt="lg">
-          Déjà un compte ?{' '}
-          <Anchor component={Link} to="/login" size="sm">Se connecter</Anchor>
+          {t('auth.register.alreadyHaveAccount')}{' '}
+          <Anchor component={Link} to="/login" size="sm">{t('auth.register.login')}</Anchor>
         </Text>
       </Paper>
     </section>

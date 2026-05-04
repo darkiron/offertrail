@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
 import {
   AppShell,
   Alert,
@@ -35,15 +36,16 @@ import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.css';
 
-const NAV_LINKS = [
-  { label: 'Dashboard', to: '/app', icon: IconLayoutDashboard },
-  { label: 'Candidatures', to: '/app/candidatures', icon: IconBriefcase },
-  { label: 'Entreprises', to: '/app/etablissements', icon: IconBuilding },
-  { label: 'Contacts', to: '/app/contacts', icon: IconUsers },
-  { label: 'Import', to: '/app/import', icon: IconFileImport },
+const getNavLinks = (t: (k: string) => string) => [
+  { label: t('nav.dashboard'), to: '/app', icon: IconLayoutDashboard },
+  { label: t('nav.applications'), to: '/app/candidatures', icon: IconBriefcase },
+  { label: t('nav.organizations'), to: '/app/etablissements', icon: IconBuilding },
+  { label: t('nav.contacts'), to: '/app/contacts', icon: IconUsers },
+  { label: t('nav.import'), to: '/app/import', icon: IconFileImport },
 ];
 
 function SlowApiNotice() {
+  const { t } = useI18n();
   const isFetching = useIsFetching();
   const [visible, setVisible] = useState(false);
   const alreadyShown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
@@ -74,11 +76,9 @@ function SlowApiNotice() {
       withCloseButton
       mb="md"
       onClose={() => setVisible(false)}
-      title="Démarrage en cours"
+      title={t('nav.slowApi.title')}
     >
-      L'API et le frontend sont sur des plans gratuits (Railway + Vercel) —
-      après une période d'inactivité, le cold start peut prendre 10–30 secondes.
-      C'est normal, la suite sera fluide.
+      {t('nav.slowApi.copy')}
     </Alert>
   );
 }
@@ -90,6 +90,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { t } = useI18n();
 
   const PRICING_EXEMPT = ['/app/pricing', '/app/mon-compte'];
   const isPricingExempt = PRICING_EXEMPT.some((p) => location.pathname.startsWith(p));
@@ -136,11 +137,12 @@ export function AppLayout() {
           </Group>
 
           <Group gap="xs">
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
               radius="xl"
             >
               {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
@@ -161,19 +163,19 @@ export function AppLayout() {
                 <Menu.Label>{user?.email}</Menu.Label>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/app/mon-compte">
-                  Mon compte
+                  {t('nav.myAccount')}
                 </Menu.Item>
                 {profile?.role === 'admin' ? (
                   <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/app/admin">
-                    Administration
+                    {t('nav.admin')}
                   </Menu.Item>
                 ) : null}
                 <Menu.Item leftSection={<IconCreditCard size={14} />} component={Link} to="/app/pricing">
-                  Abonnement
+                  {t('nav.subscription')}
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconLogout size={14} />} color="red" onClick={handleLogout}>
-                  Se déconnecter
+                  {t('nav.logout')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -183,7 +185,7 @@ export function AppLayout() {
 
       {/* ── Sidebar ── */}
       <AppShell.Navbar p="sm" className={classes.navbar}>
-        {NAV_LINKS.map(({ label, to, icon: Icon }) => (
+        {getNavLinks(t).map(({ label, to, icon: Icon }) => (
           <NavLink
             key={to}
             label={label}

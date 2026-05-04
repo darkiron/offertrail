@@ -5,10 +5,13 @@ import { Link, Outlet } from 'react-router-dom';
 import classes from './LandingLayout.module.css';
 import { LEGAL_CONFIG } from '../config/legal';
 import { CONFIG } from '../config';
+import { useI18n } from '../i18n';
+import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
 
 export function LandingLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className={classes.root}>
@@ -23,31 +26,33 @@ export function LandingLayout() {
           </Link>
 
           <div className={classes.navCenter}>
-            <a href="#fonctionnalites" className={classes.navLink}>Fonctionnalités</a>
-            <a href="#tarifs" className={classes.navLink}>Tarifs</a>
+            <a href="#fonctionnalites" className={classes.navLink}>{t('nav.features')}</a>
+            <a href="#tarifs" className={classes.navLink}>{t('nav.pricing')}</a>
           </div>
 
           <Group gap="xs" className={classes.navActions}>
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
               radius="xl"
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
             >
               {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
             </ActionIcon>
-            <Link to="/login" className={classes.btnOutline}>Se connecter</Link>
-            <Link to="/register" className={classes.btnPrimary}>Commencer →</Link>
+            <Link to="/login" className={classes.btnOutline}>{t('nav.login')}</Link>
+            <Link to="/register" className={classes.btnPrimary}>{t('nav.start')} →</Link>
           </Group>
 
           <div className={classes.navBurger}>
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
               radius="xl"
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
             >
               {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
             </ActionIcon>
@@ -64,10 +69,10 @@ export function LandingLayout() {
         size="xs"
       >
         <Stack gap="md" pt="md">
-          <a href="#fonctionnalites" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>Fonctionnalités</a>
-          <a href="#tarifs" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>Tarifs</a>
-          <Link to="/login" className={classes.btnOutline} onClick={() => setMobileMenuOpen(false)}>Se connecter</Link>
-          <Link to="/register" className={classes.btnPrimary} onClick={() => setMobileMenuOpen(false)}>Commencer →</Link>
+          <a href="#fonctionnalites" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('nav.features')}</a>
+          <a href="#tarifs" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('nav.pricing')}</a>
+          <Link to="/login" className={classes.btnOutline} onClick={() => setMobileMenuOpen(false)}>{t('nav.login')}</Link>
+          <Link to="/register" className={classes.btnPrimary} onClick={() => setMobileMenuOpen(false)}>{t('nav.start')} →</Link>
         </Stack>
       </Drawer>
 
@@ -91,11 +96,11 @@ export function LandingLayout() {
             </a>
           </Text>
           <Group gap="lg">
-            <a href="#tarifs" className={classes.footerLink}>Tarifs</a>
-            <Link to="/app/legal/cgu" className={classes.footerLink}>CGU</Link>
-            <Link to="/app/legal/confidentialite" className={classes.footerLink}>Confidentialité</Link>
-            <Link to="/mentions-legales" className={classes.footerLink}>Mentions légales</Link>
-            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>Contact</a>
+            <a href="#tarifs" className={classes.footerLink}>{t('nav.pricing')}</a>
+            <Link to="/app/legal/cgu" className={classes.footerLink}>{t('nav.legalCgu')}</Link>
+            <Link to="/app/legal/confidentialite" className={classes.footerLink}>{t('nav.legalPrivacy')}</Link>
+            <Link to="/mentions-legales" className={classes.footerLink}>{t('nav.legalMentions')}</Link>
+            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>{t('nav.contact')}</a>
           </Group>
         </div>
       </footer>

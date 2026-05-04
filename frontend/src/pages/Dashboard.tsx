@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Stack, SimpleGrid, Group, Paper, Table, TextInput, Select,
@@ -15,12 +15,10 @@ import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge
 import { StatusBadge } from '../components/atoms/StatusBadge';
 import { Button } from '../components/atoms/Button';
 import { EmptyState } from '../components/atoms/EmptyState';
-import { STATUT_OPTIONS } from '../constants/statuts';
+import { STATUTS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import classes from './Dashboard.module.css';
-
-const STATUS_OPTIONS = STATUT_OPTIONS;
 
 export function Dashboard() {
   const { t } = useI18n();
@@ -40,7 +38,12 @@ export function Dashboard() {
     loading, loadingInsights, error, refetch, markFollowup, loadInsights,
   } = useDashboard({ search: searchTerm, status: statusFilter, page, limit, showHidden });
 
-  useEffect(() => { document.title = 'Tableau de bord — OfferTrail'; }, []);
+  const statusOptions = useMemo(() => [
+    { value: '', label: t('status.all') },
+    ...STATUTS.map((s) => ({ value: s, label: t(`status.${s}`) })),
+  ], [t]);
+
+  useEffect(() => { document.title = t('dashboard.title') + ' — OfferTrail'; }, [t]);
   useEffect(() => { setPage(1); }, [searchTerm, statusFilter, showHidden]);
   useEffect(() => {
     if (activeTab === 'insights' && !insights) loadInsights();
@@ -54,9 +57,9 @@ export function Dashboard() {
   const handleMarkFollowup = async (id: number) => {
     try {
       await markFollowup(id);
-      notifications.show({ message: 'Relance mise à jour', color: 'green' });
+      notifications.show({ message: t('dashboard.notifFollowupUpdated'), color: 'green' });
     } catch {
-      notifications.show({ message: 'Impossible de mettre à jour la relance.', color: 'red' });
+      notifications.show({ message: t('dashboard.notifFollowupError'), color: 'red' });
     }
   };
 
@@ -66,7 +69,7 @@ export function Dashboard() {
         <NewApplicationModal
           onClose={() => setShowModal(false)}
           onCreated={() => {
-            notifications.show({ message: 'Candidature ajoutée', color: 'green' });
+            notifications.show({ message: t('dashboard.notifAppAdded'), color: 'green' });
             refetch();
           }}
         />
@@ -105,14 +108,14 @@ export function Dashboard() {
           <Tabs.Panel value="apps">
             <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" mb="md">
               <TextInput
-                placeholder="Entreprise, poste, contact..."
+                placeholder={t('dashboard.searchPlaceholder')}
                 label={t('dashboard.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Select
                 label={t('dashboard.status')}
-                data={STATUS_OPTIONS}
+                data={statusOptions}
                 value={statusFilter}
                 onChange={(v) => setStatusFilter(v ?? '')}
               />
@@ -128,8 +131,8 @@ export function Dashboard() {
               <Center h={120}><Loader /></Center>
             ) : apps.length === 0 ? (
               <EmptyState
-                title="Aucune candidature pour l'instant."
-                description="Commence par en ajouter une."
+                title={t('dashboard.noApplicationsTitle')}
+                description={t('dashboard.noApplicationsDesc')}
                 action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
               />
             ) : (

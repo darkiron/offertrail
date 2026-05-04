@@ -16,32 +16,33 @@ import { ApplicationEditModal } from '../components/organisms/ApplicationEditMod
 import { EventEditModal } from '../components/organisms/EventEditModal';
 import type { Contact } from '../types';
 import type { ApplicationDetailsResponse } from '../services/api';
-import { statusLabelMap } from '../utils/statut';
+import { STATUTS } from '../constants/statuts';
+import { useI18n } from '../i18n';
 import classes from './ApplicationDetails.module.css';
 
-const STATUS_OPTIONS = Object.entries(statusLabelMap).map(([value, label]) => ({ value, label }));
 
 const EVENT_TYPE_MAP: Record<string, string> = {
-  CREATED: 'Création', UPDATED: 'Mise à jour', STATUS_CHANGED: 'Statut',
-  NOTE_ADDED: 'Note', CONTACT_CREATED: 'Contact créé', CONTACT_LINKED: 'Contact lié',
-  FOLLOWUP_SENT: 'Relance', RESPONSE_RECEIVED: 'Réponse', INTERVIEW_SCHEDULED: 'Entretien',
-  OFFER_RECEIVED: 'Offre', APPLICATION_CREATED: 'Création', FOLLOWED_UP: 'Relance',
+  CREATED: 'application.created', UPDATED: 'application.statusUpdated', STATUS_CHANGED: 'application.statusUpdated',
+  NOTE_ADDED: 'application.noteAdded', CONTACT_CREATED: 'application.contactCreated', CONTACT_LINKED: 'application.contactLinked',
+  FOLLOWUP_SENT: 'application.followupSent', RESPONSE_RECEIVED: 'application.responseReceived', INTERVIEW_SCHEDULED: 'application.interviewScheduled',
+  OFFER_RECEIVED: 'application.offerReceived', APPLICATION_CREATED: 'application.created', FOLLOWED_UP: 'application.followupSent',
 };
 
-function formatEventType(type: string) {
-  return EVENT_TYPE_MAP[type] || type.replace(/_/g, ' ');
+function formatEventType(type: string, t: (k: string) => string) {
+  const key = EVENT_TYPE_MAP[type];
+  return key ? t(key) : type.replace(/_/g, ' ');
 }
 
-function renderEventPayload(event: ApplicationDetailsResponse['events'][number]) {
+function renderEventPayload(event: ApplicationDetailsResponse['events'][number], t: (k: string) => string) {
   const type = event.type || event.event_type;
   switch (type) {
     case 'STATUS_CHANGED':
       return event.payload?.old_status
-        ? `${statusLabelMap[event.payload.old_status] || event.payload.old_status} → ${statusLabelMap[event.payload.new_status] || event.payload.new_status}`
-        : (event.payload?.new_status ? statusLabelMap[event.payload.new_status] || event.payload.new_status : null);
+        ? `${t(`status.${event.payload.old_status}`) || event.payload.old_status} → ${t(`status.${event.payload.new_status}`) || event.payload.new_status}`
+        : (event.payload?.new_status ? t(`status.${event.payload.new_status}`) || event.payload.new_status : null);
     case 'NOTE_ADDED': return event.payload?.text || null;
-    case 'CONTACT_CREATED': return event.payload?.name ? `Contact: ${event.payload.name}` : null;
-    case 'CONTACT_LINKED': return event.payload?.contact_name ? `Contact lié: ${event.payload.contact_name}` : null;
+    case 'CONTACT_CREATED': return event.payload?.name ? `${t('application.contact')}: ${event.payload.name}` : null;
+    case 'CONTACT_LINKED': return event.payload?.contact_name ? `${t('application.contactLinked')}: ${event.payload.contact_name}` : null;
     case 'CREATED': case 'APPLICATION_CREATED':
       return event.payload?.company ? `${event.payload.company} · ${event.payload.title}` : null;
     default: return event.payload?.text || null;
@@ -49,6 +50,10 @@ function renderEventPayload(event: ApplicationDetailsResponse['events'][number])
 }
 
 export function ApplicationDetails() {
+  const { t, locale } = useI18n();
+  const STATUS_OPTIONS = useMemo(() => [
+    ...STATUTS.map((s) => ({ value: s, label: t(`status.${s}`) })),
+  ], [t]);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const numId = id ? parseInt(id, 10) : undefined;
@@ -69,7 +74,7 @@ export function ApplicationDetails() {
     first_name: '', last_name: '', email: '', phone: '', role: '', is_recruiter: 0,
   });
 
-  useEffect(() => { document.title = 'Candidature — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('application.recordKicker') + ' — OfferTrail'; }, [t]);
   useEffect(() => {
     if (data) setFinalCustomerSearch(data.final_customer_organization?.name || '');
   }, [data]);
@@ -95,8 +100,8 @@ export function ApplicationDetails() {
     return (
       <Center h={300}>
         <EmptyState
-          title={String(error) || 'Candidature introuvable.'}
-          action={{ label: 'Retour', onClick: () => navigate('/app') }}
+          title={String(error) || t('application.notFound')}
+          action={{ label: t('common.backToDashboard'), onClick: () => navigate('/app') }}
         />
       </Center>
     );
@@ -107,20 +112,20 @@ export function ApplicationDetails() {
   const shouldShowFinalCustomer = organization?.type === 'ESN' || organization?.type === 'CABINET_RECRUTEMENT' || !!final_customer_organization;
 
   const handleUpdateStatus = async (status: string) => {
-    try { await updateStatus(status); notifications.show({ message: 'Statut mis à jour', color: 'green' }); }
-    catch { notifications.show({ message: 'Impossible de mettre à jour le statut.', color: 'red' }); }
+    try { await updateStatus(status); notifications.show({ message: t('application.notifUpdated'), color: 'green' }); }
+    catch { notifications.show({ message: t('application.notifError'), color: 'red' }); }
   };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNote.trim()) return;
     try { await addNote(newNote); setNewNote(''); }
-    catch { notifications.show({ message: "Impossible d'ajouter la note.", color: 'red' }); }
+    catch { notifications.show({ message: t('application.notifNoteError'), color: 'red' }); }
   };
 
   const handleMarkFollowup = async () => {
-    try { await markFollowup(); notifications.show({ message: 'Relance mise à jour', color: 'green' }); }
-    catch { notifications.show({ message: 'Impossible de mettre à jour la relance.', color: 'red' }); }
+    try { await markFollowup(); notifications.show({ message: t('application.notifFollowupUpdated'), color: 'green' }); }
+    catch { notifications.show({ message: t('application.notifFollowupError'), color: 'red' }); }
   };
 
   const handleCreateContact = async (e: React.FormEvent) => {
@@ -130,18 +135,18 @@ export function ApplicationDetails() {
       await createContact({ ...contactForm, organization_id: organization?.id });
       setContactForm({ first_name: '', last_name: '', email: '', phone: '', role: '', is_recruiter: 0 });
       setShowContactModal(false);
-    } catch { notifications.show({ message: 'Impossible de créer le contact.', color: 'red' }); }
+    } catch { notifications.show({ message: t('contacts.createError'), color: 'red' }); }
   };
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <Link to="/app/candidatures" className={classes.back}>← Retour aux candidatures</Link>
+      <Link to="/app/candidatures" className={classes.back}>← {t('application.backToApps')}</Link>
 
       {/* Hero */}
       <Paper className={classes.hero} p="xl" radius="lg" withBorder>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" className={classes.heroGrid}>
           <Stack gap="sm">
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Application record</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.recordKicker')}</Text>
             <Title order={1}>{app.company}</Title>
             <Text size="lg" c="dimmed">{app.title}</Text>
             <Group mt="xs" gap="xs">
@@ -159,34 +164,34 @@ export function ApplicationDetails() {
                 disabled={isUpdatingStatus}
                 rightSection={isUpdatingStatus ? <Loader size={12} /> : undefined}
               />
-              <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>Réponse reçue</Button>
-              <Button variant="primary" size="small" onClick={handleMarkFollowup}>Relance faite</Button>
-              <Button variant="ghost" size="small" onClick={() => setShowEditModal(true)}>Modifier</Button>
+              <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>{t('application.responseAction')}</Button>
+              <Button variant="primary" size="small" onClick={handleMarkFollowup}>{t('application.followupAction')}</Button>
+              <Button variant="ghost" size="small" onClick={() => setShowEditModal(true)}>{t('application.edit')}</Button>
             </Group>
           </Stack>
 
           <Stack gap="md">
             <Paper p="sm" radius="md" withBorder>
-              <Text size="xs" tt="uppercase" fw={700} c="dimmed">Candidaté le</Text>
+              <Text size="xs" tt="uppercase" fw={700} c="dimmed">{t('application.appliedOn')}</Text>
               <Text size="xl" fw={700}>{app.applied_at || '-'}</Text>
-              <Text size="xs" c="dimmed">source: {app.source || 'Direct'}</Text>
+              <Text size="xs" c="dimmed">{t('application.source')}: {app.source || t('dashboard.sourceDirect')}</Text>
             </Paper>
             <Paper p="sm" radius="md" withBorder>
-              <Text size="xs" tt="uppercase" fw={700} c="dimmed">Follow-up</Text>
+              <Text size="xs" tt="uppercase" fw={700} c="dimmed">{t('application.followup')}</Text>
               <Text size="xl" fw={700}>{app.next_followup_at || '-'}</Text>
             </Paper>
             {organization && (
               <Text size="sm">
-                <Text span c="dimmed">Organisation: </Text>
+                <Text span c="dimmed">{t('application.organization')}: </Text>
                 <Anchor component={Link} to={`/organizations/${organization.id}`}>{organization.name}</Anchor>
               </Text>
             )}
             {shouldShowFinalCustomer && (
               <Text size="sm">
-                <Text span c="dimmed">Client final: </Text>
+                <Text span c="dimmed">{t('newApplication.finalCustomer')}: </Text>
                 {final_customer_organization
                   ? <Anchor component={Link} to={`/organizations/${final_customer_organization.id}`}>{final_customer_organization.name}</Anchor>
-                  : 'Non lié'}
+                  : t('application.nonLinked')}
               </Text>
             )}
           </Stack>
@@ -197,7 +202,7 @@ export function ApplicationDetails() {
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" className={classes.contentGrid}>
         {/* Timeline + notes */}
         <Paper p="lg" radius="lg" withBorder>
-          <Title order={3} mb="md">Timeline</Title>
+          <Title order={3} mb="md">{t('application.timeline')}</Title>
           {events.length > 0 ? (
             <Timeline active={events.length - 1} bulletSize={12} lineWidth={2}>
               {events.map((event: ApplicationDetailsResponse['events'][number], index: number) => (
@@ -205,15 +210,15 @@ export function ApplicationDetails() {
                   key={`${event.id || index}-${event.ts}`}
                   title={
                     <Group gap={4} align="center">
-                      <Text size="sm" fw={500}>{formatEventType(event.type || event.event_type)}</Text>
+                      <Text size="sm" fw={500}>{formatEventType(event.type || event.event_type, t)}</Text>
                       {event.id && (
-                        <Tooltip label="Modifier cet événement" withArrow>
+                        <Tooltip label={t('application.editEvent')} withArrow>
                           <ActionIcon
                             size="xs"
                             variant="subtle"
                             color="dimmed"
                             onClick={() => setEditingEvent(event)}
-                            aria-label="Modifier l'événement"
+                            aria-label={t('application.editEvent')}
                           >
                             <IconPencil size={12} />
                           </ActionIcon>
@@ -222,27 +227,27 @@ export function ApplicationDetails() {
                     </Group>
                   }
                 >
-                  <Text size="xs" c="dimmed">{new Date(event.ts).toLocaleString()}</Text>
-                  {renderEventPayload(event) && (
-                    <Text size="xs" c="dimmed" mt={2}>{renderEventPayload(event)}</Text>
+                  <Text size="xs" c="dimmed">{new Date(event.ts).toLocaleString(locale.startsWith('fr') ? 'fr-FR' : 'en-US')}</Text>
+                  {renderEventPayload(event, t) && (
+                    <Text size="xs" c="dimmed" mt={2}>{renderEventPayload(event, t)}</Text>
                   )}
                 </Timeline.Item>
               ))}
             </Timeline>
           ) : (
-            <Text size="sm" c="dimmed" fs="italic">Aucun événement enregistré.</Text>
+            <Text size="sm" c="dimmed" fs="italic">{t('application.noEvents')}</Text>
           )}
 
           <form onSubmit={handleAddNote} className={classes.noteForm}>
             <Stack gap="sm">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Note rapide</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.quickNote')}</Text>
               <Textarea
-                placeholder="Saisir une note..."
+                placeholder={t('application.addNote')}
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 minRows={3}
               />
-              <Button type="submit" variant="primary">Ajouter</Button>
+              <Button type="submit" variant="primary">{t('common.create')}</Button>
             </Stack>
           </form>
         </Paper>
@@ -250,31 +255,31 @@ export function ApplicationDetails() {
         {/* Details + contacts */}
         <Stack gap="md">
           <Paper p="lg" radius="lg" withBorder>
-            <Title order={3} mb="md">Détails</Title>
+            <Title order={3} mb="md">{t('application.details')}</Title>
             <SimpleGrid cols={2} spacing="sm">
               <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Statut</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('dashboard.status')}</Text>
                 <StatusBadge status={app.status} />
               </div>
               <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Type</Text>
-                <Text size="sm" c="dimmed">{app.type}</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.type')}</Text>
+                <Text size="sm" c="dimmed">{t(`newApplication.jobTypes.${app.type}`) || app.type}</Text>
               </div>
               <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Source</Text>
-                <Text size="sm" c="dimmed">{app.source || 'Direct'}</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.source')}</Text>
+                <Text size="sm" c="dimmed">{app.source || t('dashboard.sourceDirect')}</Text>
               </div>
               <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Applied at</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.appliedAt')}</Text>
                 <Text size="sm" c="dimmed">{app.applied_at || '-'}</Text>
               </div>
             </SimpleGrid>
 
             {shouldShowFinalCustomer && (
               <Stack gap="xs" mt="md">
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Lier un client final</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('newApplication.finalCustomer')}</Text>
                 <Autocomplete
-                  placeholder="Rechercher un client final"
+                  placeholder={t('newApplication.finalCustomerPlaceholder')}
                   value={finalCustomerSearch}
                   onChange={setFinalCustomerSearch}
                   data={finalCustomerCandidates.map((c) => c.name)}
@@ -285,7 +290,7 @@ export function ApplicationDetails() {
                 />
                 {final_customer_organization && (
                   <Button variant="ghost" size="small" onClick={() => setFinalCustomer(null)}>
-                    Retirer le client final
+                    {t('organization.maintenance.resetAction')}
                   </Button>
                 )}
               </Stack>
@@ -300,8 +305,8 @@ export function ApplicationDetails() {
 
           <Paper p="lg" radius="lg" withBorder>
             <Group justify="space-between" mb="md">
-              <Title order={3}>Contacts</Title>
-              <Button variant="ghost" size="small" onClick={() => setShowContactModal(true)}>+ Ajouter</Button>
+              <Title order={3}>{t('application.contacts')}</Title>
+              <Button variant="ghost" size="small" onClick={() => setShowContactModal(true)}>+ {t('application.addContact')}</Button>
             </Group>
             {contacts.length > 0 ? (
               <Stack gap="sm">
@@ -309,8 +314,8 @@ export function ApplicationDetails() {
                   <Paper key={c.id} p="sm" radius="md" withBorder>
                     <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
                     <Group gap="xs">
-                      {c.is_recruiter === 1 && <Text size="xs" c="dimmed">Recruteur</Text>}
-                      <Text size="xs" c="dimmed">{c.role || 'Contact'}</Text>
+                      {c.is_recruiter === 1 && <Text size="xs" c="dimmed">{t('application.recruiter')}</Text>}
+                      <Text size="xs" c="dimmed">{c.role || t('application.contact')}</Text>
                     </Group>
                     {(c.email || c.phone) && (
                       <Text size="xs" c="dimmed" mt={2}>{[c.email, c.phone].filter(Boolean).join(' · ')}</Text>
@@ -319,35 +324,35 @@ export function ApplicationDetails() {
                 ))}
               </Stack>
             ) : (
-              <Text size="sm" c="dimmed" fs="italic">Aucun contact lié pour l'instant.</Text>
+              <Text size="sm" c="dimmed" fs="italic">{t('application.noContacts')}</Text>
             )}
           </Paper>
         </Stack>
       </SimpleGrid>
 
       {/* Contact modal */}
-      <Modal opened={showContactModal} onClose={() => setShowContactModal(false)} title="Ajouter un contact">
+      <Modal opened={showContactModal} onClose={() => setShowContactModal(false)} title={t('application.addContactTitle')}>
         <Tabs defaultValue="create">
           <Tabs.List mb="md">
-            <Tabs.Tab value="create">Créer</Tabs.Tab>
-            <Tabs.Tab value="link" onClick={() => setIsLinking(true)}>Lier existant</Tabs.Tab>
+            <Tabs.Tab value="create">{t('application.createNew')}</Tabs.Tab>
+            <Tabs.Tab value="link" onClick={() => setIsLinking(true)}>{t('application.linkExisting')}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="create">
             <form onSubmit={handleCreateContact}>
               <Stack gap="sm">
                 <SimpleGrid cols={2} spacing="sm">
-                  <input className="mantine-Input-input" placeholder="Prénom" required value={contactForm.first_name} onChange={(e) => setContactForm((f) => ({ ...f, first_name: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Nom" required value={contactForm.last_name} onChange={(e) => setContactForm((f) => ({ ...f, last_name: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Email" type="email" value={contactForm.email} onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Téléphone" value={contactForm.phone} onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Rôle" value={contactForm.role} onChange={(e) => setContactForm((f) => ({ ...f, role: e.target.value }))} />
+                  <input className="mantine-Input-input" placeholder={t('contacts.firstName')} required value={contactForm.first_name} onChange={(e) => setContactForm((f) => ({ ...f, first_name: e.target.value }))} />
+                  <input className="mantine-Input-input" placeholder={t('contacts.lastName')} required value={contactForm.last_name} onChange={(e) => setContactForm((f) => ({ ...f, last_name: e.target.value }))} />
+                  <input className="mantine-Input-input" placeholder={t('contacts.email')} type="email" value={contactForm.email} onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))} />
+                  <input className="mantine-Input-input" placeholder={t('contacts.phone')} value={contactForm.phone} onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))} />
+                  <input className="mantine-Input-input" placeholder={t('contacts.role')} value={contactForm.role} onChange={(e) => setContactForm((f) => ({ ...f, role: e.target.value }))} />
                   <label className={classes.checkboxLabel}>
                     <input type="checkbox" checked={contactForm.is_recruiter === 1} onChange={(e) => setContactForm((f) => ({ ...f, is_recruiter: e.target.checked ? 1 : 0 }))} />
-                    Est recruteur
+                    {t('contacts.recruiterContact')}
                   </label>
                 </SimpleGrid>
-                <Button type="submit" variant="primary">Créer et lier</Button>
+                <Button type="submit" variant="primary">{t('application.createAndLink')}</Button>
               </Stack>
             </form>
           </Tabs.Panel>
@@ -365,15 +370,15 @@ export function ApplicationDetails() {
                   >
                     <div>
                       <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
-                      <Text size="xs" c="dimmed">{c.role || 'Contact'}</Text>
+                      <Text size="xs" c="dimmed">{c.role || t('application.contact')}</Text>
                     </div>
                     <Button variant="ghost" size="small" onClick={() => { linkContact(c.id); setShowContactModal(false); }}>
-                      Lier
+                      {t('application.linkExisting')}
                     </Button>
                   </Group>
                 ))}
               {(!all_contacts || all_contacts.length === 0) && (
-                <Text size="sm" c="dimmed" fs="italic">Aucun contact existant.</Text>
+                <Text size="sm" c="dimmed" fs="italic">{t('application.noExistingContacts')}</Text>
               )}
             </Stack>
           </Tabs.Panel>
