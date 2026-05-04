@@ -138,32 +138,51 @@ export function AppLayout() {
           </Group>
 
           <Group gap="xs">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => changeLanguage(locale.startsWith('fr') ? 'en' : 'fr')}
-              title={locale.startsWith('fr') ? 'Passer en anglais' : 'Switch to French'}
-              radius="xl"
-            >
-              <Text size="md">{locale.startsWith('fr') ? '🇬🇧' : '🇫🇷'}</Text>
-            </ActionIcon>
+            <Menu shadow="md" width={140} radius="md" position="bottom-end">
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  title={t('nav.selectLanguage')}
+                  radius="xl"
+                >
+                  <Text size="md">{locale.startsWith('fr') ? '🇫🇷' : '🇬🇧'}</Text>
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<Text size="sm">🇫🇷</Text>}
+                  onClick={() => changeLanguage('fr')}
+                  active={locale.startsWith('fr')}
+                >
+                  Français
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<Text size="sm">🇬🇧</Text>}
+                  onClick={() => changeLanguage('en')}
+                  active={locale.startsWith('en')}
+                >
+                  English
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
 
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
               radius="xl"
             >
               {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
             </ActionIcon>
 
-            <Menu shadow="md" width={200} radius="md">
+            <Menu shadow="md" width={200} radius="md" position="bottom-end">
               <Menu.Target>
                 <UnstyledButton className={classes.userBtn}>
                   <Group gap="xs">
                     <Text size="sm" fw={600}>
-                      {profile?.prenom || user?.email?.split('@')[0] || 'Mon compte'}
+                      {profile?.prenom || user?.email?.split('@')[0] || t('nav.myAccount')}
                     </Text>
                     <IconChevronDown size={14} />
                   </Group>
@@ -173,19 +192,19 @@ export function AppLayout() {
                 <Menu.Label>{user?.email}</Menu.Label>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/app/mon-compte">
-                  Mon compte
+                  {t('nav.myAccount')}
                 </Menu.Item>
                 {profile?.role === 'admin' ? (
                   <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/app/admin">
-                    Administration
+                    {t('nav.admin')}
                   </Menu.Item>
                 ) : null}
                 <Menu.Item leftSection={<IconCreditCard size={14} />} component={Link} to="/app/pricing">
-                  Abonnement
+                  {t('nav.subscription')}
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconLogout size={14} />} color="red" onClick={handleLogout}>
-                  Se déconnecter
+                  {t('nav.logout')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Group, Text, ActionIcon, useMantineColorScheme, Drawer, Stack, Burger } from '@mantine/core';
+import { Group, Text, ActionIcon, useMantineColorScheme, Drawer, Stack, Burger, Menu } from '@mantine/core';
 import { IconSun, IconMoon } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
 import classes from './LandingLayout.module.css';
@@ -12,16 +12,35 @@ export function LandingLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t, locale, changeLanguage } = useI18n();
 
-  const LanguageSwitcher = ({ size = 'sm' }: { size?: string }) => (
-    <ActionIcon
-      variant="subtle"
-      color="gray"
-      onClick={() => changeLanguage(locale.startsWith('fr') ? 'en' : 'fr')}
-      title={locale.startsWith('fr') ? 'Passer en anglais' : 'Switch to French'}
-      radius="xl"
-    >
-      <Text size={size}>{locale.startsWith('fr') ? '🇬🇧' : '🇫🇷'}</Text>
-    </ActionIcon>
+  const LanguageSwitcher = ({ size = 'md' }: { size?: string }) => (
+    <Menu shadow="md" width={140} radius="md" position="bottom-end">
+      <Menu.Target>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          title={t('nav.selectLanguage')}
+          radius="xl"
+        >
+          <Text size={size}>{locale.startsWith('fr') ? '🇫🇷' : '🇬🇧'}</Text>
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Item
+          leftSection={<Text size="sm">🇫🇷</Text>}
+          onClick={() => changeLanguage('fr')}
+          active={locale.startsWith('fr')}
+        >
+          Français
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<Text size="sm">🇬🇧</Text>}
+          onClick={() => changeLanguage('en')}
+          active={locale.startsWith('en')}
+        >
+          English
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 
   return (
@@ -42,13 +61,13 @@ export function LandingLayout() {
           </div>
 
           <Group gap="xs" className={classes.navActions}>
-            <LanguageSwitcher size="md" />
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
               radius="xl"
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
             >
               {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
             </ActionIcon>
@@ -57,13 +76,13 @@ export function LandingLayout() {
           </Group>
 
           <div className={classes.navBurger}>
-            <LanguageSwitcher size="md" />
+            <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => toggleColorScheme()}
               radius="xl"
-              title="Changer le thème"
+              title={t('nav.switchTheme')}
             >
               {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
             </ActionIcon>
@@ -107,11 +126,11 @@ export function LandingLayout() {
             </a>
           </Text>
           <Group gap="lg">
-            <a href="#tarifs" className={classes.footerLink}>Tarifs</a>
-            <Link to="/app/legal/cgu" className={classes.footerLink}>CGU</Link>
-            <Link to="/app/legal/confidentialite" className={classes.footerLink}>Confidentialité</Link>
-            <Link to="/mentions-legales" className={classes.footerLink}>Mentions légales</Link>
-            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>Contact</a>
+            <a href="#tarifs" className={classes.footerLink}>{t('nav.pricing')}</a>
+            <Link to="/app/legal/cgu" className={classes.footerLink}>{t('nav.legalCgu')}</Link>
+            <Link to="/app/legal/confidentialite" className={classes.footerLink}>{t('nav.legalPrivacy')}</Link>
+            <Link to="/mentions-legales" className={classes.footerLink}>{t('nav.legalMentions')}</Link>
+            <a href={`mailto:${CONFIG.CONTACT_EMAIL}`} className={classes.footerLink}>{t('nav.contact')}</a>
           </Group>
         </div>
       </footer>

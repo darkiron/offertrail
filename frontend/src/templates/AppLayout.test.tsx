@@ -38,7 +38,7 @@ vi.mock('../i18n', () => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useIsFetching: () => 0,
+  useIsFetching: vi.fn().mockReturnValue(0),
 }));
 
 vi.mock('@mantine/core', async (importOriginal) => {
@@ -50,6 +50,14 @@ vi.mock('@mantine/core', async (importOriginal) => {
   MockMenu.Label = ({ children }: any) => <div>{children}</div>;
   MockMenu.Divider = () => <hr />;
 
+  const MockAlert = ({ children, title, onClose }: any) => (
+    <div>
+      <div>{title}</div>
+      {children}
+      <button onClick={onClose}>Close Alert</button>
+    </div>
+  );
+
   return {
     ...actual,
     useMantineColorScheme: () => ({
@@ -57,6 +65,7 @@ vi.mock('@mantine/core', async (importOriginal) => {
       toggleColorScheme: mockToggleColorScheme,
     }),
     Menu: MockMenu,
+    Alert: MockAlert,
   };
 });
 
@@ -92,7 +101,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('nav.dashboard')).toBeInTheDocument();
   });
 
-  it('shows the language flag and handles change', async () => {
+  it('shows the current language flag and handles change via menu', async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -101,11 +110,14 @@ describe('AppLayout', () => {
         { wrapper }
       );
     });
-    const flagBtn = screen.getByText('🇬🇧');
+    // With locale 'fr', it should show 🇫🇷
+    const flagBtn = screen.getByText('🇫🇷');
     expect(flagBtn).toBeInTheDocument();
     
+    // In our MockMenu, the dropdown items are rendered directly
+    const enOption = screen.getByText('English');
     await act(async () => {
-      fireEvent.click(flagBtn);
+      fireEvent.click(enOption);
     });
     expect(mockChangeLanguage).toHaveBeenCalledWith('en');
   });
@@ -119,8 +131,8 @@ describe('AppLayout', () => {
         { wrapper }
       );
     });
-    // The theme toggle title is "Changer le thème"
-    const themeBtn = screen.getByTitle('Changer le thème');
+    // The theme toggle title is "nav.switchTheme" because of the mock t
+    const themeBtn = screen.getByTitle('nav.switchTheme');
     await act(async () => {
       fireEvent.click(themeBtn);
     });
@@ -143,12 +155,41 @@ describe('AppLayout', () => {
       fireEvent.click(userBtn);
     });
     
-    const logoutBtn = screen.getByText('Se déconnecter');
+    const logoutBtn = screen.getByText('nav.logout');
     await act(async () => {
       fireEvent.click(logoutBtn);
     });
     
     expect(mockSignOut).toHaveBeenCalled();
+  });
+
+  it('shows SlowApiNotice when fetching takes too long', async () => {
+    vi.useFakeTimers();
+    const useIsFetchingMock = vi.mocked(await import('@tanstack/react-query')).useIsFetching;
+    useIsFetchingMock.mockReturnValue(1);
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <AppLayout />
+        </MemoryRouter>,
+        { wrapper }
+      );
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(screen.getByText(/Démarrage en cours/i)).toBeInTheDocument();
+    
+    const closeAlert = screen.getByText('Close Alert');
+    await act(async () => {
+      fireEvent.click(closeAlert);
+    });
+    expect(screen.queryByText(/Démarrage en cours/i)).not.toBeInTheDocument();
+
+    vi.useRealTimers();
   });
 
   it('redirects to checkout if subscription is inactive', async () => {

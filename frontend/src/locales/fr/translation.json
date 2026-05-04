@@ -12,6 +12,16 @@
     "brand": "OfferTrail",
     "themeDark": "☼ Clair",
     "themeLight": "◐ Sombre",
+    "myAccount": "Mon compte",
+    "admin": "Administration",
+    "subscription": "Abonnement",
+    "logout": "Se déconnecter",
+    "switchTheme": "Changer le thème",
+    "selectLanguage": "Choisir la langue",
+    "legalCgu": "CGU",
+    "legalPrivacy": "Confidentialité",
+    "legalMentions": "Mentions légales",
+    "contact": "Contact",
     "footer": "OfferTrail © 2026 • interface unifiée et badges harmonisés"
   },
   "common": {
@@ -66,6 +76,12 @@
     "loadingInsights": "Chargement des insights...",
     "failedInsights": "Impossible de charger les insights.",
     "markDone": "Traité",
+    "noApplicationsTitle": "Aucune candidature pour l'instant.",
+    "noApplicationsDesc": "Commence par en ajouter une.",
+    "searchPlaceholder": "Entreprise, poste, contact...",
+    "notifFollowupUpdated": "Relance mise à jour",
+    "notifFollowupError": "Impossible de mettre à jour la relance.",
+    "notifAppAdded": "Candidature ajoutée",
     "nextFollowup": "Prochaine relance",
     "page": "Page",
     "of": "sur",
@@ -188,10 +204,10 @@
     "signalHintWeak": "Manque de données : à traiter comme signal faible."
   },
   "newApplication": {
-    "kicker": "Création de candidature",
-    "title": "Nouvelle candidature",
-    "core": "Informations principales",
-    "tracking": "Suivi",
+    "kicker": "Nouvelle opportunité",
+    "title": "Ajouter une candidature",
+    "core": "Données clefs",
+    "tracking": "Suivi & Source",
     "organization": "Établissement ou nom de société",
     "organizationPlaceholder": "Rechercher ou saisir un nom d’ETS...",
     "createOrg": "Créer l’ETS",
@@ -206,6 +222,187 @@
     "jobUrlPlaceholder": "https://...",
     "tip": "Astuce : si l’ETS existe déjà, le sélectionner ici conserve son type et son signal de probité.",
     "createAction": "Créer la candidature",
-    "createError": "Impossible de créer la candidature. Vérifie les données saisies."
+    "createError": "Impossible de créer la candidature. Vérifie les données saisies.",
+    "creating": "Création...",
+    "finalCustomer": "Client final",
+    "finalCustomerPlaceholder": "Rechercher le client final",
+    "finalCustomerHint": "Lien utile quand la candidature passe par un cabinet ou une ESN.",
+    "newOrgTitle": "Nouvel ETS",
+    "collapse": "Replier",
+    "orgLabels": {
+      "name": "Nom",
+      "type": "Type",
+      "city": "Ville",
+      "website": "Site web",
+      "linkedin": "LinkedIn",
+      "notes": "Notes"
+    },
+    "orgTypes": {
+      "CLIENT_FINAL": "Client final",
+      "ESN": "ESN",
+      "CABINET_RECRUTEMENT": "Cabinet",
+      "STARTUP": "Startup",
+      "PME": "PME",
+      "GRAND_COMPTE": "Grand compte",
+      "PORTAGE": "Portage",
+      "AUTRE": "Autre"
+    },
+    "jobTypes": {
+      "CDI": "CDI",
+      "FREELANCE": "Freelance",
+      "CDD": "CDD",
+      "INTERN": "Stage"
+    },
+    "notifOrgCreated": "Entreprise \"{{name}}\" créée"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Pilotage clair · Tarif simple",
+      "title": "Ta recherche d'emploi",
+      "subtitle": "sans perdre le fil.",
+      "copy": "Suis chaque candidature, mesure tes taux de réponse, ne rate plus aucune relance. Sans tableur.",
+      "ctaPrimary": "Créer mon compte →",
+      "ctaSecondary": "Voir comment ça marche"
+    },
+    "mockup": {
+      "url": "app.offertrail.fr/app",
+      "stats": {
+        "followed": "Candidatures suivies",
+        "rejectionRate": "Taux de refus",
+        "responseRate": "Taux de réponse",
+        "avgResponse": "Délai moyen de réponse"
+      },
+      "pipeline": {
+        "title": "Pipeline actif",
+        "item1": {
+          "title": "Product Designer · FinTech Paris",
+          "meta": "Relance prévue demain · contact recruteur attaché"
+        },
+        "item2": {
+          "title": "UX Lead · Startup SaaS",
+          "meta": "Entretien prévu mercredi · notes centralisées"
+        },
+        "item3": {
+          "title": "Senior Designer · ESN Lille",
+          "meta": "En attente · dernier contact il y a 5 jours"
+        },
+        "status": {
+          "followup": "Relance",
+          "interview": "Entretien",
+          "pending": "En attente"
+        }
+      },
+      "signals": {
+        "title": "Signaux clefs",
+        "friction": "Point de friction détecté",
+        "frictionCopy": "Les candidatures sans relance dans les 5 jours ont le moins bon taux de réponse."
+      }
+    },
+    "features": {
+      "kicker": "Fonctionnalités",
+      "title": "Tout ce qu'il faut. Rien de superflu.",
+      "items": {
+        "kpis": { "title": "KPIs en temps réel", "desc": "Taux de refus, taux de réponse, délai moyen. Comprends ce qui fonctionne dans ta recherche, chiffres à l'appui." },
+        "followups": { "title": "File de relances", "desc": "Ne laisse plus une candidature sans suite. OfferTrail te rappelle quand relancer et quel contact solliciter." },
+        "probity": { "title": "Score de probité", "desc": "Chaque entreprise reçoit un signal basé sur les retours collectifs. Sache à quoi t'attendre avant de postuler." },
+        "history": { "title": "Historique complet", "desc": "Chaque changement de statut est tracé. Retrouve l'historique exact de chaque candidature, sans effort." },
+        "contacts": { "title": "Contacts centralisés", "desc": "Rattache tes recruteurs à leurs entreprises. Le réseau se construit candidature après candidature." },
+        "immediate": { "title": "Démarrage immédiat", "desc": "Tu ouvres, tu ajoutes tes premières candidatures, et ton suivi prend forme tout de suite. Pas de setup lourd." }
+      }
+    },
+    "pricing": {
+      "kicker": "Tarif",
+      "title": "Simple. Transparent. Un seul plan.",
+      "points": {
+        "full": { "title": "Accès complet dès le départ", "desc": "Dashboard, relances, contacts, établissements, historique — rien n'est verrouillé derrière un tier supérieur." },
+        "noCommitment": { "title": "Sans engagement", "desc": "Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie." },
+        "unique": { "title": "Un seul plan, sans ambiguïté", "desc": "OfferTrail fonctionne avec une offre Pro unique à {{price}} par mois." },
+        "structured": { "title": "Suivi structuré", "desc": "Tes candidatures, contacts et historique restent centralisés dans un seul espace clair." }
+      },
+      "card": {
+        "name": "Plan Pro",
+        "period": "/ mois",
+        "features": {
+          "unlimited": "Candidatures illimitées",
+          "dashboard": "Dashboard complet avec KPIs réels",
+          "tracking": "Relances, historique et timeline",
+          "linked": "Contacts et établissements liés",
+          "probity": "Score de probité des entreprises",
+          "import": "Import TSV"
+        },
+        "cta": "Créer mon compte →",
+        "note": "{{price}} / mois · Sans engagement"
+      }
+    },
+    "transparency": {
+      "kicker": "Qui est derrière OfferTrail ?",
+      "title": "Un développeur. Pas une boîte.",
+      "copy": "OfferTrail est développé et maintenu par CraftCodes, une auto-entreprise indépendante. Un outil conçu pour les freelances et chercheurs d'emploi qui veulent garder le contrôle de leur recherche, sans usine à gaz.",
+      "breakdown": {
+        "title": "Sur {{totalPrice}}/mois",
+        "stripe": "Stripe (paiement)",
+        "taxes": "URSSAF (charges 33%)",
+        "dev": "Rémunération du développeur",
+        "note": "Pas d'investisseurs. Pas de padding. Le prix reflète un travail réel."
+      }
+    },
+    "cta": {
+      "title": "Reprends le contrôle.",
+      "copy": "Un outil propre, un prix clair, une recherche mieux pilotée.",
+      "btn": "Passer à OfferTrail →"
+    }
+  },
+  "status": {
+    "all": "Tous",
+    "en_attente": "En attente",
+    "envoyee": "Envoyée",
+    "entretien": "Entretien",
+    "offre_recue": "Offre reçue",
+    "refusee": "Refusée"
+  },
+  "probity": {
+    "fiable": "Fiable",
+    "moyen": "Moyen",
+    "méfiance": "Méfiance",
+    "insuffisant": "Signal faible",
+    "score": "Score: {{score}}/100",
+    "weakSignal": "Signal faible"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Entre dans ton workspace OfferTrail.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "toi@exemple.fr",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Ton mot de passe",
+      "passwordDesc": "Compatible avec les gestionnaires de mots de passe.",
+      "submit": "Se connecter",
+      "forgotPassword": "Mot de passe oublié ?",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte",
+      "error": "Connexion impossible",
+      "invalidForm": "Formulaire invalide"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Commence à piloter tes candidatures.",
+      "firstnameLabel": "Prénom",
+      "lastnameLabel": "Nom",
+      "submit": "S'inscrire",
+      "alreadyHaveAccount": "Déjà un compte ?",
+      "login": "Se connecter"
+    },
+    "story": {
+      "title": "Reprends la main sur ton pipeline de candidatures.",
+      "copy": "Un CRM de candidatures SaaS — ton historique, tes relances et tes contacts centralisés dans un seul espace.",
+      "point1": { "title": "Vue pipeline exploitable", "desc": "Retrouve rapidement ce qui est en attente, ce qui ghoste et ce qui demande une relance." },
+      "point2": { "title": "Contexte entreprise + contact", "desc": "Chaque candidature garde son contexte, ses notes et son historique d'interactions." },
+      "point3": { "title": "Base locale propre", "desc": "Tes données restent chez toi, avec une structure SaaS prête pour la suite." }
+    },
+    "validation": {
+      "email": "Email invalide",
+      "passwordMin": "Minimum 8 caractères"
+    }
   }
 }

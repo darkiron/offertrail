@@ -12,6 +12,16 @@
     "brand": "OfferTrail",
     "themeDark": "☼ Light",
     "themeLight": "◐ Dark",
+    "myAccount": "My Account",
+    "admin": "Administration",
+    "subscription": "Subscription",
+    "logout": "Logout",
+    "switchTheme": "Switch theme",
+    "selectLanguage": "Select language",
+    "legalCgu": "Terms of Service",
+    "legalPrivacy": "Privacy Policy",
+    "legalMentions": "Legal Mentions",
+    "contact": "Contact",
     "footer": "OfferTrail © 2026 • unified interface and harmonized badges"
   },
   "common": {
@@ -66,6 +76,12 @@
     "loadingInsights": "Loading insights...",
     "failedInsights": "Unable to load insights.",
     "markDone": "Done",
+    "noApplicationsTitle": "No applications yet.",
+    "noApplicationsDesc": "Start by adding one.",
+    "searchPlaceholder": "Company, position, contact...",
+    "notifFollowupUpdated": "Follow-up updated",
+    "notifFollowupError": "Unable to update follow-up.",
+    "notifAppAdded": "Application added",
     "nextFollowup": "Next follow-up",
     "page": "Page",
     "of": "of",
@@ -188,17 +204,17 @@
     "signalHintWeak": "Missing data: treat as weak signal."
   },
   "newApplication": {
-    "kicker": "Create application",
-    "title": "New application",
-    "core": "Primary information",
-    "tracking": "Tracking",
+    "kicker": "New opportunity",
+    "title": "Add application",
+    "core": "Key data",
+    "tracking": "Tracking & Source",
     "organization": "Organization or company name",
     "organizationPlaceholder": "Search or enter an ORG name...",
     "createOrg": "Create ORG",
     "jobTitle": "Job title",
     "type": "Type",
     "initialStatus": "Initial status",
-    "appliedAt": "Application date",
+    "appliedAt": "Applied date",
     "nextFollowup": "Next follow-up",
     "source": "Source",
     "sourcePlaceholder": "LinkedIn, referral...",
@@ -206,6 +222,187 @@
     "jobUrlPlaceholder": "https://...",
     "tip": "Tip: if the ORG already exists, selecting it here keeps its type and probity signal.",
     "createAction": "Create application",
-    "createError": "Unable to create application. Check entered data."
+    "createError": "Unable to create application. Check entered data.",
+    "creating": "Creating...",
+    "finalCustomer": "Final customer",
+    "finalCustomerPlaceholder": "Search for final customer",
+    "finalCustomerHint": "Useful link when the application goes through an agency or outsourcing company.",
+    "newOrgTitle": "New ORG",
+    "collapse": "Collapse",
+    "orgLabels": {
+      "name": "Name",
+      "type": "Type",
+      "city": "City",
+      "website": "Website",
+      "linkedin": "LinkedIn",
+      "notes": "Notes"
+    },
+    "orgTypes": {
+      "CLIENT_FINAL": "Final customer",
+      "ESN": "Agency/ESN",
+      "CABINET_RECRUTEMENT": "Recruitment agency",
+      "STARTUP": "Startup",
+      "PME": "SMB",
+      "GRAND_COMPTE": "Large company",
+      "PORTAGE": "Umbrella company",
+      "AUTRE": "Other"
+    },
+    "jobTypes": {
+      "CDI": "CDI",
+      "FREELANCE": "Freelance",
+      "CDD": "CDD",
+      "INTERN": "Internship"
+    },
+    "notifOrgCreated": "Organization \"{{name}}\" created"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Clear management · Simple pricing",
+      "title": "Your job search",
+      "subtitle": "without losing the thread.",
+      "copy": "Track every application, measure your response rates, never miss a follow-up. Without spreadsheets.",
+      "ctaPrimary": "Create my account →",
+      "ctaSecondary": "See how it works"
+    },
+    "mockup": {
+      "url": "app.offertrail.fr/app",
+      "stats": {
+        "followed": "Applications tracked",
+        "rejectionRate": "Rejection rate",
+        "responseRate": "Response rate",
+        "avgResponse": "Avg response time"
+      },
+      "pipeline": {
+        "title": "Active pipeline",
+        "item1": {
+          "title": "Product Designer · FinTech Paris",
+          "meta": "Follow-up planned tomorrow · recruiter contact attached"
+        },
+        "item2": {
+          "title": "UX Lead · Startup SaaS",
+          "meta": "Interview planned Wednesday · centralized notes"
+        },
+        "item3": {
+          "title": "Senior Designer · ESN Lille",
+          "meta": "Pending · last contact 5 days ago"
+        },
+        "status": {
+          "followup": "Follow-up",
+          "interview": "Interview",
+          "pending": "Pending"
+        }
+      },
+      "signals": {
+        "title": "Key signals",
+        "friction": "Friction point detected",
+        "frictionCopy": "Applications without follow-up within 5 days have the worst response rate."
+      }
+    },
+    "features": {
+      "kicker": "Features",
+      "title": "Everything you need. Nothing you don't.",
+      "items": {
+        "kpis": { "title": "Real-time KPIs", "desc": "Rejection rate, response rate, average delay. Understand what works in your search, supported by numbers." },
+        "followups": { "title": "Follow-up queue", "desc": "Don't leave any application without a follow-up. OfferTrail reminds you when to follow up and which contact to reach out to." },
+        "probity": { "title": "Probity score", "desc": "Each company receives a signal based on collective feedback. Know what to expect before applying." },
+        "history": { "title": "Complete history", "desc": "Every status change is tracked. Find the exact history of each application, effortlessly." },
+        "contacts": { "title": "Centralized contacts", "desc": "Link your recruiters to their companies. Your network builds up application after application." },
+        "immediate": { "title": "Immediate start", "desc": "Open it, add your first applications, and your tracking takes shape immediately. No heavy setup." }
+      }
+    },
+    "pricing": {
+      "kicker": "Pricing",
+      "title": "Simple. Transparent. One single plan.",
+      "points": {
+        "full": { "title": "Full access from the start", "desc": "Dashboard, follow-ups, contacts, organizations, history — nothing is locked behind a higher tier." },
+        "noCommitment": { "title": "No commitment", "desc": "Cancel whenever you want. No forced annual contracts, no hidden exit fees." },
+        "unique": { "title": "One single plan, no ambiguity", "desc": "OfferTrail works with a unique Pro offer at {{price}} per month." },
+        "structured": { "title": "Structured tracking", "desc": "Your applications, contacts, and history stay centralized in one clear space." }
+      },
+      "card": {
+        "name": "Pro Plan",
+        "period": "/ month",
+        "features": {
+          "unlimited": "Unlimited applications",
+          "dashboard": "Full dashboard with real KPIs",
+          "tracking": "Follow-ups, history and timeline",
+          "linked": "Linked contacts and organizations",
+          "probity": "Company probity score",
+          "import": "TSV Import"
+        },
+        "cta": "Create my account →",
+        "note": "{{price}} / month · No commitment"
+      }
+    },
+    "transparency": {
+      "kicker": "Who is behind OfferTrail?",
+      "title": "A developer. Not a company.",
+      "copy": "OfferTrail is developed and maintained by CraftCodes, an independent solo business. A tool designed for freelancers and job seekers who want to keep control of their search, without the bloat.",
+      "breakdown": {
+        "title": "Out of {{totalPrice}}/month",
+        "stripe": "Stripe (payment)",
+        "taxes": "URSSAF (taxes 33%)",
+        "dev": "Developer's pay",
+        "note": "No investors. No padding. The price reflects real work."
+      }
+    },
+    "cta": {
+      "title": "Take back control.",
+      "copy": "A clean tool, a clear price, a better managed search.",
+      "btn": "Switch to OfferTrail →"
+    }
+  },
+  "status": {
+    "all": "All",
+    "en_attente": "Pending",
+    "envoyee": "Sent",
+    "entretien": "Interview",
+    "offre_recue": "Offer received",
+    "refusee": "Rejected"
+  },
+  "probity": {
+    "fiable": "Reliable",
+    "moyen": "Average",
+    "méfiance": "Caution",
+    "insuffisant": "Weak signal",
+    "score": "Score: {{score}}/100",
+    "weakSignal": "Weak signal"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Enter your OfferTrail workspace.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Your password",
+      "passwordDesc": "Compatible with password managers.",
+      "submit": "Login",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create an account",
+      "error": "Unable to login",
+      "invalidForm": "Invalid form"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Start tracking your applications.",
+      "firstnameLabel": "First name",
+      "lastnameLabel": "Last name",
+      "submit": "Sign up",
+      "alreadyHaveAccount": "Already have an account?",
+      "login": "Login"
+    },
+    "story": {
+      "title": "Take back control of your application pipeline.",
+      "copy": "A SaaS application CRM — your history, follow-ups and contacts centralized in one space.",
+      "point1": { "title": "Actionable pipeline view", "desc": "Quickly find what's pending, who's ghosting and what needs a follow-up." },
+      "point2": { "title": "Company + contact context", "desc": "Each application keeps its context, notes and interaction history." },
+      "point3": { "title": "Clean local base", "desc": "Your data stays with you, with a SaaS structure ready for what's next." }
+    },
+    "validation": {
+      "email": "Invalid email",
+      "passwordMin": "Minimum 8 characters"
+    }
   }
 }
