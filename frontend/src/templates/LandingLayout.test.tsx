@@ -1,4 +1,4 @@
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, within } from '@testing-library/react';
 import { LandingLayout } from './LandingLayout';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -30,6 +30,14 @@ vi.mock('@mantine/core', async (importOriginal) => {
       toggleColorScheme: vi.fn(),
     }),
     Menu: MockMenu,
+    Drawer: ({ children, opened, onClose }: any) => (
+      opened ? (
+        <div role="dialog">
+          <button aria-label="Close drawer" onClick={onClose}>Close</button>
+          {children}
+        </div>
+      ) : null
+    ),
     Burger: ({ opened, onClick }: any) => <button role="burger" onClick={onClick}>{opened ? 'Close' : 'Open'}</button>,
   };
 });
@@ -83,18 +91,32 @@ describe('LandingLayout', () => {
     // In Mantine, Burger is a button.
     const burger = screen.getByRole('burger'); // MockBurger uses role burger
     
-    await act(async () => {
-      fireEvent.click(burger);
-    });
-    // Drawer title should be visible
-    expect(screen.getAllByText(/OfferTrail/i).length).toBeGreaterThan(0);
+    // Click links in mobile menu
+    const getDrawer = () => screen.queryByRole('dialog');
+    
+    // Feature link
+    await act(async () => { fireEvent.click(burger); }); // Open
+    await act(async () => { fireEvent.click(within(getDrawer()!).getByText('nav.features')); }); // Click & Close
+    
+    // Pricing link
+    await act(async () => { fireEvent.click(burger); }); // Open
+    await act(async () => { fireEvent.click(within(getDrawer()!).getByText('nav.pricing')); }); // Click & Close
 
-    // Click a link in mobile menu to close it
-    const featuresLink = screen.getByText('nav.features');
+    // Login link
+    await act(async () => { fireEvent.click(burger); }); // Open
+    await act(async () => { fireEvent.click(within(getDrawer()!).getByText('nav.login')); }); // Click & Close
+
+    // Start link
+    await act(async () => { fireEvent.click(burger); }); // Open
+    await act(async () => { fireEvent.click(within(getDrawer()!).getByText('nav.start →')); }); // Click & Close
+
+    // Test close button in drawer
+    await act(async () => { fireEvent.click(burger); }); // Open
+    const closeBtn = screen.getByLabelText('Close drawer');
     await act(async () => {
-      fireEvent.click(featuresLink);
+      fireEvent.click(closeBtn); // Click & Close
     });
-    // The drawer would close in a real app
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('handles theme toggle in both desktop and mobile views', async () => {
@@ -109,9 +131,11 @@ describe('LandingLayout', () => {
     const themeButtons = screen.getAllByTitle('nav.switchTheme');
     expect(themeButtons.length).toBe(2); // Desktop and mobile
 
-    await act(async () => {
-      fireEvent.click(themeButtons[0]);
-    });
+    for (const btn of themeButtons) {
+      await act(async () => {
+        fireEvent.click(btn);
+      });
+    }
   });
 
   it('handles language change in LandingLayout', async () => {
