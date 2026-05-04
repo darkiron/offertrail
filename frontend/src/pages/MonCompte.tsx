@@ -11,9 +11,11 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { authService, subscriptionService } from '../services/api';
 import { Button } from '../components/atoms/Button';
+import { useI18n } from '../i18n';
 import classes from './MonCompte.module.css';
 
 export function MonCompte() {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
@@ -32,7 +34,7 @@ export function MonCompte() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
 
-  useEffect(() => { document.title = 'Mon compte — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('account.title') + ' — OfferTrail'; }, [t]);
 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
@@ -41,10 +43,10 @@ export function MonCompte() {
     }
 
     if (paymentStatus === 'success') {
-      notifications.show({ message: 'Paiement confirmé. Mise à jour de ton abonnement en cours.', color: 'green' });
+      notifications.show({ message: t('account.paymentSuccess'), color: 'green' });
       void queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (paymentStatus === 'cancelled') {
-      notifications.show({ message: 'Paiement annulé.', color: 'yellow' });
+      notifications.show({ message: t('account.paymentCancelled'), color: 'yellow' });
     }
 
     setSearchParams((current) => {
@@ -67,10 +69,10 @@ export function MonCompte() {
     try {
       await authService.updateMe(form);
       await refreshProfile();
-      notifications.show({ message: 'Profil enregistré', color: 'green' });
+      notifications.show({ message: t('account.notifSuccess'), color: 'green' });
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) { navigate('/login'); return; }
-      notifications.show({ message: 'Impossible de mettre à jour le profil.', color: 'red' });
+      notifications.show({ message: t('account.notifError'), color: 'red' });
     } finally {
       setSaving(false);
     }
@@ -82,11 +84,11 @@ export function MonCompte() {
     try {
       const { error } = await supabase.auth.updateUser({ password: passwordForm.new_password });
       if (error) throw error;
-      notifications.show({ message: 'Mot de passe mis à jour', color: 'green' });
+      notifications.show({ message: t('account.passwordUpdateSuccess'), color: 'green' });
       setPasswordOpen(false);
       setPasswordForm({ new_password: '' });
     } catch {
-      notifications.show({ message: 'Impossible de modifier le mot de passe.', color: 'red' });
+      notifications.show({ message: t('account.passwordUpdateError'), color: 'red' });
     } finally {
       setPasswordSaving(false);
     }
@@ -98,7 +100,7 @@ export function MonCompte() {
       const { portal_url } = await subscriptionService.portal();
       window.location.assign(portal_url);
     } catch (err: unknown) {
-      const detail = (axios.isAxiosError(err) && err.response?.data?.detail) || 'Impossible d\'ouvrir le portail Stripe.';
+      const detail = (axios.isAxiosError(err) && err.response?.data?.detail) || t('account.stripeError');
       notifications.show({ message: detail, color: 'red' });
       setPortalLoading(false);
     }
@@ -108,38 +110,38 @@ export function MonCompte() {
     <Stack gap="lg" p="lg" className={classes.shell}>
       {/* Banner */}
       <Paper className={classes.banner} p="xl" radius="lg" withBorder>
-        <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Mon compte</Text>
-        <Title order={1} mt="xs">Profil, sécurité et abonnement au même endroit.</Title>
+        <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('account.title')}</Text>
+        <Title order={1} mt="xs">{t('account.subtitle')}</Title>
         <Text c="dimmed" mt="sm">
-          L&apos;abonnement est géré avec Stripe pour un passage au plan Pro sans friction.
+          {t('account.copy')}
         </Text>
       </Paper>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
         {/* Profile card */}
         <Paper p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Profil</Text>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('account.profile')}</Text>
           <form onSubmit={saveProfile}>
             <Stack gap="md">
               <SimpleGrid cols={2} spacing="sm">
                 <TextInput
-                  label="Prénom"
+                  label={t('account.firstname')}
                   value={form.prenom}
                   onChange={(e) => setForm((f) => ({ ...f, prenom: e.target.value }))}
                 />
                 <TextInput
-                  label="Nom"
+                  label={t('account.lastname')}
                   value={form.nom}
                   onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
                 />
               </SimpleGrid>
-              <TextInput label="Email" value={user?.email || ''} disabled />
+              <TextInput label={t('account.email')} value={user?.email || ''} disabled />
               <Group>
                 <Button type="submit" variant="primary" disabled={saving}>
-                  {saving ? 'Sauvegarde...' : 'Enregistrer'}
+                  {saving ? t('account.saving') : t('common.save')}
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setPasswordOpen(true)}>
-                  Modifier le mot de passe
+                  {t('account.changePassword')}
                 </Button>
               </Group>
             </Stack>
@@ -150,43 +152,43 @@ export function MonCompte() {
         <Stack gap="md">
           {/* Plan */}
           <Paper p="lg" radius="lg" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Abonnement</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('account.subscription')}</Text>
             <Group justify="space-between" mb="sm">
               {sub?.is_active && (
                 <Badge variant="light" color="green" size="lg">Pro</Badge>
               )}
               {sub?.is_active ? (
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
-                  {portalLoading ? 'Redirection...' : 'Gérer via Stripe →'}
+                  {portalLoading ? t('account.redirection') : t('account.manageStripe')}
                 </Button>
               ) : (
                 <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
-                  Passer en Pro →
+                  {t('account.upgradePro')}
                 </Button>
               )}
             </Group>
             {sub?.is_active && (
               <Text size="sm" c="dimmed">
-                Plan démarré le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
+                {t('account.planStarted', { date: sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString(locale.startsWith('fr') ? 'fr-FR' : 'en-US') : '-' })}
               </Text>
             )}
           </Paper>
 
           {/* Factures — portail Stripe si abonnement actif */}
           <Paper p="lg" radius="lg" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Factures</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('account.invoices')}</Text>
             {sub?.is_active ? (
               <Group justify="space-between" align="center">
-                <Text size="sm" c="dimmed">Historique et téléchargement via Stripe</Text>
+                <Text size="sm" c="dimmed">{t('account.invoiceHistory')}</Text>
                 <Button variant="ghost" size="small" onClick={openStripePortal} disabled={portalLoading}>
-                  {portalLoading ? '...' : 'Voir les factures →'}
+                  {portalLoading ? '...' : t('account.viewInvoices')}
                 </Button>
               </Group>
             ) : (
               <Text size="sm" c="dimmed">
-                Disponible après souscription au plan Pro.{' '}
+                {t('account.proOnly')}{' '}
                 <Anchor size="sm" onClick={() => navigate('/app/pricing')} style={{ cursor: 'pointer' }}>
-                  Passer en Pro →
+                  {t('account.upgradePro')}
                 </Anchor>
               </Text>
             )}
@@ -195,17 +197,17 @@ export function MonCompte() {
       </SimpleGrid>
 
       {/* Password modal */}
-      <Modal opened={passwordOpen} onClose={() => setPasswordOpen(false)} title="Modifier le mot de passe">
+      <Modal opened={passwordOpen} onClose={() => setPasswordOpen(false)} title={t('account.passwordModalTitle')}>
         <form onSubmit={changePassword}>
           <Stack gap="md">
             <PasswordInput
-              label="Nouveau mot de passe"
+              label={t('account.newPassword')}
               value={passwordForm.new_password}
               onChange={(e) => setPasswordForm({ new_password: e.target.value })}
               minLength={8}
             />
             <Button type="submit" variant="primary" disabled={passwordSaving}>
-              {passwordSaving ? 'Mise à jour...' : 'Enregistrer le mot de passe'}
+              {passwordSaving ? t('account.updating') : t('account.savePassword')}
             </Button>
           </Stack>
         </form>

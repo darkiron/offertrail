@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
   Modal, TextInput, Textarea, NumberInput, Select, SimpleGrid, Stack, Group, Text,
 } from '@mantine/core';
 import type { Application } from '../../types';
 import type { ApplicationPayload } from '../../services/api';
+import { useI18n } from '../../i18n';
 import { Button } from '../atoms/Button';
 import { STATUT_FORM_OPTIONS } from '../../constants/statuts';
 
@@ -14,14 +15,20 @@ interface ApplicationEditModalProps {
   onSaved: (payload: ApplicationPayload) => Promise<unknown>;
 }
 
-const CONTRACT_OPTIONS = [
-  { value: 'CDI', label: 'CDI' },
-  { value: 'FREELANCE', label: 'Freelance' },
-  { value: 'CDD', label: 'CDD' },
-  { value: 'INTERN', label: 'Stage' },
-];
-
 export function ApplicationEditModal({ application, onClose, onSaved }: ApplicationEditModalProps) {
+  const { t } = useI18n();
+
+  const CONTRACT_OPTIONS = useMemo(() => [
+    { value: 'CDI', label: t('newApplication.jobTypes.CDI') },
+    { value: 'FREELANCE', label: t('newApplication.jobTypes.FREELANCE') },
+    { value: 'CDD', label: t('newApplication.jobTypes.CDD') },
+    { value: 'INTERN', label: t('newApplication.jobTypes.INTERN') },
+  ], [t]);
+
+  const STATUT_OPTIONS = useMemo(() => [
+    ...STATUT_FORM_OPTIONS.map(opt => ({ ...opt, label: t(`status.${opt.value}`) }))
+  ], [t]);
+
   const [form, setForm] = useState<ApplicationPayload>({
     title: application.title ?? '',
     type: application.type ?? 'CDI',
@@ -54,7 +61,7 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
       });
       onClose();
     } catch (err: unknown) {
-      setError((axios.isAxiosError(err) && err.response?.data?.detail) || 'Échec de la sauvegarde.');
+      setError((axios.isAxiosError(err) && err.response?.data?.detail) || t('application.saveError'));
     } finally {
       setLoading(false);
     }
@@ -67,7 +74,7 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
       size="lg"
       title={
         <Stack gap={2}>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Modifier</Text>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.edit')}</Text>
           <Text size="xl" fw={700}>{application.title}</Text>
         </Stack>
       }
@@ -77,7 +84,7 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           <TextInput
-            label="Poste"
+            label={t('application.jobTitle')}
             required
             value={form.title ?? ''}
             onChange={(e) => set('title', e.target.value)}
@@ -85,14 +92,14 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
 
           <SimpleGrid cols={2} spacing="sm">
             <Select
-              label="Type de contrat"
+              label={t('application.contractType')}
               data={CONTRACT_OPTIONS}
               value={form.type ?? 'CDI'}
               onChange={(v) => set('type', v ?? 'CDI')}
             />
             <Select
-              label="Statut"
-              data={STATUT_FORM_OPTIONS}
+              label={t('dashboard.status')}
+              data={STATUT_OPTIONS}
               value={form.status ?? 'envoyee'}
               onChange={(v) => set('status', v ?? 'envoyee')}
             />
@@ -100,13 +107,13 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
 
           <SimpleGrid cols={2} spacing="sm">
             <TextInput
-              label="Date de candidature"
+              label={t('application.appliedAt')}
               type="date"
               value={form.applied_at ?? ''}
               onChange={(e) => set('applied_at', e.target.value)}
             />
             <TextInput
-              label="Date de réponse"
+              label={t('application.responseDate')}
               type="date"
               value={form.response_date ?? ''}
               onChange={(e) => set('response_date', e.target.value)}
@@ -115,13 +122,13 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
 
           <SimpleGrid cols={2} spacing="sm">
             <TextInput
-              label="Source"
+              label={t('application.source')}
               placeholder="LinkedIn, Indeed…"
               value={form.source ?? ''}
               onChange={(e) => set('source', e.target.value)}
             />
             <NumberInput
-              label="Salaire visé (€)"
+              label={t('application.salary')}
               placeholder="45000"
               value={form.salary ?? ''}
               onChange={(v) => set('salary', v === '' ? null : Number(v))}
@@ -130,23 +137,23 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
           </SimpleGrid>
 
           <TextInput
-            label="URL de l'offre"
+            label={t('newApplication.jobUrl')}
             placeholder="https://…"
             value={form.job_url ?? ''}
             onChange={(e) => set('job_url', e.target.value)}
           />
 
           <Textarea
-            label="Notes"
+            label={t('application.notes')}
             rows={4}
             value={form.notes ?? ''}
             onChange={(e) => set('notes', e.target.value)}
           />
 
           <Group justify="space-between">
-            <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Sauvegarde…' : 'Enregistrer'}
+              {loading ? t('account.saving') : t('common.save')}
             </Button>
           </Group>
         </Stack>
