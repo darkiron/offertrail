@@ -145,7 +145,7 @@ export function AppLayout() {
               title={locale.startsWith('fr') ? 'Passer en anglais' : 'Switch to French'}
               radius="xl"
             >
-              <Text size="xs" fw={700}>{locale.startsWith('fr') ? 'EN' : 'FR'}</Text>
+              <Text size="md">{locale.startsWith('fr') ? '🇬🇧' : '🇫🇷'}</Text>
             </ActionIcon>
 
             <ActionIcon
