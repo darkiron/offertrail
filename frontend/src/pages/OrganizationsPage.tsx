@@ -154,7 +154,7 @@ export const OrganizationsPage: React.FC = () => {
             placeholder={t('organization.allTypes')}
             value={typeFilter || null}
             onChange={(v) => setTypeFilter(v ?? '')}
-            data={organizationTypes.map((t) => ({ value: t, label: t(`organization.types.${t}`) }))}
+            data={organizationTypes.map((orgType) => ({ value: orgType, label: t(`organization.types.${orgType}`) }))}
             clearable
           />
         </SimpleGrid>
