@@ -73,6 +73,16 @@ vi.mock('@mantine/hooks', () => ({
   useDisclosure: () => [false, { toggle: vi.fn(), close: vi.fn() }],
 }));
 
+vi.mock('../components/atoms/LanguageSwitcher', () => ({
+  LanguageSwitcher: () => (
+    <div>
+      <button aria-label="nav.selectLanguage">🇫🇷</button>
+      <button onClick={() => mockChangeLanguage('fr')}>nav.langs.fr</button>
+      <button onClick={() => mockChangeLanguage('en')}>nav.langs.en</button>
+    </div>
+  ),
+}));
+
 vi.mock('../services/api', () => ({
   subscriptionService: {
     getMe: vi.fn().mockResolvedValue({ is_active: true }),
