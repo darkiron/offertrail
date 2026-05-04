@@ -35,13 +35,6 @@ import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.css';
 
-const NAV_LINKS = [
-  { label: 'Dashboard', to: '/app', icon: IconLayoutDashboard },
-  { label: 'Candidatures', to: '/app/candidatures', icon: IconBriefcase },
-  { label: 'Entreprises', to: '/app/etablissements', icon: IconBuilding },
-  { label: 'Contacts', to: '/app/contacts', icon: IconUsers },
-  { label: 'Import', to: '/app/import', icon: IconFileImport },
-];
 
 function SlowApiNotice() {
   const isFetching = useIsFetching();
@@ -90,6 +83,15 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { t, locale, changeLanguage } = useI18n();
+
+  const NAV_LINKS = [
+    { label: t('nav.dashboard'), to: '/app', icon: IconLayoutDashboard },
+    { label: t('nav.applications'), to: '/app/candidatures', icon: IconBriefcase },
+    { label: t('nav.organizations'), to: '/app/etablissements', icon: IconBuilding },
+    { label: t('nav.contacts'), to: '/app/contacts', icon: IconUsers },
+    { label: t('nav.import'), to: '/app/import', icon: IconFileImport },
+  ];
 
   const PRICING_EXEMPT = ['/app/pricing', '/app/mon-compte'];
   const isPricingExempt = PRICING_EXEMPT.some((p) => location.pathname.startsWith(p));
@@ -136,6 +138,16 @@ export function AppLayout() {
           </Group>
 
           <Group gap="xs">
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={() => changeLanguage(locale.startsWith('fr') ? 'en' : 'fr')}
+              title={locale.startsWith('fr') ? 'Passer en anglais' : 'Switch to French'}
+              radius="xl"
+            >
+              <Text size="xs" fw={700}>{locale.startsWith('fr') ? 'EN' : 'FR'}</Text>
+            </ActionIcon>
+
             <ActionIcon
               variant="subtle"
               color="gray"
