@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,7 @@ def get_usage(db: Session, profile: Profile) -> dict:
 
 def activate_pro(db: Session, profile: Profile) -> None:
     profile.subscription_status = "active"
-    profile.plan_started_at     = datetime.utcnow()
+    profile.plan_started_at     = datetime.now(timezone.utc).replace(tzinfo=None)
     profile.plan_expires_at     = None
     db.commit()
 
