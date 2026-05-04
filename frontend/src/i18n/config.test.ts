@@ -6,6 +6,10 @@ describe('i18n config', () => {
     expect(i18n.options.fallbackLng).toContain('fr');
   });
 
+  it('should be initialized synchronously (initImmediate: false)', () => {
+    expect(i18n.options.initImmediate).toBe(false);
+  });
+
   it('should have fr and en resources', () => {
     expect(i18n.options.resources).toHaveProperty('fr');
     expect(i18n.options.resources).toHaveProperty('en');
