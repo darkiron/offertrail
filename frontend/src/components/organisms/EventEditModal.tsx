@@ -4,18 +4,8 @@ import {
   Modal, TextInput, Textarea, Select, Stack, Group, Text,
 } from '@mantine/core';
 import type { EventUpdatePayload } from '../../services/api';
+import { useI18n } from '../../i18n';
 import { Button } from '../atoms/Button';
-
-const EVENT_TYPE_OPTIONS = [
-  { value: 'creation', label: 'Création' },
-  { value: 'statut_change', label: 'Changement de statut' },
-  { value: 'note_ajout', label: 'Note' },
-  { value: 'relance', label: 'Relance' },
-  { value: 'contact_ajout', label: 'Contact ajouté' },
-  { value: 'reponse_recue', label: 'Réponse reçue' },
-  { value: 'entretien', label: 'Entretien' },
-  { value: 'offre_recue', label: 'Offre reçue' },
-];
 
 interface EventItem {
   id: string;
@@ -43,6 +33,18 @@ function toDatetimeLocal(iso: string): string {
 }
 
 export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEditModalProps) {
+  const { t } = useI18n();
+
+  const EVENT_TYPE_OPTIONS = [
+    { value: 'creation', label: t('application.created') },
+    { value: 'statut_change', label: t('application.statusUpdated') },
+    { value: 'note_ajout', label: t('application.noteAdded') },
+    { value: 'relance', label: t('application.followupSent') },
+    { value: 'contact_ajout', label: t('application.contactCreated') },
+    { value: 'reponse_recue', label: t('application.responseReceived') },
+    { value: 'entretien', label: t('application.interviewScheduled') },
+    { value: 'offre_recue', label: t('application.offerReceived') },
+  ];
   const rawType = event.type.toLowerCase();
   const [type, setType] = useState(rawType);
   const [contenu, setContenu] = useState(event.payload?.text ?? '');
@@ -64,7 +66,7 @@ export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEdit
       });
       onClose();
     } catch (err: unknown) {
-      setError((axios.isAxiosError(err) && err.response?.data?.detail) || "Échec de la sauvegarde de l'événement.");
+      setError((axios.isAxiosError(err) && err.response?.data?.detail) || t('application.saveError'));
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEdit
       await onDeleted(event.id);
       onClose();
     } catch (err: unknown) {
-      setError((axios.isAxiosError(err) && err.response?.data?.detail) || "Échec de la suppression.");
+      setError((axios.isAxiosError(err) && err.response?.data?.detail) || t('application.deleteError'));
       setDeleting(false);
     }
   };
@@ -89,7 +91,7 @@ export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEdit
       size="md"
       title={
         <Stack gap={2}>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Modifier l'événement</Text>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('application.editEventTitle')}</Text>
         </Stack>
       }
     >
@@ -98,21 +100,21 @@ export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEdit
       <form onSubmit={handleSave}>
         <Stack gap="md">
           <Select
-            label="Type"
+            label={t('newApplication.orgLabels.type')}
             data={EVENT_TYPE_OPTIONS}
             value={type}
             onChange={(v) => setType(v ?? rawType)}
           />
 
           <TextInput
-            label="Date et heure"
+            label={t('application.dateTime')}
             type="datetime-local"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
 
           <Textarea
-            label="Contenu / Note"
+            label={t('application.contentNote')}
             rows={3}
             value={contenu}
             onChange={(e) => setContenu(e.target.value)}
@@ -120,12 +122,12 @@ export function EventEditModal({ event, onClose, onSaved, onDeleted }: EventEdit
 
           <Group justify="space-between">
             <Button type="button" variant="ghost" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Suppression…' : 'Supprimer'}
+              {deleting ? t('application.deleting') : t('application.delete')}
             </Button>
             <Group gap="sm">
-              <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+              <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
               <Button type="submit" variant="primary" disabled={loading}>
-                {loading ? 'Sauvegarde…' : 'Enregistrer'}
+                {loading ? t('account.saving') : t('common.save')}
               </Button>
             </Group>
           </Group>

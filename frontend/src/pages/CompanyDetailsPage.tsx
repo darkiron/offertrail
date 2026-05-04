@@ -12,6 +12,7 @@ import { Button } from '../components/atoms/Button';
 import OrganizationEditModal from '../components/organisms/OrganizationEditModal';
 import ContactEditModal from '../components/organisms/ContactEditModal';
 import type { Application, Contact, Organization } from '../types';
+import { useI18n } from '../i18n';
 import classes from './CompanyDetailsPage.module.css';
 
 type CompanyDetails = Organization & {
@@ -30,52 +31,43 @@ type CompanyDetails = Organization & {
 
 type DetailTab = 'overview' | 'applications' | 'contacts' | 'activity';
 
-const tabDefinitions: Array<{ id: DetailTab; label: string }> = [
-  { id: 'overview', label: 'Aperçu' },
-  { id: 'applications', label: 'Candidatures' },
-  { id: 'contacts', label: 'Contacts' },
-  { id: 'activity', label: 'Activité' },
+const tabDefinitions = (t: (k: string) => string): Array<{ id: DetailTab; label: string }> => [
+  { id: 'overview', label: t('organization.overview') },
+  { id: 'applications', label: t('organization.applications') },
+  { id: 'contacts', label: t('organization.contacts') },
+  { id: 'activity', label: t('organization.activity') },
 ];
 
-const formatDate = (value?: string | null, withTime = false) => {
+const formatDate = (value: string | null | undefined, withTime: boolean, locale: string) => {
   if (!value) {
     return '-';
   }
-  return new Date(value).toLocaleString('fr-FR', withTime ? {
+  return new Date(value).toLocaleString(locale.startsWith('fr') ? 'fr-FR' : 'en-US', withTime ? {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   } : {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 };
 
-const formatEventLabel = (rawType?: string) => {
-  const type = String(rawType || '').toUpperCase();
-  const map: Record<string, string> = {
-    UPDATED: 'Organisation mise a jour',
-    CREATED: 'Creation',
-    STATUS_CHANGED: 'Statut modifie',
-    NOTE_ADDED: 'Note ajoutee',
-    CONTACT_LINKED: 'Contact lie',
-    CONTACT_CREATED: 'Contact cree',
-    RESPONSE_RECEIVED: 'Reponse recue',
-    FOLLOWUP_SENT: 'Relance envoyee',
-    OFFER_RECEIVED: 'Offre recue',
-    INTERVIEW_SCHEDULED: 'Entretien planifie',
-  };
-  return map[type] || type.replace(/_/g, ' ') || 'Evenement';
+const formatEventLabel = (rawType: string | undefined, t: (k: string) => string) => {
+  const type = String(rawType || '').toLowerCase();
+  const key = `organization.events.${type}`;
+  const translated = t(key);
+  return translated !== key ? translated : type.replace(/_/g, ' ') || t('organization.events.event');
 };
 
-const getProbityHint = (level: Organization['probity_level'], score: number | null) => {
+const getProbityHint = (level: Organization['probity_level'], score: number | null, t: (k: string, p?: object) => string) => {
   switch (level) {
-    case 'fiable': return score !== null ? 'Signal favorable et documente.' : 'Signal favorable.';
-    case 'moyen': return 'Signal mitige a surveiller.';
-    case 'méfiance': return 'Signal de risque eleve.';
-    case 'insuffisant': return 'Manque de donnees: a traiter comme signal faible.';
-    default: return 'Signal faible.';
+    case 'fiable': return score !== null ? t('organization.probityHintFiable') : t('organization.probityHintFiableSimple');
+    case 'moyen': return t('organization.probityHintMoyen');
+    case 'méfiance': return t('organization.probityHintRisque');
+    case 'insuffisant': return t('organization.probityHintInsuffisant');
+    default: return t('organization.probityHintDefault');
   }
 };
 
 export const CompanyDetailsPage: React.FC = () => {
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<CompanyDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,13 +84,13 @@ export const CompanyDetailsPage: React.FC = () => {
       const response = await api.getCompany(Number(id));
       setData(response);
     } catch {
-      setError('Impossible de charger la fiche ETS.');
+      setError(t('organization.detailError'));
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { document.title = 'Entreprise — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('nav.organizations') + ' — OfferTrail'; }, [t]);
 
   useEffect(() => {
     fetchCompany();
@@ -116,9 +108,9 @@ export const CompanyDetailsPage: React.FC = () => {
     return (
       <Stack gap="lg" p="lg" className={classes.shell}>
         <Paper p="xl" radius="lg" withBorder>
-          <Text c="dimmed" ta="center">{error || 'ETS introuvable.'}</Text>
+          <Text c="dimmed" ta="center">{error || t('organization.detailError')}</Text>
           <Group justify="center" mt="md">
-            <Anchor component={Link} to="/app/etablissements">Retour aux établissements</Anchor>
+            <Anchor component={Link} to="/app/etablissements">{t('common.backToOrganizations')}</Anchor>
           </Group>
         </Paper>
       </Stack>
@@ -134,11 +126,11 @@ export const CompanyDetailsPage: React.FC = () => {
 
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
-      <Anchor component={Link} to="/app/etablissements" c="dimmed" size="sm">← Retour aux établissements</Anchor>
+      <Anchor component={Link} to="/app/etablissements" c="dimmed" size="sm">← {t('common.backToOrganizations')}</Anchor>
 
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
         <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Fiche detail ETS</Text>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.detailKicker')}</Text>
           <Title order={1} mt="xs">{data.name}</Title>
           <Group mt="md" gap="xs" wrap="wrap">
             <OrganizationTypeBadge type={data.type} />
@@ -146,20 +138,19 @@ export const CompanyDetailsPage: React.FC = () => {
             {data.city ? <Badge variant="outline" size="sm">{data.city}</Badge> : null}
           </Group>
           <Text c="dimmed" mt="md" size="sm">
-            Vérifie les informations de l&apos;organisation, consulte les candidatures liées, ouvre les contacts utiles et
-            mets à jour la fiche ETS sans quitter la page.
+            {t('organization.detailCopy')}
           </Text>
           <Group mt="lg" gap="xs" wrap="wrap">
-            <Button variant="primary" onClick={() => setEditingOrganization(true)}>Modifier la fiche ETS</Button>
-            <Button component={Link} to={`/app/etablissements/maintenance?source=${data.id}`} variant="ghost">Maintenance ETS</Button>
+            <Button variant="primary" onClick={() => setEditingOrganization(true)}>{t('organization.editAction')}</Button>
+            <Button component={Link} to={`/app/etablissements/maintenance?source=${data.id}`} variant="ghost">{t('organization.maintenanceAction')}</Button>
             {data.website ? (
               <a href={data.website} target="_blank" rel="noreferrer">
-                <Button variant="ghost">Site web</Button>
+                <Button variant="ghost">{t('newApplication.orgLabels.website')}</Button>
               </a>
             ) : null}
             {data.linkedin_url ? (
               <a href={data.linkedin_url} target="_blank" rel="noreferrer">
-                <Button variant="ghost">LinkedIn</Button>
+                <Button variant="ghost">{t('newApplication.orgLabels.linkedin')}</Button>
               </a>
             ) : null}
           </Group>
@@ -168,12 +159,12 @@ export const CompanyDetailsPage: React.FC = () => {
         <Paper p="xl" radius="lg" withBorder>
           <Stack gap="md">
             <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Synthèse rapide</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.summaryTitle')}</Text>
               <Stack gap="xs">
                 {[
-                  { label: 'Dernière mise à jour', value: formatDate(data.updated_at, true) },
-                  { label: 'Création de la fiche', value: formatDate(data.created_at) },
-                  { label: 'Contacts liés', value: String(data.contacts.length) },
+                  { label: t('organization.lastUpdate'), value: formatDate(data.updated_at, true, locale) },
+                  { label: t('organization.createdAt'), value: formatDate(data.created_at, false, locale) },
+                  { label: t('organization.linkedContacts'), value: String(data.contacts.length) },
                 ].map((item) => (
                   <Group key={item.label} justify="space-between">
                     <Text size="xs" c="dimmed">{item.label}</Text>
@@ -183,9 +174,9 @@ export const CompanyDetailsPage: React.FC = () => {
               </Stack>
             </Stack>
             <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Cadence</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.cadenceTitle')}</Text>
               <Text size="sm" c="dimmed">
-                {dueFollowups > 0 ? `${dueFollowups} relance(s) à surveiller` : 'Aucune relance en attente'}
+                {dueFollowups > 0 ? t('organization.dueFollowupsCount', { count: dueFollowups }) : t('organization.noDueFollowups')}
               </Text>
             </Stack>
           </Stack>
@@ -194,10 +185,10 @@ export const CompanyDetailsPage: React.FC = () => {
 
       <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
         {[
-          { label: 'Candidatures', value: data.total_applications, hint: 'volume cumulé' },
-          { label: 'Taux de réponse', value: `${responseRate}%`, hint: 'retours détectés' },
-          { label: 'Taux positif', value: `${positiveRate}%`, hint: 'entretiens ou offres' },
-          { label: 'Ghosting', value: data.ghosting_count, hint: 'sans retour après 30j' },
+          { label: t('nav.applications'), value: data.total_applications, hint: t('organization.stats.totalApplicationsHint') },
+          { label: t('dashboard.responseRate'), value: `${responseRate}%`, hint: t('organization.stats.responseRateHint') },
+          { label: t('organization.stats.positiveRate'), value: `${positiveRate}%`, hint: t('organization.stats.positiveRateHint') },
+          { label: t('organization.stats.ghosting'), value: data.ghosting_count, hint: t('organization.stats.ghostingHint') },
         ].map((stat) => (
           <Paper key={stat.label} p="lg" radius="lg" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
@@ -210,7 +201,7 @@ export const CompanyDetailsPage: React.FC = () => {
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
         <Paper p="xl" radius="lg" withBorder>
           <Group gap="xs" mb="lg" wrap="wrap">
-            {tabDefinitions.map((tab) => (
+            {tabDefinitions(t).map((tab) => (
               <Chip
                 key={tab.id}
                 checked={activeTab === tab.id}
@@ -226,10 +217,10 @@ export const CompanyDetailsPage: React.FC = () => {
             <Stack gap="md">
               <SimpleGrid cols={2} spacing="sm">
                 {[
-                  { label: 'Temps moyen de réponse', value: data.avg_response_days ?? '-', hint: 'jours avant premier retour' },
-                  { label: 'Taux de rejet estimé', value: `${rejectionRate}%`, hint: 'depuis les signaux de statut' },
-                  { label: 'Réponses constatées', value: data.total_responses, hint: 'sur l\'ensemble des candidatures' },
-                  { label: 'Signal probité', value: null, hint: getProbityHint(data.probity_level, data.probity_score), probity: true },
+                  { label: t('dashboard.avgResponseTime'), value: data.avg_response_days ?? '-', hint: t('organization.stats.avgResponseHint') },
+                  { label: t('organization.stats.rejectionRate'), value: `${rejectionRate}%`, hint: t('organization.stats.rejectionRateHint') },
+                  { label: t('organization.stats.totalResponses'), value: data.total_responses, hint: t('organization.stats.totalResponsesHint') },
+                  { label: t('probity.signalTitle'), value: null, hint: getProbityHint(data.probity_level, data.probity_score, t), probity: true },
                 ].map((metric) => (
                   <Paper key={metric.label} p="md" radius="md" withBorder>
                     <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{metric.label}</Text>
@@ -246,9 +237,9 @@ export const CompanyDetailsPage: React.FC = () => {
               </SimpleGrid>
 
               <Paper p="md" radius="lg" className={classes.noteCard}>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="xs">Notes ETS</Text>
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="xs">{t('contacts.notes')}</Text>
                 <Text size="sm" c="dimmed">
-                  {data.notes?.trim() || 'Aucune note renseignée pour cet établissement.'}
+                  {data.notes?.trim() || t('organization.noNotes')}
                 </Text>
               </Paper>
             </Stack>
@@ -263,26 +254,26 @@ export const CompanyDetailsPage: React.FC = () => {
                       <Stack gap={4}>
                         <Text fw={700} size="sm">{application.title}</Text>
                         <Group gap="xs" wrap="wrap">
-                          <Badge variant="outline" size="xs">{application.type}</Badge>
-                          <Badge variant="outline" size="xs">{application.source || 'Source directe'}</Badge>
-                          <Text size="xs" c="dimmed">Postulé le {formatDate(application.applied_at)}</Text>
+                          <Badge variant="outline" size="xs">{t(`newApplication.jobTypes.${application.type}`) || application.type}</Badge>
+                          <Badge variant="outline" size="xs">{application.source || t('dashboard.sourceDirect')}</Badge>
+                          <Text size="xs" c="dimmed">{t('application.appliedOn')} {formatDate(application.applied_at, false, locale)}</Text>
                         </Group>
                       </Stack>
                       <StatusBadge status={application.status} />
                     </Group>
                     <Group mt="sm" gap="xs">
                       {application.next_followup_at ? (
-                        <Badge variant="outline" size="xs">Relance: {formatDate(application.next_followup_at)}</Badge>
+                        <Badge variant="outline" size="xs">{t('application.followup')}: {formatDate(application.next_followup_at, false, locale)}</Badge>
                       ) : null}
                       <Link to={`/app/candidatures/${application.id}`}>
-                        <Text size="xs" c="blue">Ouvrir la candidature</Text>
+                        <Text size="xs" c="blue">{t('contacts.openApplication')}</Text>
                       </Link>
                     </Group>
                   </Paper>
                 ))}
               </Stack>
             ) : (
-              <Text c="dimmed" ta="center" py="xl">Aucune candidature liée à cet ETS.</Text>
+              <Text c="dimmed" ta="center" py="xl">{t('organization.noLinkedApplications')}</Text>
             )
           ) : null}
 
@@ -296,17 +287,17 @@ export const CompanyDetailsPage: React.FC = () => {
                         <Text fw={700} size="sm">{contact.first_name} {contact.last_name}</Text>
                         <Group gap="xs" wrap="wrap">
                           {contact.role ? <Badge variant="outline" size="xs">{contact.role}</Badge> : null}
-                          {contact.is_recruiter ? <Badge variant="light" color="pink" size="xs">Recruteur</Badge> : null}
+                          {contact.is_recruiter ? <Badge variant="light" color="pink" size="xs">{t('contacts.recruiter')}</Badge> : null}
                         </Group>
                       </Stack>
-                      <Button variant="ghost" size="small" onClick={() => setEditingContact(contact)}>Éditer</Button>
+                      <Button variant="ghost" size="small" onClick={() => setEditingContact(contact)}>{t('common.edit')}</Button>
                     </Group>
                     <Group mt="sm" gap="xs" wrap="wrap">
                       {contact.email ? <Badge variant="outline" size="xs">{contact.email}</Badge> : null}
                       {contact.phone ? <Badge variant="outline" size="xs">{contact.phone}</Badge> : null}
                       {contact.linkedin_url ? (
                         <a href={contact.linkedin_url} target="_blank" rel="noreferrer">
-                          <Text size="xs" c="blue">LinkedIn</Text>
+                          <Text size="xs" c="blue">{t('contacts.linkedin')}</Text>
                         </a>
                       ) : null}
                     </Group>
@@ -314,7 +305,7 @@ export const CompanyDetailsPage: React.FC = () => {
                 ))}
               </Stack>
             ) : (
-              <Text c="dimmed" ta="center" py="xl">Aucun contact rattaché à cet ETS.</Text>
+              <Text c="dimmed" ta="center" py="xl">{t('organization.noLinkedContacts')}</Text>
             )
           ) : null}
 
@@ -325,9 +316,9 @@ export const CompanyDetailsPage: React.FC = () => {
                   <Paper key={`${event.id}-${event.ts}`} p="md" radius="md" withBorder>
                     <Group justify="space-between" align="flex-start">
                       <Stack gap={4}>
-                        <Text fw={700} size="sm">{formatEventLabel(event.type || event.event_type)}</Text>
+                        <Text fw={700} size="sm">{formatEventLabel(event.type || event.event_type, t)}</Text>
                         <Group gap="xs" wrap="wrap">
-                          <Badge variant="outline" size="xs">{formatDate(event.ts, true)}</Badge>
+                          <Badge variant="outline" size="xs">{formatDate(event.ts, true, locale)}</Badge>
                           {event.application ? <Badge variant="outline" size="xs">{event.application.title}</Badge> : null}
                           {event.contact ? <Badge variant="outline" size="xs">{event.contact.name}</Badge> : null}
                         </Group>
@@ -340,7 +331,7 @@ export const CompanyDetailsPage: React.FC = () => {
                 ))}
               </Stack>
             ) : (
-              <Text c="dimmed" ta="center" py="xl">Aucune activité récente pour cet ETS.</Text>
+              <Text c="dimmed" ta="center" py="xl">{t('organization.noRecentActivity')}</Text>
             )
           ) : null}
         </Paper>
@@ -348,13 +339,13 @@ export const CompanyDetailsPage: React.FC = () => {
         <Paper p="xl" radius="lg" withBorder>
           <Stack gap="md">
             <Stack gap="xs" pb="md" className={classes.sectionDivider}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Informations ETS</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.infoTitle')}</Text>
               {[
-                { label: 'Nom', value: data.name },
-                { label: 'Type', value: data.type },
-                { label: 'Ville', value: data.city || 'Non renseignée' },
-                { label: 'Site web', value: data.website || 'Non renseigné' },
-                { label: 'LinkedIn', value: data.linkedin_url || 'Non renseigné' },
+                { label: t('newApplication.orgLabels.name'), value: data.name },
+                { label: t('newApplication.orgLabels.type'), value: t(`organization.types.${data.type}`) || data.type },
+                { label: t('newApplication.orgLabels.city'), value: data.city || t('contacts.notDefined') },
+                { label: t('newApplication.orgLabels.website'), value: data.website || t('contacts.notDefined') },
+                { label: t('newApplication.orgLabels.linkedin'), value: data.linkedin_url || t('contacts.notDefined') },
               ].map((item) => (
                 <Group key={item.label} justify="space-between">
                   <Text size="xs" c="dimmed">{item.label}</Text>
@@ -363,11 +354,11 @@ export const CompanyDetailsPage: React.FC = () => {
               ))}
             </Stack>
             <Stack gap="xs">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Vue liée</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.linkedViewTitle')}</Text>
               {[
-                { label: 'Candidatures', value: data.applications.length },
-                { label: 'Contacts', value: data.contacts.length },
-                { label: 'Événements', value: data.events.length },
+                { label: t('nav.applications'), value: data.applications.length },
+                { label: t('nav.contacts'), value: data.contacts.length },
+                { label: t('organization.eventsTitle'), value: data.events.length },
               ].map((item) => (
                 <Group key={item.label} justify="space-between">
                   <Text size="xs" c="dimmed">{item.label}</Text>

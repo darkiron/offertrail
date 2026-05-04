@@ -1,5 +1,6 @@
 import { Badge } from '@mantine/core';
 import type { ProbityLevel } from '../../types';
+import { useI18n } from '../../i18n';
 import classes from './ProbityBadge.module.css';
 
 interface ProbityBadgeProps {
@@ -16,17 +17,11 @@ const LEVEL_CLASS_MAP: Record<string, string> = {
   insuffisant: classes.danger,
 };
 
-const LEVEL_LABEL_MAP: Record<string, string> = {
-  fiable:      'Fiable',
-  moyen:       'Moyen',
-  méfiance:    'Méfiance',
-  insuffisant: 'Signal faible',
-};
-
 export function ProbityBadge({ score, level, showScore = true, size = 'sm' }: ProbityBadgeProps) {
+  const { t } = useI18n();
   const colorClass = LEVEL_CLASS_MAP[level] ?? classes.danger;
-  const label = LEVEL_LABEL_MAP[level] ?? 'Signal faible';
-  const title = score !== null ? `Score: ${score.toFixed(1)}/100` : 'Signal faible';
+  const label = t(`probity.${level}`) !== `probity.${level}` ? t(`probity.${level}`) : t('probity.weakSignal');
+  const title = score !== null ? t('probity.score', { score: score.toFixed(1) }) : t('probity.weakSignal');
 
   return (
     <Badge

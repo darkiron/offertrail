@@ -6,22 +6,24 @@ import {
 import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
 import type { SubscriptionStatus } from '../types';
+import { useI18n } from '../i18n';
 import { Button } from '../components/atoms/Button';
 
 export function Pricing() {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const transparencyRows = [
-    { label: 'Traitement du paiement', value: 'Stripe' },
-    { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
-    { label: 'Développement, maintenance et support', value: 'CraftCodes' },
+    { label: t('pricing.transparency.payment'), value: 'Stripe' },
+    { label: t('pricing.transparency.taxes'), value: t('pricing.transparency.copy').split('.')[1].trim() },
+    { label: t('pricing.transparency.dev'), value: 'CraftCodes' },
   ];
 
   useEffect(() => {
-    document.title = 'Abonnement — OfferTrail';
+    document.title = t('pricing.title') + ' — OfferTrail';
     subscriptionService.getMe().then(setSub).catch(() => {});
-  }, []);
+  }, [t]);
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -35,9 +37,9 @@ export function Pricing() {
 
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
+      notifications.show({ message: checkout.message || t('pricing.notifProActivated'), color: 'green' });
     } catch {
-      notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
+      notifications.show({ message: t('pricing.notifProError'), color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -46,13 +48,13 @@ export function Pricing() {
   return (
     <Stack gap="lg" p="lg" maw={520} mx="auto">
       <Group>
-        <Button variant="ghost" onClick={() => navigate(-1)}>← Retour</Button>
-        <Title order={2}>Passer en Pro</Title>
+        <Button variant="ghost" onClick={() => navigate(-1)}>← {t('common.cancel')}</Button>
+        <Title order={2}>{t('pricing.upgradeTitle')}</Title>
       </Group>
 
       {sub ? (
         <Text c="dimmed" size="sm">
-          Plan actuel : <strong>{sub.is_active ? 'Pro' : 'Aucun abonnement actif'}</strong>
+          {t('pricing.currentPlan')} <strong>{sub.is_active ? 'Pro' : t('pricing.noActiveSubscription')}</strong>
         </Text>
       ) : null}
 
@@ -66,7 +68,7 @@ export function Pricing() {
             </Text>
           </Stack>
           {sub?.is_active ? (
-            <Badge variant="light" color="green" size="sm">Actif</Badge>
+            <Badge variant="light" color="green" size="sm">{t('pricing.active')}</Badge>
           ) : null}
         </Group>
 
@@ -78,11 +80,11 @@ export function Pricing() {
           icon={<Text c="green" size="sm">✓</Text>}
         >
           {[
-            'Candidatures illimitées',
-            'Analytics complets',
-            'Score de probité',
-            'File de relances',
-            'Export CSV',
+            t('pricing.features.unlimited'),
+            t('pricing.features.analytics'),
+            t('pricing.features.probity'),
+            t('pricing.features.followups'),
+            t('pricing.features.export'),
           ].map((feature) => (
             <List.Item key={feature}>{feature}</List.Item>
           ))}
@@ -90,11 +92,11 @@ export function Pricing() {
 
         {sub?.is_active ? (
           <Text size="sm" c="dimmed">
-            Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
+            {t('pricing.activeSince', { date: sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString(locale.startsWith('fr') ? 'fr-FR' : 'en-US') : '-' })}
           </Text>
         ) : (
           <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
+            {loading ? t('account.redirection') : t('pricing.upgradeAction')}
           </Button>
         )}
       </Paper>
@@ -102,7 +104,7 @@ export function Pricing() {
       <Paper p="lg" radius="lg" withBorder>
         <Stack gap="sm">
           <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">
-            Transparence sur le prix
+            {t('pricing.transparency.title')}
           </Text>
 
           {transparencyRows.map((row, index) => (
@@ -118,14 +120,13 @@ export function Pricing() {
           ))}
 
           <Text size="sm" c="dimmed" lh={1.6}>
-            OfferTrail est édité et maintenu par CraftCodes. Le prix de l&apos;abonnement finance
-            le traitement du paiement, l&apos;exploitation du service et l&apos;évolution du produit.
+            {t('pricing.transparency.copy')}
           </Text>
         </Stack>
       </Paper>
 
       <Text size="xs" c="dimmed" ta="center">
-        Paiement sécurisé via Stripe
+        {t('pricing.transparency.stripe')}
       </Text>
     </Stack>
   );

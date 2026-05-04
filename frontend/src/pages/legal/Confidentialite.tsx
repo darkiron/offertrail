@@ -1,16 +1,18 @@
 import React from 'react';
 import { LegalLayout } from '../../components/LegalLayout';
+import { useI18n } from '../../i18n';
 
 export const Confidentialite: React.FC = () => {
+  const { t } = useI18n();
   React.useEffect(() => {
-    document.title = 'Politique de confidentialité — OfferTrail';
-  }, []);
+    document.title = t('legal.privacy') + ' — OfferTrail';
+  }, [t]);
 
   return (
     <LegalLayout
-      eyebrow="RGPD & confidentialité"
-      title="Politique de confidentialité"
-      updated="Dernière mise à jour : janvier 2026"
+      eyebrow={t('legal.eyebrowPrivacy')}
+      title={t('legal.privacy')}
+      updated={t('legal.updated')}
     >
       <div className="legal-section">
         <h2>Responsable du traitement</h2>

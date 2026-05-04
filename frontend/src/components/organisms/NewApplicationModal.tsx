@@ -19,22 +19,33 @@ interface NewApplicationModalProps {
   onCreated: () => void;
 }
 
-const ORG_TYPE_OPTIONS = [
-  { value: 'CLIENT_FINAL', label: 'Client final' },
-  { value: 'ESN', label: 'ESN' },
-  { value: 'CABINET_RECRUTEMENT', label: 'Cabinet' },
-  { value: 'STARTUP', label: 'Startup' },
-  { value: 'PME', label: 'PME' },
-  { value: 'GRAND_COMPTE', label: 'Grand compte' },
-  { value: 'PORTAGE', label: 'Portage' },
-  { value: 'AUTRE', label: 'Autre' },
-];
-
 const EMPTY_ORG = { name: '', type: 'AUTRE' as OrganizationType, city: '', website: '', linkedin_url: '', notes: '' };
 
 export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
+
+  const ORG_TYPE_OPTIONS = useMemo(() => [
+    { value: 'CLIENT_FINAL', label: t('newApplication.orgTypes.CLIENT_FINAL') },
+    { value: 'ESN', label: t('newApplication.orgTypes.ESN') },
+    { value: 'CABINET_RECRUTEMENT', label: t('newApplication.orgTypes.CABINET_RECRUTEMENT') },
+    { value: 'STARTUP', label: t('newApplication.orgTypes.STARTUP') },
+    { value: 'PME', label: t('newApplication.orgTypes.PME') },
+    { value: 'GRAND_COMPTE', label: t('newApplication.orgTypes.GRAND_COMPTE') },
+    { value: 'PORTAGE', label: t('newApplication.orgTypes.PORTAGE') },
+    { value: 'AUTRE', label: t('newApplication.orgTypes.AUTRE') },
+  ], [t]);
+
+  const STATUT_OPTIONS = useMemo(() => [
+    ...STATUT_FORM_OPTIONS.map(opt => ({ ...opt, label: t(`status.${opt.value}`) }))
+  ], [t]);
+
+  const JOB_TYPE_OPTIONS = useMemo(() => [
+    { value: 'CDI', label: t('newApplication.jobTypes.CDI') },
+    { value: 'FREELANCE', label: t('newApplication.jobTypes.FREELANCE') },
+    { value: 'CDD', label: t('newApplication.jobTypes.CDD') },
+    { value: 'INTERN', label: t('newApplication.jobTypes.INTERN') },
+  ], [t]);
 
   const [formData, setFormData] = useState({
     company: '',
@@ -101,7 +112,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
         const full = await organizationService.getById(created.id);
         setOrganizations((current) => [full, ...current]);
         setShowCreateOrg(false);
-        notifications.show({ message: `Entreprise "${full.name}" créée`, color: 'green' });
+        notifications.show({ message: t('newApplication.notifOrgCreated', { name: full.name }), color: 'green' });
         organizationId = full.id;
       }
 
@@ -176,18 +187,18 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
 
               <Collapse mounted={showCreateOrg}>
                 <Paper p="md" withBorder radius="md">
-                  <Group justify="space-between" mb="sm">
-                    <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">▣ Nouvel ETS</Text>
-                    <Button type="button" variant="ghost" size="small" onClick={() => setShowCreateOrg(false)}>Replier</Button>
-                  </Group>
-                  <SimpleGrid cols={2} spacing="sm">
-                    <TextInput label="Nom" value={newOrg.name} onChange={(e) => setNewOrg((n) => ({ ...n, name: e.target.value }))} />
-                    <Select label="Type" data={ORG_TYPE_OPTIONS} value={newOrg.type} onChange={(v) => setNewOrg((n) => ({ ...n, type: (v as OrganizationType) || 'AUTRE' }))} />
-                    <TextInput label="Ville" value={newOrg.city} onChange={(e) => setNewOrg((n) => ({ ...n, city: e.target.value }))} />
-                    <TextInput label="Site web" value={newOrg.website} onChange={(e) => setNewOrg((n) => ({ ...n, website: e.target.value }))} />
-                    <TextInput label="LinkedIn" value={newOrg.linkedin_url} onChange={(e) => setNewOrg((n) => ({ ...n, linkedin_url: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
-                    <Textarea label="Notes" rows={2} value={newOrg.notes} onChange={(e) => setNewOrg((n) => ({ ...n, notes: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
-                  </SimpleGrid>
+              <Group justify="space-between" mb="sm">
+                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">▣ {t('newApplication.newOrgTitle')}</Text>
+                <Button type="button" variant="ghost" size="small" onClick={() => setShowCreateOrg(false)}>{t('newApplication.collapse')}</Button>
+              </Group>
+              <SimpleGrid cols={2} spacing="sm">
+                <TextInput label={t('newApplication.orgLabels.name')} value={newOrg.name} onChange={(e) => setNewOrg((n) => ({ ...n, name: e.target.value }))} />
+                <Select label={t('newApplication.orgLabels.type')} data={ORG_TYPE_OPTIONS} value={newOrg.type} onChange={(v) => setNewOrg((n) => ({ ...n, type: (v as OrganizationType) || 'AUTRE' }))} />
+                <TextInput label={t('newApplication.orgLabels.city')} value={newOrg.city} onChange={(e) => setNewOrg((n) => ({ ...n, city: e.target.value }))} />
+                <TextInput label={t('newApplication.orgLabels.website')} value={newOrg.website} onChange={(e) => setNewOrg((n) => ({ ...n, website: e.target.value }))} />
+                <TextInput label={t('newApplication.orgLabels.linkedin')} value={newOrg.linkedin_url} onChange={(e) => setNewOrg((n) => ({ ...n, linkedin_url: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
+                <Textarea label={t('newApplication.orgLabels.notes')} rows={2} value={newOrg.notes} onChange={(e) => setNewOrg((n) => ({ ...n, notes: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
+              </SimpleGrid>
                 </Paper>
               </Collapse>
 
@@ -201,8 +212,8 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
               {needsFinalCustomer && (
                 <div>
                   <Autocomplete
-                    label="Client final"
-                    placeholder="Rechercher le client final"
+                    label={t('newApplication.finalCustomer')}
+                    placeholder={t('newApplication.finalCustomerPlaceholder')}
                     value={finalCustomerSearch}
                     onChange={(val) => {
                       setFinalCustomerSearch(val);
@@ -218,7 +229,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
                     </Group>
                   )}
                   <Text size="xs" c="dimmed" mt="xs">
-                    Lien utile quand la candidature passe par un cabinet ou une ESN.
+                    {t('newApplication.finalCustomerHint')}
                   </Text>
                 </div>
               )}
@@ -226,20 +237,13 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
               <SimpleGrid cols={2} spacing="sm">
                 <Select
                   label={t('newApplication.type')}
-                  data={[
-                    { value: 'CDI', label: 'CDI' },
-                    { value: 'FREELANCE', label: 'FREELANCE' },
-                    { value: 'CDD', label: 'CDD' },
-                    { value: 'INTERN', label: 'INTERNSHIP' },
-                  ]}
+                  data={JOB_TYPE_OPTIONS}
                   value={formData.type}
                   onChange={(v) => setFormData((f) => ({ ...f, type: v || 'CDI' }))}
                 />
                 <Select
                   label={t('newApplication.initialStatus')}
-                  data={[
-                    ...STATUT_FORM_OPTIONS,
-                  ]}
+                  data={STATUT_OPTIONS}
                   value={formData.status}
                   onChange={(v) => setFormData((f) => ({ ...f, status: v || 'envoyee' }))}
                 />
@@ -279,7 +283,7 @@ export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalP
           <Group justify="space-between">
             <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Création...' : t('newApplication.createAction')}
+              {loading ? t('newApplication.creating') : t('newApplication.createAction')}
             </Button>
           </Group>
         </Stack>
