@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { ScrollToTop } from './components/atoms/ScrollToTop';
 import { supabase } from './lib/supabase';
 
 import { Dashboard } from './pages/Dashboard';
@@ -97,6 +98,7 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AppRoutes />
     </Router>
   );

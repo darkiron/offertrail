@@ -5,10 +5,12 @@ import {
   Stack, Text, ThemeIcon, Title,
 } from '@mantine/core';
 import { IconCheck, IconCreditCard, IconX } from '@tabler/icons-react';
+import { useI18n } from '../i18n';
 import { axiosInstance } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export function Checkout() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { refreshProfile, profile } = useAuth();
@@ -20,8 +22,8 @@ export function Checkout() {
   const paymentResult = searchParams.get('payment');
 
   useEffect(() => {
-    document.title = 'Activer votre abonnement — OfferTrail';
-  }, []);
+    document.title = t('pricing.checkout.title') + ' — OfferTrail';
+  }, [t]);
 
   // Déjà actif → redirect direct
   useEffect(() => {
@@ -67,7 +69,7 @@ export function Checkout() {
         navigate('/app', { replace: true });
       }
     } catch {
-      setError("Impossible d'initialiser le paiement. Réessayez.");
+      setError(t('pricing.checkout.notifError'));
     } finally {
       setLoading(false);
     }
@@ -88,10 +90,10 @@ export function Checkout() {
         <Stack gap="xl">
           {/* Header */}
           <Stack gap="xs" ta="center">
-            <Badge size="lg" variant="light" color="green" mx="auto">Pro — 14,99€/mois</Badge>
-            <Title order={2} fw={900}>Activez votre abonnement</Title>
+            <Badge size="lg" variant="light" color="green" mx="auto">{t('nav.subscription')} — {t('pricing.pricePerMonth')}</Badge>
+            <Title order={2} fw={900}>{t('pricing.checkout.title')}</Title>
             <Text c="dimmed" size="sm">
-              Bienvenue sur OfferTrail. Un abonnement est requis pour accéder à l&apos;application.
+              {t('pricing.checkout.welcome')}
             </Text>
           </Stack>
 
@@ -105,11 +107,11 @@ export function Checkout() {
               </ThemeIcon>
             }
           >
-            <List.Item>Candidatures illimitées</List.Item>
-            <List.Item>Suivi des entreprises et contacts</List.Item>
-            <List.Item>Relances et historique complet</List.Item>
-            <List.Item>Score de probité des entreprises</List.Item>
-            <List.Item>Résiliable à tout moment</List.Item>
+            <List.Item>{t('pricing.features.unlimited')}</List.Item>
+            <List.Item>{t('pricing.features.tracking')}</List.Item>
+            <List.Item>{t('pricing.features.history')}</List.Item>
+            <List.Item>{t('pricing.features.probity')}</List.Item>
+            <List.Item>{t('pricing.features.cancelable')}</List.Item>
           </List>
 
           <Divider />
@@ -117,13 +119,13 @@ export function Checkout() {
           {/* Alerts */}
           {paymentResult === 'success' && polling && (
             <Alert color="green" icon={<Loader size="xs" />}>
-              Paiement reçu — activation en cours…
+              {t('pricing.checkout.paymentReceived')}
             </Alert>
           )}
 
           {paymentResult === 'cancelled' && (
             <Alert color="orange" icon={<IconX size={16} />}>
-              Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.
+              {t('pricing.checkout.paymentCancelled')}
             </Alert>
           )}
 
@@ -139,11 +141,11 @@ export function Checkout() {
             onClick={() => void handleCheckout()}
             fullWidth
           >
-            {polling ? 'Activation en cours…' : 'Payer 14,99€ / mois'}
+            {polling ? t('pricing.checkout.activating') : t('pricing.checkout.payAction')}
           </Button>
 
           <Text size="xs" c="dimmed" ta="center">
-            Paiement sécurisé via Stripe. Aucune carte stockée chez nous.
+            {t('pricing.checkout.security')}
           </Text>
         </Stack>
       </Paper>

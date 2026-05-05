@@ -1,5 +1,6 @@
 import { Card, Group, Text, Badge } from '@mantine/core';
 import type { MonthlyStats } from '../../types';
+import { useI18n } from '../../i18n';
 import classes from './MonthlyApplicationsChart.module.css';
 
 interface MonthlyApplicationsChartProps {
@@ -8,6 +9,7 @@ interface MonthlyApplicationsChartProps {
 }
 
 export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChartProps) {
+  const { t } = useI18n();
   const maxCount = Math.max(...data.map((d) => d.count), 1);
   const chartHeight = 200;
   const barWidth = 40;
@@ -17,7 +19,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
   return (
     <Card radius="lg" padding="lg">
       <Group justify="space-between" mb="md">
-        <Text fw={600}>Monthly Applications</Text>
+        <Text fw={600}>{t('admin.stats.monthlyAppsTitle')}</Text>
         <Badge variant="filled" size="sm">{year}</Badge>
       </Group>
 
@@ -28,7 +30,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
           ta="center"
           style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          No application data available for {year}
+          {t('admin.stats.noDataYear', { year })}
         </Text>
       ) : (
         <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
@@ -61,7 +63,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
                     rx="4"
                     className={classes.bar}
                   >
-                    <title>{`${d.month}: ${d.count} applications`}</title>
+                    <title>{`${d.month}: ${d.count} ${t('admin.stats.appsCount')}`}</title>
                   </rect>
                   <text
                     x={x + barWidth / 2}

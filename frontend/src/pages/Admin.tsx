@@ -17,6 +17,7 @@ import {
 import { notifications } from '@mantine/notifications';
 import { IconDownload, IconRefresh, IconSearch } from '@tabler/icons-react';
 import { axiosInstance } from '../services/api';
+import { useI18n } from '../i18n';
 import classes from './Admin.module.css';
 
 const accentColor  = 'var(--mantine-color-blue-6)';
@@ -99,16 +100,16 @@ const defaultFunnel: Funnel = {
   total: 0, pending: 0, active: 0, cancelled: 0, churn_rate: 0, activation_rate: 0,
 };
 
-function formatDate(value: string | null | undefined): string {
+function formatDate(value: string | null | undefined, locale: string): string {
   if (!value) return '-';
-  return new Date(value).toLocaleDateString('fr-FR');
+  return new Date(value).toLocaleDateString(locale.startsWith('fr') ? 'fr-FR' : 'en-US');
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, t: (k: string) => string) {
   const map: Record<string, { color: string; label: string }> = {
-    active:    { color: 'green',  label: 'Actif' },
-    pending:   { color: 'orange', label: 'En attente' },
-    cancelled: { color: 'red',    label: 'Résilié' },
+    active:    { color: 'green',  label: t('admin.stats.funnel.active') },
+    pending:   { color: 'orange', label: t('admin.stats.funnel.pending') },
+    cancelled: { color: 'red',    label: t('admin.stats.funnel.cancelled') },
   };
   const entry = map[status] ?? { color: 'gray', label: status };
   return <Badge variant="light" color={entry.color} size="sm">{entry.label}</Badge>;
@@ -127,6 +128,7 @@ function KpiCard({ label, value, sub, color }: {
 }
 
 export function Admin() {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const [stats, setStats]       = useState<AdminStats>(defaultStats);
   const [users, setUsers]       = useState<AdminUserRow[]>([]);
@@ -141,7 +143,7 @@ export function Admin() {
   const [search, setSearch]     = useState('');
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null);
 
-  useEffect(() => { document.title = 'Administration — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('admin.title') + ' — OfferTrail'; }, [t]);
 
   const handle403 = (err: unknown): boolean => {
     if (axios.isAxiosError(err) && err.response?.status === 403) {
@@ -173,7 +175,7 @@ export function Admin() {
         setUsers(usersRes.data);
       } catch (err) {
         if (handle403(err)) return;
-        notifications.show({ title: 'Erreur', message: 'Impossible de charger le backoffice.', color: 'red' });
+        notifications.show({ title: t('common.error'), message: t('admin.notifLoadError'), color: 'red' });
       } finally {
         setLoading(false);
       }
@@ -209,10 +211,10 @@ export function Admin() {
       setPendingAction(`${userId}:${status}`);
       await axiosInstance.patch(`/admin/users/${userId}/status`, { subscription_status: status });
       await refresh();
-      notifications.show({ message: `Statut mis à jour.`, color: 'green' });
+      notifications.show({ message: t('admin.notifStatusUpdated'), color: 'green' });
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: "Impossible de mettre à jour le statut.", color: 'red' });
+      notifications.show({ message: t('admin.notifStatusError'), color: 'red' });
     } finally {
       setPendingAction(null);
     }
@@ -223,10 +225,10 @@ export function Admin() {
       setPendingAction(`${userId}:toggle`);
       await axiosInstance.patch(`/admin/users/${userId}/toggle-active`);
       await refresh();
-      notifications.show({ message: 'Compte mis à jour.', color: 'blue' });
+      notifications.show({ message: t('admin.notifAccountUpdated'), color: 'blue' });
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Impossible de modifier le statut.', color: 'red' });
+      notifications.show({ message: t('admin.notifAccountError'), color: 'red' });
     } finally {
       setPendingAction(null);
       setConfirmUserId(null);
@@ -238,13 +240,13 @@ export function Admin() {
       setPendingAction('probite');
       const res = await axiosInstance.post<{ updated: number }>('/admin/recompute-probite');
       notifications.show({
-        title: 'Probité recalculée',
-        message: `${res.data.updated} établissements mis à jour.`,
+        title: t('admin.notifProbiteTitle'),
+        message: t('admin.notifProbiteSuccess', { count: res.data.updated }),
         color: 'green',
       });
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Erreur lors du recalcul.', color: 'red' });
+      notifications.show({ message: t('admin.notifProbiteError'), color: 'red' });
     } finally {
       setPendingAction(null);
     }
@@ -261,7 +263,7 @@ export function Admin() {
       URL.revokeObjectURL(url);
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Erreur export CSV.', color: 'red' });
+      notifications.show({ message: t('admin.notifExportError'), color: 'red' });
     }
   };
 
@@ -279,15 +281,15 @@ export function Admin() {
 
   // Pie data for funnel
   const pieData = [
-    { name: 'Actifs',       value: funnel.active,    color: successColor },
-    { name: 'En attente',   value: funnel.pending,   color: warningColor },
-    { name: 'Résiliés',     value: funnel.cancelled, color: dangerColor  },
+    { name: t('admin.stats.funnel.active'),       value: funnel.active,    color: successColor },
+    { name: t('admin.stats.funnel.pending'),   value: funnel.pending,   color: warningColor },
+    { name: t('admin.stats.funnel.cancelled'),     value: funnel.cancelled, color: dangerColor  },
   ].filter((d) => d.value > 0);
 
   if (accessDenied) {
     return (
       <Stack gap="lg" p="lg" className={classes.shell}>
-        <Alert color="red">Accès refusé. Redirection en cours.</Alert>
+        <Alert color="red">{t('admin.accessDenied')}</Alert>
       </Stack>
     );
   }
@@ -297,22 +299,23 @@ export function Admin() {
       <Modal
         opened={!!confirmUserId}
         onClose={() => setConfirmUserId(null)}
-        title="Confirmer la désactivation"
+        title={t('admin.confirmDeactivate')}
         size="sm"
         centered
       >
         <Text size="sm" mb="lg">
-          Désactiver <strong>{confirmUser?.email ?? confirmUser?.id}</strong> ?
-          L&apos;utilisateur ne pourra plus se connecter.
+          {t('admin.deactivateUser', { user: confirmUser?.email ?? confirmUser?.id })}
+          <br />
+          {t('admin.deactivateHint')}
         </Text>
         <Group justify="flex-end" gap="sm">
-          <Button variant="default" onClick={() => setConfirmUserId(null)}>Annuler</Button>
+          <Button variant="default" onClick={() => setConfirmUserId(null)}>{t('common.cancel')}</Button>
           <Button
             color="red"
             loading={pendingAction === `${confirmUserId}:toggle`}
             onClick={() => confirmUserId && void handleToggleActive(confirmUserId)}
           >
-            Désactiver
+            {t('admin.deactivateAction')}
           </Button>
         </Group>
       </Modal>
@@ -320,26 +323,26 @@ export function Admin() {
       <Stack gap="xl" p="lg" className={classes.shell}>
         {/* Hero */}
         <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-          <span className={classes.kicker}>Admin</span>
-          <h1 className={classes.heroTitle}>Tableau de bord administrateur</h1>
+          <span className={classes.kicker}>{t('admin.title')}</span>
+          <h1 className={classes.heroTitle}>{t('admin.subtitle')}</h1>
           <Text c="dimmed">
-            Vue globale des comptes, du parc d&apos;abonnements et des actions de support.
+            {t('admin.copy')}
           </Text>
         </Paper>
 
         {/* ── Zone 1 — KPI Cards ── */}
         <div>
           <Title order={4} mb="md" c="dimmed" tt="uppercase" fz="xs" fw={700} ls="0.06em">
-            Vue d&apos;ensemble
+            {t('admin.stats.overview')}
           </Title>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
             {loading
               ? [...Array(4)].map((_, i) => <Skeleton key={i} height={100} radius="lg" />)
               : [
-                  { label: 'MRR', value: `${stats.mrr.toFixed(2)} €`, sub: `ARR : ${stats.arr.toFixed(2)} €`, color: 'green' },
-                  { label: 'Abonnés actifs', value: String(stats.active_users), sub: `${stats.activation_rate} % activation` },
-                  { label: 'Taux d\'activation', value: `${stats.activation_rate} %`, sub: `+${stats.new_users_30d} inscrits 30j` },
-                  { label: 'Churn mensuel', value: `${stats.churn_rate} %`, sub: `${stats.cancelled_users} résiliés` },
+                  { label: t('admin.stats.mrr'), value: `${stats.mrr.toFixed(2)} €`, sub: `${t('admin.stats.arr')} : ${stats.arr.toFixed(2)} €`, color: 'green' },
+                  { label: t('admin.stats.activeSubscribers'), value: String(stats.active_users), sub: `${stats.activation_rate} ${t('admin.stats.activationSuffix')}` },
+                  { label: t('admin.stats.activationRate'), value: `${stats.activation_rate} %`, sub: t('admin.stats.registered30d', { count: stats.new_users_30d }) },
+                  { label: t('admin.stats.monthlyChurn'), value: `${stats.churn_rate} %`, sub: t('admin.stats.cancelledCount', { count: stats.cancelled_users }) },
                 ].map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}
           </SimpleGrid>
         </div>
@@ -352,14 +355,14 @@ export function Admin() {
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
             {/* MRR 12 mois */}
             <Paper p="lg" radius="lg" withBorder>
-              <Text fw={600} mb="sm">MRR — 12 derniers mois</Text>
+              <Text fw={600} mb="sm">{t('admin.stats.mrrGrowth')}</Text>
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={mrrData} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
                     <CartesianGrid {...GRID} />
                     <XAxis dataKey="month" tick={TICK} />
                     <YAxis tick={TICK} />
-                    <Tooltip contentStyle={TT_STYLE} formatter={(v) => [`${Number(v).toFixed(2)} €`, 'MRR']} />
+                    <Tooltip contentStyle={TT_STYLE} formatter={(v) => [`${Number(v).toFixed(2)} €`, t('admin.stats.mrr')]} />
                     <Line type="monotone" dataKey="mrr" stroke={accentColor} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -368,7 +371,7 @@ export function Admin() {
 
             {/* Inscriptions vs Paiements 30j */}
             <Paper p="lg" radius="lg" withBorder>
-              <Text fw={600} mb="sm">Inscriptions vs Paiements — 30j</Text>
+              <Text fw={600} mb="sm">{t('admin.stats.signupsTitle')}</Text>
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={signups} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
@@ -377,8 +380,8 @@ export function Admin() {
                     <YAxis tick={TICK} allowDecimals={false} />
                     <Tooltip contentStyle={TT_STYLE} />
                     <Legend wrapperStyle={LEGEND_STYLE} />
-                    <Line type="monotone" dataKey="signups" stroke={accentColor} strokeWidth={2} dot={false} name="Inscrits" />
-                    <Line type="monotone" dataKey="paid" stroke={successColor} strokeWidth={2} dot={false} name="Payants" />
+                    <Line type="monotone" dataKey="signups" stroke={accentColor} strokeWidth={2} dot={false} name={t('admin.stats.registered')} />
+                    <Line type="monotone" dataKey="paid" stroke={successColor} strokeWidth={2} dot={false} name={t('admin.stats.paid')} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -386,7 +389,7 @@ export function Admin() {
 
             {/* Candidatures 30j */}
             <Paper p="lg" radius="lg" withBorder>
-              <Text fw={600} mb="sm">Candidatures créées — 30j</Text>
+              <Text fw={600} mb="sm">{t('admin.stats.appsTitle')}</Text>
               {chartsLoading ? <Skeleton height={220} radius="md" /> : (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={cands} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
@@ -394,7 +397,7 @@ export function Admin() {
                     <XAxis dataKey="date" tick={TICK} interval={4} />
                     <YAxis tick={TICK} allowDecimals={false} />
                     <Tooltip contentStyle={TT_STYLE} />
-                    <Bar dataKey="count" fill={accentColor} name="Candidatures" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="count" fill={accentColor} name={t('admin.stats.apps')} radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -403,10 +406,10 @@ export function Admin() {
             {/* Funnel Pie */}
             <Paper p="lg" radius="lg" withBorder>
               <Text fw={600} mb="sm">
-                Entonnoir — Activation {funnel.activation_rate} % · Churn {funnel.churn_rate} %
+                {t('admin.stats.funnelTitle', { activation: funnel.activation_rate, churn: funnel.churn_rate })}
               </Text>
               {chartsLoading ? <Skeleton height={220} radius="md" /> : pieData.length === 0 ? (
-                <Text c="dimmed" size="sm" ta="center" mt="xl">Aucune donnée</Text>
+                <Text c="dimmed" size="sm" ta="center" mt="xl">{t('admin.stats.noData')}</Text>
               ) : (
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
@@ -428,12 +431,12 @@ export function Admin() {
         <Paper p="xl" radius="lg" withBorder>
           <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
             <Stack gap={2}>
-              <Title order={3}>Liste des utilisateurs</Title>
-              <Text size="sm" c="dimmed">{activeCount} comptes actifs sur {users.length}</Text>
+              <Title order={3}>{t('admin.users.title')}</Title>
+              <Text size="sm" c="dimmed">{t('admin.users.activeCount', { active: activeCount, total: users.length })}</Text>
             </Stack>
             <Group gap="sm" wrap="wrap">
               <TextInput
-                placeholder="Rechercher par email..."
+                placeholder={t('admin.users.searchPlaceholder')}
                 leftSection={<IconSearch size={14} />}
                 value={search}
                 onChange={(e) => setSearch(e.currentTarget.value)}
@@ -445,7 +448,7 @@ export function Admin() {
                 leftSection={<IconDownload size={14} />}
                 onClick={() => void handleExportCsv()}
               >
-                Exporter CSV
+                {t('admin.exportCsv')}
               </Button>
               <Button
                 variant="light"
@@ -453,7 +456,7 @@ export function Admin() {
                 loading={pendingAction === 'probite'}
                 onClick={() => void handleRecomputeProbite()}
               >
-                Recalculer probité
+                {t('admin.recomputeProbite')}
               </Button>
             </Group>
           </Group>
@@ -462,14 +465,14 @@ export function Admin() {
             <Table striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Email</Table.Th>
-                  <Table.Th>Statut</Table.Th>
-                  <Table.Th>Rôle</Table.Th>
-                  <Table.Th>Candidatures</Table.Th>
-                  <Table.Th>Inscrit le</Table.Th>
-                  <Table.Th>Payé le</Table.Th>
-                  <Table.Th>Compte</Table.Th>
-                  <Table.Th>Actions</Table.Th>
+                  <Table.Th>{t('admin.users.table.email')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.status')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.role')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.apps')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.registeredAt')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.paidAt')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.account')}</Table.Th>
+                  <Table.Th>{t('admin.users.table.actions')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -484,7 +487,7 @@ export function Admin() {
                 ) : filteredUsers.length === 0 ? (
                   <Table.Tr>
                     <Table.Td colSpan={8} style={{ textAlign: 'center' }}>
-                      <Text c="dimmed">Aucun utilisateur.</Text>
+                      <Text c="dimmed">{t('admin.users.noUser')}</Text>
                     </Table.Td>
                   </Table.Tr>
                 ) : (
@@ -494,26 +497,26 @@ export function Admin() {
                         <Stack gap={2}>
                           <Text fw={700} size="sm">{user.email ?? '—'}</Text>
                           <Text c="dimmed" size="xs">
-                            {[user.prenom, user.nom].filter(Boolean).join(' ') || 'Sans nom'}
+                            {[user.prenom, user.nom].filter(Boolean).join(' ') || t('admin.users.noName')}
                           </Text>
                         </Stack>
                       </Table.Td>
-                      <Table.Td>{statusBadge(user.subscription_status)}</Table.Td>
+                      <Table.Td>{statusBadge(user.subscription_status, t)}</Table.Td>
                       <Table.Td>
                         <Badge variant="light" color={user.role === 'admin' ? 'yellow' : 'gray'} size="sm">
                           {user.role}
                         </Badge>
                       </Table.Td>
                       <Table.Td>{user.nb_candidatures}</Table.Td>
-                      <Table.Td>{formatDate(user.created_at)}</Table.Td>
-                      <Table.Td>{formatDate(user.plan_started_at)}</Table.Td>
+                      <Table.Td>{formatDate(user.created_at, locale)}</Table.Td>
+                      <Table.Td>{formatDate(user.plan_started_at, locale)}</Table.Td>
                       <Table.Td>
                         <Badge
                           variant="light"
                           color={user.is_active ? 'green' : 'red'}
                           size="sm"
                         >
-                          {user.is_active ? 'actif' : 'désactivé'}
+                          {user.is_active ? t('admin.stats.funnel.active').toLowerCase() : t('admin.deactivateAction').toLowerCase()}
                         </Badge>
                       </Table.Td>
                       <Table.Td>
@@ -527,7 +530,7 @@ export function Admin() {
                               disabled={!!pendingAction || !user.is_active}
                               onClick={() => void handleStatusChange(user.id, 'active')}
                             >
-                              Activer
+                              {t('admin.activateAction')}
                             </Button>
                           ) : (
                             <Button
@@ -538,7 +541,7 @@ export function Admin() {
                               disabled={!!pendingAction || !user.is_active}
                               onClick={() => void handleStatusChange(user.id, 'cancelled')}
                             >
-                              Révoquer
+                              {t('admin.revokeAction')}
                             </Button>
                           )}
                           {user.is_active ? (
@@ -549,7 +552,7 @@ export function Admin() {
                               disabled={!!pendingAction}
                               onClick={() => setConfirmUserId(user.id)}
                             >
-                              Désactiver
+                              {t('admin.deactivateAction')}
                             </Button>
                           ) : (
                             <Button
@@ -560,7 +563,7 @@ export function Admin() {
                               disabled={!!pendingAction}
                               onClick={() => void handleToggleActive(user.id)}
                             >
-                              Réactiver
+                              {t('admin.reactivateAction')}
                             </Button>
                           )}
                         </Group>
