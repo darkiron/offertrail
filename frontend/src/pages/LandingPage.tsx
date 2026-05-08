@@ -1,45 +1,52 @@
 import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 import { CONFIG } from '../config';
 import '../styles/landing.css';
 
-const features = [
-  { icon: '📊', title: 'KPIs en temps réel', desc: 'Taux de refus, taux de réponse, délai moyen. Comprends ce qui fonctionne dans ta recherche, chiffres à l\'appui.' },
-  { icon: '🔔', title: 'File de relances',   desc: 'Ne laisse plus une candidature sans suite. OfferTrail te rappelle quand relancer et quel contact solliciter.' },
-  { icon: '🏢', title: 'Score de probité',   desc: 'Chaque entreprise reçoit un signal basé sur les retours collectifs. Sache à quoi t\'attendre avant de postuler.' },
-  { icon: '📋', title: 'Historique complet', desc: 'Chaque changement de statut est tracé. Retrouve l\'historique exact de chaque candidature, sans effort.' },
-  { icon: '👥', title: 'Contacts centralisés', desc: 'Rattache tes recruteurs à leurs entreprises. Le réseau se construit candidature après candidature.' },
-  { icon: '⚡', title: 'Démarrage immédiat', desc: 'Tu ouvres, tu ajoutes tes premières candidatures, et ton suivi prend forme tout de suite. Pas de setup lourd.' },
-];
-
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
-    document.title = 'OfferTrail — Pilote ta recherche d\'emploi';
-  }, []);
+    document.title = t('landing.pageTitle');
+  }, [t]);
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
   }
+
+  const features = [
+    { icon: t('landing.feature1Icon'), title: t('landing.feature1Title'), desc: t('landing.feature1Desc') },
+    { icon: t('landing.feature2Icon'), title: t('landing.feature2Title'), desc: t('landing.feature2Desc') },
+    { icon: t('landing.feature3Icon'), title: t('landing.feature3Title'), desc: t('landing.feature3Desc') },
+    { icon: t('landing.feature4Icon'), title: t('landing.feature4Title'), desc: t('landing.feature4Desc') },
+    { icon: t('landing.feature5Icon'), title: t('landing.feature5Title'), desc: t('landing.feature5Desc') },
+    { icon: t('landing.feature6Icon'), title: t('landing.feature6Title'), desc: t('landing.feature6Desc') },
+  ];
+
+  const pricingPoints = [
+    { title: t('landing.pricing1Title'), desc: t('landing.pricing1Desc') },
+    { title: t('landing.pricing2Title'), desc: t('landing.pricing2Desc') },
+    { title: t('landing.pricing3Title'), desc: t('landing.pricing3Desc', { price: CONFIG.PRO_PRICE }) },
+    { title: t('landing.pricing4Title'), desc: t('landing.pricing4Desc') },
+  ];
 
   return (
     <div className="lp-root">
 
       {/* ─── Hero ─── */}
       <section className="lp-hero">
-        <div className="lp-badge">Pilotage clair · Tarif simple</div>
+        <div className="lp-badge">{t('landing.badge')}</div>
         <h1 className="lp-h1">
-          Ta recherche d'emploi<br />
-          <span>sans perdre le fil.</span>
+          {t('landing.heroTitle1')}<br />
+          <span>{t('landing.heroTitle2')}</span>
         </h1>
-        <p className="lp-hero-sub">
-          Suis chaque candidature, mesure tes taux de réponse, ne rate plus aucune relance. Sans tableur.
-        </p>
+        <p className="lp-hero-sub">{t('landing.heroSub')}</p>
         <div className="lp-hero-actions">
-          <Link to="/register" className="lp-btn-primary">Créer mon compte →</Link>
-          <a href="#features" className="lp-btn-outline">Voir comment ça marche</a>
+          <Link to="/register" className="lp-btn-primary">{t('landing.cta')}</Link>
+          <a href="#features" className="lp-btn-outline">{t('landing.ctaHow')}</a>
         </div>
       </section>
 
@@ -50,61 +57,61 @@ export const LandingPage: React.FC = () => {
             <div className="lp-dot lp-dot-red" />
             <div className="lp-dot lp-dot-yellow" />
             <div className="lp-dot lp-dot-green" />
-            <div className="lp-url-bar">app.offertrail.fr/app</div>
+            <div className="lp-url-bar">{t('landing.mockupUrl')}</div>
           </div>
           <div className="lp-stats-row">
-            <div className="lp-stat"><div className="lp-stat-num">43</div><div className="lp-stat-label">Candidatures suivies</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">69%</div><div className="lp-stat-label">Taux de refus</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">20.9%</div><div className="lp-stat-label">Taux de réponse</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">7 j</div><div className="lp-stat-label">Délai moyen de réponse</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">43</div><div className="lp-stat-label">{t('landing.mockupStat1Label')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">69%</div><div className="lp-stat-label">{t('landing.mockupStat2Label')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">20.9%</div><div className="lp-stat-label">{t('landing.mockupStat3Label')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mockupStat4Value')}</div><div className="lp-stat-label">{t('landing.mockupStat4Label')}</div></div>
           </div>
           <div className="lp-mock-body">
             <div className="lp-mock-grid">
               <div className="lp-panel">
-                <p className="lp-panel-title">Pipeline actif</p>
+                <p className="lp-panel-title">{t('landing.mockupPipelineTitle')}</p>
                 <div className="lp-pipeline">
                   <div className="lp-pipeline-item">
                     <div>
-                      <strong>Product Designer · FinTech Paris</strong>
-                      <span className="lp-meta">Relance prévue demain · contact recruteur attaché</span>
+                      <strong>{t('landing.mockupItem1Title')}</strong>
+                      <span className="lp-meta">{t('landing.mockupItem1Meta')}</span>
                     </div>
-                    <span className="lp-pill lp-pill-orange">Relance</span>
+                    <span className="lp-pill lp-pill-orange">{t('landing.mockupItem1Status')}</span>
                   </div>
                   <div className="lp-pipeline-item">
                     <div>
-                      <strong>UX Lead · Startup SaaS</strong>
-                      <span className="lp-meta">Entretien prévu mercredi · notes centralisées</span>
+                      <strong>{t('landing.mockupItem2Title')}</strong>
+                      <span className="lp-meta">{t('landing.mockupItem2Meta')}</span>
                     </div>
-                    <span className="lp-pill lp-pill-blue">Entretien</span>
+                    <span className="lp-pill lp-pill-blue">{t('landing.mockupItem2Status')}</span>
                   </div>
                   <div className="lp-pipeline-item">
                     <div>
-                      <strong>Senior Designer · ESN Lille</strong>
-                      <span className="lp-meta">En attente · dernier contact il y a 5 jours</span>
+                      <strong>{t('landing.mockupItem3Title')}</strong>
+                      <span className="lp-meta">{t('landing.mockupItem3Meta')}</span>
                     </div>
-                    <span className="lp-pill lp-pill-slate">En attente</span>
+                    <span className="lp-pill lp-pill-slate">{t('landing.mockupItem3Status')}</span>
                   </div>
                 </div>
               </div>
               <div className="lp-panel">
-                <p className="lp-panel-title">Signaux clefs</p>
+                <p className="lp-panel-title">{t('landing.mockupSignalsTitle')}</p>
                 <div className="lp-chart">
                   <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>Taux de refus</span><span>69%</span></div>
+                    <div className="lp-bar-meta"><span>{t('landing.mockupBarRefusal')}</span><span>69%</span></div>
                     <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '69%' }} /></div>
                   </div>
                   <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>Taux de réponse</span><span>20.9%</span></div>
+                    <div className="lp-bar-meta"><span>{t('landing.mockupBarResponse')}</span><span>20.9%</span></div>
                     <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '20.9%' }} /></div>
                   </div>
                   <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>Dossiers actifs</span><span>11</span></div>
+                    <div className="lp-bar-meta"><span>{t('landing.mockupBarActive')}</span><span>11</span></div>
                     <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '26%' }} /></div>
                   </div>
                 </div>
                 <div className="lp-signal">
-                  <strong>Point de friction détecté</strong>
-                  <p>Les candidatures sans relance dans les 5 jours ont le moins bon taux de réponse.</p>
+                  <strong>{t('landing.mockupFrictionTitle')}</strong>
+                  <p>{t('landing.mockupFrictionDesc')}</p>
                 </div>
               </div>
             </div>
@@ -115,8 +122,8 @@ export const LandingPage: React.FC = () => {
       {/* ─── Features ─── */}
       <section id="features" className="lp-section-wrap lp-alt">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">Fonctionnalités</div>
-          <h2 className="lp-section-title">Tout ce qu'il faut. Rien de superflu.</h2>
+          <div className="lp-section-kicker">{t('landing.featuresKicker')}</div>
+          <h2 className="lp-section-title">{t('landing.featuresTitle')}</h2>
           <div className="lp-feature-grid">
             {features.map((f) => (
               <div key={f.title} className="lp-feature">
@@ -132,16 +139,11 @@ export const LandingPage: React.FC = () => {
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">Tarif</div>
-          <h2 className="lp-section-title">Simple. Transparent. Un seul plan.</h2>
+          <div className="lp-section-kicker">{t('landing.pricingKicker')}</div>
+          <h2 className="lp-section-title">{t('landing.pricingTitle')}</h2>
           <div className="lp-pricing-grid">
             <div className="lp-pricing-copy">
-              {[
-                { title: 'Accès complet dès le départ', desc: 'Dashboard, relances, contacts, établissements, historique — rien n\'est verrouillé derrière un tier supérieur.' },
-                { title: 'Sans engagement', desc: 'Résilie quand tu veux. Pas de contrat annuel forcé, pas de frais cachés à la sortie.' },
-                { title: 'Un seul plan, sans ambiguïté', desc: `OfferTrail fonctionne avec une offre Pro unique à ${CONFIG.PRO_PRICE} par mois.` },
-                { title: 'Suivi structuré', desc: 'Tes candidatures, contacts et historique restent centralisés dans un seul espace clair.' },
-              ].map((p) => (
+              {pricingPoints.map((p) => (
                 <div key={p.title} className="lp-pricing-point">
                   <div className="lp-pricing-check">✓</div>
                   <div>
@@ -153,19 +155,19 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="lp-plan-card">
-              <div className="lp-plan-name">Plan Pro</div>
-              <div className="lp-plan-price">{CONFIG.PRO_PRICE} <span className="lp-plan-period">/ mois</span></div>
+              <div className="lp-plan-name">{t('landing.planName')}</div>
+              <div className="lp-plan-price">{CONFIG.PRO_PRICE} <span className="lp-plan-period">{t('landing.planPeriod')}</span></div>
               <div className="lp-plan-divider" />
               <ul className="lp-plan-features">
-                <li>Candidatures illimitées</li>
-                <li>Dashboard complet avec KPIs réels</li>
-                <li>Relances, historique et timeline</li>
-                <li>Contacts et établissements liés</li>
-                <li>Score de probité des entreprises</li>
-                <li>Import TSV</li>
+                <li>{t('landing.planFeature1')}</li>
+                <li>{t('landing.planFeature2')}</li>
+                <li>{t('landing.planFeature3')}</li>
+                <li>{t('landing.planFeature4')}</li>
+                <li>{t('landing.planFeature5')}</li>
+                <li>{t('landing.planFeature6')}</li>
               </ul>
-              <Link to="/register" className="lp-plan-cta">Créer mon compte →</Link>
-              <p className="lp-plan-note">{CONFIG.PRO_PRICE} / mois · Sans engagement</p>
+              <Link to="/register" className="lp-plan-cta">{t('landing.planCta')}</Link>
+              <p className="lp-plan-note">{t('landing.planNote', { price: CONFIG.PRO_PRICE })}</p>
             </div>
           </div>
         </div>
@@ -174,36 +176,34 @@ export const LandingPage: React.FC = () => {
       {/* ─── CraftCodes section ─── */}
       <section className="lp-section-wrap" id="craftcodes">
         <div className="lp-section-inner" style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto' }}>
-          <div className="lp-section-kicker">Qui est derrière OfferTrail ?</div>
-          <h2 className="lp-section-title">Un développeur. Pas une boîte.</h2>
+          <div className="lp-section-kicker">{t('landing.craftKicker')}</div>
+          <h2 className="lp-section-title">{t('landing.craftTitle')}</h2>
           <p style={{ fontSize: '16px', lineHeight: 1.7, marginBottom: '2rem', opacity: 0.75 }}>
-            OfferTrail est développé et maintenu par{' '}
+            {t('landing.craftDesc1')}{' '}
             <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
               CraftCodes
             </a>
-            , une auto-entreprise indépendante. Un outil conçu pour les freelances et
-            chercheurs d'emploi qui veulent garder le contrôle de leur recherche,
-            sans usine à gaz.
+            {', '}{t('landing.craftDesc2')}
           </p>
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
-              Sur 14,99€/mois
+              {t('landing.craftBreakdownLabel', { price: CONFIG.PRO_PRICE })}
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>Stripe (paiement)</span>
+              <span style={{ opacity: 0.6 }}>{t('landing.craftStripe')}</span>
               <span style={{ opacity: 0.6 }}>~0,47€</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>URSSAF (charges 33%)</span>
+              <span style={{ opacity: 0.6 }}>{t('landing.craftUrssaf')}</span>
               <span style={{ opacity: 0.6 }}>~4,79€</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px', fontWeight: 600 }}>
-              <span>Rémunération du développeur</span>
+              <span>{t('landing.craftDev')}</span>
               <span className="lp-link">~9,73€</span>
             </div>
             <p style={{ fontSize: '12px', opacity: 0.4, margin: '12px 0 0', lineHeight: 1.6 }}>
-              Pas d'investisseurs. Pas de padding. Le prix reflète un travail réel.
+              {t('landing.craftDisclaimer')}
             </p>
           </div>
         </div>
@@ -211,9 +211,9 @@ export const LandingPage: React.FC = () => {
 
       {/* ─── CTA final ─── */}
       <section className="lp-cta-section">
-        <h2>Reprends le contrôle.</h2>
-        <p>Un outil propre, un prix clair, une recherche mieux pilotée.</p>
-        <Link to="/register" className="lp-btn-primary">Passer à OfferTrail →</Link>
+        <h2>{t('landing.ctaFinalTitle')}</h2>
+        <p>{t('landing.ctaFinalDesc')}</p>
+        <Link to="/register" className="lp-btn-primary">{t('landing.ctaFinal')}</Link>
       </section>
 
     </div>
