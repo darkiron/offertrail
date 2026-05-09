@@ -48,16 +48,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* ── Landing public (LandingLayout) ── */}
+      {/* ── Landing public + pages légales (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />
+        <Route path="/cgv" element={<TermsPage />} />
+        <Route path="/mentions-legales" element={<LegalNoticePage />} />
+        <Route path="/rgpd" element={<PrivacyPolicyPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Route>
-
-      {/* ── Pages légales (layout intégré dans chaque page) ── */}
-      <Route path="/cgv" element={<TermsPage />} />
-      <Route path="/mentions-legales" element={<LegalNoticePage />} />
-      <Route path="/rgpd" element={<PrivacyPolicyPage />} />
-      <Route path="/contact" element={<ContactPage />} />
       {/* Public — pas de ProtectedRoute, accessible sans connexion (requis Stripe live) */}
       <Route path="/app/legal/cgu" element={<CGU />} />
       <Route path="/app/legal/confidentialite" element={<Confidentialite />} />
