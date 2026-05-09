@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Breadcrumbs, Anchor, Text } from '@mantine/core';
+import { useI18n } from '../i18n';
 import '../styles/legal.css';
 
 interface LegalLayoutProps {
@@ -9,41 +11,19 @@ interface LegalLayoutProps {
   children: React.ReactNode;
 }
 
-const FooterLinks: React.FC = () => (
-  <footer className="legal-footer">
-    <div className="legal-footer-inner">
-      <span>© {new Date().getFullYear()} OfferTrail</span>
-      <span className="legal-footer-sep">·</span>
-      <Link to="/app/legal/cgu">CGU</Link>
-      <span className="legal-footer-sep">·</span>
-      <Link to="/app/legal/confidentialite">Confidentialité</Link>
-      <span className="legal-footer-sep">·</span>
-      <Link to="/mentions-legales">Mentions légales</Link>
-      <span className="legal-footer-sep">·</span>
-      <Link to="/contact">Contact</Link>
-    </div>
-  </footer>
-);
+export const LegalLayout: React.FC<LegalLayoutProps> = ({ eyebrow, title, updated, children }) => {
+  const { t } = useI18n();
 
-export const LegalLayout: React.FC<LegalLayoutProps> = ({ eyebrow, title, updated, children }) => (
-  <div className="legal-shell">
-    <div className="legal-nav-wrap">
-      <div className="legal-nav-inner">
-        <Link to="/" className="legal-brand">
-          <div className="legal-brand-mark">OT</div>
-          OfferTrail
-        </Link>
-        <Link to="/" className="legal-back">← Retour à l'accueil</Link>
-      </div>
-    </div>
-
+  return (
     <main className="legal-content">
+      <Breadcrumbs mb="lg" separatorMargin="xs">
+        <Anchor component={Link} to="/" size="sm" c="dimmed">{t('common.home')}</Anchor>
+        <Text size="sm" c="dimmed">{title}</Text>
+      </Breadcrumbs>
       <div className="legal-eyebrow">{eyebrow}</div>
       <h1 className="legal-title">{title}</h1>
       {updated ? <p className="legal-updated">{updated}</p> : null}
       {children}
     </main>
-
-    <FooterLinks />
-  </div>
-);
+  );
+};

@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: offertrail-api
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+
+      # ── Base de données (Supabase PostgreSQL) ──────────────────────────────
+      - key: DATABASE_URL
+        sync: false          # postgresql://... (connexion directe Supabase, port 5432)
+
+      # ── Supabase Auth ──────────────────────────────────────────────────────
+      - key: SUPABASE_JWT_SECRET
+        sync: false          # Dashboard → Settings → API → JWT Secret
+      - key: SUPABASE_URL
+        sync: false          # https://xxxx.supabase.co
+      - key: SUPABASE_SERVICE_KEY
+        sync: false          # Settings → API → service_role key
+
+      # ── Stripe ────────────────────────────────────────────────────────────
+      - key: STRIPE_SECRET_KEY
+        sync: false          # sk_live_...
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false          # pk_live_...
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false          # whsec_... (endpoint Render dans Stripe Dashboard)
+      - key: STRIPE_PRICE_ID
+        sync: false          # price_... (ID du prix Pro)
+      - key: ENABLE_STRIPE_CHECKOUT
+        value: "1"
+
+      # ── Email ─────────────────────────────────────────────────────────────
+      - key: RESEND_API_KEY
+        sync: false
+
+      # ── CORS & redirects ──────────────────────────────────────────────────
+      - key: ALLOWED_ORIGINS
+        sync: false          # https://offertrail.fr,https://www.offertrail.fr
+      - key: ALLOWED_ORIGIN_REGEX
+        sync: false          # ^https://(([a-z0-9-]+\.)?offertrail\.fr|offertrail\.craftcodes\.fr)$
+      - key: APP_BASE_URL
+        sync: false          # https://offertrail.fr (pour les redirects Stripe)

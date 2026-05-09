@@ -13,14 +13,13 @@ import { StatusBadge } from '../components/atoms/StatusBadge';
 import { EmptyState } from '../components/atoms/EmptyState';
 import { Button } from '../components/atoms/Button';
 import { PageHeader } from '../components/molecules/PageHeader';
-import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
+import { useStatusOptions } from '../hooks/useStatusOptions';
 import classes from './ApplicationsPage.module.css';
-
-const STATUS_OPTIONS = STATUT_OPTIONS;
 
 export function ApplicationsPage() {
   const { t } = useI18n();
+  const STATUS_OPTIONS = useStatusOptions();
   const navigate = useNavigate();
 
   const [page, setPage] = useState(1);
@@ -38,7 +37,7 @@ export function ApplicationsPage() {
     showHidden,
   });
 
-  useEffect(() => { document.title = 'Candidatures — OfferTrail'; }, []);
+  useEffect(() => { document.title = t('application.pageTitle'); }, [t]);
   useEffect(() => { setPage(1); }, [searchTerm, statusFilter, showHidden]);
 
   if (error && (error as { response?: { status?: number } }).response?.status === 401) {
@@ -52,14 +51,14 @@ export function ApplicationsPage() {
         <NewApplicationModal
           onClose={() => setShowModal(false)}
           onCreated={() => {
-            notifications.show({ message: 'Candidature ajoutée', color: 'green' });
+            notifications.show({ message: t('application.added'), color: 'green' });
             refetch();
           }}
         />
       )}
 
       <PageHeader
-        title="Candidatures"
+        title={t('application.pageHeader')}
         count={loading ? null : total}
         actions={
           <Button variant="primary" onClick={() => setShowModal(true)}>
@@ -72,7 +71,7 @@ export function ApplicationsPage() {
         <Group gap="sm" mb="md" wrap="wrap">
           <TextInput
             label={t('dashboard.search')}
-            placeholder="Entreprise, poste..."
+            placeholder={t('application.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ flex: 1, minWidth: 180 }}
@@ -96,8 +95,8 @@ export function ApplicationsPage() {
           <Center h={120}><Loader /></Center>
         ) : apps.length === 0 ? (
           <EmptyState
-            title="Aucune candidature pour l'instant."
-            description="Commence par en ajouter une."
+            title={t('application.emptyTitle')}
+            description={t('application.emptyDesc')}
             action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
           />
         ) : (
@@ -124,10 +123,10 @@ export function ApplicationsPage() {
                             {org && <OrganizationTypeBadge type={org.type} size="xs" />}
                             {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
                           </Group>
-                          <Text size="xs" c="dimmed">{app.source || 'Direct'} • {app.type}</Text>
+                          <Text size="xs" c="dimmed">{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
                           {app.final_customer_organization_id && (
                             <Text size="xs" c="dimmed">
-                              Client final: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
+                              {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
                             </Text>
                           )}
                         </Stack>
