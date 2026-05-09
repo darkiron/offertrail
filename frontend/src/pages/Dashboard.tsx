@@ -15,15 +15,14 @@ import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge
 import { StatusBadge } from '../components/atoms/StatusBadge';
 import { Button } from '../components/atoms/Button';
 import { EmptyState } from '../components/atoms/EmptyState';
-import { STATUT_OPTIONS } from '../constants/statuts';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { useStatusOptions } from '../hooks/useStatusOptions';
 import classes from './Dashboard.module.css';
-
-const STATUS_OPTIONS = STATUT_OPTIONS;
 
 export function Dashboard() {
   const { t } = useI18n();
+  const STATUS_OPTIONS = useStatusOptions();
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
@@ -40,7 +39,7 @@ export function Dashboard() {
     loading, loadingInsights, error, refetch, markFollowup, loadInsights,
   } = useDashboard({ search: searchTerm, status: statusFilter, page, limit, showHidden });
 
-  useEffect(() => { document.title = 'Tableau de bord — OfferTrail'; }, []);
+  useEffect(() => { document.title = `${t('dashboard.title')} — OfferTrail`; }, [t]);
   useEffect(() => { setPage(1); }, [searchTerm, statusFilter, showHidden]);
   useEffect(() => {
     if (activeTab === 'insights' && !insights) loadInsights();
@@ -54,9 +53,9 @@ export function Dashboard() {
   const handleMarkFollowup = async (id: number) => {
     try {
       await markFollowup(id);
-      notifications.show({ message: 'Relance mise à jour', color: 'green' });
+      notifications.show({ message: t('dashboard.followupUpdated'), color: 'green' });
     } catch {
-      notifications.show({ message: 'Impossible de mettre à jour la relance.', color: 'red' });
+      notifications.show({ message: t('dashboard.followupError'), color: 'red' });
     }
   };
 
@@ -66,7 +65,7 @@ export function Dashboard() {
         <NewApplicationModal
           onClose={() => setShowModal(false)}
           onCreated={() => {
-            notifications.show({ message: 'Candidature ajoutée', color: 'green' });
+            notifications.show({ message: t('application.added'), color: 'green' });
             refetch();
           }}
         />
@@ -105,7 +104,7 @@ export function Dashboard() {
           <Tabs.Panel value="apps">
             <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" mb="md">
               <TextInput
-                placeholder="Entreprise, poste, contact..."
+                placeholder={t('dashboard.searchPlaceholder')}
                 label={t('dashboard.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -128,8 +127,8 @@ export function Dashboard() {
               <Center h={120}><Loader /></Center>
             ) : apps.length === 0 ? (
               <EmptyState
-                title="Aucune candidature pour l'instant."
-                description="Commence par en ajouter une."
+                title={t('application.emptyTitle')}
+                description={t('application.emptyDesc')}
                 action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
               />
             ) : (
@@ -159,7 +158,7 @@ export function Dashboard() {
                               <Text size="xs" c="dimmed">{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
                               {app.final_customer_organization_id && (
                                 <Text size="xs" c="dimmed">
-                                  Client final: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
+                                  {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
                                 </Text>
                               )}
                             </Stack>

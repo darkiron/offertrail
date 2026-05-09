@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 
 import { Dashboard } from './pages/Dashboard';
@@ -34,6 +34,12 @@ import { Confidentialite } from './pages/legal/Confidentialite';
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   const navigate = useNavigate();
 
@@ -47,20 +53,25 @@ function AppRoutes() {
   }, [navigate]);
 
   return (
+    <>
+      <ScrollToTop />
     <Routes>
-      {/* ── Landing public (LandingLayout) ── */}
+      {/* ── Pages publiques (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />
+        <Route path="/cgv" element={<TermsPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/mentions-legales" element={<LegalNoticePage />} />
+        <Route path="/legal-notice" element={<LegalNoticePage />} />
+        <Route path="/rgpd" element={<PrivacyPolicyPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        {/* Public — accessible sans connexion (requis Stripe live) */}
+        <Route path="/app/legal/cgu" element={<CGU />} />
+        <Route path="/app/legal/terms-of-use" element={<CGU />} />
+        <Route path="/app/legal/confidentialite" element={<Confidentialite />} />
+        <Route path="/app/legal/privacy-policy" element={<Confidentialite />} />
       </Route>
-
-      {/* ── Pages légales (layout intégré dans chaque page) ── */}
-      <Route path="/cgv" element={<TermsPage />} />
-      <Route path="/mentions-legales" element={<LegalNoticePage />} />
-      <Route path="/rgpd" element={<PrivacyPolicyPage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      {/* Public — pas de ProtectedRoute, accessible sans connexion (requis Stripe live) */}
-      <Route path="/app/legal/cgu" element={<CGU />} />
-      <Route path="/app/legal/confidentialite" element={<Confidentialite />} />
 
       {/* ── Auth (standalone, pas de layout) ── */}
       <Route path="/login" element={<LoginPage />} />
@@ -91,6 +102,7 @@ function AppRoutes() {
       {/* ── Redirects de compatibilité ── */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 

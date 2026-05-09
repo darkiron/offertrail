@@ -110,6 +110,15 @@
   color: var(--text-main);
 }
 
+.legal-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 20px 0 8px;
+  color: var(--text-dim);
+}
+
 .legal-section p {
   font-size: 14px;
   color: var(--text-dim);
