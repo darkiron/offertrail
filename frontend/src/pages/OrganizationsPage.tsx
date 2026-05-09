@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n';
 import {
   Anchor, Badge, Group, Chip, Paper, Select, SimpleGrid, Stack, Text, TextInput,
 } from '@mantine/core';
@@ -11,30 +12,13 @@ import classes from './OrganizationsPage.module.css';
 
 type OrganizationTab = 'all' | 'engaged' | 'responsive' | 'watchlist';
 
-const organizationTypeLabels: Record<OrganizationType, string> = {
-  CLIENT_FINAL: 'Client final',
-  ESN: 'ESN',
-  CABINET_RECRUTEMENT: 'Cabinet',
-  STARTUP: 'Startup',
-  PME: 'PME',
-  GRAND_COMPTE: 'Grand compte',
-  PORTAGE: 'Portage',
-  AUTRE: 'Autre',
-};
-
-const tabDefinitions: Array<{ id: OrganizationTab; label: string; hint: string }> = [
-  { id: 'all', label: 'Tous', hint: 'Vue complete du portefeuille' },
-  { id: 'engaged', label: 'Actifs', hint: 'Organisations avec candidatures' },
-  { id: 'responsive', label: 'Repondent', hint: 'Taux de reponse >= 35%' },
-  { id: 'watchlist', label: 'A surveiller', hint: 'Activite sans retour significatif' },
-];
-
 const organizationTypes: OrganizationType[] = [
   'CLIENT_FINAL', 'ESN', 'CABINET_RECRUTEMENT', 'STARTUP',
   'PME', 'GRAND_COMPTE', 'PORTAGE', 'AUTRE',
 ];
 
 export const OrganizationsPage: React.FC = () => {
+  const { t, locale } = useI18n();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,9 +27,27 @@ export const OrganizationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<OrganizationTab>('all');
   const navigate = useNavigate();
 
+  const organizationTypeLabels = useMemo<Record<OrganizationType, string>>(() => ({
+    CLIENT_FINAL: t('organization.typeClientFinal'),
+    ESN: t('organization.typeESN'),
+    CABINET_RECRUTEMENT: t('organization.typeCabinet'),
+    STARTUP: t('organization.typeStartup'),
+    PME: t('organization.typePME'),
+    GRAND_COMPTE: t('organization.typeGrandCompte'),
+    PORTAGE: t('organization.typePortage'),
+    AUTRE: t('organization.typeAutre'),
+  }), [t]);
+
+  const tabDefinitions = useMemo(() => [
+    { id: 'all' as OrganizationTab, label: t('organization.tabAll'), hint: t('organization.tabAllHint') },
+    { id: 'engaged' as OrganizationTab, label: t('organization.tabEngaged'), hint: t('organization.tabEngagedHint') },
+    { id: 'responsive' as OrganizationTab, label: t('organization.tabResponsive'), hint: t('organization.tabResponsiveHint') },
+    { id: 'watchlist' as OrganizationTab, label: t('organization.tabWatchlist'), hint: t('organization.tabWatchlistHint') },
+  ], [t]);
+
   useEffect(() => {
-    document.title = 'Établissements — OfferTrail';
-  }, []);
+    document.title = t('organization.pageTitle');
+  }, [t]);
 
   const fetchOrganizations = async () => {
     setLoading(true);
@@ -80,26 +82,20 @@ export const OrganizationsPage: React.FC = () => {
     return Math.max(0, Math.min(100, Math.round((organization.response_rate || 0) - getPositiveRate(organization))));
   };
 
-  const getHealthBucket = (organization: Organization) => {
-    if ((organization.response_rate || 0) >= 45) {
-      return { color: 'green', label: 'Dynamique saine' };
-    }
-    if ((organization.response_rate || 0) >= 20) {
-      return { color: 'yellow', label: 'A entretenir' };
-    }
-    return { color: 'red', label: 'Relation froide' };
-  };
+  const getHealthBucket = useCallback((organization: Organization) => {
+    if ((organization.response_rate || 0) >= 45) return { color: 'green', label: t('organization.healthGood') };
+    if ((organization.response_rate || 0) >= 20) return { color: 'yellow', label: t('organization.healthMedium') };
+    return { color: 'red', label: t('organization.healthCold') };
+  }, [t]);
 
-  const formatDate = (value?: string | null) => {
-    if (!value) {
-      return '-';
-    }
-    return new Date(value).toLocaleDateString('fr-FR', {
+  const formatDate = useCallback((value?: string | null) => {
+    if (!value) return '-';
+    return new Date(value).toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
     });
-  };
+  }, [locale]);
 
   const typeCounts = organizationTypes.reduce<Record<string, number>>((acc, type) => {
     acc[type] = organizations.filter((org) => org.type === type).length;
@@ -127,21 +123,21 @@ export const OrganizationsPage: React.FC = () => {
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
       <PageHeader
-        title="Etablissements"
+        title={t('organization.pageHeader')}
         count={loading ? null : organizations.length}
         actions={
           <Anchor component={Link} to="/app/etablissements/maintenance">
-            <Badge variant="filled" size="md" radius="xl">Maintenance ETS →</Badge>
+            <Badge variant="filled" size="md" radius="xl">{t('organization.maintenanceBtn')}</Badge>
           </Anchor>
         }
       />
 
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
         {[
-          { label: 'Total', value: organizations.length, hint: 'établissements chargés' },
-          { label: 'Actifs', value: engagedOrganizations.length, hint: 'avec au moins une candidature' },
-          { label: 'Taux moyen', value: `${averageResponseRate}%`, hint: 'réponse moyenne' },
-          { label: 'Volume', value: totalApplications, hint: 'candidatures cumulées' },
+          { label: t('organization.kpiTotal'), value: organizations.length, hint: t('organization.kpiTotalHint') },
+          { label: t('organization.kpiActive'), value: engagedOrganizations.length, hint: t('organization.kpiActiveHint') },
+          { label: t('organization.kpiAvgRate'), value: `${averageResponseRate}%`, hint: t('organization.kpiAvgRateHint') },
+          { label: t('organization.kpiVolume'), value: totalApplications, hint: t('organization.kpiVolumeHint') },
         ].map((kpi) => (
           <Paper key={kpi.label} p="md" radius="md" withBorder>
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{kpi.label}</Text>
@@ -155,12 +151,12 @@ export const OrganizationsPage: React.FC = () => {
       <Paper p="lg" radius="lg" withBorder>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md" mb="md">
           <TextInput
-            placeholder="Rechercher un établissement, une ville, un signal..."
+            placeholder={t('organization.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <Select
-            placeholder="Tous les types"
+            placeholder={t('organization.allTypes')}
             value={typeFilter || null}
             onChange={(v) => setTypeFilter(v ?? '')}
             data={organizationTypes.map((t) => ({ value: t, label: organizationTypeLabels[t] }))}
@@ -185,7 +181,7 @@ export const OrganizationsPage: React.FC = () => {
       <Paper p="lg" radius="lg" withBorder>
         <Group justify="space-between" mb="md" wrap="wrap" gap="md">
           <Stack gap={4}>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Tri visuel</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.visualSort')}</Text>
             <Group gap="xs">
               {tabDefinitions.map((tab) => (
                 <Chip
@@ -200,7 +196,7 @@ export const OrganizationsPage: React.FC = () => {
             </Group>
           </Stack>
           <Text size="sm" c="dimmed">
-            {loading ? 'Chargement...' : `${visibleOrganizations.length} résultat(s)`}
+            {loading ? t('common.loading') : `${visibleOrganizations.length} ${t('organization.results')}`}
           </Text>
         </Group>
 
@@ -211,7 +207,7 @@ export const OrganizationsPage: React.FC = () => {
             <Text c="red">{error}</Text>
           </Paper>
         ) : visibleOrganizations.length === 0 ? (
-          <Text c="dimmed" ta="center" py="xl">Aucun établissement ne correspond aux filtres actuels.</Text>
+          <Text c="dimmed" ta="center" py="xl">{t('organization.noMatch')}</Text>
         ) : (
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
             {visibleOrganizations.map((organization) => {
@@ -220,7 +216,7 @@ export const OrganizationsPage: React.FC = () => {
               const health = getHealthBucket(organization);
               const notePreview = organization.notes?.trim()
                 ? organization.notes.trim().slice(0, 110)
-                : 'Aucune note disponible pour cet établissement.';
+                : t('organization.noNotes');
 
               return (
                 <Paper
@@ -239,7 +235,7 @@ export const OrganizationsPage: React.FC = () => {
                   <Text fw={700} size="lg" mt="xs">{organization.name}</Text>
 
                   <Group mt="xs" gap="xs" wrap="wrap">
-                    <Text size="sm" c="dimmed">{organization.city || 'Ville non renseignée'}</Text>
+                    <Text size="sm" c="dimmed">{organization.city || t('organization.noCity')}</Text>
                     {organization.website ? (
                       <Anchor
                         href={organization.website}
@@ -248,7 +244,7 @@ export const OrganizationsPage: React.FC = () => {
                         size="sm"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        Voir le site
+                        {t('organization.viewSite')}
                       </Anchor>
                     ) : null}
                   </Group>
@@ -260,10 +256,10 @@ export const OrganizationsPage: React.FC = () => {
 
                   <SimpleGrid cols={2} spacing="xs" mt="md">
                     {[
-                      { label: 'Candidatures', value: organization.total_applications ?? 0, hint: 'activité cumulée' },
-                      { label: 'Taux de réponse', value: `${organization.response_rate ?? 0}%`, progress: organization.response_rate ?? 0 },
-                      { label: 'Taux positif', value: `${positiveRate}%`, hint: 'retours constructifs' },
-                      { label: 'Taux de rejet', value: `${rejectionRate}%`, hint: 'signal à surveiller' },
+                      { label: t('organization.statApplications'), value: organization.total_applications ?? 0, hint: t('organization.statApplicationsHint') },
+                      { label: t('organization.statResponseRate'), value: `${organization.response_rate ?? 0}%`, progress: organization.response_rate ?? 0 },
+                      { label: t('organization.statPositiveRate'), value: `${positiveRate}%`, hint: t('organization.statPositiveRateHint') },
+                      { label: t('organization.statRejectionRate'), value: `${rejectionRate}%`, hint: t('organization.statRejectionRateHint') },
                     ].map((stat) => (
                       <Paper key={stat.label} p="sm" radius="md" withBorder>
                         <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
@@ -280,10 +276,10 @@ export const OrganizationsPage: React.FC = () => {
 
                   <Group justify="space-between" mt="md" pt="sm" className={classes.sectionFooter}>
                     <Stack gap={2}>
-                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Dernière interaction</Text>
+                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('organization.lastInteraction')}</Text>
                       <Text size="sm" c="dimmed">{formatDate(organization.updated_at)}</Text>
                     </Stack>
-                    <Text size="sm" c="dimmed">Ouvrir la fiche →</Text>
+                    <Text size="sm" c="dimmed">{t('organization.openCard')}</Text>
                   </Group>
                 </Paper>
               );
