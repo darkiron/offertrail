@@ -7,22 +7,14 @@ import {
   PasswordInput, Stack, Text, Title,
 } from '@mantine/core';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
-const schema = z
-  .object({
-    password: z.string().min(8, "Choisis un mot de passe d'au moins 8 caractères."),
-    confirmPassword: z.string().min(8, "Confirme ton mot de passe."),
-  })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: 'Les deux mots de passe doivent être identiques.',
-    path: ['confirmPassword'],
-  });
-
-type ResetPasswordForm = z.infer<typeof schema>;
+type ResetPasswordForm = { password: string; confirmPassword: string };
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const {
@@ -40,10 +32,20 @@ export function ResetPasswordPage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const schema = z
+    .object({
+      password: z.string().min(8, t('auth.resetPassword.passwordMin')),
+      confirmPassword: z.string().min(8, t('auth.resetPassword.passwordConfirm')),
+    })
+    .refine((value) => value.password === value.confirmPassword, {
+      message: t('auth.resetPassword.passwordMismatch'),
+      path: ['confirmPassword'],
+    });
+
   const onSubmit = handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Formulaire invalide');
+      setError(parsed.error.issues[0]?.message ?? t('auth.resetPassword.formInvalid'));
       return;
     }
 
@@ -55,10 +57,10 @@ export function ResetPasswordPage() {
       if (supabaseError) throw supabaseError;
       navigate('/login', {
         replace: true,
-        state: { message: 'Mot de passe mis à jour. Tu peux maintenant te connecter.' },
+        state: { message: t('auth.resetPassword.successMessage') },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lien invalide ou expiré');
+      setError(err instanceof Error ? err.message : t('auth.resetPassword.errorFallback'));
     }
   });
 
@@ -67,9 +69,9 @@ export function ResetPasswordPage() {
       <section className={classes.shell}>
         <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <Text c="dimmed">Validation du lien de réinitialisation…</Text>
+            <Text c="dimmed">{t('auth.resetPassword.validating')}</Text>
             <Anchor component={Link} to="/forgot-password" size="sm">
-              Demander un nouveau lien
+              {t('auth.resetPassword.requestNewLink')}
             </Anchor>
           </Stack>
         </Paper>
@@ -81,23 +83,21 @@ export function ResetPasswordPage() {
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Nouveau mot de passe</Badge>
+          <Badge variant="light" size="sm">{t('auth.resetPassword.badge')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Réinitialiser le mot de passe</Title>
-        <Text c="dimmed" size="sm" mb="xl">
-          Choisis un nouveau mot de passe sécurisé pour ton compte OfferTrail.
-        </Text>
+        <Title order={2} mb={4}>{t('auth.resetPassword.title')}</Title>
+        <Text c="dimmed" size="sm" mb="xl">{t('auth.resetPassword.subtitle')}</Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <PasswordInput
-            label="Nouveau mot de passe"
+            label={t('auth.resetPassword.newPassword')}
             autoComplete="new-password"
             error={errors.password?.message}
             {...register('password')}
           />
 
           <PasswordInput
-            label="Confirmation"
+            label={t('auth.resetPassword.confirmPassword')}
             autoComplete="new-password"
             error={errors.confirmPassword?.message}
             {...register('confirmPassword')}
@@ -108,13 +108,13 @@ export function ResetPasswordPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Mettre à jour le mot de passe
+            {t('auth.resetPassword.submit')}
           </Button>
         </Stack>
 
         <Text size="sm" c="dimmed" mt="lg">
           <Anchor component={Link} to="/forgot-password" size="sm">
-            Demander un nouveau lien
+            {t('auth.resetPassword.requestNewLink')}
           </Anchor>
         </Text>
       </Paper>

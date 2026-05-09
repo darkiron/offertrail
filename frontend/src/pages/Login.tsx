@@ -7,18 +7,15 @@ import {
   Stack, Text, TextInput, Title,
 } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 import classes from './Login.module.css';
 
-const loginSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caractères'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = { email: string; password: string };
 
 export function LoginPage() {
   const location = useLocation();
   const { signIn, isAuthenticated, isLoading, profile } = useAuth();
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const successMessage =
     (location.state as { message?: string } | null)?.message ?? null;
@@ -40,6 +37,11 @@ export function LoginPage() {
     return <Navigate to={nextPath ?? '/app'} replace />;
   }
 
+  const loginSchema = z.object({
+    email: z.string().email(t('auth.login.emailInvalid')),
+    password: z.string().min(8, t('auth.login.passwordMin')),
+  });
+
   const onSubmit = handleSubmit(async (values) => {
     const result = loginSchema.safeParse(values);
     if (!result.success) {
@@ -50,7 +52,7 @@ export function LoginPage() {
           setError(fieldName, { type: 'manual', message: issue.message });
         }
       });
-      setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
+      setFormError(result.error.issues[0]?.message ?? t('auth.login.formInvalid'));
       return;
     }
 
@@ -59,7 +61,7 @@ export function LoginPage() {
       clearErrors();
       await signIn(result.data.email, result.data.password);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Connexion impossible');
+      setFormError(error instanceof Error ? error.message : t('auth.login.error'));
     }
   });
 
@@ -69,15 +71,13 @@ export function LoginPage() {
         {/* ── Panneau gauche ── */}
         <aside className={classes.story}>
           <span className={classes.eyebrow}>OfferTrail Workspace</span>
-          <h1 className={classes.storyTitle}>Reprends la main sur ton pipeline de candidatures.</h1>
-          <Text c="dimmed">
-            Un CRM de candidatures SaaS — ton historique, tes relances et tes contacts centralisés dans un seul espace.
-          </Text>
+          <h1 className={classes.storyTitle}>{t('auth.login.storyTitle')}</h1>
+          <Text c="dimmed">{t('auth.login.storyDesc')}</Text>
           <Stack gap="sm" mt="xl">
             {[
-              { title: 'Vue pipeline exploitable', desc: 'Retrouve rapidement ce qui est en attente, ce qui ghoste et ce qui demande une relance.' },
-              { title: 'Contexte entreprise + contact', desc: "Chaque candidature garde son contexte, ses notes et son historique d'interactions." },
-              { title: 'Base locale propre', desc: 'Tes données restent chez toi, avec une structure SaaS prête pour la suite.' },
+              { title: t('auth.login.point1Title'), desc: t('auth.login.point1Desc') },
+              { title: t('auth.login.point2Title'), desc: t('auth.login.point2Desc') },
+              { title: t('auth.login.point3Title'), desc: t('auth.login.point3Desc') },
             ].map((point) => (
               <div key={point.title} className={classes.point}>
                 <Text fw={800} size="sm">{point.title}</Text>
@@ -90,11 +90,11 @@ export function LoginPage() {
         {/* ── Panneau droit ── */}
         <div className={classes.panel}>
           <Anchor component={Link} to="/" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
-            ← OfferTrail
+            {t('auth.backToHome')}
           </Anchor>
 
-          <Title order={2} mb={4}>Connexion</Title>
-          <Text c="dimmed" size="sm" mb="xl">Entre dans ton workspace OfferTrail.</Text>
+          <Title order={2} mb={4}>{t('auth.login.title')}</Title>
+          <Text c="dimmed" size="sm" mb="xl">{t('auth.login.subtitle')}</Text>
 
           <Stack component="form" gap="md" onSubmit={onSubmit}>
             {successMessage && (
@@ -102,8 +102,8 @@ export function LoginPage() {
             )}
 
             <TextInput
-              label="Email"
-              placeholder="toi@exemple.fr"
+              label={t('auth.login.email')}
+              placeholder={t('auth.login.emailPlaceholder')}
               type="email"
               autoComplete="email"
               autoCapitalize="none"
@@ -113,10 +113,10 @@ export function LoginPage() {
             />
 
             <PasswordInput
-              label="Mot de passe"
-              placeholder="Ton mot de passe"
+              label={t('auth.login.password')}
+              placeholder={t('auth.login.passwordPlaceholder')}
               autoComplete="current-password"
-              description="Compatible avec les gestionnaires de mots de passe comme NordPass."
+              description={t('auth.login.passwordDesc')}
               error={errors.password?.message}
               {...register('password')}
             />
@@ -126,15 +126,15 @@ export function LoginPage() {
             )}
 
             <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-              Se connecter
+              {t('auth.login.submit')}
             </Button>
           </Stack>
 
           <Text size="sm" c="dimmed" mt="lg">
-            <Anchor component={Link} to="/forgot-password" size="sm">Mot de passe oublié ?</Anchor>
+            <Anchor component={Link} to="/forgot-password" size="sm">{t('auth.login.forgotPassword')}</Anchor>
             {' · '}
-            Pas encore de compte ?{' '}
-            <Anchor component={Link} to="/register" size="sm">Créer un compte</Anchor>
+            {t('auth.login.noAccount')}{' '}
+            <Anchor component={Link} to="/register" size="sm">{t('auth.login.createAccount')}</Anchor>
           </Text>
         </div>
       </Paper>
