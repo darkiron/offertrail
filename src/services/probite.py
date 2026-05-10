@@ -3,7 +3,7 @@ OfferTrail — Service de calcul du score de probité
 Équivalent de la fonction SQL recompute_probite_scores() en Python.
 Tourne toutes les heures via APScheduler.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 
@@ -62,11 +62,11 @@ def recompute_probite_scores(db: Session) -> int:
             existing.ghosting_rate       = score["ghosting_rate"]
             existing.nb_candidatures     = score["nb_candidatures"]
             existing.nb_users_uniques    = score["nb_users_uniques"]
-            existing.last_computed_at    = datetime.utcnow()
+            existing.last_computed_at    = datetime.now(timezone.utc).replace(tzinfo=None)
         else:
             db.add(ProbiteScore(
                 etablissement_id    = ets_id,
-                last_computed_at    = datetime.utcnow(),
+                last_computed_at    = datetime.now(timezone.utc).replace(tzinfo=None),
                 **score
             ))
 

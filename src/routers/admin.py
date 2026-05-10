@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -19,7 +19,7 @@ def global_stats(
     db: Session = Depends(get_db),
     _: Profile = Depends(get_admin_profile),
 ):
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
@@ -230,7 +230,7 @@ def mrr_history(
 ):
     """MRR des 12 derniers mois."""
     result = []
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
     for i in range(11, -1, -1):
         month_start = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
         month_end   = (month_start + timedelta(days=32)).replace(day=1)
@@ -252,7 +252,7 @@ def signups_history(
     _: Profile = Depends(get_admin_profile),
 ):
     """Inscriptions et activations par jour sur 30 jours."""
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
     result = []
     for i in range(30, -1, -1):
         day       = today - timedelta(days=i)
@@ -295,7 +295,7 @@ def candidatures_evolution(
     _: Profile = Depends(get_admin_profile),
 ):
     """Candidatures créées par jour sur 30 jours."""
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
     result = []
     for i in range(30, -1, -1):
         day       = today - timedelta(days=i)
