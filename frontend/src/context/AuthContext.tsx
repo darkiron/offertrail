@@ -87,17 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      if (data.session) {
+        applySession(data.session)
+        await fetchProfile()
+      }
+    } finally {
       setIsLoading(false)
-      throw error
     }
-    // Positionne le token immédiatement — onAuthStateChange est asynchrone,
-    // sans ça les premières requêtes partent sans Authorization.
-    if (data.session) {
-      setAxiosAuthToken(data.session.access_token)
-    }
-    // isLoading sera mis à false par onAuthStateChange après fetchProfile()
   }
 
   const signOut = async () => {
