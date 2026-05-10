@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Badge, Group, List, Paper, Stack, Text, Title,
@@ -7,21 +7,24 @@ import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
 import type { SubscriptionStatus } from '../types';
 import { Button } from '../components/atoms/Button';
+import { useI18n } from '../i18n';
 
 export function Pricing() {
   const navigate = useNavigate();
+  const { t, locale } = useI18n();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const transparencyRows = [
-    { label: 'Traitement du paiement', value: 'Stripe' },
-    { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
-    { label: 'Développement, maintenance et support', value: 'CraftCodes' },
-  ];
+
+  const transparencyRows = useMemo(() => [
+    { label: t('pricing.row1Label'), value: t('pricing.row1Value') },
+    { label: t('pricing.row2Label'), value: t('pricing.row2Value') },
+    { label: t('pricing.row3Label'), value: t('pricing.row3Value') },
+  ], [t]);
 
   useEffect(() => {
-    document.title = 'Abonnement — OfferTrail';
+    document.title = t('pricing.pageTitle');
     subscriptionService.getMe().then(setSub).catch(() => {});
-  }, []);
+  }, [t]);
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -35,9 +38,9 @@ export function Pricing() {
 
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
+      notifications.show({ message: checkout.message || t('pricing.successMessage'), color: 'green' });
     } catch {
-      notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
+      notifications.show({ message: t('pricing.error'), color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -46,27 +49,27 @@ export function Pricing() {
   return (
     <Stack gap="lg" p="lg" maw={520} mx="auto">
       <Group>
-        <Button variant="ghost" onClick={() => navigate(-1)}>← Retour</Button>
-        <Title order={2}>Passer en Pro</Title>
+        <Button variant="ghost" onClick={() => navigate(-1)}>{t('pricing.back')}</Button>
+        <Title order={2}>{t('pricing.title')}</Title>
       </Group>
 
       {sub ? (
         <Text c="dimmed" size="sm">
-          Plan actuel : <strong>{sub.is_active ? 'Pro' : 'Aucun abonnement actif'}</strong>
+          {t('pricing.currentPlan')} <strong>{sub.is_active ? t('pricing.planActive') : t('pricing.planNone')}</strong>
         </Text>
       ) : null}
 
       <Paper p="xl" radius="lg" withBorder style={{ borderColor: 'rgba(14, 165, 233, 0.35)' }}>
         <Group justify="space-between" align="flex-start" mb="lg">
           <Stack gap={4}>
-            <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">Pro</Text>
+            <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">{t('pricing.planActive')}</Text>
             <Text size="xl" fw={500}>
-              14,99€
-              <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
+              {t('pricing.price')}
+              <Text component="span" size="sm" fw={400} c="dimmed">{t('pricing.perMonth')}</Text>
             </Text>
           </Stack>
           {sub?.is_active ? (
-            <Badge variant="light" color="green" size="sm">Actif</Badge>
+            <Badge variant="light" color="green" size="sm">{t('pricing.badgeActive')}</Badge>
           ) : null}
         </Group>
 
@@ -78,11 +81,11 @@ export function Pricing() {
           icon={<Text c="green" size="sm">✓</Text>}
         >
           {[
-            'Candidatures illimitées',
-            'Analytics complets',
-            'Score de probité',
-            'File de relances',
-            'Export CSV',
+            t('pricing.feature1'),
+            t('pricing.feature2'),
+            t('pricing.feature3'),
+            t('pricing.feature4'),
+            t('pricing.feature5'),
           ].map((feature) => (
             <List.Item key={feature}>{feature}</List.Item>
           ))}
@@ -90,11 +93,14 @@ export function Pricing() {
 
         {sub?.is_active ? (
           <Text size="sm" c="dimmed">
-            Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
+            {t('pricing.activeSince')}{' '}
+            {sub.plan_started_at
+              ? new Date(sub.plan_started_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR')
+              : '-'}
           </Text>
         ) : (
           <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
+            {loading ? t('pricing.loading') : t('pricing.submit')}
           </Button>
         )}
       </Paper>
@@ -102,7 +108,7 @@ export function Pricing() {
       <Paper p="lg" radius="lg" withBorder>
         <Stack gap="sm">
           <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">
-            Transparence sur le prix
+            {t('pricing.transparencyTitle')}
           </Text>
 
           {transparencyRows.map((row, index) => (
@@ -118,14 +124,13 @@ export function Pricing() {
           ))}
 
           <Text size="sm" c="dimmed" lh={1.6}>
-            OfferTrail est édité et maintenu par CraftCodes. Le prix de l&apos;abonnement finance
-            le traitement du paiement, l&apos;exploitation du service et l&apos;évolution du produit.
+            {t('pricing.transparencyDesc')}
           </Text>
         </Stack>
       </Paper>
 
       <Text size="xs" c="dimmed" ta="center">
-        Paiement sécurisé via Stripe
+        {t('pricing.securePayment')}
       </Text>
     </Stack>
   );
