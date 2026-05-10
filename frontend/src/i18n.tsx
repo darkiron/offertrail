@@ -406,6 +406,11 @@ const translations = {
         devPay: 'Developer pay',
         noInvestors: 'No investors. No padding. The price reflects real work.',
       },
+      mif: {
+        kicker: 'Made in France',
+        title: 'Proudly French',
+        desc: 'Designed, developed and hosted in France by an independent developer.',
+      },
       cta: {
         title: 'Take back control.',
         sub: 'A clean tool, a clear price, a better-managed search.',
@@ -814,6 +819,11 @@ const translations = {
         urssaf: 'URSSAF (charges 33%)',
         devPay: 'Remuneration du developpeur',
         noInvestors: 'Pas d investisseurs. Pas de padding. Le prix reflete un travail reel.',
+      },
+      mif: {
+        kicker: 'Made in France',
+        title: 'Fierement francais',
+        desc: 'Concu, developpe et heberge en France par un developpeur independant.',
       },
       cta: {
         title: 'Reprends le controle.',

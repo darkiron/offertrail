@@ -209,6 +209,65 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ─── Made in France ─── */}
+      <section className="lp-section-wrap lp-mif-section">
+        <div className="lp-section-inner">
+          <div className="lp-mif-layout">
+            <div className="lp-mif-coq" aria-hidden="true">
+              <svg viewBox="0 0 130 158" xmlns="http://www.w3.org/2000/svg">
+                {/* Tail feathers — drawn behind body */}
+                <path d="M 90 87 C 96 72 104 56 101 42 C 97 57 93 72 90 90 Z" fill="#002395"/>
+                <path d="M 91 93 C 101 79 111 63 111 48 C 106 62 99 78 91 96 Z" fill="#FFFFFF" stroke="#ccc" strokeWidth="0.8"/>
+                <path d="M 90 99 C 99 86 107 72 106 58 C 101 71 95 85 90 102 Z" fill="#ED2939"/>
+                {/* Body */}
+                <ellipse cx="62" cy="100" rx="30" ry="21" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.2" strokeWidth="0.8"/>
+                {/* Wing */}
+                <path d="M 36 96 C 43 80 76 80 83 92 C 68 87 44 87 36 96 Z" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.15" strokeWidth="0.6"/>
+                {/* Neck */}
+                <path d="M 35 56 C 30 65 35 77 45 82 C 53 78 57 67 54 57 C 49 62 42 62 35 56 Z" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.18" strokeWidth="0.6"/>
+                {/* Head */}
+                <circle cx="45" cy="43" r="15" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.2" strokeWidth="0.8"/>
+                {/* Comb — 3 peaks tricolores */}
+                <path d="M 36 28 C 33 21 31 13 35 8 C 36 14 38 22 40 28 Z" fill="#002395"/>
+                <path d="M 40 28 C 37 20 38 11 42 7 C 43 13 44 22 45 28 Z" fill="#FFFFFF" stroke="#ccc" strokeWidth="0.7"/>
+                <path d="M 45 28 C 43 20 45 11 49 8 C 49 15 49 22 51 28 Z" fill="#ED2939"/>
+                {/* Beak */}
+                <path d="M 30 44 L 19 41 L 21 48 Z" fill="#F4A020"/>
+                {/* Wattle */}
+                <path d="M 27 50 C 22 53 19 58 21 62 C 22 66 27 65 28 61 C 29 57 28 52 27 50 Z" fill="#ED2939"/>
+                {/* Eye */}
+                <circle cx="39" cy="41" r="3.5" fill="#1A1A2E"/>
+                <circle cx="38" cy="40" r="1.2" fill="white"/>
+                {/* Legs */}
+                <line x1="54" y1="121" x2="49" y2="143" stroke="#F4A020" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="70" y1="121" x2="75" y2="143" stroke="#F4A020" strokeWidth="2.5" strokeLinecap="round"/>
+                {/* Left toes */}
+                <line x1="49" y1="143" x2="40" y2="148" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="49" y1="143" x2="49" y2="151" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="49" y1="143" x2="58" y2="147" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+                {/* Right toes */}
+                <line x1="75" y1="143" x2="66" y2="148" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="75" y1="143" x2="75" y2="151" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="75" y1="143" x2="84" y2="147" stroke="#F4A020" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+
+            <div className="lp-mif-text">
+              <div className="lp-mif-tricolor">
+                <span className="lp-mif-bar lp-mif-bar--blue" />
+                <span className="lp-mif-bar lp-mif-bar--white" />
+                <span className="lp-mif-bar lp-mif-bar--red" />
+              </div>
+              <div className="lp-section-kicker" style={{ textAlign: 'left', marginBottom: '10px' }}>
+                {t('landing.mif.kicker')}
+              </div>
+              <h2 className="lp-mif-title">{t('landing.mif.title')}</h2>
+              <p className="lp-mif-desc">{t('landing.mif.desc')}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA final ─── */}
       <section className="lp-cta-section">
         <h2>{t('landing.cta.title')}</h2>

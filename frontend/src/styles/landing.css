@@ -627,6 +627,79 @@
 
 .lp-footer-links a:hover { color: var(--text-main); }
 
+/* ─── Made in France ─── */
+.lp-mif-layout {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.lp-mif-coq {
+  flex-shrink: 0;
+}
+
+.lp-mif-coq svg {
+  width: 110px;
+  height: auto;
+  display: block;
+  animation: coq-strut 2.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes coq-strut {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  30%       { transform: translateY(-7px) rotate(3deg); }
+  60%       { transform: translateY(-4px) rotate(-2deg); }
+  80%       { transform: translateY(-6px) rotate(2deg); }
+}
+
+.lp-mif-text {
+  min-width: 0;
+}
+
+.lp-mif-title {
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin: 0 0 10px;
+  text-align: left;
+}
+
+.lp-mif-desc {
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.lp-mif-tricolor {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.lp-mif-bar {
+  display: block;
+  height: 4px;
+  width: 36px;
+  border-radius: 2px;
+}
+
+.lp-mif-bar--blue  { background: #002395; animation: mif-pulse 3s ease-in-out infinite; }
+.lp-mif-bar--white {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  animation: mif-pulse 3s ease-in-out infinite 0.3s;
+}
+.lp-mif-bar--red   { background: #ED2939; animation: mif-pulse 3s ease-in-out infinite 0.6s; }
+
+@keyframes mif-pulse {
+  0%, 100% { opacity: 0.65; }
+  50%       { opacity: 1; }
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 860px) {
   .lp-mock-grid       { grid-template-columns: 1fr; }
@@ -639,4 +712,8 @@
 @media (max-width: 560px) {
   .lp-feature-grid { grid-template-columns: 1fr; }
   .lp-stats-row    { gap: 20px; }
+  .lp-mif-layout   { flex-direction: column; gap: 28px; text-align: center; }
+  .lp-mif-title    { text-align: center; }
+  .lp-mif-tricolor { justify-content: center; }
+  .lp-section-kicker[style] { text-align: center !important; }
 }
