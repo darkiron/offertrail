@@ -2,6 +2,7 @@ import csv
 import io
 from datetime import datetime, timedelta
 
+import stripe
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 from src.auth import get_admin_profile
 from src.database import get_db
 from src.models import Candidature, Etablissement, Profile, Relance
+from src.services.stripe_service import is_configured
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -185,6 +187,22 @@ def recent_activity(
             for p in new_active
         ],
     }
+
+
+@router.get("/promos")
+def list_promos(_: Profile = Depends(get_admin_profile)):
+    if not is_configured():
+        return {"promos": []}
+    coupons = stripe.Coupon.list(limit=20)
+    return {"promos": [{
+        "id": c.id,
+        "name": c.name,
+        "percent_off": c.percent_off,
+        "amount_off": c.amount_off,
+        "duration": c.duration,
+        "times_redeemed": c.times_redeemed,
+        "valid": c.valid,
+    } for c in coupons.data]}
 
 
 @router.get("/export-users")

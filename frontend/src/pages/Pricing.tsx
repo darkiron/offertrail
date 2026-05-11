@@ -10,6 +10,7 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
@@ -72,6 +73,7 @@ export function Pricing() {
   const [period, setPeriod] = useState<Period>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [cgvAccepted, setCgvAccepted] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
 
   useEffect(() => {
     document.title = 'Tarifs — OfferTrail';
@@ -88,7 +90,11 @@ export function Pricing() {
   const handleCheckout = async (plan: Exclude<PlanId, 'free'>) => {
     setLoadingPlan(plan);
     try {
-      const checkout = await subscriptionService.checkout({ plan, period });
+      const checkout = await subscriptionService.checkout({
+        plan,
+        period,
+        coupon: promoCode.trim() || undefined,
+      });
 
       if (checkout.mode === 'stripe' && checkout.checkout_url) {
         window.location.assign(checkout.checkout_url);
@@ -154,6 +160,14 @@ export function Pricing() {
         value={period}
         onChange={(value) => setPeriod(value as Period)}
         w="fit-content"
+      />
+
+      <TextInput
+        label="Code promo"
+        placeholder="LAUNCH2026"
+        value={promoCode}
+        onChange={(event) => setPromoCode(event.currentTarget.value.toUpperCase())}
+        maw={260}
       />
 
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" style={{ alignItems: 'stretch' }}>
