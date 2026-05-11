@@ -92,20 +92,11 @@ export function AppLayout() {
     { label: t('nav.import'), to: '/app/import', icon: IconFileImport },
   ], [t]);
 
-  const PRICING_EXEMPT = ['/app/pricing', '/app/mon-compte'];
-  const isPricingExempt = PRICING_EXEMPT.some((p) => location.pathname.startsWith(p));
-
   useEffect(() => {
     if (isAuthenticated) {
       subscriptionService.getMe().then(setSub).catch(() => {});
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (sub && !sub.is_active && !isPricingExempt && profile?.role !== 'admin') {
-      navigate('/app/checkout', { replace: true });
-    }
-  }, [sub, isPricingExempt, profile]);
 
   const isActive = (to: string) =>
     to === '/app'

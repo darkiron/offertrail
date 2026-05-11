@@ -1,33 +1,94 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Badge, Checkbox, Group, List, Paper, Stack, Text, Title,
+  Badge,
+  Checkbox,
+  Group,
+  List,
+  Paper,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
 import type { SubscriptionStatus } from '../types';
 import { Button } from '../components/atoms/Button';
 
+type PlanId = 'free' | 'pro' | 'ultimate';
+type Period = 'monthly' | 'yearly';
+
+const PLAN_RANK: Record<PlanId, number> = { free: 0, pro: 1, ultimate: 2 };
+
+const PLANS: Array<{
+  id: PlanId;
+  name: string;
+  prices: Partial<Record<Period, string>>;
+  features: string[];
+}> = [
+  {
+    id: 'free',
+    name: 'Free',
+    prices: { monthly: '0€' },
+    features: [
+      '5 candidatures',
+      'Dashboard basique',
+      '1 relance active',
+      'Historique 1 mois',
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    prices: { monthly: '9,99€/mois', yearly: '99€/an' },
+    features: [
+      '100 candidatures',
+      'KPIs avancés',
+      'Import/Export CSV',
+      '10 relances actives',
+      'Historique 6 mois',
+    ],
+  },
+  {
+    id: 'ultimate',
+    name: 'Ultimate',
+    prices: { monthly: '14,99€/mois', yearly: '149€/an' },
+    features: [
+      'Candidatures illimitées',
+      'Score de probité complet',
+      'Timeline détaillée',
+      'Relances illimitées',
+      'Historique illimité',
+      'Support prioritaire',
+    ],
+  },
+];
+
 export function Pricing() {
   const navigate = useNavigate();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [period, setPeriod] = useState<Period>('monthly');
+  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [cgvAccepted, setCgvAccepted] = useState(false);
-  const transparencyRows = [
-    { label: 'Traitement du paiement', value: 'Stripe' },
-    { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
-    { label: 'Développement, maintenance et support', value: 'CraftCodes' },
-  ];
 
   useEffect(() => {
-    document.title = 'Abonnement — OfferTrail';
+    document.title = 'Tarifs — OfferTrail';
     subscriptionService.getMe().then(setSub).catch(() => {});
   }, []);
 
-  const handleUpgrade = async () => {
-    setLoading(true);
+  const currentPlan = useMemo<PlanId>(() => {
+    if (sub?.plan === 'pro' || sub?.plan === 'ultimate') {
+      return sub.plan;
+    }
+    return 'free';
+  }, [sub]);
+
+  const handleCheckout = async (plan: Exclude<PlanId, 'free'>) => {
+    setLoadingPlan(plan);
     try {
-      const checkout = await subscriptionService.checkout({ plan: 'pro', period: 'monthly' });
+      const checkout = await subscriptionService.checkout({ plan, period });
 
       if (checkout.mode === 'stripe' && checkout.checkout_url) {
         window.location.assign(checkout.checkout_url);
@@ -36,113 +97,150 @@ export function Pricing() {
 
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: checkout.message || 'Plan Pro activé !', color: 'green' });
+      notifications.show({ message: 'Plan activé.', color: 'green' });
     } catch {
-      notifications.show({ message: "Impossible d'activer le plan Pro.", color: 'red' });
+      notifications.show({ message: "Impossible d'initialiser le paiement.", color: 'red' });
     } finally {
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
+  const renderAction = (plan: PlanId) => {
+    if (plan === currentPlan) {
+      return <Button variant="secondary" disabled fullWidth>Plan actuel</Button>;
+    }
+
+    if (plan === 'free') {
+      return currentPlan === 'free'
+        ? <Button variant="secondary" disabled fullWidth>Plan actuel</Button>
+        : <Button variant="secondary" disabled fullWidth>Downgrade</Button>;
+    }
+
+    if (PLAN_RANK[plan] < PLAN_RANK[currentPlan]) {
+      return <Button variant="secondary" disabled fullWidth>Downgrade</Button>;
+    }
+
+    return (
+      <Button
+        variant="primary"
+        onClick={() => void handleCheckout(plan)}
+        disabled={!cgvAccepted || loadingPlan !== null}
+        loading={loadingPlan === plan}
+        fullWidth
+      >
+        {loadingPlan === plan ? 'Redirection...' : 'Essayer gratuitement 30 jours'}
+      </Button>
+    );
+  };
+
   return (
-    <Stack gap="lg" p="lg" maw={520} mx="auto">
-      <Group>
-        <Button variant="ghost" onClick={() => navigate(-1)}>← Retour</Button>
-        <Title order={2}>Passer en Pro</Title>
-      </Group>
-
-      {sub ? (
-        <Text c="dimmed" size="sm">
-          Plan actuel : <strong>{sub.is_active ? 'Pro' : 'Aucun abonnement actif'}</strong>
-        </Text>
-      ) : null}
-
-      <Paper p="xl" radius="lg" withBorder style={{ borderColor: 'rgba(14, 165, 233, 0.35)' }}>
-        <Group justify="space-between" align="flex-start" mb="lg">
-          <Stack gap={4}>
-            <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">Pro</Text>
-            <Text size="xl" fw={500}>
-              14,99€
-              <Text component="span" size="sm" fw={400} c="dimmed">/mois</Text>
-            </Text>
-          </Stack>
-          {sub?.is_active ? (
-            <Badge variant="light" color="green" size="sm">Actif</Badge>
-          ) : null}
-        </Group>
-
-        <List
-          spacing="sm"
-          size="sm"
-          c="dimmed"
-          mb="xl"
-          icon={<Text c="green" size="sm">✓</Text>}
-        >
-          {[
-            'Candidatures illimitées',
-            'Analytics complets',
-            'Score de probité',
-            'File de relances',
-            'Export CSV',
-          ].map((feature) => (
-            <List.Item key={feature}>{feature}</List.Item>
-          ))}
-        </List>
-
-        {sub?.is_active ? (
-          <Text size="sm" c="dimmed">
-            Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
-          </Text>
-        ) : (
-          <Stack gap="md">
-            <Checkbox
-              label={(
-                <span style={{ fontSize: '12px', lineHeight: '1.6' }}>
-                  J&apos;accepte les <a href="/app/legal/cgv" target="_blank" rel="noreferrer">CGV</a> et
-                  je renonce à mon droit de rétractation de 14 jours conformément
-                  à l&apos;article L221-28 du Code de la consommation, le service
-                  étant accessible immédiatement.
-                </span>
-              )}
-              checked={cgvAccepted}
-              onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
-              required
-            />
-            <Button variant="primary" onClick={handleUpgrade} disabled={!cgvAccepted || loading}>
-              {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
-            </Button>
-          </Stack>
-        )}
-      </Paper>
-
-      <Paper p="lg" radius="lg" withBorder>
-        <Stack gap="sm">
-          <Text size="xs" fw={500} tt="uppercase" ls="0.08em" c="dimmed">
-            Transparence sur le prix
-          </Text>
-
-          {transparencyRows.map((row, index) => (
-            <Group
-              key={row.label}
-              justify="space-between"
-              pb={index < transparencyRows.length - 1 ? 'sm' : 0}
-              style={index < transparencyRows.length - 1 ? { borderBottom: '1px solid var(--mantine-color-default-border)' } : undefined}
-            >
-              <Text size="sm" c="dimmed">{row.label}</Text>
-              <Text size="sm" fw={500}>{row.value}</Text>
-            </Group>
-          ))}
-
-          <Text size="sm" c="dimmed" lh={1.6}>
-            OfferTrail est édité et maintenu par CraftCodes. Le prix de l&apos;abonnement finance
-            le traitement du paiement, l&apos;exploitation du service et l&apos;évolution du produit.
+    <Stack gap="xl" p="lg" maw={1120} mx="auto">
+      <Group justify="space-between" align="flex-start">
+        <Stack gap={6}>
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed">Tarifs</Text>
+          <Title order={1}>Choisis le plan adapté à ton volume de candidatures</Title>
+          <Text c="dimmed" maw={680}>
+            Trois plans lisibles, un premier mois offert sur Pro et Ultimate, et les promotions gérées par coupons Stripe.
           </Text>
         </Stack>
-      </Paper>
+        <Button variant="ghost" onClick={() => navigate(-1)}>Retour</Button>
+      </Group>
 
-      <Text size="xs" c="dimmed" ta="center">
-        Paiement sécurisé via Stripe
-      </Text>
+      <SegmentedControl
+        data={[
+          { label: 'Mensuel', value: 'monthly' },
+          { label: 'Annuel (-17%)', value: 'yearly' },
+        ]}
+        value={period}
+        onChange={(value) => setPeriod(value as Period)}
+        w="fit-content"
+      />
+
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" style={{ alignItems: 'stretch' }}>
+        {PLANS.map((plan) => {
+          const highlighted = (plan.id === 'pro' && period === 'monthly') || (plan.id === 'ultimate' && period === 'yearly');
+          const badge = plan.id === 'pro' && period === 'monthly'
+            ? 'POPULAIRE'
+            : plan.id === 'ultimate' && period === 'yearly'
+              ? 'MEILLEUR RAPPORT'
+              : null;
+
+          return (
+            <Paper
+              key={plan.id}
+              p="xl"
+              radius="md"
+              withBorder
+              style={{
+                borderColor: highlighted ? 'var(--mantine-color-blue-5)' : undefined,
+                boxShadow: highlighted ? '0 18px 40px rgba(37, 99, 235, 0.14)' : undefined,
+              }}
+            >
+              <Stack gap="lg" h="100%">
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap={4}>
+                    <Text size="xs" fw={800} tt="uppercase" c="dimmed">{plan.name}</Text>
+                    <Title order={2}>{plan.prices[plan.id === 'free' ? 'monthly' : period]}</Title>
+                  </Stack>
+                  {badge ? <Badge color={plan.id === 'pro' ? 'blue' : 'violet'}>{badge}</Badge> : null}
+                </Group>
+
+                <List spacing="sm" size="sm" c="dimmed">
+                  {plan.features.map((feature) => (
+                    <List.Item key={feature}>{feature}</List.Item>
+                  ))}
+                </List>
+
+                {plan.id !== 'free' ? (
+                  <Badge variant="light" color="green" w="fit-content">Premier mois offert</Badge>
+                ) : null}
+
+                <Stack gap="md" mt="auto">
+                  {plan.id !== 'free' ? (
+                    <Checkbox
+                      label={(
+                        <span style={{ fontSize: '12px', lineHeight: '1.6' }}>
+                          J&apos;accepte les <a href="/app/legal/cgv" target="_blank" rel="noreferrer">CGV</a> et
+                          je renonce à mon droit de rétractation de 14 jours conformément à l&apos;article L221-28 du Code de la consommation,
+                          le service étant accessible immédiatement.
+                        </span>
+                      )}
+                      checked={cgvAccepted}
+                      onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
+                      required
+                    />
+                  ) : null}
+                  {renderAction(plan.id)}
+                </Stack>
+              </Stack>
+            </Paper>
+          );
+        })}
+      </SimpleGrid>
+
+      <Paper p="xl" radius="md" withBorder>
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-start">
+            <Stack gap={4}>
+              <Text size="xs" fw={800} tt="uppercase" c="dimmed">Transparence prix</Text>
+              <Title order={3}>Ce que finance l&apos;abonnement</Title>
+            </Stack>
+            <Badge variant="light">CraftCodes</Badge>
+          </Group>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+            {[
+              ['URSSAF et charges', 'Cotisations, taxes et cadre administratif du service.'],
+              ['Stripe', 'Paiement sécurisé, facturation et gestion des abonnements.'],
+              ['Produit', 'Développement, hébergement, maintenance et support CraftCodes.'],
+            ].map(([title, description]) => (
+              <Stack key={title} gap={4}>
+                <Text fw={700}>{title}</Text>
+                <Text size="sm" c="dimmed">{description}</Text>
+              </Stack>
+            ))}
+          </SimpleGrid>
+        </Stack>
+      </Paper>
     </Stack>
   );
 }

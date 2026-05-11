@@ -58,6 +58,7 @@ export function Checkout() {
       setError(null);
       const res = await axiosInstance.post<{ checkout_url: string | null; mode: string }>(
         '/subscription/checkout',
+        { plan: 'pro', period: 'monthly' },
       );
       if (res.data.checkout_url) {
         window.location.href = res.data.checkout_url;
