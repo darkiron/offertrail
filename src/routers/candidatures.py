@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_active_user_id
+from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement
+from src.models import Candidature, CandidatureEvent, Etablissement, Profile
 from src.schemas.candidature_events import CandidatureEventSchema
 from src.schemas.candidatures import CandidatureCreate, CandidatureSchema, CandidatureUpdate
+from src.services.subscription import check_can_create_candidature
 
 router = APIRouter()
 
@@ -28,8 +29,11 @@ def list_candidatures(
 def create_candidature(
     body: CandidatureCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> CandidatureSchema:
+    user_id = profile.id
+    check_can_create_candidature(db, profile)
+
     if not body.etablissement_id:
         raise HTTPException(status_code=422, detail="etablissement_id requis")
 

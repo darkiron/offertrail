@@ -143,6 +143,7 @@ def get_current_profile(
             id=user_id,
             prenom=prenom,
             nom=nom,
+            plan="free",
         )
         db.add(profile)
         db.commit()
@@ -167,20 +168,12 @@ def get_current_profile(
 def get_active_profile(
     profile: Profile = Depends(get_current_profile),
 ) -> Profile:
-    """Réservé aux abonnés actifs — lève 402 si subscription_status != 'active'.
-    Les admins bypassent cette vérification."""
-    if profile.role == "admin":
-        return profile
-    if profile.subscription_status != "active":
-        raise HTTPException(
-            status_code=402,
-            detail={"code": "PAYMENT_REQUIRED", "message": "Abonnement requis"},
-        )
+    """Retourne un profil actif. Les limites de plan sont verifiees par action."""
     return profile
 
 
 def get_active_user_id(profile: Profile = Depends(get_active_profile)) -> str:
-    """Version sécurisée de get_current_user_id — exige subscription_status='active'."""
+    """Version securisee de get_current_user_id."""
     return profile.id
 
 

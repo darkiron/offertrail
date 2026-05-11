@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_active_user_id
+from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
-from src.models import Candidature, Relance
+from src.models import Candidature, Profile, Relance
 from src.schemas.relances import RelanceCreate, RelanceSchema, RelanceUpdate
+from src.services.subscription import check_can_create_relance
 
 router = APIRouter()
 
@@ -22,8 +23,11 @@ def list_relances(
 def create_relance(
     body: RelanceCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> RelanceSchema:
+    user_id = profile.id
+    check_can_create_relance(db, profile)
+
     candidature = (
         db.query(Candidature)
         .filter(Candidature.id == body.candidature_id, Candidature.user_id == user_id)
