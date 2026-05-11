@@ -52,8 +52,17 @@ def get_plan_config(plan: str) -> dict:
     return PLANS.get(plan, PLANS["free"])
 
 
+def get_effective_plan(profile: Profile) -> str:
+    if profile.plan in ("pro", "ultimate"):
+        return profile.plan
+    if profile.subscription_status == "active":
+        return "pro"
+    return "free"
+
+
 def check_can_create_candidature(db, profile):
-    config = get_plan_config(profile.plan)
+    plan = get_effective_plan(profile)
+    config = get_plan_config(plan)
     if config["candidatures_max"] == 0:
         return
     from src.models import Candidature
@@ -64,12 +73,13 @@ def check_can_create_candidature(db, profile):
             "message": f"Limite de {config['candidatures_max']} candidatures atteinte.",
             "current": count,
             "max": config["candidatures_max"],
-            "upgrade_to": "pro" if profile.plan == "free" else "ultimate",
+            "upgrade_to": "pro" if plan == "free" else "ultimate",
         })
 
 
 def check_can_create_relance(db, profile):
-    config = get_plan_config(profile.plan)
+    plan = get_effective_plan(profile)
+    config = get_plan_config(plan)
     if config["relances_max"] == 0:
         return
     from src.models import Relance
@@ -81,12 +91,13 @@ def check_can_create_relance(db, profile):
         raise HTTPException(status_code=402, detail={
             "code": "RELANCE_LIMIT",
             "message": f"Limite de {config['relances_max']} relance(s) active(s) atteinte.",
-            "upgrade_to": "pro" if profile.plan == "free" else "ultimate",
+            "upgrade_to": "pro" if plan == "free" else "ultimate",
         })
 
 
 def get_usage(db: Session, profile: Profile) -> dict:
-    config = get_plan_config(profile.plan)
+    plan = get_effective_plan(profile)
+    config = get_plan_config(plan)
     from src.models import Candidature, Relance
 
     candidatures_count = db.query(Candidature).filter(Candidature.user_id == profile.id).count()
@@ -97,8 +108,8 @@ def get_usage(db: Session, profile: Profile) -> dict:
 
     return {
         "subscription_status": profile.subscription_status,
-        "is_active": profile.plan in ("pro", "ultimate") and profile.subscription_status == "active",
-        "plan": profile.plan or "free",
+        "is_active": plan in ("pro", "ultimate") and profile.subscription_status == "active",
+        "plan": plan,
         "billing_period": profile.billing_period,
         "plan_started_at": profile.plan_started_at.isoformat() if profile.plan_started_at else None,
         "limits": config,

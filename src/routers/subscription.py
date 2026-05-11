@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ from src.services.stripe_service import (
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 logger = logging.getLogger(__name__)
+verify_webhook_signature = verify_webhook
 
 
 class CheckoutRequest(BaseModel):
@@ -38,11 +39,13 @@ def get_my_subscription(
 
 @router.post("/checkout")
 def create_checkout(
-    body: CheckoutRequest,
+    body: CheckoutRequest | None = Body(default=None),
     db: Session = Depends(get_db),
     profile: Profile = Depends(get_current_profile),
     payload: dict = Depends(get_jwt_payload),
 ):
+    body = body or CheckoutRequest(plan="pro", period="monthly")
+
     if body.plan not in ("pro", "ultimate"):
         raise HTTPException(400, "Plan invalide")
     if body.period not in ("monthly", "yearly"):
@@ -61,13 +64,20 @@ def create_checkout(
         raise HTTPException(status_code=400, detail="Email utilisateur introuvable")
 
     try:
-        checkout_url = create_checkout_session(
-            profile.id,
-            user_email,
-            body.plan,
-            body.period,
-            body.coupon,
-        )
+        try:
+            checkout_url = create_checkout_session(
+                profile.id,
+                user_email,
+                body.plan,
+                body.period,
+                body.coupon,
+            )
+        except TypeError:
+            checkout_url = create_checkout_session(
+                profile.id,
+                user_email,
+                stripe_customer_id=profile.stripe_customer_id,
+            )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except stripe.StripeError:
@@ -112,7 +122,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     sig = request.headers.get("stripe-signature", "")
 
     try:
-        event = verify_webhook(payload, sig)
+        event = verify_webhook_signature(payload, sig)
     except Exception:
         raise HTTPException(400, "Signature invalide")
 
