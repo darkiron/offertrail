@@ -434,11 +434,39 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.lp-pricing-controls {
+  width: fit-content;
+  max-width: 100%;
+  margin: 28px auto 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--bg-surface) 42%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-pricing-controls span {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lp-pricing-controls strong {
+  color: rgb(52, 211, 153);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .lp-plan-card-grid {
   align-items: stretch;
   gap: 20px;
   max-width: 1040px;
-  margin: 36px auto 0;
+  margin: 24px auto 0;
 }
 
 .lp-pricing-copy {

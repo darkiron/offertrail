@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { SegmentedControl } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { PlanCard } from '../components/PlanCard';
 import { usePricingPlans } from '../lib/pricingPlans';
+import type { BillingPeriod } from '../lib/pricingPlans';
 import '../styles/landing.css';
 
 export const LandingPage: React.FC = () => {
@@ -12,6 +14,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const plans = usePricingPlans();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
+  const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -143,12 +146,25 @@ export const LandingPage: React.FC = () => {
           <div className="lp-section-kicker">{t('landing.pricing.pageKicker')}</div>
           <h2 className="lp-section-title">{t('landing.pricing.landingTitle')}</h2>
           <p className="lp-section-sub">{t('landing.pricing.landingSub')}</p>
+          <div className="lp-pricing-controls">
+            <span>{t('landing.pricing.periodLabel')}</span>
+            <SegmentedControl
+              data={[
+                { label: t('landing.pricing.monthly'), value: 'monthly' },
+                { label: t('landing.pricing.yearly'), value: 'yearly' },
+              ]}
+              value={period}
+              onChange={(value) => setPeriod(value as BillingPeriod)}
+            />
+            {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
+          </div>
           <div className="lp-pricing-grid lp-pricing-grid-three lp-plan-card-grid">
             {plans.map((plan) => (
               <PlanCard
                 key={plan.id}
                 plan={plan}
                 isSelected={selectedPlan === plan.id}
+                period={period}
                 onSelect={setSelectedPlan}
                 onCta={(id) => handlePricingCta(id)}
                 mode="public"

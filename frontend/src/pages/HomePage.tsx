@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { SegmentedControl } from '@mantine/core';
 import { useI18n } from '../i18n';
 import { PlanCard } from '../components/PlanCard';
 import { usePricingPlans } from '../lib/pricingPlans';
+import type { BillingPeriod } from '../lib/pricingPlans';
 import classes from './HomePage.module.css';
 
 const FEATURES = [
@@ -44,6 +46,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const plans = usePricingPlans();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
+  const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
   useEffect(() => {
     document.title = 'OfferTrail — Reprends la main sur ton pipeline';
@@ -150,12 +153,25 @@ export function HomePage() {
           <h2 className={classes.sectionTitle}>{t('landing.pricing.pageTitle2')}</h2>
           <p className={classes.sectionSub}>{t('landing.pricing.pageSubtitle')}</p>
         </div>
+        <div className={classes.pricingControls}>
+          <span>{t('landing.pricing.periodLabel')}</span>
+          <SegmentedControl
+            data={[
+              { label: t('landing.pricing.monthly'), value: 'monthly' },
+              { label: t('landing.pricing.yearly'), value: 'yearly' },
+            ]}
+            value={period}
+            onChange={(value) => setPeriod(value as BillingPeriod)}
+          />
+          {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
+        </div>
         <div className={classes.pricingGrid}>
           {plans.map((plan) => (
             <PlanCard
               key={plan.id}
               plan={plan}
               isSelected={selectedPlan === plan.id}
+              period={period}
               onSelect={setSelectedPlan}
               onCta={handleCta}
               mode="public"

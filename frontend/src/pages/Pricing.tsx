@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Anchor,
+  Checkbox,
   Group,
+  SegmentedControl,
   Stack,
   TextInput,
 } from '@mantine/core';
@@ -24,7 +27,10 @@ export function Pricing() {
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  const [period, setPeriod] = useState<Period>('monthly');
+  const [cgvAccepted, setCgvAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
+  const promoPlaceholder = import.meta.env.VITE_PROMO_PLACEHOLDER || t('landing.pricing.promoPlaceholder');
 
   useEffect(() => {
     document.title = t('landing.pricing.pageTitle');
@@ -79,13 +85,28 @@ export function Pricing() {
       </div>
 
       <div className={classes.controlsRow}>
-        <span className={classes.controlsLabel}>{t('landing.pricing.promoLabel')}</span>
-        <TextInput
-          placeholder="LAUNCH2026"
-          value={promoCode}
-          onChange={(event) => setPromoCode(event.currentTarget.value.toUpperCase())}
-          size="sm"
-        />
+        <div className={classes.periodControl}>
+          <span className={classes.controlsLabel}>{t('landing.pricing.periodLabel')}</span>
+          <SegmentedControl
+            data={[
+              { label: t('landing.pricing.monthly'), value: 'monthly' },
+              { label: t('landing.pricing.yearly'), value: 'yearly' },
+            ]}
+            value={period}
+            onChange={(value) => setPeriod(value as Period)}
+          />
+          {period === 'yearly' && <span className={classes.savingsBadge}>{t('landing.pricing.savingsBadge')}</span>}
+        </div>
+        <div className={classes.promoWrap}>
+          <TextInput
+            label={t('landing.pricing.promoLabel')}
+            description={t('landing.pricing.promoDescription')}
+            placeholder={promoPlaceholder}
+            value={promoCode}
+            onChange={(event) => setPromoCode(event.currentTarget.value.toUpperCase())}
+            size="sm"
+          />
+        </div>
       </div>
 
       <div className={classes.grid}>
@@ -95,13 +116,33 @@ export function Pricing() {
             plan={plan}
             isSelected={selectedPlan === plan.id}
             isCurrent={currentPlan === plan.id}
+            period={period}
             onSelect={setSelectedPlan}
             onCta={handleCta}
             mode="app"
             loading={loadingPlan === plan.id}
+            checkoutDisabled={!cgvAccepted}
           />
         ))}
       </div>
+
+      <section className={classes.checkoutPanel}>
+        <Checkbox
+          checked={cgvAccepted}
+          onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
+          label={
+            <span>
+              {t('landing.pricing.cgvLabel')}
+              <Anchor href="/app/legal/cgv" target="_blank" rel="noreferrer">
+                {t('landing.pricing.cgvLink')}
+              </Anchor>
+              {' '}
+              {t('landing.pricing.cgvSuffix')}
+            </span>
+          }
+        />
+        <p>{t('landing.pricing.checkoutLegalHint')}</p>
+      </section>
 
       <section className={classes.transparency}>
         <div className={classes.transparencyHeader}>

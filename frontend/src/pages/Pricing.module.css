@@ -46,7 +46,7 @@
 /* Controls row: toggle + promo grouped */
 .controlsRow {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 20px;
   flex-wrap: wrap;
   padding: 14px 18px;
@@ -54,6 +54,13 @@
   border: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 65%, transparent);
   background: color-mix(in srgb, var(--mantine-color-body) 60%, transparent);
   margin-bottom: 28px;
+}
+
+.periodControl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .controlsLabel {
@@ -66,10 +73,8 @@
 }
 
 .promoWrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-left: auto;
+  min-width: min(280px, 100%);
 }
 
 .savingsBadge {
@@ -90,6 +95,24 @@
   gap: 18px;
   align-items: stretch;
   margin-bottom: 32px;
+}
+
+.checkoutPanel {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  margin: -10px 0 32px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 65%, transparent);
+  background: color-mix(in srgb, var(--mantine-color-body) 70%, transparent);
+}
+
+.checkoutPanel p {
+  margin: 0;
+  padding-left: 34px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--mantine-color-dimmed);
 }
 
 /* Card base */
@@ -269,17 +292,6 @@
   gap: 10px;
 }
 
-.cgvCheckbox {
-  font-size: 11.5px;
-  line-height: 1.55;
-  color: var(--mantine-color-dimmed);
-}
-
-.cgvCheckbox a {
-  color: var(--mantine-color-blue-5);
-  text-decoration: underline;
-}
-
 /* Transparency section */
 .transparency {
   margin-top: 8px;
@@ -332,11 +344,14 @@
   .transparencyGrid   { grid-template-columns: 1fr; gap: 14px; }
   .controlsRow        { gap: 14px; }
   .promoWrap          { margin-left: 0; width: 100%; }
+  .periodControl      { width: 100%; }
 }
 
 @media (max-width: 560px) {
   .controlsRow        { flex-direction: column; align-items: stretch; }
   .controlsLabel      { margin-bottom: -4px; }
+  .periodControl      { align-items: stretch; flex-direction: column; }
   .card               { padding: 22px 20px 22px; }
   .featuredBadge      { right: 16px; }
+  .checkoutPanel p    { padding-left: 0; }
 }

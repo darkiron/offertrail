@@ -318,6 +318,34 @@
   padding: 80px 32px;
 }
 
+.pricingControls {
+  width: fit-content;
+  max-width: 100%;
+  margin: -22px auto 28px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--bg-surface) 34%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pricingControls span {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pricingControls strong {
+  color: rgb(52, 211, 153);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .pricingGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
