@@ -377,6 +377,14 @@
   margin: 0 0 48px;
 }
 
+.lp-section-sub {
+  color: var(--text-dim);
+  line-height: 1.65;
+  margin: -28px auto 40px;
+  max-width: 620px;
+  text-align: center;
+}
+
 /* ─── Features ─── */
 .lp-feature-grid {
   display: grid;
@@ -420,6 +428,10 @@
   grid-template-columns: 1fr 1fr;
   gap: 32px;
   align-items: start;
+}
+
+.lp-pricing-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .lp-pricing-copy {
@@ -473,6 +485,22 @@
   box-shadow: 0 28px 56px rgba(0, 0, 0, 0.2);
 }
 
+.lp-plan-card-featured {
+  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+  box-shadow:
+    0 28px 56px rgba(0, 0, 0, 0.24),
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+  transform: translateY(-8px);
+}
+
+.lp-plan-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 28px;
+}
+
 .lp-plan-name {
   font-size: 11px;
   font-weight: 800;
@@ -482,12 +510,31 @@
   margin: 0 0 10px;
 }
 
+.lp-plan-badge {
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .lp-plan-price {
   font-size: 42px;
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1;
   margin: 0 0 4px;
+}
+
+.lp-plan-yearly {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 20px;
 }
 
 .lp-plan-period {
@@ -542,6 +589,17 @@
 }
 
 .lp-plan-cta:hover { opacity: 0.88; }
+
+.lp-plan-cta-secondary {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text-main);
+}
+
+.lp-plan-cta-secondary:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  opacity: 1;
+}
 
 .lp-plan-note {
   text-align: center;
@@ -631,7 +689,9 @@
 @media (max-width: 860px) {
   .lp-mock-grid       { grid-template-columns: 1fr; }
   .lp-feature-grid    { grid-template-columns: 1fr 1fr; }
-  .lp-pricing-grid    { grid-template-columns: 1fr; }
+  .lp-pricing-grid,
+  .lp-pricing-grid-three { grid-template-columns: 1fr; }
+  .lp-plan-card-featured { transform: none; }
   .lp-footer-inner    { grid-template-columns: 1fr; }
   .lp-footer-links    { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
 }

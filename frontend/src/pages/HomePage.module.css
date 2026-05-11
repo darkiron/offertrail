@@ -320,10 +320,11 @@
 
 .pricingGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
-  max-width: 480px;
+  max-width: 1040px;
   margin: 0 auto;
+  align-items: stretch;
 }
 
 .planCard {
@@ -339,6 +340,14 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+.planHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
 .planBadge {
   display: inline-flex;
   padding: 4px 10px;
@@ -349,7 +358,20 @@
   text-transform: uppercase;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent);
-  margin-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.planTag {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .planName {

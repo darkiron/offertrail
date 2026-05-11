@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
-import { CONFIG } from '../config';
 import '../styles/landing.css';
 
 export const LandingPage: React.FC = () => {
@@ -18,11 +17,29 @@ export const LandingPage: React.FC = () => {
     { icon: '⚡', title: t('landing.features.start_title'),    desc: t('landing.features.start_desc') },
   ];
 
-  const pricingPoints = [
-    { title: t('landing.pricing.full_title'),       desc: t('landing.pricing.full_desc') },
-    { title: t('landing.pricing.nolock_title'),     desc: t('landing.pricing.nolock_desc') },
-    { title: t('landing.pricing.oneplan_title'),    desc: t('landing.pricing.oneplan_desc').replace('{price}', CONFIG.PRO_PRICE) },
-    { title: t('landing.pricing.structured_title'), desc: t('landing.pricing.structured_desc') },
+  const pricingPlans = [
+    {
+      name: 'Free',
+      monthly: '0€',
+      yearly: '—',
+      badge: 'Pour commencer',
+      features: ['5 candidatures', 'Historique 1 mois', '1 relance active', 'Dashboard basique'],
+    },
+    {
+      name: 'Pro',
+      monthly: '9,99€',
+      yearly: '99€/an',
+      badge: 'Populaire',
+      highlighted: true,
+      features: ['100 candidatures', 'Historique 6 mois', '10 relances actives', 'Import/Export CSV'],
+    },
+    {
+      name: 'Ultimate',
+      monthly: '14,99€',
+      yearly: '149€/an',
+      badge: 'Meilleur rapport annuel',
+      features: ['Candidatures illimitées', 'Historique illimité', 'Relances illimitées', 'Support prioritaire'],
+    },
   ];
 
   useEffect(() => {
@@ -139,36 +156,31 @@ export const LandingPage: React.FC = () => {
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap" id="tarifs">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">{t('landing.pricing.kicker')}</div>
-          <h2 className="lp-section-title">{t('landing.pricing.title')}</h2>
-          <div className="lp-pricing-grid">
-            <div className="lp-pricing-copy">
-              {pricingPoints.map((p) => (
-                <div key={p.title} className="lp-pricing-point">
-                  <div className="lp-pricing-check">✓</div>
-                  <div>
-                    <div className="lp-pricing-point-title">{p.title}</div>
-                    <div className="lp-pricing-point-desc">{p.desc}</div>
-                  </div>
+          <div className="lp-section-kicker">Tarifs</div>
+          <h2 className="lp-section-title">Trois plans clairs, avec annuel disponible</h2>
+          <p className="lp-section-sub">
+            Commence gratuitement, passe en Pro quand le volume augmente, ou choisis Ultimate pour tout lever.
+          </p>
+          <div className="lp-pricing-grid lp-pricing-grid-three">
+            {pricingPlans.map((plan) => (
+              <div key={plan.name} className={`lp-plan-card ${plan.highlighted ? 'lp-plan-card-featured' : ''}`}>
+                <div className="lp-plan-topline">
+                  <div className="lp-plan-name">{plan.name}</div>
+                  <span className="lp-plan-badge">{plan.badge}</span>
                 </div>
-              ))}
-            </div>
-
-            <div className="lp-plan-card">
-              <div className="lp-plan-name">{t('landing.pricing.planName')}</div>
-              <div className="lp-plan-price">{CONFIG.PRO_PRICE} <span className="lp-plan-period">{t('landing.pricing.perMonth')}</span></div>
-              <div className="lp-plan-divider" />
-              <ul className="lp-plan-features">
-                <li>{t('landing.pricing.feature1')}</li>
-                <li>{t('landing.pricing.feature2')}</li>
-                <li>{t('landing.pricing.feature3')}</li>
-                <li>{t('landing.pricing.feature4')}</li>
-                <li>{t('landing.pricing.feature5')}</li>
-                <li>{t('landing.pricing.feature6')}</li>
-              </ul>
-              <Link to="/register" className="lp-plan-cta">{t('landing.pricing.cta')}</Link>
-              <p className="lp-plan-note">{t('landing.pricing.note').replace('{price}', CONFIG.PRO_PRICE)}</p>
-            </div>
+                <div className="lp-plan-price">
+                  {plan.monthly}<span className="lp-plan-period">/mois</span>
+                </div>
+                <div className="lp-plan-yearly">{plan.yearly === '—' ? 'Pas d’annuel' : `${plan.yearly} en annuel`}</div>
+                <div className="lp-plan-divider" />
+                <ul className="lp-plan-features">
+                  {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
+                </ul>
+                <Link to="/register" className={`lp-plan-cta ${plan.highlighted ? '' : 'lp-plan-cta-secondary'}`}>
+                  {plan.name === 'Free' ? 'Créer un compte' : 'Essayer 30 jours'}
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -188,7 +200,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
-              {t('landing.craftcodes.label').replace('{price}', CONFIG.PRO_PRICE)}
+              Prix transparent · Pro à 9,99€/mois
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
               <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.stripe')}</span>
