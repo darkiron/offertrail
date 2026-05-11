@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Checkbox,
   Group,
-  SegmentedControl,
   Stack,
   TextInput,
 } from '@mantine/core';
@@ -11,6 +9,8 @@ import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
 import type { SubscriptionStatus } from '../types';
 import { Button } from '../components/atoms/Button';
+import { PlanCard } from '../components/PlanCard';
+import { useI18n } from '../i18n';
 import classes from './Pricing.module.css';
 
 type PlanId = 'free' | 'pro' | 'ultimate';
@@ -18,76 +18,18 @@ type Period = 'monthly' | 'yearly';
 
 const PLAN_RANK: Record<PlanId, number> = { free: 0, pro: 1, ultimate: 2 };
 
-type PlanDef = {
-  id: PlanId;
-  name: string;
-  prices: Partial<Record<Period, { amount: string; suffix: string; note?: string }>>;
-  specs: Array<{ label: string; value: string }>;
-  badgeMonthly?: { label: string; violet?: boolean };
-  badgeYearly?: { label: string; violet?: boolean };
-};
-
-const PLANS: PlanDef[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    prices: {
-      monthly: { amount: '0€', suffix: '', note: 'Gratuit, sans CB' },
-    },
-    specs: [
-      { label: 'Mensuel', value: '0€' },
-      { label: 'Annuel', value: '—' },
-      { label: 'Candidatures', value: '5' },
-      { label: 'Historique', value: '1 mois' },
-      { label: 'Relances', value: '1 active' },
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    prices: {
-      monthly: { amount: '9,99€', suffix: '/mois', note: 'Facturation mensuelle, sans engagement' },
-      yearly:  { amount: '99€',   suffix: '/an',   note: 'Soit 8,25€/mois — économise 17%' },
-    },
-    specs: [
-      { label: 'Mensuel', value: '9,99€' },
-      { label: 'Annuel', value: '99€/an' },
-      { label: 'Candidatures', value: '100' },
-      { label: 'Historique', value: '6 mois' },
-      { label: 'Relances', value: '10 actives' },
-    ],
-    badgeMonthly: { label: 'Populaire' },
-  },
-  {
-    id: 'ultimate',
-    name: 'Ultimate',
-    prices: {
-      monthly: { amount: '14,99€', suffix: '/mois', note: 'Facturation mensuelle' },
-      yearly:  { amount: '149€',   suffix: '/an',   note: 'Soit 12,42€/mois — économise 17%' },
-    },
-    specs: [
-      { label: 'Mensuel', value: '14,99€' },
-      { label: 'Annuel', value: '149€/an' },
-      { label: 'Candidatures', value: 'Illimité' },
-      { label: 'Historique', value: 'Illimité' },
-      { label: 'Relances', value: 'Illimitées' },
-    ],
-    badgeYearly: { label: 'Meilleur rapport', violet: true },
-  },
-];
-
 export function Pricing() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const [period, setPeriod] = useState<Period>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
-  const [cgvAccepted, setCgvAccepted] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [promoCode, setPromoCode] = useState('');
 
   useEffect(() => {
-    document.title = 'Tarifs — OfferTrail';
+    document.title = t('landing.pricing.pageTitle');
     subscriptionService.getMe().then(setSub).catch(() => {});
-  }, []);
+  }, [t]);
 
   const currentPlan = useMemo<PlanId>(() => {
     if (sub?.plan === 'pro' || sub?.plan === 'ultimate') {
@@ -96,7 +38,59 @@ export function Pricing() {
     return 'free';
   }, [sub]);
 
-  const handleCheckout = async (plan: Exclude<PlanId, 'free'>) => {
+  type PlanDef = {
+    id: PlanId;
+    name: string;
+    prices: Partial<Record<Period, { amount: string; suffix: string; note: string }>>;
+    specs: Array<{ label: string; value: string }>;
+    badgeMonthly?: { label: string; violet?: boolean };
+    badgeYearly?: { label: string; violet?: boolean };
+  };
+
+  const PLANS: PlanDef[] = useMemo(() => [
+    {
+      id: 'free',
+      name: t('landing.pricing.freeName'),
+      prices: {
+        monthly: { amount: '0€', suffix: '', note: t('landing.pricing.freeNote') },
+      },
+      specs: [
+        { label: t('landing.pricing.specApplications'), value: '5' },
+        { label: t('landing.pricing.specHistory'),      value: '1 mois' },
+        { label: t('landing.pricing.specFollowups'),    value: '1' },
+      ],
+    },
+    {
+      id: 'pro',
+      name: t('landing.pricing.proName'),
+      prices: {
+        monthly: { amount: '9,99€', suffix: '/mois', note: t('landing.pricing.proMonthlyNote') },
+        yearly:  { amount: '99€',   suffix: '/an',   note: t('landing.pricing.proYearlyNote') },
+      },
+      specs: [
+        { label: t('landing.pricing.specApplications'), value: '100' },
+        { label: t('landing.pricing.specHistory'),      value: '6 mois' },
+        { label: t('landing.pricing.specFollowups'),    value: '10' },
+      ],
+      badgeMonthly: { label: t('landing.pricing.badgePopular') },
+    },
+    {
+      id: 'ultimate',
+      name: t('landing.pricing.ultimateName'),
+      prices: {
+        monthly: { amount: '14,99€', suffix: '/mois', note: t('landing.pricing.ultimateMonthlyNote') },
+        yearly:  { amount: '149€',   suffix: '/an',   note: t('landing.pricing.ultimateYearlyNote') },
+      },
+      specs: [
+        { label: t('landing.pricing.specApplications'), value: '∞' },
+        { label: t('landing.pricing.specHistory'),      value: '∞' },
+        { label: t('landing.pricing.specFollowups'),    value: '∞' },
+      ],
+      badgeYearly: { label: t('landing.pricing.badgeBestValue'), violet: true },
+    },
+  ], [t]);
+
+  const handleCheckout = async (plan: Exclude<PlanId, 'free'>, period: Period) => {
     setLoadingPlan(plan);
     try {
       const checkout = await subscriptionService.checkout({
@@ -112,142 +106,60 @@ export function Pricing() {
 
       const updated = await subscriptionService.getMe();
       setSub(updated);
-      notifications.show({ message: 'Plan activé.', color: 'green' });
+      notifications.show({ message: t('monCompte.proActivated'), color: 'green' });
     } catch {
-      notifications.show({ message: "Impossible d'initialiser le paiement.", color: 'red' });
+      notifications.show({ message: t('monCompte.proActivateError'), color: 'red' });
     } finally {
       setLoadingPlan(null);
     }
   };
 
-  const renderAction = (plan: PlanId) => {
-    if (plan === currentPlan) {
-      return <Button variant="secondary" disabled fullWidth>Plan actuel</Button>;
-    }
-    if (plan === 'free') {
-      return <Button variant="secondary" disabled fullWidth>Downgrade</Button>;
-    }
-    if (PLAN_RANK[plan] < PLAN_RANK[currentPlan]) {
-      return <Button variant="secondary" disabled fullWidth>Downgrade</Button>;
-    }
-
-    return (
-      <Button
-        variant="primary"
-        onClick={() => void handleCheckout(plan)}
-        disabled={!cgvAccepted || loadingPlan !== null}
-        loading={loadingPlan === plan}
-        fullWidth
-      >
-        {loadingPlan === plan ? 'Redirection...' : 'Essai gratuit 30 jours'}
-      </Button>
-    );
+  const handleCta = (id: PlanId, period: Period) => {
+    if (id === 'free' || PLAN_RANK[id] < PLAN_RANK[currentPlan]) return;
+    void handleCheckout(id as Exclude<PlanId, 'free'>, period);
   };
 
   return (
     <Stack gap="lg" className={classes.shell}>
       <div className={classes.header}>
         <div className={classes.headerLeft}>
-          <p className={classes.kicker}>Tarifs</p>
-          <h1 className={classes.title}>Choisis le plan adapté à ton volume de candidatures</h1>
-          <p className={classes.subtitle}>
-            Trois plans lisibles, premier mois offert sur Pro et Ultimate, promotions gérées par coupons Stripe.
-          </p>
+          <p className={classes.kicker}>{t('landing.pricing.pageKicker')}</p>
+          <h1 className={classes.title}>{t('landing.pricing.pageTitle2')}</h1>
+          <p className={classes.subtitle}>{t('landing.pricing.pageSubtitle')}</p>
         </div>
-        <Button variant="ghost" onClick={() => navigate(-1)}>Retour</Button>
+        <Button variant="ghost" onClick={() => navigate(-1)}>{t('landing.pricing.back')}</Button>
       </div>
 
       <div className={classes.controlsRow}>
-        <span className={classes.controlsLabel}>Périodicité</span>
-        <SegmentedControl
-          data={[
-            { label: 'Mensuel', value: 'monthly' },
-            { label: 'Annuel',  value: 'yearly'  },
-          ]}
-          value={period}
-          onChange={(value) => setPeriod(value as Period)}
+        <span className={classes.controlsLabel}>{t('landing.pricing.promoLabel')}</span>
+        <TextInput
+          placeholder="LAUNCH2026"
+          value={promoCode}
+          onChange={(event) => setPromoCode(event.currentTarget.value.toUpperCase())}
+          size="sm"
         />
-        {period === 'yearly' && <span className={classes.savingsBadge}>-17%</span>}
-
-        <div className={classes.promoWrap}>
-          <span className={classes.controlsLabel}>Code promo</span>
-          <TextInput
-            placeholder="LAUNCH2026"
-            value={promoCode}
-            onChange={(event) => setPromoCode(event.currentTarget.value.toUpperCase())}
-            size="sm"
-          />
-        </div>
       </div>
 
       <div className={classes.grid}>
-        {PLANS.map((plan) => {
-          const priceData = plan.prices[plan.id === 'free' ? 'monthly' : period];
-          if (!priceData) return null;
-
-          const badge = period === 'monthly' ? plan.badgeMonthly : plan.badgeYearly;
-          const featured = !!badge;
-
-          return (
-            <div
-              key={plan.id}
-              className={`${classes.card} ${featured ? classes.cardFeatured : ''}`}
-            >
-              {badge && (
-                <span
-                  className={`${classes.featuredBadge} ${badge.violet ? classes.featuredBadgeViolet : ''}`}
-                >
-                  {badge.label}
-                </span>
-              )}
-
-              <p className={classes.planName}>{plan.name}</p>
-              <div className={classes.priceRow}>
-                <h2 className={classes.price}>{priceData.amount}</h2>
-                {priceData.suffix && <span className={classes.pricePeriod}>{priceData.suffix}</span>}
-              </div>
-              <p className={classes.priceNote}>{priceData.note || ''}</p>
-
-              {plan.id !== 'free' && (
-                <span className={classes.trialPill}>Premier mois offert</span>
-              )}
-
-              <div className={classes.specList}>
-                {plan.specs.map((spec) => (
-                  <div key={spec.label} className={classes.specItem}>
-                    <span>{spec.label}</span>
-                    <strong>{spec.value}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div className={classes.cardFooter}>
-                {plan.id !== 'free' && (
-                  <Checkbox
-                    className={classes.cgvCheckbox}
-                    label={(
-                      <span>
-                        J&apos;accepte les <a href="/app/legal/cgv" target="_blank" rel="noreferrer">CGV</a> et renonce
-                        au droit de rétractation (article L221-28 du Code de la consommation), le service étant accessible immédiatement.
-                      </span>
-                    )}
-                    checked={cgvAccepted}
-                    onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
-                    required
-                  />
-                )}
-                {renderAction(plan.id)}
-              </div>
-            </div>
-          );
-        })}
+        {PLANS.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isSelected={selectedPlan === plan.id}
+            isCurrent={currentPlan === plan.id}
+            onSelect={setSelectedPlan}
+            onCta={handleCta}
+            mode="app"
+            loading={loadingPlan === plan.id}
+          />
+        ))}
       </div>
 
       <section className={classes.transparency}>
         <div className={classes.transparencyHeader}>
           <div>
-            <p className={classes.kicker}>Transparence prix</p>
-            <h3 className={classes.transparencyTitle}>Ce que finance l&apos;abonnement</h3>
+            <p className={classes.kicker}>{t('landing.pricing.transparencyKicker')}</p>
+            <h3 className={classes.transparencyTitle}>{t('landing.pricing.transparencyTitle')}</h3>
           </div>
           <Group gap="xs">
             <span className={classes.savingsBadge}>CraftCodes</span>
@@ -255,9 +167,9 @@ export function Pricing() {
         </div>
         <div className={classes.transparencyGrid}>
           {[
-            ['URSSAF et charges', 'Cotisations, taxes et cadre administratif du service.'],
-            ['Stripe',            'Paiement sécurisé, facturation et gestion des abonnements.'],
-            ['Produit',           'Développement, hébergement, maintenance et support CraftCodes.'],
+            [t('landing.pricing.transparencyItem1Title'), t('landing.pricing.transparencyItem1Desc')],
+            [t('landing.pricing.transparencyItem2Title'), t('landing.pricing.transparencyItem2Desc')],
+            [t('landing.pricing.transparencyItem3Title'), t('landing.pricing.transparencyItem3Desc')],
           ].map(([title, description]) => (
             <div key={title} className={classes.transparencyItem}>
               <h4>{title}</h4>
@@ -269,3 +181,5 @@ export function Pricing() {
     </Stack>
   );
 }
+
+export default Pricing;

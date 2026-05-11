@@ -55,4 +55,4 @@ def verify_webhook(payload: bytes, sig: str) -> stripe.Event:
 
 
 def is_configured() -> bool:
-    return bool(os.getenv("STRIPE_SECRET_KEY"))
+    return bool(os.getenv("STRIPE_SECRET_KEY")) and all(PRICE_MAP.values())
