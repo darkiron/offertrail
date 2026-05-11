@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useI18n } from '../i18n';
 import {
   Stack, Paper, SimpleGrid, Group, Text, Title, TextInput, Modal,
-  PasswordInput, Badge, Anchor,
+  PasswordInput, Badge, Anchor, Checkbox,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -33,6 +33,8 @@ export function MonCompte() {
   const [passwordForm, setPasswordForm] = useState({ new_password: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [cgvAccepted, setCgvAccepted] = useState(false);
 
   useEffect(() => { document.title = t('monCompte.pageTitle'); }, [t]);
 
@@ -106,6 +108,23 @@ export function MonCompte() {
     }
   };
 
+  const startAccountUpgrade = async () => {
+    setUpgradeLoading(true);
+    try {
+      const checkout = await subscriptionService.checkout({ plan: 'pro', period: 'monthly' });
+      if (checkout.mode === 'stripe' && checkout.checkout_url) {
+        window.location.assign(checkout.checkout_url);
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      notifications.show({ message: 'Plan Pro active.', color: 'green' });
+    } catch (err: unknown) {
+      const detail = (axios.isAxiosError(err) && err.response?.data?.detail) || "Impossible d'activer le plan Pro.";
+      notifications.show({ message: detail, color: 'red' });
+      setUpgradeLoading(false);
+    }
+  };
+
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
       {/* Banner */}
@@ -160,9 +179,29 @@ export function MonCompte() {
                   {portalLoading ? t('monCompte.redirecting') : t('monCompte.managePro')}
                 </Button>
               ) : (
-                <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
-                  {t('monCompte.upgradePro')}
-                </Button>
+                <Stack gap="xs" align="flex-start">
+                  <Checkbox
+                    label={(
+                      <span style={{ fontSize: '12px', lineHeight: '1.6' }}>
+                        J&apos;accepte les <a href="/app/legal/cgv" target="_blank" rel="noreferrer">CGV</a> et
+                        je renonce à mon droit de rétractation de 14 jours conformément
+                        à l&apos;article L221-28 du Code de la consommation, le service
+                        étant accessible immédiatement.
+                      </span>
+                    )}
+                    checked={cgvAccepted}
+                    onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
+                    required
+                  />
+                  <Group gap="xs">
+                    <Button variant="ghost" size="small" onClick={startAccountUpgrade} disabled={!cgvAccepted || upgradeLoading}>
+                      {upgradeLoading ? t('monCompte.redirecting') : t('monCompte.upgradePro')}
+                    </Button>
+                    <Button variant="secondary" size="small" onClick={() => navigate('/app/pricing')}>
+                      Voir les tarifs
+                    </Button>
+                  </Group>
+                </Stack>
               )}
             </Group>
             {sub?.is_active && (

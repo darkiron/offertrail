@@ -131,5 +131,9 @@ export interface AuthResponse {
 export interface SubscriptionStatus {
   subscription_status: 'pending' | 'active' | 'cancelled' | string;
   is_active: boolean;
+  plan: 'free' | 'pro' | 'ultimate' | string;
+  billing_period: 'monthly' | 'yearly' | null;
   plan_started_at: string | null;
+  limits?: Record<string, unknown>;
+  usage?: Record<string, unknown>;
 }

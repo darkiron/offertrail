@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Badge, Group, List, Paper, Stack, Text, Title,
+  Badge, Checkbox, Group, List, Paper, Stack, Text, Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { subscriptionService } from '../services/api';
@@ -12,6 +12,7 @@ export function Pricing() {
   const navigate = useNavigate();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cgvAccepted, setCgvAccepted] = useState(false);
   const transparencyRows = [
     { label: 'Traitement du paiement', value: 'Stripe' },
     { label: 'Charges et obligations administratives', value: 'Exploitation du service' },
@@ -26,7 +27,7 @@ export function Pricing() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const checkout = await subscriptionService.checkout();
+      const checkout = await subscriptionService.checkout({ plan: 'pro', period: 'monthly' });
 
       if (checkout.mode === 'stripe' && checkout.checkout_url) {
         window.location.assign(checkout.checkout_url);
@@ -93,9 +94,24 @@ export function Pricing() {
             Actif depuis le {sub.plan_started_at ? new Date(sub.plan_started_at).toLocaleDateString('fr-FR') : '-'}
           </Text>
         ) : (
-          <Button variant="primary" onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
-          </Button>
+          <Stack gap="md">
+            <Checkbox
+              label={(
+                <span style={{ fontSize: '12px', lineHeight: '1.6' }}>
+                  J&apos;accepte les <a href="/app/legal/cgv" target="_blank" rel="noreferrer">CGV</a> et
+                  je renonce à mon droit de rétractation de 14 jours conformément
+                  à l&apos;article L221-28 du Code de la consommation, le service
+                  étant accessible immédiatement.
+                </span>
+              )}
+              checked={cgvAccepted}
+              onChange={(event) => setCgvAccepted(event.currentTarget.checked)}
+              required
+            />
+            <Button variant="primary" onClick={handleUpgrade} disabled={!cgvAccepted || loading}>
+              {loading ? 'Redirection...' : 'Passer en Pro — 14,99€/mois'}
+            </Button>
+          </Stack>
         )}
       </Paper>
 
