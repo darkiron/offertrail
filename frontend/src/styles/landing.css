@@ -574,6 +574,32 @@
   flex-shrink: 0;
 }
 
+.lp-plan-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 0 24px;
+}
+
+.lp-plan-spec {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  font-size: 13px;
+}
+
+.lp-plan-spec span {
+  color: var(--text-dim);
+}
+
+.lp-plan-spec strong {
+  color: var(--text-main);
+  font-weight: 800;
+  text-align: right;
+}
+
 .lp-plan-cta {
   display: block;
   width: 100%;

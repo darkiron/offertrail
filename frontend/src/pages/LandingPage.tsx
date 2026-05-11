@@ -20,25 +20,37 @@ export const LandingPage: React.FC = () => {
   const pricingPlans = [
     {
       name: 'Free',
-      monthly: '0€',
-      yearly: '—',
       badge: 'Pour commencer',
-      features: ['5 candidatures', 'Historique 1 mois', '1 relance active', 'Dashboard basique'],
+      rows: [
+        ['Mensuel', '0€'],
+        ['Annuel', '—'],
+        ['Candidatures', '5'],
+        ['Historique', '1 mois'],
+        ['Relances', '1 active'],
+      ],
     },
     {
       name: 'Pro',
-      monthly: '9,99€',
-      yearly: '99€/an',
       badge: 'Populaire',
       highlighted: true,
-      features: ['100 candidatures', 'Historique 6 mois', '10 relances actives', 'Import/Export CSV'],
+      rows: [
+        ['Mensuel', '9,99€'],
+        ['Annuel', '99€/an'],
+        ['Candidatures', '100'],
+        ['Historique', '6 mois'],
+        ['Relances', '10 actives'],
+      ],
     },
     {
       name: 'Ultimate',
-      monthly: '14,99€',
-      yearly: '149€/an',
       badge: 'Meilleur rapport annuel',
-      features: ['Candidatures illimitées', 'Historique illimité', 'Relances illimitées', 'Support prioritaire'],
+      rows: [
+        ['Mensuel', '14,99€'],
+        ['Annuel', '149€/an'],
+        ['Candidatures', 'Illimité'],
+        ['Historique', 'Illimité'],
+        ['Relances', 'Illimitées'],
+      ],
     },
   ];
 
@@ -169,13 +181,20 @@ export const LandingPage: React.FC = () => {
                   <span className="lp-plan-badge">{plan.badge}</span>
                 </div>
                 <div className="lp-plan-price">
-                  {plan.monthly}<span className="lp-plan-period">/mois</span>
+                  {plan.rows[0][1]}<span className="lp-plan-period">/mois</span>
                 </div>
-                <div className="lp-plan-yearly">{plan.yearly === '—' ? 'Pas d’annuel' : `${plan.yearly} en annuel`}</div>
+                <div className="lp-plan-yearly">
+                  {plan.rows[1][1] === '—' ? 'Pas d’annuel' : `${plan.rows[1][1]} en annuel`}
+                </div>
                 <div className="lp-plan-divider" />
-                <ul className="lp-plan-features">
-                  {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-                </ul>
+                <div className="lp-plan-specs">
+                  {plan.rows.map(([label, value]) => (
+                    <div key={label} className="lp-plan-spec">
+                      <span>{label}</span>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                </div>
                 <Link to="/register" className={`lp-plan-cta ${plan.highlighted ? '' : 'lp-plan-cta-secondary'}`}>
                   {plan.name === 'Free' ? 'Créer un compte' : 'Essayer 30 jours'}
                 </Link>
