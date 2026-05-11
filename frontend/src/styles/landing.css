@@ -434,6 +434,13 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.lp-plan-card-grid {
+  align-items: stretch;
+  gap: 20px;
+  max-width: 1040px;
+  margin: 36px auto 0;
+}
+
 .lp-pricing-copy {
   display: flex;
   flex-direction: column;

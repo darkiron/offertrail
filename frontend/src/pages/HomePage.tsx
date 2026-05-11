@@ -1,5 +1,8 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n';
+import { PlanCard } from '../components/PlanCard';
+import { usePricingPlans } from '../lib/pricingPlans';
 import classes from './HomePage.module.css';
 
 const FEATURES = [
@@ -35,38 +38,20 @@ const FEATURES = [
   },
 ];
 
-const PLANS = [
-  {
-    name: 'Free',
-    badge: 'Pour démarrer',
-    monthly: '0€',
-    yearly: '—',
-    desc: 'Le nécessaire pour tester OfferTrail sur une recherche légère.',
-    features: ['5 candidatures', 'Historique 1 mois', '1 relance active', 'Dashboard basique'],
-  },
-  {
-    name: 'Pro',
-    badge: 'Populaire',
-    monthly: '9,99€',
-    yearly: '99€/an',
-    desc: "Pour piloter une recherche active sans perdre le fil.",
-    featured: true,
-    features: ['100 candidatures', 'Historique 6 mois', '10 relances actives', 'Import/Export CSV'],
-  },
-  {
-    name: 'Ultimate',
-    badge: 'Meilleur rapport annuel',
-    monthly: '14,99€',
-    yearly: '149€/an',
-    desc: 'Pour lever toutes les limites et garder tout ton historique.',
-    features: ['Candidatures illimitées', 'Historique illimité', 'Relances illimitées', 'Support prioritaire'],
-  },
-];
 
 export function HomePage() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const plans = usePricingPlans();
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
+
   useEffect(() => {
     document.title = 'OfferTrail — Reprends la main sur ton pipeline';
   }, []);
+
+  const handleCta = (id: 'free' | 'pro' | 'ultimate', _period: 'monthly' | 'yearly') => {
+    navigate(id === 'free' ? '/register' : '/app/pricing');
+  };
 
   return (
     <>
@@ -161,34 +146,20 @@ export function HomePage() {
       {/* ── Pricing ── */}
       <section id="tarifs" className={classes.pricing}>
         <div className={classes.sectionLabel}>
-          <div className={classes.sectionEyebrow}>💳 Tarifs</div>
-          <h2 className={classes.sectionTitle}>Trois plans, mensuel ou annuel</h2>
-          <p className={classes.sectionSub}>Choisis selon ton volume de candidatures. Le plan annuel est disponible sur Pro et Ultimate.</p>
+          <div className={classes.sectionEyebrow}>💳 {t('landing.pricing.pageKicker')}</div>
+          <h2 className={classes.sectionTitle}>{t('landing.pricing.pageTitle2')}</h2>
+          <p className={classes.sectionSub}>{t('landing.pricing.pageSubtitle')}</p>
         </div>
         <div className={classes.pricingGrid}>
-          {PLANS.map((plan) => (
-            <div key={plan.name} className={`${classes.planCard} ${plan.featured ? classes.featured : ''}`}>
-              <div className={classes.planHeader}>
-                <span className={classes.planBadge}>{plan.name}</span>
-                <span className={classes.planTag}>{plan.badge}</span>
-              </div>
-              <h3 className={classes.planName}>{plan.desc}</h3>
-              <div className={classes.planPrice}>
-                {plan.monthly}<span className={classes.planPeriod}>/mois</span>
-              </div>
-              <p className={classes.planDesc}>{plan.yearly === '—' ? 'Pas de facturation annuelle' : `${plan.yearly} en annuel`}</p>
-              <ul className={classes.planFeatures}>
-                {plan.features.map((f) => (
-                  <li key={f}>
-                    <span className={classes.checkmark}>✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register" className={`${classes.planCta} ${plan.featured ? classes.primary : ''}`}>
-                {plan.name === 'Free' ? 'Créer un compte' : 'Essayer 30 jours'}
-              </Link>
-            </div>
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              isSelected={selectedPlan === plan.id}
+              onSelect={setSelectedPlan}
+              onCta={handleCta}
+              mode="public"
+            />
           ))}
         </div>
       </section>

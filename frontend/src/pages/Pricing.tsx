@@ -11,16 +11,16 @@ import type { SubscriptionStatus } from '../types';
 import { Button } from '../components/atoms/Button';
 import { PlanCard } from '../components/PlanCard';
 import { useI18n } from '../i18n';
+import { PLAN_RANK, usePricingPlans } from '../lib/pricingPlans';
 import classes from './Pricing.module.css';
 
 type PlanId = 'free' | 'pro' | 'ultimate';
 type Period = 'monthly' | 'yearly';
 
-const PLAN_RANK: Record<PlanId, number> = { free: 0, pro: 1, ultimate: 2 };
-
 export function Pricing() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const plans = usePricingPlans();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -37,58 +37,6 @@ export function Pricing() {
     }
     return 'free';
   }, [sub]);
-
-  type PlanDef = {
-    id: PlanId;
-    name: string;
-    prices: Partial<Record<Period, { amount: string; suffix: string; note: string }>>;
-    specs: Array<{ label: string; value: string }>;
-    badgeMonthly?: { label: string; violet?: boolean };
-    badgeYearly?: { label: string; violet?: boolean };
-  };
-
-  const PLANS: PlanDef[] = useMemo(() => [
-    {
-      id: 'free',
-      name: t('landing.pricing.freeName'),
-      prices: {
-        monthly: { amount: '0€', suffix: '', note: t('landing.pricing.freeNote') },
-      },
-      specs: [
-        { label: t('landing.pricing.specApplications'), value: '5' },
-        { label: t('landing.pricing.specHistory'),      value: '1 mois' },
-        { label: t('landing.pricing.specFollowups'),    value: '1' },
-      ],
-    },
-    {
-      id: 'pro',
-      name: t('landing.pricing.proName'),
-      prices: {
-        monthly: { amount: '9,99€', suffix: '/mois', note: t('landing.pricing.proMonthlyNote') },
-        yearly:  { amount: '99€',   suffix: '/an',   note: t('landing.pricing.proYearlyNote') },
-      },
-      specs: [
-        { label: t('landing.pricing.specApplications'), value: '100' },
-        { label: t('landing.pricing.specHistory'),      value: '6 mois' },
-        { label: t('landing.pricing.specFollowups'),    value: '10' },
-      ],
-      badgeMonthly: { label: t('landing.pricing.badgePopular') },
-    },
-    {
-      id: 'ultimate',
-      name: t('landing.pricing.ultimateName'),
-      prices: {
-        monthly: { amount: '14,99€', suffix: '/mois', note: t('landing.pricing.ultimateMonthlyNote') },
-        yearly:  { amount: '149€',   suffix: '/an',   note: t('landing.pricing.ultimateYearlyNote') },
-      },
-      specs: [
-        { label: t('landing.pricing.specApplications'), value: '∞' },
-        { label: t('landing.pricing.specHistory'),      value: '∞' },
-        { label: t('landing.pricing.specFollowups'),    value: '∞' },
-      ],
-      badgeYearly: { label: t('landing.pricing.badgeBestValue'), violet: true },
-    },
-  ], [t]);
 
   const handleCheckout = async (plan: Exclude<PlanId, 'free'>, period: Period) => {
     setLoadingPlan(plan);
@@ -141,7 +89,7 @@ export function Pricing() {
       </div>
 
       <div className={classes.grid}>
-        {PLANS.map((plan) => (
+        {plans.map((plan) => (
           <PlanCard
             key={plan.id}
             plan={plan}

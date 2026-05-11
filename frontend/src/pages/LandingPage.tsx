@@ -1,12 +1,17 @@
-import React, { useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { PlanCard } from '../components/PlanCard';
+import { usePricingPlans } from '../lib/pricingPlans';
 import '../styles/landing.css';
 
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const plans = usePricingPlans();
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -17,46 +22,13 @@ export const LandingPage: React.FC = () => {
     { icon: '⚡', title: t('landing.features.start_title'),    desc: t('landing.features.start_desc') },
   ];
 
-  const pricingPlans = [
-    {
-      name: 'Free',
-      badge: 'Pour commencer',
-      rows: [
-        ['Mensuel', '0€'],
-        ['Annuel', '—'],
-        ['Candidatures', '5'],
-        ['Historique', '1 mois'],
-        ['Relances', '1 active'],
-      ],
-    },
-    {
-      name: 'Pro',
-      badge: 'Populaire',
-      highlighted: true,
-      rows: [
-        ['Mensuel', '9,99€'],
-        ['Annuel', '99€/an'],
-        ['Candidatures', '100'],
-        ['Historique', '6 mois'],
-        ['Relances', '10 actives'],
-      ],
-    },
-    {
-      name: 'Ultimate',
-      badge: 'Meilleur rapport annuel',
-      rows: [
-        ['Mensuel', '14,99€'],
-        ['Annuel', '149€/an'],
-        ['Candidatures', 'Illimité'],
-        ['Historique', 'Illimité'],
-        ['Relances', 'Illimitées'],
-      ],
-    },
-  ];
-
   useEffect(() => {
     document.title = t('landing.hero.pageTitle');
   }, [t]);
+
+  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate') => {
+    navigate(id === 'free' ? '/register' : `/register?plan=${id}`);
+  };
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
@@ -168,37 +140,19 @@ export const LandingPage: React.FC = () => {
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap" id="tarifs">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">Tarifs</div>
-          <h2 className="lp-section-title">Trois plans clairs, avec annuel disponible</h2>
-          <p className="lp-section-sub">
-            Commence gratuitement, passe en Pro quand le volume augmente, ou choisis Ultimate pour tout lever.
-          </p>
-          <div className="lp-pricing-grid lp-pricing-grid-three">
-            {pricingPlans.map((plan) => (
-              <div key={plan.name} className={`lp-plan-card ${plan.highlighted ? 'lp-plan-card-featured' : ''}`}>
-                <div className="lp-plan-topline">
-                  <div className="lp-plan-name">{plan.name}</div>
-                  <span className="lp-plan-badge">{plan.badge}</span>
-                </div>
-                <div className="lp-plan-price">
-                  {plan.rows[0][1]}<span className="lp-plan-period">/mois</span>
-                </div>
-                <div className="lp-plan-yearly">
-                  {plan.rows[1][1] === '—' ? 'Pas d’annuel' : `${plan.rows[1][1]} en annuel`}
-                </div>
-                <div className="lp-plan-divider" />
-                <div className="lp-plan-specs">
-                  {plan.rows.map(([label, value]) => (
-                    <div key={label} className="lp-plan-spec">
-                      <span>{label}</span>
-                      <strong>{value}</strong>
-                    </div>
-                  ))}
-                </div>
-                <Link to="/register" className={`lp-plan-cta ${plan.highlighted ? '' : 'lp-plan-cta-secondary'}`}>
-                  {plan.name === 'Free' ? 'Créer un compte' : 'Essayer 30 jours'}
-                </Link>
-              </div>
+          <div className="lp-section-kicker">{t('landing.pricing.pageKicker')}</div>
+          <h2 className="lp-section-title">{t('landing.pricing.landingTitle')}</h2>
+          <p className="lp-section-sub">{t('landing.pricing.landingSub')}</p>
+          <div className="lp-pricing-grid lp-pricing-grid-three lp-plan-card-grid">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                isSelected={selectedPlan === plan.id}
+                onSelect={setSelectedPlan}
+                onCta={(id) => handlePricingCta(id)}
+                mode="public"
+              />
             ))}
           </div>
         </div>

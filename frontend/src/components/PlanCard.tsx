@@ -1,41 +1,16 @@
 import { useState } from 'react';
 import { Switch, Checkbox, Button, Anchor } from '@mantine/core';
 import { useI18n } from '../i18n';
+import type { BillingPeriod, PlanId, PricingPlan } from '../lib/pricingPlans';
 import classes from './PlanCard.module.css';
 
-type PlanId = 'free' | 'pro' | 'ultimate';
-type Period = 'monthly' | 'yearly';
-
-interface Price {
-  amount: string;
-  suffix: string;
-  note: string;
-}
-
-interface Badge {
-  label: string;
-  violet?: boolean;
-}
-
-interface PlanDef {
-  id: PlanId;
-  name: string;
-  prices: {
-    monthly: Price;
-    yearly?: Price;
-  };
-  specs: Array<{ label: string; value: string }>;
-  badgeMonthly?: Badge;
-  badgeYearly?: Badge;
-}
-
 interface Props {
-  plan: PlanDef;
+  plan: PricingPlan;
   isSelected?: boolean;
   isCurrent?: boolean;
   loading?: boolean;
   onSelect: (id: PlanId) => void;
-  onCta: (id: PlanId, period: Period) => void;
+  onCta: (id: PlanId, period: BillingPeriod) => void;
   mode: 'app' | 'public';
 }
 
@@ -53,7 +28,7 @@ export function PlanCard({ plan, isSelected = false, isCurrent = false, loading 
   };
 
   const handleCtaClick = () => {
-    const period: Period = isYearly ? 'yearly' : 'monthly';
+    const period: BillingPeriod = isYearly ? 'yearly' : 'monthly';
     onCta(plan.id, period);
   };
 
@@ -87,6 +62,14 @@ export function PlanCard({ plan, isSelected = false, isCurrent = false, loading 
           {t('landing.pricing.trialPill')}
         </div>
       )}
+      <ul className={classes.featureList}>
+        {plan.features.map((feature) => (
+          <li key={feature} className={classes.featureItem}>
+            <span className={classes.featureCheck}>✓</span>
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
       <ul className={classes.specList}>
         {plan.specs.map((spec, index) => (
           <li key={index} className={classes.specItem}>
@@ -102,7 +85,7 @@ export function PlanCard({ plan, isSelected = false, isCurrent = false, loading 
           </Button>
         ) : mode === 'public' ? (
           <Button variant={plan.id === 'free' ? 'light' : 'filled'} onClick={handleCtaClick}>
-            {plan.id === 'free' ? t('landing.pricing.freeCta') || 'Commencer gratuitement' : t('landing.pricing.trialCta')}
+            {plan.id === 'free' ? t('landing.pricing.freeCta') : t('landing.pricing.trialCta')}
           </Button>
         ) : plan.id === 'free' ? (
           <Button variant="light" disabled>
