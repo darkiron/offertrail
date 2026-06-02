@@ -24,7 +24,7 @@ import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { ContactPage } from './pages/ContactPage';
 import { MonCompte } from './pages/MonCompte';
-import { Pricing } from './pages/Pricing';
+import Pricing from './pages/Pricing';
 import { Admin } from './pages/Admin';
 import { Checkout } from './pages/Checkout';
 import { HomePage } from './pages/HomePage';

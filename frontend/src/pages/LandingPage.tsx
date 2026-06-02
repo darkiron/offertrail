@@ -1,13 +1,20 @@
-import React, { useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { SegmentedControl } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
-import { CONFIG } from '../config';
+import { PlanCard } from '../components/PlanCard';
+import { usePricingPlans } from '../lib/pricingPlans';
+import type { BillingPeriod } from '../lib/pricingPlans';
 import '../styles/landing.css';
 
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const plans = usePricingPlans();
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
+  const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -18,16 +25,13 @@ export const LandingPage: React.FC = () => {
     { icon: '⚡', title: t('landing.features.start_title'),    desc: t('landing.features.start_desc') },
   ];
 
-  const pricingPoints = [
-    { title: t('landing.pricing.full_title'),       desc: t('landing.pricing.full_desc') },
-    { title: t('landing.pricing.nolock_title'),     desc: t('landing.pricing.nolock_desc') },
-    { title: t('landing.pricing.oneplan_title'),    desc: t('landing.pricing.oneplan_desc').replace('{price}', CONFIG.PRO_PRICE) },
-    { title: t('landing.pricing.structured_title'), desc: t('landing.pricing.structured_desc') },
-  ];
-
   useEffect(() => {
     document.title = t('landing.hero.pageTitle');
   }, [t]);
+
+  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate') => {
+    navigate(id === 'free' ? '/register' : `/register?plan=${id}`);
+  };
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
@@ -139,36 +143,33 @@ export const LandingPage: React.FC = () => {
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap" id="tarifs">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">{t('landing.pricing.kicker')}</div>
-          <h2 className="lp-section-title">{t('landing.pricing.title')}</h2>
-          <div className="lp-pricing-grid">
-            <div className="lp-pricing-copy">
-              {pricingPoints.map((p) => (
-                <div key={p.title} className="lp-pricing-point">
-                  <div className="lp-pricing-check">✓</div>
-                  <div>
-                    <div className="lp-pricing-point-title">{p.title}</div>
-                    <div className="lp-pricing-point-desc">{p.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="lp-plan-card">
-              <div className="lp-plan-name">{t('landing.pricing.planName')}</div>
-              <div className="lp-plan-price">{CONFIG.PRO_PRICE} <span className="lp-plan-period">{t('landing.pricing.perMonth')}</span></div>
-              <div className="lp-plan-divider" />
-              <ul className="lp-plan-features">
-                <li>{t('landing.pricing.feature1')}</li>
-                <li>{t('landing.pricing.feature2')}</li>
-                <li>{t('landing.pricing.feature3')}</li>
-                <li>{t('landing.pricing.feature4')}</li>
-                <li>{t('landing.pricing.feature5')}</li>
-                <li>{t('landing.pricing.feature6')}</li>
-              </ul>
-              <Link to="/register" className="lp-plan-cta">{t('landing.pricing.cta')}</Link>
-              <p className="lp-plan-note">{t('landing.pricing.note').replace('{price}', CONFIG.PRO_PRICE)}</p>
-            </div>
+          <div className="lp-section-kicker">{t('landing.pricing.pageKicker')}</div>
+          <h2 className="lp-section-title">{t('landing.pricing.landingTitle')}</h2>
+          <p className="lp-section-sub">{t('landing.pricing.landingSub')}</p>
+          <div className="lp-pricing-controls">
+            <span>{t('landing.pricing.periodLabel')}</span>
+            <SegmentedControl
+              data={[
+                { label: t('landing.pricing.monthly'), value: 'monthly' },
+                { label: t('landing.pricing.yearly'), value: 'yearly' },
+              ]}
+              value={period}
+              onChange={(value) => setPeriod(value as BillingPeriod)}
+            />
+            {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
+          </div>
+          <div className="lp-pricing-grid lp-pricing-grid-three lp-plan-card-grid">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                isSelected={selectedPlan === plan.id}
+                period={period}
+                onSelect={setSelectedPlan}
+                onCta={(id) => handlePricingCta(id)}
+                mode="public"
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -188,7 +189,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
-              {t('landing.craftcodes.label').replace('{price}', CONFIG.PRO_PRICE)}
+              Prix transparent · Pro à 9,99€/mois
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
               <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.stripe')}</span>

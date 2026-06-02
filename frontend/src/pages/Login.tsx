@@ -14,7 +14,7 @@ type LoginFormData = { email: string; password: string };
 
 export function LoginPage() {
   const location = useLocation();
-  const { signIn, isAuthenticated, isLoading, profile } = useAuth();
+  const { signIn, isAuthenticated, isLoading } = useAuth();
   const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const successMessage =
@@ -37,9 +37,6 @@ export function LoginPage() {
 
   if (!isLoading && isAuthenticated) {
     const nextPath = (location.state as { from?: string } | null)?.from ?? null;
-    if (profile?.subscription_status !== 'active') {
-      return <Navigate to="/app/checkout" replace />;
-    }
     return <Navigate to={nextPath ?? '/app'} replace />;
   }
 
