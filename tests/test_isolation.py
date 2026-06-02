@@ -97,37 +97,47 @@ class TestEtablissementsAccess:
 
 
 class TestSubscriptionGate:
-    def test_pending_user_blocked_from_candidatures(self, client, ets):
-        """Un utilisateur pending reçoit 402 sur les endpoints protégés."""
+    def test_free_user_limited_to_five_candidatures(self, client, ets):
+        """Modèle freemium : un utilisateur free (pending) peut créer jusqu'à 5
+        candidatures ; la 6e est bloquée par 402 LIMIT_REACHED."""
         from uuid import uuid4
         from tests.conftest import make_token
 
         user_id = str(uuid4())
-        email = f"pending-{uuid4().hex}@example.com"
+        email = f"free-{uuid4().hex}@example.com"
         db = SessionLocal()
         try:
-            profile = Profile(id=user_id, prenom="Pending", nom="User",
-                              subscription_status="pending", is_active=True)
-            db.add(profile)
+            db.add(Profile(id=user_id, prenom="Free", nom="User",
+                           subscription_status="pending", is_active=True))
+            db.add_all([
+                Candidature(
+                    user_id=user_id,
+                    etablissement_id=ets["id"],
+                    poste=f"Poste {index}",
+                    statut="envoyee",
+                )
+                for index in range(4)
+            ])
             db.commit()
         finally:
             db.close()
 
         token = make_token(user_id, email)
         headers = {"Authorization": f"Bearer {token}"}
+        payload = {
+            "etablissement_id": ets["id"],
+            "poste": "Poste limite",
+            "statut": "envoyee",
+        }
 
-        response = client.post(
-            "/candidatures",
-            headers=headers,
-            json={
-                "etablissement_id": ets["id"],
-                "poste": "Poste test",
-                "statut": "envoyee",
-            },
-        )
+        # 5e candidature : encore dans la limite free → autorisée
+        allowed = client.post("/candidatures", headers=headers, json=payload)
+        assert allowed.status_code == 201
 
-        assert response.status_code == 402
-        assert response.json()["detail"]["code"] == "PAYMENT_REQUIRED"
+        # 6e candidature : limite free atteinte → bloquée
+        blocked = client.post("/candidatures", headers=headers, json=payload)
+        assert blocked.status_code == 402
+        assert blocked.json()["detail"]["code"] == "LIMIT_REACHED"
 
     def test_active_user_can_create_unlimited_candidatures(self, client, user_a, ets):
         """Un utilisateur actif peut créer des candidatures sans limite."""

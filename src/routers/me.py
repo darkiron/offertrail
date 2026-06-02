@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.auth import get_active_user_id, own_candidature
+from src.auth import get_active_profile, get_active_user_id, own_candidature
 from src.database import get_db
 from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
-from src.models import Candidature, CandidatureEvent, Etablissement, Relance
+from src.models import Candidature, CandidatureEvent, Etablissement, Profile, Relance
 from src.schemas.me import (
     CandidatureCreate,
     CandidatureSchema,
@@ -17,6 +17,7 @@ from src.schemas.me import (
     PipelineBucket,
     RelanceSchema,
 )
+from src.services.subscription import check_can_create_candidature
 
 router = APIRouter()
 
@@ -48,8 +49,11 @@ def list_my_candidatures(
 def create_my_candidature(
     payload: CandidatureCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> CandidatureSchema:
+    user_id = profile.id
+    check_can_create_candidature(db, profile)
+
     etablissement = db.query(Etablissement).filter(Etablissement.id == payload.etablissement_id).first()
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")

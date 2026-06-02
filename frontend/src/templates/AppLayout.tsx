@@ -92,20 +92,11 @@ export function AppLayout() {
     { label: t('nav.import'), to: '/app/import', icon: IconFileImport },
   ], [t]);
 
-  const PRICING_EXEMPT = ['/app/pricing', '/app/mon-compte'];
-  const isPricingExempt = PRICING_EXEMPT.some((p) => location.pathname.startsWith(p));
-
   useEffect(() => {
     if (isAuthenticated) {
       subscriptionService.getMe().then(setSub).catch(() => {});
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (sub && !sub.is_active && !isPricingExempt && profile?.role !== 'admin') {
-      navigate('/app/checkout', { replace: true });
-    }
-  }, [sub, isPricingExempt, profile]);
 
   const isActive = (to: string) =>
     to === '/app'
@@ -127,8 +118,8 @@ export function AppLayout() {
     >
       {/* ── Header ── */}
       <AppShell.Header className={classes.header}>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
+        <Group h="100%" px="md" justify="space-between" className={classes.headerInner}>
+          <Group className={classes.headerBrandGroup}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Link to="/app" className={classes.brand}>
               <span className={classes.brandMark}>OT</span>
@@ -136,7 +127,7 @@ export function AppLayout() {
             </Link>
           </Group>
 
-          <Group gap="xs">
+          <Group gap="xs" className={classes.headerActions}>
             <LanguageSwitcher />
             <ActionIcon
               variant="subtle"
@@ -151,7 +142,7 @@ export function AppLayout() {
               <Menu.Target>
                 <UnstyledButton className={classes.userBtn}>
                   <Group gap="xs">
-                    <Text size="sm" fw={600}>
+                    <Text size="sm" fw={600} className={classes.userLabel}>
                       {profile?.prenom || user?.email?.split('@')[0] || t('nav.monCompte')}
                     </Text>
                     <IconChevronDown size={14} />

@@ -1,19 +1,22 @@
 .shellWide {
-  max-width: 1400px;
+  max-width: min(1200px, 100vw);
   margin: 0 auto;
-  padding: 32px 24px 72px;
+  width: 100%;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2.5rem) clamp(4.5rem, 6vw, 5.5rem);
 }
 
 .shellStandard {
-  max-width: 1300px;
+  max-width: min(1200px, 100vw);
   margin: 0 auto;
-  padding: 32px 24px 72px;
+  width: 100%;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2.5rem) clamp(4.5rem, 6vw, 5.5rem);
 }
 
 .shellNarrow {
-  max-width: 1200px;
+  max-width: min(1200px, 100vw);
   margin: 0 auto;
-  padding: 32px 24px 72px;
+  width: 100%;
+  padding: clamp(1.25rem, 3.5vw, 2.5rem) clamp(0.75rem, 2.5vw, 2rem) clamp(4rem, 5.5vw, 5rem);
 }
 
 .hero {
@@ -101,10 +104,3 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 768px) {
-  .shellWide,
-  .shellStandard,
-  .shellNarrow {
-    padding: 24px 16px 56px;
-  }
-}

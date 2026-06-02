@@ -160,9 +160,12 @@ export function MonCompte() {
                   {portalLoading ? t('monCompte.redirecting') : t('monCompte.managePro')}
                 </Button>
               ) : (
-                <Button variant="ghost" size="small" onClick={() => navigate('/app/pricing')}>
-                  {t('monCompte.upgradePro')}
-                </Button>
+                <Stack gap="xs" align="flex-start">
+                  <Text size="sm" c="dimmed">{t('monCompte.upgradeFromPricing')}</Text>
+                  <Button variant="secondary" size="small" onClick={() => navigate('/app/pricing')}>
+                    {t('monCompte.viewPricing')}
+                  </Button>
+                </Stack>
               )}
             </Group>
             {sub?.is_active && (

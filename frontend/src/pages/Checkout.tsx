@@ -58,6 +58,7 @@ export function Checkout() {
       setError(null);
       const res = await axiosInstance.post<{ checkout_url: string | null; mode: string }>(
         '/subscription/checkout',
+        { plan: 'pro', period: 'monthly' },
       );
       if (res.data.checkout_url) {
         window.location.href = res.data.checkout_url;
@@ -88,7 +89,7 @@ export function Checkout() {
         <Stack gap="xl">
           {/* Header */}
           <Stack gap="xs" ta="center">
-            <Badge size="lg" variant="light" color="green" mx="auto">Pro — 14,99€/mois</Badge>
+            <Badge size="lg" variant="light" color="green" mx="auto">Pro — 9,99€/mois</Badge>
             <Title order={2} fw={900}>Activez votre abonnement</Title>
             <Text c="dimmed" size="sm">
               Bienvenue sur OfferTrail. Un abonnement est requis pour accéder à l&apos;application.
@@ -139,7 +140,7 @@ export function Checkout() {
             onClick={() => void handleCheckout()}
             fullWidth
           >
-            {polling ? 'Activation en cours…' : 'Payer 14,99€ / mois'}
+            {polling ? 'Activation en cours…' : 'Payer 9,99€ / mois'}
           </Button>
 
           <Text size="xs" c="dimmed" ta="center">

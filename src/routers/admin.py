@@ -2,6 +2,7 @@ import csv
 import io
 from datetime import datetime, timedelta, timezone
 
+import stripe
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func
@@ -10,8 +11,23 @@ from sqlalchemy.orm import Session
 from src.auth import get_admin_profile
 from src.database import get_db
 from src.models import Candidature, Etablissement, Profile, Relance
+from src.services.stripe_service import is_configured
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+PLAN_PRICES = {
+    ("pro", "monthly"): 9.99,
+    ("pro", "yearly"): 99 / 12,
+    ("ultimate", "monthly"): 14.99,
+    ("ultimate", "yearly"): 149 / 12,
+}
+
+
+def _profile_mrr(profile: Profile) -> float:
+    if profile.plan not in ("pro", "ultimate"):
+        return 0
+    return PLAN_PRICES.get((profile.plan, profile.billing_period or "monthly"), 0)
 
 
 @router.get("/stats")
@@ -23,23 +39,19 @@ def global_stats(
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
-    total_users    = db.query(Profile).count()
-    active_users   = db.query(Profile).filter(Profile.subscription_status == "active").count()
-    pending_users  = db.query(Profile).filter(Profile.subscription_status == "pending").count()
-    cancelled_users = db.query(Profile).filter(Profile.subscription_status == "cancelled").count()
+    profiles = db.query(Profile).all()
+    total_users = len(profiles)
+    free_users = sum(1 for p in profiles if (p.plan or "free") == "free")
+    pro_users = sum(1 for p in profiles if p.plan == "pro")
+    ultimate_users = sum(1 for p in profiles if p.plan == "ultimate")
+    active_users = pro_users + ultimate_users
 
-    mrr = round(active_users * 14.99, 2)
+    mrr = round(sum(_profile_mrr(p) for p in profiles), 2)
     arr = round(mrr * 12, 2)
 
     new_users_7d  = db.query(Profile).filter(Profile.created_at >= week_ago).count()
     new_users_30d = db.query(Profile).filter(Profile.created_at >= month_ago).count()
-    new_active_30d = db.query(Profile).filter(
-        Profile.subscription_status == "active",
-        Profile.plan_started_at >= month_ago,
-    ).count()
-
-    activation_rate = round((active_users / total_users * 100), 1) if total_users > 0 else 0
-    churn_rate = round((cancelled_users / (cancelled_users + active_users) * 100), 1) if (cancelled_users + active_users) > 0 else 0
+    conversion_rate = round((active_users / total_users * 100), 1) if total_users > 0 else 0
 
     total_cands         = db.query(func.count(Candidature.id)).scalar()
     avg_cands_per_user  = round(total_cands / total_users, 1) if total_users > 0 else 0
@@ -54,14 +66,13 @@ def global_stats(
         "mrr": mrr,
         "arr": arr,
         "total_users": total_users,
+        "free_users": free_users,
+        "pro_users": pro_users,
+        "ultimate_users": ultimate_users,
         "active_users": active_users,
-        "pending_users": pending_users,
-        "cancelled_users": cancelled_users,
         "new_users_7d": new_users_7d,
         "new_users_30d": new_users_30d,
-        "new_active_30d": new_active_30d,
-        "activation_rate": activation_rate,
-        "churn_rate": churn_rate,
+        "conversion_rate": conversion_rate,
         "total_candidatures": total_cands,
         "avg_cands_per_user": avg_cands_per_user,
         "total_relances": total_relances,
@@ -87,6 +98,8 @@ def list_users(
             "prenom":              profile.prenom,
             "nom":                 profile.nom,
             "subscription_status": profile.subscription_status,
+            "plan":                profile.plan or "free",
+            "billing_period":      profile.billing_period,
             "role":                profile.role,
             "is_active":           profile.is_active,
             "nb_candidatures":     nb_cands,
@@ -108,20 +121,34 @@ def update_user_status(
         raise HTTPException(status_code=404, detail="Profil introuvable")
 
     new_status = body.get("subscription_status")
-    if new_status not in ("pending", "active", "cancelled"):
-        raise HTTPException(status_code=400, detail="Statut invalide")
+    new_plan = body.get("plan")
+    billing_period = body.get("billing_period") or "monthly"
 
-    from src.services.subscription import activate_pro, _set_cancelled
-    if new_status == "active":
-        activate_pro(db, profile)
+    from src.services.subscription import _set_cancelled, activate_plan
+    if new_plan:
+        if new_plan not in ("free", "pro", "ultimate"):
+            raise HTTPException(status_code=400, detail="Plan invalide")
+        if new_plan == "free":
+            _set_cancelled(db, profile)
+        else:
+            activate_plan(db, profile, new_plan, billing_period)
+    elif new_status == "active":
+        activate_plan(db, profile, "pro", billing_period)
     elif new_status == "cancelled":
         _set_cancelled(db, profile)
-    else:
+    elif new_status == "pending":
         profile.subscription_status = "pending"
         db.commit()
+    else:
+        raise HTTPException(status_code=400, detail="Statut invalide")
 
     db.refresh(profile)
-    return {"id": profile.id, "subscription_status": profile.subscription_status}
+    return {
+        "id": profile.id,
+        "subscription_status": profile.subscription_status,
+        "plan": profile.plan,
+        "billing_period": profile.billing_period,
+    }
 
 
 @router.patch("/users/{user_id}/toggle-active")
@@ -187,6 +214,22 @@ def recent_activity(
     }
 
 
+@router.get("/promos")
+def list_promos(_: Profile = Depends(get_admin_profile)):
+    if not is_configured():
+        return {"promos": []}
+    coupons = stripe.Coupon.list(limit=20)
+    return {"promos": [{
+        "id": c.id,
+        "name": c.name,
+        "percent_off": c.percent_off,
+        "amount_off": c.amount_off,
+        "duration": c.duration,
+        "times_redeemed": c.times_redeemed,
+        "valid": c.valid,
+    } for c in coupons.data]}
+
+
 @router.get("/export-users")
 def export_users(
     db: Session = Depends(get_db),
@@ -195,11 +238,12 @@ def export_users(
     profiles = db.query(Profile).all()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id", "email", "subscription_status", "role", "is_active", "created_at", "plan_started_at"])
+    writer.writerow(["id", "email", "plan", "billing_period", "subscription_status", "role", "is_active", "created_at", "plan_started_at"])
     for p in profiles:
         writer.writerow([
             p.id,
             getattr(p, "email", ""),
+            p.plan or "free", p.billing_period,
             p.subscription_status, p.role, p.is_active,
             p.created_at, p.plan_started_at,
         ])
@@ -234,14 +278,14 @@ def mrr_history(
     for i in range(11, -1, -1):
         month_start = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
         month_end   = (month_start + timedelta(days=32)).replace(day=1)
-        active_count = db.query(Profile).filter(
-            Profile.subscription_status == "active",
+        active_profiles = db.query(Profile).filter(
+            Profile.plan.in_(("pro", "ultimate")),
             Profile.plan_started_at < month_end,
-        ).count()
+        ).all()
         result.append({
             "month":        month_start.strftime("%Y-%m"),
-            "mrr":          round(active_count * 14.99, 2),
-            "active_users": active_count,
+            "mrr":          round(sum(_profile_mrr(p) for p in active_profiles), 2),
+            "active_users": len(active_profiles),
         })
     return result
 
@@ -261,11 +305,25 @@ def signups_history(
         count = db.query(Profile).filter(
             and_(Profile.created_at >= day_start, Profile.created_at < day_end)
         ).count()
-        paid = db.query(Profile).filter(
-            and_(Profile.plan_started_at >= day_start, Profile.plan_started_at < day_end)
+        upgrades = db.query(Profile).filter(
+            Profile.plan.in_(("pro", "ultimate")),
+            Profile.plan_started_at >= day_start,
+            Profile.plan_started_at < day_end,
         ).count()
-        result.append({"date": day.strftime("%d/%m"), "signups": count, "paid": paid})
+        result.append({"date": day.strftime("%d/%m"), "signups": count, "upgrades": upgrades})
     return result
+
+
+@router.get("/analytics/plan-distribution")
+def plan_distribution(
+    db: Session = Depends(get_db),
+    _: Profile = Depends(get_admin_profile),
+):
+    return [
+        {"name": "Free", "plan": "free", "value": db.query(Profile).filter(Profile.plan == "free").count()},
+        {"name": "Pro", "plan": "pro", "value": db.query(Profile).filter(Profile.plan == "pro").count()},
+        {"name": "Ultimate", "plan": "ultimate", "value": db.query(Profile).filter(Profile.plan == "ultimate").count()},
+    ]
 
 
 @router.get("/analytics/funnel")
@@ -306,3 +364,11 @@ def candidatures_evolution(
         ).count()
         result.append({"date": day.strftime("%d/%m"), "count": count})
     return result
+
+
+@router.get("/analytics/candidatures-daily")
+def candidatures_daily(
+    db: Session = Depends(get_db),
+    _: Profile = Depends(get_admin_profile),
+):
+    return candidatures_evolution(db, _)

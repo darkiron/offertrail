@@ -122,7 +122,9 @@ def test_get_current_profile_inactive_user(client):
     assert resp.status_code == 403
 
 
-def test_get_active_profile_subscription_not_active(client):
+def test_get_active_profile_pending_still_allowed(client):
+    """Modèle freemium : un profil pending (= plan free) accède aux endpoints ;
+    les limites de plan sont vérifiées par action, pas au niveau de l'accès."""
     user_id = str(uuid4())
     db = SessionLocal()
     try:
@@ -138,7 +140,7 @@ def test_get_active_profile_subscription_not_active(client):
 
     token = make_token(user_id)
     resp = client.get("/me/stats", headers={"Authorization": f"Bearer {token}"})
-    assert resp.status_code == 402
+    assert resp.status_code == 200
 
 
 def test_get_current_profile_new_user_auto_created(client):

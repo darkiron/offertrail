@@ -30,6 +30,12 @@ export interface DashboardParams {
   source?: string;
 }
 
+export interface CheckoutPayload {
+  plan: 'pro' | 'ultimate';
+  period: 'monthly' | 'yearly';
+  coupon?: string;
+}
+
 export interface ApplicationPayload {
   company?: string;
   title?: string;
@@ -551,8 +557,8 @@ export const subscriptionService = {
     const response = await axiosInstance.get<SubscriptionStatus>('/subscription/me');
     return response.data;
   },
-  checkout: async () => {
-    const response = await axiosInstance.post<{ mode: 'simulated' | 'stripe'; checkout_url: string | null; message?: string }>('/subscription/checkout');
+  checkout: async (payload: CheckoutPayload) => {
+    const response = await axiosInstance.post<{ mode: 'simulated' | 'stripe'; checkout_url: string | null; message?: string }>('/subscription/checkout', payload);
     return response.data;
   },
   portal: async () => {

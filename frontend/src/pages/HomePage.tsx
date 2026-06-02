@@ -1,6 +1,10 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { CONFIG } from '../config';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { SegmentedControl } from '@mantine/core';
+import { useI18n } from '../i18n';
+import { PlanCard } from '../components/PlanCard';
+import { usePricingPlans } from '../lib/pricingPlans';
+import type { BillingPeriod } from '../lib/pricingPlans';
 import classes from './HomePage.module.css';
 
 const FEATURES = [
@@ -36,19 +40,21 @@ const FEATURES = [
   },
 ];
 
-const PLAN_PRO = [
-  'Candidatures illimitées',
-  'Pipeline & statuts complets',
-  'Contacts & entreprises',
-  'Analytics complets',
-  'Relances automatiques',
-  'Score de probité',
-];
 
 export function HomePage() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const plans = usePricingPlans();
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
+  const [period, setPeriod] = useState<BillingPeriod>('monthly');
+
   useEffect(() => {
     document.title = 'OfferTrail — Reprends la main sur ton pipeline';
   }, []);
+
+  const handleCta = (id: 'free' | 'pro' | 'ultimate', _period: 'monthly' | 'yearly') => {
+    navigate(id === 'free' ? '/register' : '/app/pricing');
+  };
 
   return (
     <>
@@ -77,7 +83,7 @@ export function HomePage() {
 
         <p className={classes.proof}>
           <span className={classes.proofDot} />
-          {CONFIG.PRO_PRICE}/mois · Sans engagement · Résiliable à tout moment
+          Free disponible · Pro 9,99€/mois ou 99€/an · Ultimate 149€/an
         </p>
       </section>
 
@@ -143,30 +149,34 @@ export function HomePage() {
       {/* ── Pricing ── */}
       <section id="tarifs" className={classes.pricing}>
         <div className={classes.sectionLabel}>
-          <div className={classes.sectionEyebrow}>💳 Tarif</div>
-          <h2 className={classes.sectionTitle}>Un seul plan, tout inclus</h2>
-          <p className={classes.sectionSub}>Accès complet à toutes les fonctionnalités. Sans surprise.</p>
+          <div className={classes.sectionEyebrow}>💳 {t('landing.pricing.pageKicker')}</div>
+          <h2 className={classes.sectionTitle}>{t('landing.pricing.pageTitle2')}</h2>
+          <p className={classes.sectionSub}>{t('landing.pricing.pageSubtitle')}</p>
+        </div>
+        <div className={classes.pricingControls}>
+          <span>{t('landing.pricing.periodLabel')}</span>
+          <SegmentedControl
+            data={[
+              { label: t('landing.pricing.monthly'), value: 'monthly' },
+              { label: t('landing.pricing.yearly'), value: 'yearly' },
+            ]}
+            value={period}
+            onChange={(value) => setPeriod(value as BillingPeriod)}
+          />
+          {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
         </div>
         <div className={classes.pricingGrid}>
-          <div className={`${classes.planCard} ${classes.featured}`}>
-            <span className={classes.planBadge}>Pro</span>
-            <h3 className={classes.planName}>Pour les candidats sérieux</h3>
-            <div className={classes.planPrice}>
-              {CONFIG.PRO_PRICE}<span className={classes.planPeriod}>/mois</span>
-            </div>
-            <p className={classes.planDesc}>Tout ce qu'il faut pour piloter ta recherche d'emploi avec méthode.</p>
-            <ul className={classes.planFeatures}>
-              {PLAN_PRO.map((f) => (
-                <li key={f}>
-                  <span className={classes.checkmark}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link to="/register" className={`${classes.planCta} ${classes.primary}`}>
-              Démarrer maintenant
-            </Link>
-          </div>
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              isSelected={selectedPlan === plan.id}
+              period={period}
+              onSelect={setSelectedPlan}
+              onCta={handleCta}
+              mode="public"
+            />
+          ))}
         </div>
       </section>
 
@@ -174,7 +184,7 @@ export function HomePage() {
       <section className={classes.ctaSection}>
         <div className={classes.ctaInner}>
           <h2 className={classes.ctaTitle}>Prêt à structurer ta recherche ?</h2>
-          <p className={classes.ctaSub}>Rejoins OfferTrail. {CONFIG.PRO_PRICE}/mois, sans engagement.</p>
+          <p className={classes.ctaSub}>Rejoins OfferTrail gratuitement, puis passe en Pro ou Ultimate quand tu en as besoin.</p>
           <Link to="/register" className={classes.btnHeroPrimary}>
             Créer mon compte →
           </Link>
