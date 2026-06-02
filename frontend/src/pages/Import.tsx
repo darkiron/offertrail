@@ -8,32 +8,35 @@ import { applicationService } from '../services/api';
 import type { ImportResponse } from '../services/api';
 import { Button } from '../components/atoms/Button';
 import { PageHeader } from '../components/molecules/PageHeader';
+import { useI18n } from '../i18n';
 import classes from './Import.module.css';
 
 export const Import: React.FC = () => {
+  const { t } = useI18n();
   const [tsv, setTsv] = useState('');
   const [results, setResults] = useState<ImportResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
-    document.title = 'Import — OfferTrail';
-  }, []);
+    document.title = t('import.pageTitle');
+  }, [t]);
 
   const handleImport = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!tsv.trim()) {
-      return;
-    }
+    if (!tsv.trim()) return;
     setLoading(true);
     try {
       const response = await applicationService.importTsv(tsv);
       setResults(response);
       if (response.created > 0) {
         setTsv('');
-        notifications.show({ message: `${response.created} candidature(s) importée(s)`, color: 'green' });
+        notifications.show({
+          message: `${response.created} ${t('import.importedSuffix')}`,
+          color: 'green',
+        });
       }
     } catch (importError: unknown) {
-      const detail = (axios.isAxiosError(importError) && importError.response?.data?.detail) || "Echec de l'import. Verifie le format TSV.";
+      const detail = (axios.isAxiosError(importError) && importError.response?.data?.detail) || t('import.errorDefault');
       notifications.show({ message: detail, color: 'red' });
     } finally {
       setLoading(false);
@@ -43,17 +46,14 @@ export const Import: React.FC = () => {
   return (
     <Stack gap="lg" p="lg" className={classes.shell}>
       <PageHeader
-        title="Import des candidatures"
-        description="Colle tes données TSV depuis Excel ou Google Sheets pour importer tes candidatures en masse."
+        title={t('import.title')}
+        description={t('import.description')}
       />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
         <Paper p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Données TSV</Text>
-          <Text size="sm" c="dimmed" mb="md">
-            Colle ici tes données TSV, par exemple depuis Excel ou Google Sheets.
-            La première ligne doit contenir les colonnes : Entreprise, Poste, Type, Source, Statut, etc.
-          </Text>
+          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.sectionTsv')}</Text>
+          <Text size="sm" c="dimmed" mb="md">{t('import.tsvHint')}</Text>
           <form onSubmit={handleImport}>
             <Textarea
               classNames={{ input: classes.tsvArea }}
@@ -63,7 +63,7 @@ export const Import: React.FC = () => {
               mb="md"
             />
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Import en cours...' : "Lancer l'import"}
+              {loading ? t('import.loading') : t('import.submit')}
             </Button>
           </form>
         </Paper>
@@ -71,28 +71,30 @@ export const Import: React.FC = () => {
         <Stack gap="md">
           {results ? (
             <Paper p="lg" radius="lg" withBorder>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Résultats</Text>
+              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.resultsTitle')}</Text>
               <Stack gap="xs">
                 <Group justify="space-between">
-                  <Text size="sm">Lignes totales</Text>
+                  <Text size="sm">{t('import.totalRows')}</Text>
                   <Text size="sm" fw={700}>{results.total}</Text>
                 </Group>
                 <Group justify="space-between">
-                  <Text size="sm">Créées</Text>
+                  <Text size="sm">{t('import.created')}</Text>
                   <Text size="sm" fw={700} c="green">{results.created}</Text>
                 </Group>
                 <Group justify="space-between">
-                  <Text size="sm">Ignorées / erreurs</Text>
+                  <Text size="sm">{t('import.skipped')}</Text>
                   <Text size="sm" fw={700} c="red">{results.skipped}</Text>
                 </Group>
               </Stack>
 
               {results.errors?.length > 0 ? (
                 <Stack gap="xs" mt="md">
-                  <Text size="sm" fw={700} c="red">Erreurs :</Text>
+                  <Text size="sm" fw={700} c="red">{t('import.errorsTitle')}</Text>
                   <Stack gap={4} style={{ maxHeight: 200, overflowY: 'auto' }}>
                     {results.errors.map((item: ImportResponse['errors'][number], index: number) => (
-                      <Text key={index} size="xs" c="dimmed">Ligne {item.row} : {item.reason}</Text>
+                      <Text key={index} size="xs" c="dimmed">
+                        {t('import.rowPrefix')} {item.row} : {item.reason}
+                      </Text>
                     ))}
                   </Stack>
                 </Stack>
@@ -101,15 +103,15 @@ export const Import: React.FC = () => {
           ) : null}
 
           <Paper p="lg" radius="lg" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">Correspondance des colonnes</Text>
+            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.columnsTitle')}</Text>
             <List size="sm" c="dimmed" spacing="xs">
-              <List.Item>Entreprise (obligatoire)</List.Item>
-              <List.Item>Poste (obligatoire)</List.Item>
-              <List.Item>Type (CDI, Freelance)</List.Item>
-              <List.Item>Source (LinkedIn, etc.)</List.Item>
-              <List.Item>Statut (Applied, Interview...)</List.Item>
-              <List.Item>Date candidature</List.Item>
-              <List.Item>Notes</List.Item>
+              <List.Item>{t('import.colCompany')}</List.Item>
+              <List.Item>{t('import.colPosition')}</List.Item>
+              <List.Item>{t('import.colType')}</List.Item>
+              <List.Item>{t('import.colSource')}</List.Item>
+              <List.Item>{t('import.colStatus')}</List.Item>
+              <List.Item>{t('import.colDate')}</List.Item>
+              <List.Item>{t('import.colNotes')}</List.Item>
             </List>
           </Paper>
         </Stack>

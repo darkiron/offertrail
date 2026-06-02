@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -7,21 +7,24 @@ import {
   PasswordInput, SimpleGrid, Stack, Text, TextInput, Title,
 } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
-const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caractères'),
-  prenom: z.string().trim().optional(),
-  nom: z.string().trim().optional(),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = { email: string; password: string; prenom?: string; nom?: string };
 
 export function RegisterPage() {
   const { signUp, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+
+  const registerSchema = useMemo(() => z.object({
+    email: z.string().email(t('auth.emailInvalid')),
+    password: z.string().min(8, t('auth.passwordMin')),
+    prenom: z.string().trim().optional(),
+    nom: z.string().trim().optional(),
+  }), [t]);
+
   const {
     register,
     handleSubmit,
@@ -39,12 +42,10 @@ export function RegisterPage() {
       <section className={classes.shell}>
         <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
           <Stack gap="md" ta="center">
-            <Title order={2}>Vérifie ta boîte email</Title>
-            <Text c="dimmed">
-              Un email de confirmation a été envoyé. Clique sur le lien pour activer ton compte.
-            </Text>
+            <Title order={2}>{t('auth.register.confirmTitle')}</Title>
+            <Text c="dimmed">{t('auth.register.confirmDesc')}</Text>
             <Button component={Link} to="/login" variant="light" fullWidth>
-              Retour à la connexion
+              {t('auth.register.backToLogin')}
             </Button>
           </Stack>
         </Paper>
@@ -62,7 +63,7 @@ export function RegisterPage() {
           setError(fieldName as keyof RegisterFormData, { type: 'manual', message: issue.message });
         }
       });
-      setFormError(result.error.issues[0]?.message ?? 'Formulaire invalide');
+      setFormError(result.error.issues[0]?.message ?? t('auth.invalidForm'));
       return;
     }
 
@@ -75,7 +76,7 @@ export function RegisterPage() {
       });
       setConfirmed(true);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Une erreur est survenue. Réessaie.');
+      setFormError(error instanceof Error ? error.message : t('auth.register.error'));
     }
   });
 
@@ -83,29 +84,27 @@ export function RegisterPage() {
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
         <Anchor component={Link} to="/" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
-          ← OfferTrail
+          {t('auth.register.backLink')}
         </Anchor>
 
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Nouveau compte</Badge>
+          <Badge variant="light" size="sm">{t('auth.register.badge')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Créer ton espace OfferTrail</Title>
-        <Text c="dimmed" size="sm" mb="xl">
-          Structure ta recherche d&apos;emploi avec un CRM conçu pour les candidats sérieux.
-        </Text>
+        <Title order={2} mb={4}>{t('auth.register.title')}</Title>
+        <Text c="dimmed" size="sm" mb="xl">{t('auth.register.subtitle')}</Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <SimpleGrid cols={2} spacing="md">
             <TextInput
-              label="Prénom"
-              placeholder="Vincent"
+              label={t('auth.register.firstNameLabel')}
+              placeholder={t('auth.register.firstNamePlaceholder')}
               autoComplete="given-name"
               error={errors.prenom?.message}
               {...register('prenom')}
             />
             <TextInput
-              label="Nom"
-              placeholder="Dupont"
+              label={t('auth.register.lastNameLabel')}
+              placeholder={t('auth.register.lastNamePlaceholder')}
               autoComplete="family-name"
               error={errors.nom?.message}
               {...register('nom')}
@@ -113,8 +112,8 @@ export function RegisterPage() {
           </SimpleGrid>
 
           <TextInput
-            label="Email"
-            placeholder="toi@exemple.fr"
+            label={t('auth.emailLabel')}
+            placeholder={t('auth.emailPlaceholder')}
             type="email"
             autoComplete="email"
             autoCapitalize="none"
@@ -124,10 +123,10 @@ export function RegisterPage() {
           />
 
           <PasswordInput
-            label="Mot de passe"
-            placeholder="8 caractères minimum"
+            label={t('auth.passwordLabel')}
+            placeholder={t('auth.register.passwordPlaceholder')}
             autoComplete="new-password"
-            description="Utilise un mot de passe unique. NordPass le proposera automatiquement."
+            description={t('auth.register.passwordHint')}
             error={errors.password?.message}
             {...register('password')}
           />
@@ -137,13 +136,13 @@ export function RegisterPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Créer mon compte
+            {t('auth.register.submit')}
           </Button>
         </Stack>
 
         <Text size="sm" c="dimmed" mt="lg">
-          Déjà un compte ?{' '}
-          <Anchor component={Link} to="/login" size="sm">Se connecter</Anchor>
+          {t('auth.register.alreadyAccount')}{' '}
+          <Anchor component={Link} to="/login" size="sm">{t('auth.register.loginLink')}</Anchor>
         </Text>
       </Paper>
     </section>

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -124,7 +124,9 @@ def activate_plan(db: Session, profile: Profile, plan: str, billing_period: str 
     profile.plan = plan
     profile.billing_period = billing_period
     profile.subscription_status = "active" if plan in ("pro", "ultimate") else "pending"
-    profile.plan_started_at = datetime.utcnow() if plan in ("pro", "ultimate") else None
+    profile.plan_started_at = (
+        datetime.now(timezone.utc).replace(tzinfo=None) if plan in ("pro", "ultimate") else None
+    )
     profile.plan_expires_at = None
     db.commit()
 

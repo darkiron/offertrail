@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -7,17 +7,20 @@ import {
   Stack, Text, TextInput, Title,
 } from '@mantine/core';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
-const schema = z.object({
-  email: z.email("Saisis une adresse email valide."),
-});
-
-type ForgotPasswordForm = z.infer<typeof schema>;
+type ForgotPasswordForm = { email: string };
 
 export function ForgotPasswordPage() {
+  const { t } = useI18n();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const schema = useMemo(() => z.object({
+    email: z.string().email(t('auth.forgot.emailInvalid')),
+  }), [t]);
+
   const {
     register,
     handleSubmit,
@@ -29,7 +32,7 @@ export function ForgotPasswordPage() {
   const onSubmit = handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Formulaire invalide');
+      setError(parsed.error.issues[0]?.message ?? t('auth.invalidForm'));
       return;
     }
 
@@ -40,9 +43,9 @@ export function ForgotPasswordPage() {
         { redirectTo: `${window.location.origin}/reset-password` },
       );
       if (supabaseError) throw supabaseError;
-      setMessage("Si cet email est enregistré, un lien de réinitialisation a été envoyé.");
+      setMessage(t('auth.forgot.successMessage'));
     } catch {
-      setError("Impossible d'envoyer la demande pour le moment.");
+      setError(t('auth.forgot.errorMessage'));
     }
   });
 
@@ -50,21 +53,19 @@ export function ForgotPasswordPage() {
     <section className={classes.shell}>
       <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
         <Anchor component={Link} to="/login" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
-          ← Retour à la connexion
+          {t('auth.forgot.backLink')}
         </Anchor>
 
         <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">Réinitialisation</Badge>
+          <Badge variant="light" size="sm">{t('auth.forgot.badge')}</Badge>
         </Group>
-        <Title order={2} mb={4}>Mot de passe oublié</Title>
-        <Text c="dimmed" size="sm" mb="xl">
-          Entre ton email. Si un compte existe, un lien de réinitialisation sera envoyé.
-        </Text>
+        <Title order={2} mb={4}>{t('auth.forgot.title')}</Title>
+        <Text c="dimmed" size="sm" mb="xl">{t('auth.forgot.subtitle')}</Text>
 
         <Stack component="form" gap="md" onSubmit={onSubmit}>
           <TextInput
-            label="Email"
-            placeholder="toi@exemple.fr"
+            label={t('auth.emailLabel')}
+            placeholder={t('auth.emailPlaceholder')}
             type="email"
             autoComplete="email"
             autoCapitalize="none"
@@ -81,7 +82,7 @@ export function ForgotPasswordPage() {
           )}
 
           <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            Envoyer le lien
+            {t('auth.forgot.submit')}
           </Button>
         </Stack>
       </Paper>

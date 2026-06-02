@@ -4,6 +4,8 @@ import os
 import subprocess
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -71,6 +73,29 @@ origin_regex = _parse_allowed_origin_regex(os.getenv("ALLOWED_ORIGIN_REGEX"))
 app.state.limiter = Limiter(key_func=get_remote_address)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+class CatchServerErrorsMiddleware(BaseHTTPMiddleware):
+    """Transforme toute exception non gérée en réponse 500 « gérée ».
+
+    Sans cela, une exception remonte jusqu'au ServerErrorMiddleware de Starlette
+    (le plus externe), dont la réponse 500 ne traverse pas le CORSMiddleware :
+    le navigateur ne reçoit alors aucun en-tête CORS et masque l'erreur réelle
+    (préflight avorté). En la convertissant ici, la réponse retraverse le CORS.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception:
+            logger.exception("Erreur non gérée sur %s %s", request.method, request.url.path)
+            return JSONResponse({"detail": "Erreur interne du serveur"}, status_code=500)
+
+
+# Ordre des middlewares (le dernier ajouté est le plus externe) :
+# CORS doit envelopper tout le reste pour ajouter ses en-têtes même aux erreurs ;
+# CatchServerErrors reste au plus près des routes pour capturer les exceptions.
+app.add_middleware(CatchServerErrorsMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -79,7 +104,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(SlowAPIMiddleware)
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router.router)
 app.include_router(etablissements_router.router, prefix="/etablissements", tags=["etablissements"])

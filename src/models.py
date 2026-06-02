@@ -3,7 +3,8 @@ OfferTrail — Modèles SQLAlchemy
 Auth gérée par Supabase — table profiles liée à auth.users.
 """
 import uuid
-from datetime import datetime
+import datetime as dt
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
@@ -20,7 +21,7 @@ def gen_uuid() -> str:
 
 
 def now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):
