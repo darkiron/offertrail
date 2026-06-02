@@ -11,8 +11,9 @@
 }
 
 .headerInner {
+  width: 100%;
   min-width: 0;
-  overflow: hidden;
+  flex-wrap: nowrap;
 }
 
 .headerBrandGroup {
@@ -86,6 +87,7 @@
   background: var(--bg-base);
   min-width: 0;
   overflow-x: hidden;
+  padding: 0;
 }
 
 @media (max-width: 520px) {
