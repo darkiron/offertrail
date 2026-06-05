@@ -30,6 +30,11 @@ export function useApplications({
     staleTime: 5 * 60 * 1000,
   });
 
+  const orgMap = useMemo(
+    () => new Map((orgsQuery.data ?? []).map((o) => [o.id, o])),
+    [orgsQuery.data],
+  );
+
   const filtered = useMemo(() => {
     let items = appsQuery.data?.items ?? [];
 
@@ -46,25 +51,34 @@ export function useApplications({
     // Filtre recherche (company + title)
     if (search.trim()) {
       const needle = search.trim().toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.company.toLowerCase().includes(needle) ||
-          item.title.toLowerCase().includes(needle),
-      );
+      items = items.filter((item) => {
+        const organization = item.organization_id ? orgMap.get(item.organization_id) : null;
+        const finalCustomer = item.final_customer_organization_id ? orgMap.get(item.final_customer_organization_id) : null;
+        return [
+          item.company,
+          item.title,
+          item.source,
+          item.type,
+          item.status,
+          item.applied_at,
+          item.next_followup_at,
+          item.final_customer_name,
+          organization?.name,
+          organization?.city,
+          finalCustomer?.name,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(needle));
+      });
     }
 
     return items;
-  }, [appsQuery.data, showHidden, status, search]);
+  }, [appsQuery.data, showHidden, status, search, orgMap]);
 
   // Pagination client-side
   const paginatedApps = useMemo(
     () => filtered.slice((page - 1) * limit, page * limit),
     [filtered, page, limit],
-  );
-
-  const orgMap = useMemo(
-    () => new Map((orgsQuery.data ?? []).map((o) => [o.id, o])),
-    [orgsQuery.data],
   );
 
   return {

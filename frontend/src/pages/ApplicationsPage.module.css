@@ -2,6 +2,87 @@
   composes: shellWide from '../styles/appShell.module.css';
 }
 
+.panel {
+  background: color-mix(in srgb, var(--bg-mantle) 72%, transparent);
+  border-color: color-mix(in srgb, var(--border) 68%, transparent);
+  overflow: hidden;
+}
+
 .hero {
   composes: hero from '../styles/appShell.module.css';
+}
+
+.table {
+  table-layout: fixed;
+}
+
+.table thead tr {
+  background: color-mix(in srgb, var(--bg-crust) 60%, transparent);
+}
+
+.table th {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table td {
+  border-top-color: color-mix(in srgb, var(--border) 58%, transparent);
+}
+
+.table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.companyCell {
+  width: 40%;
+  min-width: 260px;
+}
+
+.positionCell {
+  width: 34%;
+}
+
+.statusCell {
+  width: 120px;
+}
+
+.dateCell {
+  width: 96px;
+  white-space: nowrap;
+}
+
+.actionCell {
+  width: 96px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.primaryText,
+.secondaryText {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.primaryText {
+  white-space: nowrap;
+}
+
+.secondaryText {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 14px;
+  }
 }
