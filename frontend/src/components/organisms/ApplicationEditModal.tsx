@@ -29,9 +29,9 @@ export function ApplicationEditModal({ application, onClose, onSaved }: Applicat
     source: application.source ?? '',
     job_url: application.job_url ?? '',
     applied_at: application.applied_at ?? '',
-    notes: (application as unknown as Record<string, string>).notes ?? '',
-    salary: null,
-    response_date: null,
+    notes: application.notes ?? '',
+    salary: application.salary,
+    response_date: application.response_date ?? '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

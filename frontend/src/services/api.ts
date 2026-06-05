@@ -346,6 +346,9 @@ function mapCandidatureToApplication(
     source: candidature.source,
     job_url: candidature.url_offre,
     applied_at: normalizeDate(candidature.date_candidature),
+    response_date: normalizeDate(candidature.date_reponse),
+    salary: candidature.salaire_vise,
+    notes: candidature.notes,
     next_followup_at: null,
     created_at: candidature.created_at,
     updated_at: candidature.updated_at,
@@ -354,19 +357,28 @@ function mapCandidatureToApplication(
 }
 
 function mapPayloadToSaas(data: ApplicationPayload): Partial<CandidatureApi> {
-  return {
-    etablissement_id: data.organization_id ? resolveOrganizationId(data.organization_id) : '',
-    client_final_id: data.final_customer_organization_id ? resolveOrganizationId(data.final_customer_organization_id) : null,
-    poste: data.title ?? '',
-    description: data.type ?? null,
-    statut: data.status ?? undefined,
-    source: data.source ?? null,
-    url_offre: data.job_url ?? null,
-    date_candidature: data.applied_at ?? null,
-    date_reponse: data.response_date ?? null,
-    salaire_vise: data.salary ?? null,
-    notes: data.notes ?? null,
-  };
+  const payload: Partial<CandidatureApi> = {};
+  const has = (key: keyof ApplicationPayload) => Object.prototype.hasOwnProperty.call(data, key);
+
+  if (has('organization_id') && data.organization_id) {
+    payload.etablissement_id = resolveOrganizationId(data.organization_id);
+  }
+  if (has('final_customer_organization_id')) {
+    payload.client_final_id = data.final_customer_organization_id
+      ? resolveOrganizationId(data.final_customer_organization_id)
+      : null;
+  }
+  if (has('title')) payload.poste = data.title ?? '';
+  if (has('type')) payload.description = data.type ?? null;
+  if (has('status')) payload.statut = data.status ?? undefined;
+  if (has('source')) payload.source = data.source ?? null;
+  if (has('job_url')) payload.url_offre = data.job_url ?? null;
+  if (has('applied_at')) payload.date_candidature = data.applied_at ?? null;
+  if (has('response_date')) payload.date_reponse = data.response_date ?? null;
+  if (has('salary')) payload.salaire_vise = data.salary ?? null;
+  if (has('notes')) payload.notes = data.notes ?? null;
+
+  return payload;
 }
 
 function mapContactApiToContact(contact: ContactApi): Contact {

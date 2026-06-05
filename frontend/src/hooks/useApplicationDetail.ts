@@ -17,6 +17,16 @@ export function useApplicationDetail(id: number | undefined) {
     staleTime: 5 * 60 * 1000,
   });
 
+  const syncDetail = async () => {
+    const fresh = await applicationService.getApplication(id!);
+    queryClient.setQueryData(['application', id], fresh);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['applications'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]);
+    return fresh;
+  };
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['application', id] });
 
   const updateStatus = useMutation({
@@ -57,8 +67,10 @@ export function useApplicationDetail(id: number | undefined) {
   });
 
   const updateApplication = useMutation({
-    mutationFn: (payload: ApplicationPayload) => applicationService.updateApplication(id!, payload),
-    onSuccess: invalidate,
+    mutationFn: async (payload: ApplicationPayload) => {
+      await applicationService.updateApplication(id!, payload);
+      return syncDetail();
+    },
   });
 
   const updateEvent = useMutation({

@@ -54,6 +54,9 @@ export interface Application {
   source: string | null;
   job_url: string | null;
   applied_at: string | null;
+  response_date: string | null;
+  salary: number | null;
+  notes: string | null;
   next_followup_at: string | null;
   created_at: string;
   updated_at: string;
