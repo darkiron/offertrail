@@ -1,19 +1,19 @@
 .shellWide {
-  max-width: min(1200px, 100vw);
+  max-width: min(1360px, 100%);
   margin: 0 auto;
   width: 100%;
-  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2.5rem) clamp(4.5rem, 6vw, 5.5rem);
+  padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1rem, 2.2vw, 2rem) clamp(4rem, 6vw, 5rem);
 }
 
 .shellStandard {
-  max-width: min(1200px, 100vw);
+  max-width: min(1180px, 100%);
   margin: 0 auto;
   width: 100%;
-  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2.5rem) clamp(4.5rem, 6vw, 5.5rem);
+  padding: clamp(1.25rem, 3vw, 2rem) clamp(1rem, 2.5vw, 2rem) clamp(4rem, 6vw, 5rem);
 }
 
 .shellNarrow {
-  max-width: min(1200px, 100vw);
+  max-width: min(920px, 100%);
   margin: 0 auto;
   width: 100%;
   padding: clamp(1.25rem, 3.5vw, 2.5rem) clamp(0.75rem, 2.5vw, 2rem) clamp(4rem, 5.5vw, 5rem);
@@ -104,3 +104,11 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+@media (max-width: 640px) {
+  .shellWide,
+  .shellStandard,
+  .shellNarrow {
+    padding-inline: 0.75rem;
+    padding-top: 1rem;
+  }
+}

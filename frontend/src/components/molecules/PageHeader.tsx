@@ -12,12 +12,12 @@ interface PageHeaderProps {
 export function PageHeader({ title, kicker, count, actions, description }: PageHeaderProps) {
   return (
     <Stack gap={4}>
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={2}>
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+        <Stack gap={2} style={{ minWidth: 0, flex: '1 1 280px' }}>
           {kicker && (
             <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{kicker}</Text>
           )}
-          <Group gap="sm" align="center">
+          <Group gap="sm" align="center" wrap="wrap">
             <Title order={2}>{title}</Title>
             {count != null && (
               <Badge variant="light" size="md" radius="xl">{count}</Badge>
@@ -25,7 +25,7 @@ export function PageHeader({ title, kicker, count, actions, description }: PageH
           </Group>
         </Stack>
         {actions && (
-          <Group gap="sm" wrap="nowrap" mt={kicker ? 18 : 0}>{actions}</Group>
+          <Group gap="sm" wrap="wrap" mt={kicker ? 18 : 0}>{actions}</Group>
         )}
       </Group>
       {description && (
