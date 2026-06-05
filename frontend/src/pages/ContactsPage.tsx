@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, TextInput,
@@ -38,7 +38,7 @@ export const ContactsPage: React.FC = () => {
     { id: 'unlinked', label: t('contacts.tabUnlinked'), hint: t('contacts.tabUnlinkedHint') },
   ];
 
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -49,19 +49,32 @@ export const ContactsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    fetchContacts();
+    void fetchContacts();
     organizationService.getAll().then(setOrganizations).catch(() => {});
-  }, []);
+  }, [fetchContacts]);
 
   const organizationsMap = useMemo(() => new Map(organizations.map((org) => [org.id, org])), [organizations]);
 
   const visibleContacts = contacts.filter((contact) => {
-    const matchesSearch = `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(search.toLowerCase())
-      || (contact.role && contact.role.toLowerCase().includes(search.toLowerCase()))
-      || (contact.email && contact.email.toLowerCase().includes(search.toLowerCase()));
+    const organization = contact.organization_id ? organizationsMap.get(contact.organization_id) : null;
+    const needle = search.trim().toLowerCase();
+    const matchesSearch = !needle || [
+      contact.first_name,
+      contact.last_name,
+      `${contact.first_name} ${contact.last_name}`,
+      contact.role,
+      contact.email,
+      contact.phone,
+      contact.linkedin_url,
+      contact.notes,
+      organization?.name,
+      organization?.city,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(needle));
 
     if (!matchesSearch) {
       return false;
@@ -79,7 +92,7 @@ export const ContactsPage: React.FC = () => {
   const linkedCount = contacts.filter((contact) => !!contact.organization_id).length;
 
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
+    <Stack gap="lg" className={classes.shell}>
       <PageHeader
         title={t('contacts.title')}
         count={loading ? null : contacts.length}

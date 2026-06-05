@@ -35,15 +35,29 @@ export function Dashboard() {
   const [activeTab, setActiveTab] = useState<string | null>('apps');
 
   const {
-    kpis, followups, apps, total, orgMap, sub, insights,
+    kpis, followups, apps, total, orgMap, insights,
     loading, loadingInsights, error, refetch, markFollowup, loadInsights,
   } = useDashboard({ search: searchTerm, status: statusFilter, page, limit, showHidden });
 
   useEffect(() => { document.title = `${t('dashboard.title')} — OfferTrail`; }, [t]);
-  useEffect(() => { setPage(1); }, [searchTerm, statusFilter, showHidden]);
   useEffect(() => {
     if (activeTab === 'insights' && !insights) loadInsights();
-  }, [activeTab]);
+  }, [activeTab, insights, loadInsights]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handleShowHiddenChange = (checked: boolean) => {
+    setShowHidden(checked);
+    setPage(1);
+  };
 
   if (error && (error as { response?: { status?: number } }).response?.status === 401) {
     void signOut().finally(() => navigate('/login', { replace: true }));
@@ -60,7 +74,7 @@ export function Dashboard() {
   };
 
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
+    <Stack gap="lg" className={classes.shell}>
       {showModal && (
         <NewApplicationModal
           onClose={() => setShowModal(false)}
@@ -83,7 +97,7 @@ export function Dashboard() {
       />
 
       {/* KPIs */}
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="md">
+      <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, lg: 6 }} spacing="md">
         <KPICard label={t('dashboard.totalApplications')} value={kpis.total_count} />
         <KPICard label={t('dashboard.activePipeline')} value={kpis.active_count} subValue={t('dashboard.ongoingProcesses')} />
         <KPICard label={t('dashboard.dueFollowups')} value={kpis.due_followups} subValue={t('dashboard.attentionRequired')} />
@@ -93,7 +107,7 @@ export function Dashboard() {
       </SimpleGrid>
 
       {/* Main panel */}
-      <Paper p="lg" radius="lg" withBorder>
+      <Paper p="lg" radius="lg" withBorder className={classes.panel}>
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List mb="md">
             <Tabs.Tab value="apps">{t('dashboard.tabApplications')}</Tabs.Tab>
@@ -107,19 +121,19 @@ export function Dashboard() {
                 placeholder={t('dashboard.searchPlaceholder')}
                 label={t('dashboard.search')}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
               <Select
                 label={t('dashboard.status')}
                 data={STATUS_OPTIONS}
                 value={statusFilter}
-                onChange={(v) => setStatusFilter(v ?? '')}
+                onChange={(v) => handleStatusChange(v ?? '')}
               />
               <Checkbox
                 mt="xl"
                 label={t('dashboard.showHidden')}
                 checked={showHidden}
-                onChange={(e) => setShowHidden(e.target.checked)}
+                onChange={(e) => handleShowHiddenChange(e.target.checked)}
               />
             </SimpleGrid>
 
@@ -132,15 +146,15 @@ export function Dashboard() {
                 action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
               />
             ) : (
-              <Table.ScrollContainer minWidth={600}>
-                <Table striped highlightOnHover verticalSpacing="sm">
+              <Table.ScrollContainer minWidth={760}>
+                <Table striped highlightOnHover verticalSpacing="sm" className={classes.table}>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>{t('dashboard.company')}</Table.Th>
-                      <Table.Th>{t('dashboard.position')}</Table.Th>
-                      <Table.Th>{t('dashboard.status')}</Table.Th>
-                      <Table.Th>{t('dashboard.applied')}</Table.Th>
-                      <Table.Th>{t('dashboard.action')}</Table.Th>
+                      <Table.Th className={classes.companyCell}>{t('dashboard.company')}</Table.Th>
+                      <Table.Th className={classes.positionCell}>{t('dashboard.position')}</Table.Th>
+                      <Table.Th className={classes.statusCell}>{t('dashboard.status')}</Table.Th>
+                      <Table.Th className={classes.dateCell}>{t('dashboard.applied')}</Table.Th>
+                      <Table.Th className={classes.actionCell}>{t('dashboard.action')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -148,25 +162,25 @@ export function Dashboard() {
                       const org = orgMap.get(app.organization_id || -1);
                       return (
                         <Table.Tr key={app.id}>
-                          <Table.Td>
+                          <Table.Td className={classes.companyCell}>
                             <Stack gap={4}>
-                              <Group gap="xs">
-                                <Text fw={700}>{app.company}</Text>
+                              <Group gap="xs" wrap="wrap">
+                                <Text fw={700} className={classes.primaryText}>{app.company}</Text>
                                 {org && <OrganizationTypeBadge type={org.type} size="xs" />}
                                 {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
                               </Group>
-                              <Text size="xs" c="dimmed">{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
+                              <Text size="xs" c="dimmed" className={classes.secondaryText}>{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
                               {app.final_customer_organization_id && (
-                                <Text size="xs" c="dimmed">
+                                <Text size="xs" c="dimmed" className={classes.secondaryText}>
                                   {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
                                 </Text>
                               )}
                             </Stack>
                           </Table.Td>
-                          <Table.Td>{app.title}</Table.Td>
-                          <Table.Td><StatusBadge status={app.status} /></Table.Td>
-                          <Table.Td>{app.applied_at || '-'}</Table.Td>
-                          <Table.Td>
+                          <Table.Td className={classes.positionCell}><Text className={classes.primaryText}>{app.title}</Text></Table.Td>
+                          <Table.Td className={classes.statusCell}><StatusBadge status={app.status} /></Table.Td>
+                          <Table.Td className={classes.dateCell}>{app.applied_at || '-'}</Table.Td>
+                          <Table.Td className={classes.actionCell}>
                             <Link to={`/app/candidatures/${app.id}`}>
                               <Button variant="ghost" size="small">{t('common.details')}</Button>
                             </Link>

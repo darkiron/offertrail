@@ -8,6 +8,7 @@ import { organizationService } from '../services/api';
 import { Spinner } from '../components/atoms/Spinner';
 import type { Organization, OrganizationType } from '../types';
 import { PageHeader } from '../components/molecules/PageHeader';
+import { Button } from '../components/atoms/Button';
 import classes from './OrganizationsPage.module.css';
 
 type OrganizationTab = 'all' | 'engaged' | 'responsive' | 'watchlist';
@@ -49,25 +50,22 @@ export const OrganizationsPage: React.FC = () => {
     document.title = t('organization.pageTitle');
   }, [t]);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await organizationService.getAll({
-        type: typeFilter || undefined,
-        search: search || undefined,
-      });
+      const data = await organizationService.getAll();
       setOrganizations(data);
     } catch {
       setError('Failed to load organizations');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOrganizations();
-  }, [typeFilter, search]);
+    void fetchOrganizations();
+  }, [fetchOrganizations]);
 
   const getPositiveRate = (organization: Organization) => {
     const rawValue = (organization as Organization & { positive_rate?: number | null }).positive_rate;
@@ -97,21 +95,36 @@ export const OrganizationsPage: React.FC = () => {
     });
   }, [locale]);
 
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const searchedOrganizations = organizations.filter((org) => {
+    if (!normalizedSearch) return true;
+    return [
+      org.name,
+      org.city,
+      org.website,
+      org.linkedin_url,
+      org.notes,
+      organizationTypeLabels[org.type],
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+  });
+
   const typeCounts = organizationTypes.reduce<Record<string, number>>((acc, type) => {
-    acc[type] = organizations.filter((org) => org.type === type).length;
+    acc[type] = searchedOrganizations.filter((org) => org.type === type).length;
     return acc;
   }, {});
 
   const totalApplications = organizations.reduce((sum, org) => sum + (org.total_applications ?? 0), 0);
   const engagedOrganizations = organizations.filter((org) => (org.total_applications ?? 0) > 0);
-  const watchlistOrganizations = organizations.filter(
-    (org) => (org.total_applications ?? 0) > 0 && (org.response_rate ?? 0) < 20,
-  );
   const averageResponseRate = organizations.length
     ? Math.round(organizations.reduce((sum, org) => sum + (org.response_rate ?? 0), 0) / organizations.length)
     : 0;
 
-  const visibleOrganizations = organizations.filter((org) => {
+  const visibleOrganizations = searchedOrganizations.filter((org) => {
+    if (typeFilter && org.type !== typeFilter) return false;
+
     switch (activeTab) {
       case 'engaged': return (org.total_applications ?? 0) > 0;
       case 'responsive': return (org.response_rate ?? 0) >= 35;
@@ -121,18 +134,18 @@ export const OrganizationsPage: React.FC = () => {
   });
 
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
+    <Stack gap="lg" className={classes.shell}>
       <PageHeader
         title={t('organization.pageHeader')}
         count={loading ? null : organizations.length}
         actions={
-          <Anchor component={Link} to="/app/etablissements/maintenance">
-            <Badge variant="filled" size="md" radius="xl">{t('organization.maintenanceBtn')}</Badge>
-          </Anchor>
+          <Link to="/app/etablissements/maintenance">
+            <Button variant="primary">{t('organization.maintenanceBtn')}</Button>
+          </Link>
         }
       />
 
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+      <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
         {[
           { label: t('organization.kpiTotal'), value: organizations.length, hint: t('organization.kpiTotalHint') },
           { label: t('organization.kpiActive'), value: engagedOrganizations.length, hint: t('organization.kpiActiveHint') },

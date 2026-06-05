@@ -1,9 +1,8 @@
 .card {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--bg-mantle, #1e1e2e) 88%, white 12%),
-    var(--bg-mantle, #1e1e2e)
-  );
+  background: color-mix(in srgb, var(--bg-mantle, #1e1e2e) 86%, var(--bg-surface, #313244) 14%);
+  min-height: 112px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: none;
 }
 
 .label {
@@ -11,4 +10,11 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .card {
+    min-height: 104px;
+  }
 }

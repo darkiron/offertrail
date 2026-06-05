@@ -38,7 +38,21 @@ export function ApplicationsPage() {
   });
 
   useEffect(() => { document.title = t('application.pageTitle'); }, [t]);
-  useEffect(() => { setPage(1); }, [searchTerm, statusFilter, showHidden]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handleShowHiddenChange = (checked: boolean) => {
+    setShowHidden(checked);
+    setPage(1);
+  };
 
   if (error && (error as { response?: { status?: number } }).response?.status === 401) {
     navigate('/login');
@@ -46,7 +60,7 @@ export function ApplicationsPage() {
   }
 
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
+    <Stack gap="lg" className={classes.shell}>
       {showModal && (
         <NewApplicationModal
           onClose={() => setShowModal(false)}
@@ -67,27 +81,27 @@ export function ApplicationsPage() {
         }
       />
 
-      <Paper p="lg" radius="lg" withBorder>
+      <Paper p="lg" radius="lg" withBorder className={classes.panel}>
         <Group gap="sm" mb="md" wrap="wrap">
           <TextInput
             label={t('dashboard.search')}
             placeholder={t('application.searchPlaceholder')}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             style={{ flex: 1, minWidth: 180 }}
           />
           <Select
             label={t('dashboard.status')}
             data={STATUS_OPTIONS}
             value={statusFilter}
-            onChange={(v) => setStatusFilter(v ?? '')}
+            onChange={(v) => handleStatusChange(v ?? '')}
             style={{ minWidth: 160 }}
           />
           <Checkbox
             mt="xl"
             label={t('dashboard.showHidden')}
             checked={showHidden}
-            onChange={(e) => setShowHidden(e.target.checked)}
+            onChange={(e) => handleShowHiddenChange(e.target.checked)}
           />
         </Group>
 
@@ -100,15 +114,15 @@ export function ApplicationsPage() {
             action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
           />
         ) : (
-          <Table.ScrollContainer minWidth={600}>
-            <Table striped highlightOnHover verticalSpacing="sm">
+          <Table.ScrollContainer minWidth={760}>
+            <Table striped highlightOnHover verticalSpacing="sm" className={classes.table}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>{t('dashboard.company')}</Table.Th>
-                  <Table.Th>{t('dashboard.position')}</Table.Th>
-                  <Table.Th>{t('dashboard.status')}</Table.Th>
-                  <Table.Th>{t('dashboard.applied')}</Table.Th>
-                  <Table.Th>{t('dashboard.action')}</Table.Th>
+                  <Table.Th className={classes.companyCell}>{t('dashboard.company')}</Table.Th>
+                  <Table.Th className={classes.positionCell}>{t('dashboard.position')}</Table.Th>
+                  <Table.Th className={classes.statusCell}>{t('dashboard.status')}</Table.Th>
+                  <Table.Th className={classes.dateCell}>{t('dashboard.applied')}</Table.Th>
+                  <Table.Th className={classes.actionCell}>{t('dashboard.action')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -116,25 +130,25 @@ export function ApplicationsPage() {
                   const org = orgMap.get(app.organization_id || -1);
                   return (
                     <Table.Tr key={app.id}>
-                      <Table.Td>
+                      <Table.Td className={classes.companyCell}>
                         <Stack gap={4}>
-                          <Group gap="xs">
-                            <Text fw={700}>{app.company}</Text>
+                          <Group gap="xs" wrap="wrap">
+                            <Text fw={700} className={classes.primaryText}>{app.company}</Text>
                             {org && <OrganizationTypeBadge type={org.type} size="xs" />}
                             {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
                           </Group>
-                          <Text size="xs" c="dimmed">{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
+                          <Text size="xs" c="dimmed" className={classes.secondaryText}>{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
                           {app.final_customer_organization_id && (
-                            <Text size="xs" c="dimmed">
+                            <Text size="xs" c="dimmed" className={classes.secondaryText}>
                               {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
                             </Text>
                           )}
                         </Stack>
                       </Table.Td>
-                      <Table.Td>{app.title}</Table.Td>
-                      <Table.Td><StatusBadge status={app.status} size="md" /></Table.Td>
-                      <Table.Td>{app.applied_at || '-'}</Table.Td>
-                      <Table.Td>
+                      <Table.Td className={classes.positionCell}><Text className={classes.primaryText}>{app.title}</Text></Table.Td>
+                      <Table.Td className={classes.statusCell}><StatusBadge status={app.status} size="md" /></Table.Td>
+                      <Table.Td className={classes.dateCell}>{app.applied_at || '-'}</Table.Td>
+                      <Table.Td className={classes.actionCell}>
                         <Link to={`/app/candidatures/${app.id}`}>
                           <Button variant="ghost" size="small">{t('common.details')}</Button>
                         </Link>
