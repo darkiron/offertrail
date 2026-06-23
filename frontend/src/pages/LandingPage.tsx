@@ -15,6 +15,16 @@ export const LandingPage: React.FC = () => {
   const plans = usePricingPlans();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
+  const [breakdownPeriod, setBreakdownPeriod] = useState<BillingPeriod>('monthly');
+
+  // Répartition transparente du prix Pro (charges URSSAF 33%, Stripe 2,2% + 0,25€).
+  const proPlan = plans.find((p) => p.id === 'pro');
+  const proPrice = (breakdownPeriod === 'yearly' && proPlan?.prices.yearly) || proPlan?.prices.monthly;
+  const priceValue = proPrice ? Number(proPrice.amount.replace('€', '').replace(',', '.')) : 0;
+  const eur = (n: number) => `~${n.toFixed(2).replace('.', ',')}€`;
+  const stripeFee = priceValue * 0.022 + 0.25;
+  const urssafFee = priceValue * 0.33;
+  const devPay = priceValue - stripeFee - urssafFee;
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -188,20 +198,31 @@ export const LandingPage: React.FC = () => {
           </p>
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+            <div className="lp-pricing-controls" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+              <SegmentedControl
+                size="xs"
+                data={[
+                  { label: t('landing.pricing.monthly'), value: 'monthly' },
+                  { label: t('landing.pricing.yearly'), value: 'yearly' },
+                ]}
+                value={breakdownPeriod}
+                onChange={(value) => setBreakdownPeriod(value as BillingPeriod)}
+              />
+            </div>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
-              Prix transparent · Pro à 9,99€/mois
+              Prix transparent · Pro à {proPrice?.amount}{proPrice?.suffix}
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
               <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.stripe')}</span>
-              <span style={{ opacity: 0.6 }}>~0,47€</span>
+              <span style={{ opacity: 0.6 }}>{eur(stripeFee)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
               <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.urssaf')}</span>
-              <span style={{ opacity: 0.6 }}>~4,79€</span>
+              <span style={{ opacity: 0.6 }}>{eur(urssafFee)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px', fontWeight: 600 }}>
               <span>{t('landing.craftcodes.devPay')}</span>
-              <span className="lp-link">~9,73€</span>
+              <span className="lp-link">{eur(devPay)}</span>
             </div>
             <p style={{ fontSize: '12px', opacity: 0.4, margin: '12px 0 0', lineHeight: 1.6 }}>
               {t('landing.craftcodes.noInvestors')}
