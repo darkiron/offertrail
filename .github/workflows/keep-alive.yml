@@ -1,0 +1,15 @@
+name: keep-alive
+
+# Empêche l'instance Render (plan Free) de s'endormir en pingant /health.
+# Plage 6h-22h UTC uniquement pour préserver le quota mensuel d'uptime.
+on:
+  schedule:
+    - cron: '*/10 6-22 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --max-time 60 https://offertrail-wpkp.onrender.com/health || true
