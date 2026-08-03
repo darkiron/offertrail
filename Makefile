@@ -55,7 +55,7 @@ run:
 	$(RUN_ALL)
 
 run-back:
-	$(PYTHON) -m uvicorn src.main:app --reload --port 8000
+	$(PYTHON) -m uvicorn src.main:app --reload --port 8000 --env-file .env
 
 run-front:
 	@$(MAKE) check-front-env
