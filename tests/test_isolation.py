@@ -95,6 +95,70 @@ class TestEtablissementsAccess:
 
         assert response.status_code == 401
 
+    def test_user_cannot_update_another_users_etablissement(self, client, user_a, user_b):
+        created = client.post(
+            "/etablissements",
+            headers=user_a["headers"],
+            json={"nom": "Owned Corp", "type": "AUTRE"},
+        )
+
+        response = client.patch(
+            f"/etablissements/{created.json()['id']}",
+            headers=user_b["headers"],
+            json={"nom": "Hijacked Corp"},
+        )
+
+        assert response.status_code == 403
+
+    def test_user_cannot_delete_another_users_etablissement(self, client, user_a, user_b):
+        created = client.post(
+            "/etablissements",
+            headers=user_a["headers"],
+            json={"nom": "Owned Corp", "type": "AUTRE"},
+        )
+
+        response = client.delete(
+            f"/etablissements/{created.json()['id']}",
+            headers=user_b["headers"],
+        )
+
+        assert response.status_code == 403
+
+    def test_user_cannot_merge_another_users_etablissement(self, client, user_a, user_b):
+        source = client.post(
+            "/etablissements",
+            headers=user_a["headers"],
+            json={"nom": "Source Corp", "type": "AUTRE"},
+        ).json()
+        target = client.post(
+            "/etablissements",
+            headers=user_b["headers"],
+            json={"nom": "Target Corp", "type": "AUTRE"},
+        ).json()
+
+        response = client.post(
+            f"/etablissements/{source['id']}/merge",
+            headers=user_b["headers"],
+            json={"target_organization_id": target["id"]},
+        )
+
+        assert response.status_code == 403
+
+    def test_user_cannot_split_another_users_etablissement(self, client, user_a, user_b):
+        source = client.post(
+            "/etablissements",
+            headers=user_a["headers"],
+            json={"nom": "Source Corp", "type": "AUTRE"},
+        ).json()
+
+        response = client.post(
+            f"/etablissements/{source['id']}/split",
+            headers=user_b["headers"],
+            json={"name": "Unauthorized Split"},
+        )
+
+        assert response.status_code == 403
+
 
 class TestSubscriptionGate:
     def test_free_user_limited_to_five_candidatures(self, client, ets):
