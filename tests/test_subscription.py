@@ -40,7 +40,7 @@ def test_get_subscription_pending_user(client):
     assert payload["is_active"] is False
 
 
-def test_upgrade_to_pro(client, user_a, monkeypatch):
+def test_checkout_fails_closed_when_stripe_is_not_configured(client, user_a, monkeypatch):
     # Force subscription_status à pending pour tester l'upgrade
     db = SessionLocal()
     try:
@@ -53,20 +53,19 @@ def test_upgrade_to_pro(client, user_a, monkeypatch):
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: False)
     response = client.post("/subscription/checkout", headers=user_a["headers"])
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["mode"] == "simulated"
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Stripe non configure"
 
     me = client.get("/subscription/me", headers=user_a["headers"])
-    assert me.json()["subscription_status"] == "active"
-    assert me.json()["is_active"] is True
+    assert me.json()["subscription_status"] == "pending"
+    assert me.json()["is_active"] is False
 
 
 def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch):
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: True)
     monkeypatch.setattr(
         "src.routers.subscription.create_checkout_session",
-        lambda user_id, user_email, stripe_customer_id=None: "https://checkout.stripe.test/session",
+        lambda user_id, user_email, plan, period, coupon_id=None: "https://checkout.stripe.test/session",
     )
 
     response = client.post("/subscription/checkout", headers=user_a["headers"])
@@ -179,6 +178,49 @@ def test_webhook_subscription_deleted_cancels_profile(client, user_a, monkeypatc
         assert profile is not None
         assert profile.subscription_status == "cancelled"
         assert profile.stripe_subscription_id is None
+    finally:
+        db.close()
+
+
+def test_webhook_subscription_updated_syncs_profile(client, user_a, monkeypatch):
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.subscription_status = "pending"
+        profile.stripe_customer_id = "cus_test_123"
+        profile.stripe_subscription_id = "sub_test_123"
+        db.commit()
+    finally:
+        db.close()
+
+    monkeypatch.setattr(
+        "src.routers.subscription.verify_webhook_signature",
+        lambda body, sig_header: {
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "id": "sub_test_123",
+                    "customer": "cus_test_123",
+                    "status": "trialing",
+                    "metadata": {"plan": "ultimate", "period": "yearly"},
+                },
+            },
+        },
+    )
+
+    response = client.post(
+        "/subscription/webhook",
+        content=b"{}",
+        headers={"stripe-signature": "sig_test"},
+    )
+
+    assert response.status_code == 200
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        assert profile.subscription_status == "active"
+        assert profile.plan == "ultimate"
+        assert profile.billing_period == "yearly"
     finally:
         db.close()
 

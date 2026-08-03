@@ -28,20 +28,21 @@ def create_checkout_session(
         raise ValueError(f"Prix inconnu : {price_key}")
 
     params = {
-        "payment_method_types": ["card"],
         "line_items": [{"price": price_id, "quantity": 1}],
         "mode": "subscription",
+        "integration_identifier": "offertrail_qzmpvnak",
         "customer_email": user_email,
         "success_url": f"{APP_BASE_URL}/app/mon-compte?payment=success",
         "cancel_url": f"{APP_BASE_URL}/app/pricing?payment=cancelled",
         "metadata": {"user_id": user_id, "plan": plan, "period": period},
+        "subscription_data": {
+            "metadata": {"user_id": user_id, "plan": plan, "period": period},
+        },
         "consent_collection": {"terms_of_service": "required"},
     }
 
     if LAUNCH_TRIAL_DAYS > 0:
-        params["subscription_data"] = {
-            "trial_period_days": LAUNCH_TRIAL_DAYS,
-        }
+        params["subscription_data"]["trial_period_days"] = LAUNCH_TRIAL_DAYS
 
     if coupon_id:
         params["discounts"] = [{"coupon": coupon_id}]
@@ -55,4 +56,4 @@ def verify_webhook(payload: bytes, sig: str) -> stripe.Event:
 
 
 def is_configured() -> bool:
-    return bool(os.getenv("STRIPE_SECRET_KEY")) and all(PRICE_MAP.values())
+    return bool(os.getenv("STRIPE_SECRET_KEY")) and bool(WEBHOOK_SECRET) and all(PRICE_MAP.values())

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import stripe
@@ -21,6 +21,27 @@ from src.services.stripe_service import (
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 logger = logging.getLogger(__name__)
 verify_webhook_signature = verify_webhook
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _sync_subscription(profile: Profile, subscription: dict) -> None:
+    metadata = subscription.get("metadata", {})
+    if metadata.get("plan") in ("pro", "ultimate"):
+        profile.plan = metadata["plan"]
+    if metadata.get("period") in ("monthly", "yearly"):
+        profile.billing_period = metadata["period"]
+
+    stripe_status = subscription.get("status", "")
+    if stripe_status in ("active", "trialing"):
+        profile.subscription_status = "active"
+        profile.plan_started_at = profile.plan_started_at or _utc_now()
+    elif stripe_status in ("canceled", "unpaid", "incomplete_expired"):
+        profile.subscription_status = "cancelled"
+    else:
+        profile.subscription_status = "pending"
 
 
 class CheckoutRequest(BaseModel):
@@ -52,12 +73,7 @@ def create_checkout(
         raise HTTPException(400, "Periode invalide")
 
     if not is_configured():
-        profile.plan = body.plan
-        profile.billing_period = body.period
-        profile.subscription_status = "active"
-        profile.plan_started_at = datetime.utcnow()
-        db.commit()
-        return {"mode": "simulated", "checkout_url": None}
+        raise HTTPException(status_code=503, detail="Stripe non configure")
 
     user_email = payload.get("email", "")
     if not user_email:
@@ -138,10 +154,22 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 profile.plan = plan
                 profile.billing_period = period
                 profile.subscription_status = "active"
-                profile.plan_started_at = datetime.utcnow()
+                profile.plan_started_at = _utc_now()
                 profile.stripe_customer_id = session.get("customer")
                 profile.stripe_subscription_id = session.get("subscription")
                 db.commit()
+
+    elif event["type"] == "customer.subscription.updated":
+        subscription = event["data"]["object"]
+        profile = db.query(Profile).filter(
+            (Profile.stripe_subscription_id == subscription.get("id"))
+            | (Profile.stripe_customer_id == subscription.get("customer"))
+        ).first()
+        if profile:
+            profile.stripe_customer_id = subscription.get("customer")
+            profile.stripe_subscription_id = subscription.get("id")
+            _sync_subscription(profile, subscription)
+            db.commit()
 
     elif event["type"] == "customer.subscription.deleted":
         subscription = event["data"]["object"]
