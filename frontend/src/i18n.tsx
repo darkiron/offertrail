@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 
 type Locale = 'fr' | 'en';
 export type { Locale };
@@ -924,8 +924,8 @@ const translations = {
         promoLabel: 'Promo code (optional)',
         promoPlaceholder: 'Configured in Stripe',
         promoDescription: 'Accepted codes are managed from Stripe coupons.',
-        trialPill: '14-day launch trial',
-        trialCta: 'Start 14-day trial',
+        trialPill: 'Secure payment via Stripe',
+        trialCta: 'Subscribe via Stripe',
         redirecting: 'Redirecting to Stripe...',
         currentPlan: 'Your current plan',
         downgrade: 'Downgrade not available',
@@ -940,7 +940,7 @@ const translations = {
         proYearlyNote: '99€/year · 100 applications · 6 month history',
         proFeature1: 'Advanced KPIs to understand response and rejection patterns',
         proFeature2: 'CSV import and export for a serious workflow',
-        proFeature3: '14-day launch trial before paid billing starts',
+        proFeature3: 'Cancel anytime from the secure Stripe portal',
         ultimateName: 'Ultimate',
         ultimateMonthlyNote: 'Unlimited applications, history and follow-ups',
         ultimateYearlyNote: '149€/year · unlimited',
@@ -957,7 +957,7 @@ const translations = {
         cgvLabel: 'I accept the ',
         cgvLink: 'Terms',
         cgvSuffix: 'and waive my withdrawal right for immediate access.',
-        checkoutLegalHint: 'Required before launching payment or activating the local simulated checkout.',
+        checkoutLegalHint: 'Required before opening the secure Stripe checkout.',
         transparencyKicker: '100% transparent',
         transparencyTitle: 'Where does your money go?',
         transparencyItem1Title: 'URSSAF and taxes',
@@ -1905,8 +1905,8 @@ const translations = {
         promoLabel: 'Code promo (optionnel)',
         promoPlaceholder: 'Configuré dans Stripe',
         promoDescription: 'Les codes acceptés se gèrent depuis les coupons Stripe.',
-        trialPill: 'Essai lancement 14 jours',
-        trialCta: 'Essayer 14 jours',
+        trialPill: 'Paiement sécurisé via Stripe',
+        trialCta: 'S’abonner via Stripe',
         redirecting: 'Redirection vers Stripe...',
         currentPlan: 'Ton plan actuel',
         downgrade: 'Downgrade impossible',
@@ -1921,7 +1921,7 @@ const translations = {
         proYearlyNote: '99€/an · 100 candidatures · historique 6 mois',
         proFeature1: 'KPIs avancés pour comprendre réponses et refus',
         proFeature2: 'Import et export CSV pour un workflow sérieux',
-        proFeature3: 'Essai lancement 14 jours avant facturation',
+        proFeature3: 'Résiliation à tout moment depuis le portail Stripe sécurisé',
         ultimateName: 'Ultimate',
         ultimateMonthlyNote: 'Candidatures, historique et relances illimités',
         ultimateYearlyNote: '149€/an · illimité',
@@ -1938,7 +1938,7 @@ const translations = {
         cgvLabel: 'J’accepte les ',
         cgvLink: 'CGV',
         cgvSuffix: 'et je renonce au droit de rétractation pour un accès immédiat.',
-        checkoutLegalHint: 'Obligatoire avant de lancer le paiement ou l’activation simulée en local.',
+        checkoutLegalHint: 'Obligatoire avant d’ouvrir le paiement Stripe sécurisé.',
         transparencyKicker: 'Transparence prix',
         transparencyTitle: 'Ce que finance l’abonnement',
         transparencyItem1Title: 'URSSAF et charges',
@@ -2006,6 +2006,10 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(STORAGE_KEY, next);
     setLocaleState(next);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const value = useMemo<I18nValue>(() => ({
     locale,

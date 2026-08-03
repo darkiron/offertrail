@@ -40,6 +40,24 @@ function ScrollToTop() {
   return null;
 }
 
+function NotFoundPage() {
+  useEffect(() => {
+    document.title = 'Page introuvable — OfferTrail';
+    const robots = document.querySelector('meta[name="robots"]');
+    robots?.setAttribute('content', 'noindex,follow');
+    return () => robots?.setAttribute('content', 'index,follow,max-image-preview:large');
+  }, []);
+
+  return (
+    <main style={{ maxWidth: 720, margin: '0 auto', padding: '96px 24px', textAlign: 'center' }}>
+      <p style={{ color: '#0f766e', fontWeight: 800, letterSpacing: '.08em' }}>ERREUR 404</p>
+      <h1>Cette piste ne mène nulle part.</h1>
+      <p>La page demandée n’existe pas ou a été déplacée.</p>
+      <a href="/">Revenir à l’accueil OfferTrail</a>
+    </main>
+  );
+}
+
 function AppRoutes() {
   const navigate = useNavigate();
 
@@ -100,7 +118,7 @@ function AppRoutes() {
       </Route>
 
       {/* ── Redirects de compatibilité ── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
     </>
   );

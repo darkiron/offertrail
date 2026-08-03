@@ -39,8 +39,9 @@ export const LandingPage: React.FC = () => {
     document.title = t('landing.hero.pageTitle');
   }, [t]);
 
-  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate') => {
-    navigate(id === 'free' ? '/register' : `/register?plan=${id}`);
+  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate', selectedPeriod: BillingPeriod) => {
+    const params = new URLSearchParams({ plan: id, period: selectedPeriod });
+    navigate(`/register?${params.toString()}`);
   };
 
   if (isAuthenticated) {
@@ -176,7 +177,7 @@ export const LandingPage: React.FC = () => {
                 isSelected={selectedPlan === plan.id}
                 period={period}
                 onSelect={setSelectedPlan}
-                onCta={(id) => handlePricingCta(id)}
+                onCta={handlePricingCta}
                 mode="public"
               />
             ))}

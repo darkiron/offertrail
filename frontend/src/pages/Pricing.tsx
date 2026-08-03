@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Anchor,
   Checkbox,
@@ -22,12 +22,17 @@ type Period = 'monthly' | 'yearly';
 
 export function Pricing() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
   const plans = usePricingPlans();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
-  const [period, setPeriod] = useState<Period>('monthly');
+  const requestedPlan = searchParams.get('plan');
+  const requestedPeriod = searchParams.get('period');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(
+    requestedPlan === 'pro' || requestedPlan === 'ultimate' ? requestedPlan : null,
+  );
+  const [period, setPeriod] = useState<Period>(requestedPeriod === 'yearly' ? 'yearly' : 'monthly');
   const [cgvAccepted, setCgvAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const promoPlaceholder = import.meta.env.VITE_PROMO_PLACEHOLDER || t('landing.pricing.promoPlaceholder');
