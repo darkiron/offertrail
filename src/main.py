@@ -34,6 +34,8 @@ APP_VERSION = "0.1.0"
 logger = logging.getLogger(__name__)
 DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://offertrail.local",
 ]
 DEFAULT_ALLOWED_ORIGIN_REGEX = r"^https://(([a-z0-9-]+\.)?offertrail\.fr|offertrail\.craftcodes\.fr)$"
 
@@ -1124,4 +1126,3 @@ def api_process_import(
 
     db.commit()
     return results
-
