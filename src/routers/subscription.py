@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 import stripe
@@ -21,6 +21,12 @@ from src.services.stripe_service import (
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 logger = logging.getLogger(__name__)
 verify_webhook_signature = verify_webhook
+
+
+def _stripe_datetime(timestamp: int | None) -> datetime | None:
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
 
 
 class CheckoutRequest(BaseModel):
@@ -130,10 +136,29 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 profile.plan = plan
                 profile.billing_period = period
                 profile.subscription_status = "active"
-                profile.plan_started_at = datetime.utcnow()
+                profile.plan_started_at = datetime.now(UTC).replace(tzinfo=None)
                 profile.stripe_customer_id = session.get("customer")
                 profile.stripe_subscription_id = session.get("subscription")
                 db.commit()
+
+    elif event["type"] in ("customer.subscription.created", "customer.subscription.updated"):
+        subscription = event["data"]["object"]
+        meta = subscription.get("metadata", {})
+        customer_id = subscription.get("customer")
+        user_id = meta.get("user_id")
+        profile = None
+        if user_id:
+            profile = db.query(Profile).filter(Profile.id == user_id).first()
+        if profile is None and customer_id:
+            profile = db.query(Profile).filter(Profile.stripe_customer_id == customer_id).first()
+        if profile:
+            profile.plan = meta.get("plan", profile.plan or "pro")
+            profile.billing_period = meta.get("period", profile.billing_period or "monthly")
+            profile.subscription_status = subscription.get("status", "active")
+            profile.plan_started_at = _stripe_datetime(subscription.get("start_date"))
+            profile.stripe_customer_id = customer_id
+            profile.stripe_subscription_id = subscription.get("id")
+            db.commit()
 
     elif event["type"] == "customer.subscription.deleted":
         subscription = event["data"]["object"]

@@ -166,6 +166,7 @@ def test_webhook_subscription_deleted_cancels_profile(client, user_a, monkeypatc
     finally:
         db.close()
 
+
     monkeypatch.setattr(
         "src.routers.subscription.verify_webhook_signature",
         lambda body, sig_header: {
@@ -193,6 +194,43 @@ def test_webhook_subscription_deleted_cancels_profile(client, user_a, monkeypatc
         assert profile is not None
         assert profile.subscription_status == "cancelled"
         assert profile.stripe_subscription_id is None
+    finally:
+        db.close()
+
+
+def test_webhook_subscription_created_syncs_start_date(client, user_a, monkeypatch):
+    monkeypatch.setattr(
+        "src.routers.subscription.verify_webhook_signature",
+        lambda body, sig_header: {
+            "type": "customer.subscription.created",
+            "data": {
+                "object": {
+                    "id": "sub_live_123",
+                    "customer": "cus_live_123",
+                    "status": "active",
+                    "start_date": 1785782764,
+                    "metadata": {
+                        "user_id": user_a["user_id"],
+                        "plan": "pro",
+                        "period": "monthly",
+                    },
+                },
+            },
+        },
+    )
+
+    response = client.post(
+        "/subscription/webhook",
+        content=b"{}",
+        headers={"stripe-signature": "sig_test"},
+    )
+
+    assert response.status_code == 200
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).one()
+        assert profile.plan_started_at.isoformat() == "2026-08-03T18:46:04"
+        assert profile.stripe_subscription_id == "sub_live_123"
     finally:
         db.close()
 
