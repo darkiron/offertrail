@@ -52,32 +52,24 @@ def create_checkout(
         raise HTTPException(400, "Periode invalide")
 
     if not is_configured():
-        profile.plan = body.plan
-        profile.billing_period = body.period
-        profile.subscription_status = "active"
-        profile.plan_started_at = datetime.utcnow()
-        db.commit()
-        return {"mode": "simulated", "checkout_url": None}
+        raise HTTPException(
+            status_code=503,
+            detail="Stripe n'est pas configure. Aucun abonnement n'a ete cree.",
+        )
 
     user_email = payload.get("email", "")
     if not user_email:
         raise HTTPException(status_code=400, detail="Email utilisateur introuvable")
 
     try:
-        try:
-            checkout_url = create_checkout_session(
-                profile.id,
-                user_email,
-                body.plan,
-                body.period,
-                body.coupon,
-            )
-        except TypeError:
-            checkout_url = create_checkout_session(
-                profile.id,
-                user_email,
-                stripe_customer_id=profile.stripe_customer_id,
-            )
+        checkout_url = create_checkout_session(
+            profile.id,
+            user_email,
+            body.plan,
+            body.period,
+            body.coupon,
+            profile.stripe_customer_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except stripe.StripeError:

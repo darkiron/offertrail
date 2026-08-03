@@ -21,6 +21,7 @@ def create_checkout_session(
     plan: str,
     period: str,
     coupon_id: str | None = None,
+    stripe_customer_id: str | None = None,
 ) -> str:
     price_key = f"{plan}_{period}"
     price_id = PRICE_MAP.get(price_key)
@@ -31,12 +32,16 @@ def create_checkout_session(
         "payment_method_types": ["card"],
         "line_items": [{"price": price_id, "quantity": 1}],
         "mode": "subscription",
-        "customer_email": user_email,
         "success_url": f"{APP_BASE_URL}/app/mon-compte?payment=success",
         "cancel_url": f"{APP_BASE_URL}/app/pricing?payment=cancelled",
         "metadata": {"user_id": user_id, "plan": plan, "period": period},
         "consent_collection": {"terms_of_service": "required"},
     }
+
+    if stripe_customer_id:
+        params["customer"] = stripe_customer_id
+    else:
+        params["customer_email"] = user_email
 
     if LAUNCH_TRIAL_DAYS > 0:
         params["subscription_data"] = {

@@ -40,8 +40,8 @@ def test_get_subscription_pending_user(client):
     assert payload["is_active"] is False
 
 
-def test_upgrade_to_pro(client, user_a, monkeypatch):
-    # Force subscription_status à pending pour tester l'upgrade
+def test_checkout_fails_closed_when_stripe_is_not_configured(client, user_a, monkeypatch):
+    # Un checkout payant ne doit jamais activer gratuitement le profil.
     db = SessionLocal()
     try:
         profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
@@ -53,20 +53,33 @@ def test_upgrade_to_pro(client, user_a, monkeypatch):
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: False)
     response = client.post("/subscription/checkout", headers=user_a["headers"])
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["mode"] == "simulated"
+    assert response.status_code == 503
+    assert "Aucun abonnement n'a ete cree" in response.json()["detail"]
 
     me = client.get("/subscription/me", headers=user_a["headers"])
-    assert me.json()["subscription_status"] == "active"
-    assert me.json()["is_active"] is True
+    assert me.json()["subscription_status"] == "pending"
+    assert me.json()["is_active"] is False
 
 
 def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch):
+    captured = {}
+
+    def create_session(user_id, user_email, plan, period, coupon_id=None, stripe_customer_id=None):
+        captured["customer"] = stripe_customer_id
+        return "https://checkout.stripe.test/session"
+
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.stripe_customer_id = "cus_test_123"
+        db.commit()
+    finally:
+        db.close()
+
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: True)
     monkeypatch.setattr(
         "src.routers.subscription.create_checkout_session",
-        lambda user_id, user_email, stripe_customer_id=None: "https://checkout.stripe.test/session",
+        create_session,
     )
 
     response = client.post("/subscription/checkout", headers=user_a["headers"])
@@ -76,6 +89,7 @@ def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch
         "mode": "stripe",
         "checkout_url": "https://checkout.stripe.test/session",
     }
+    assert captured["customer"] == "cus_test_123"
 
 
 def test_portal_returns_stripe_error_as_http_response(client, user_a, monkeypatch):
