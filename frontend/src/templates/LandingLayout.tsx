@@ -26,7 +26,7 @@ export function LandingLayout() {
           </Link>
 
           <div className={classes.navCenter}>
-            <a href="#fonctionnalites" className={classes.navLink}>{t('landing.nav.features')}</a>
+            <a href="#features" className={classes.navLink}>{t('landing.nav.features')}</a>
             <a href="#tarifs" className={classes.navLink}>{t('landing.nav.pricing')}</a>
           </div>
 
@@ -68,7 +68,7 @@ export function LandingLayout() {
         size="xs"
       >
         <Stack gap="md" pt="md">
-          <a href="#fonctionnalites" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.features')}</a>
+          <a href="#features" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.features')}</a>
           <a href="#tarifs" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.pricing')}</a>
           <Link to="/login" className={classes.btnOutline} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.login')}</Link>
           <Link to="/register" className={classes.btnPrimary} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.cta')}</Link>

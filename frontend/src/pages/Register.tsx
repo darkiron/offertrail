@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import {
   Alert, Anchor, Badge, Button, Group, Paper,
@@ -17,6 +17,12 @@ export function RegisterPage() {
   const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [searchParams] = useSearchParams();
+  const requestedPlan = searchParams.get('plan');
+  const requestedPeriod = searchParams.get('period');
+  const plan = requestedPlan === 'pro' || requestedPlan === 'ultimate' ? requestedPlan : 'free';
+  const period = requestedPeriod === 'yearly' ? 'yearly' : 'monthly';
+  const destination = plan === 'free' ? '/app' : `/app/pricing?plan=${plan}&period=${period}`;
 
   const registerSchema = useMemo(() => z.object({
     email: z.string().email(t('auth.emailInvalid')),
@@ -35,7 +41,7 @@ export function RegisterPage() {
     defaultValues: { email: '', password: '', prenom: '', nom: '' },
   });
 
-  if (isAuthenticated) return <Navigate to="/app" replace />;
+  if (isAuthenticated) return <Navigate to={destination} replace />;
 
   if (confirmed) {
     return (
@@ -73,6 +79,8 @@ export function RegisterPage() {
       await signUp(result.data.email, result.data.password, {
         prenom: result.data.prenom || undefined,
         nom: result.data.nom || undefined,
+        plan,
+        period,
       });
       setConfirmed(true);
     } catch (error) {

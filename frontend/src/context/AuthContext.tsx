@@ -19,7 +19,7 @@ interface AuthContextType {
   profile: Profile | null
   isAuthenticated: boolean
   isLoading: boolean
-  signUp: (email: string, password: string, meta?: { prenom?: string; nom?: string }) => Promise<void>
+  signUp: (email: string, password: string, meta?: { prenom?: string; nom?: string; plan?: string; period?: string }) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -73,13 +73,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email: string, password: string, meta?: { prenom?: string; nom?: string }) => {
+  const signUp = async (email: string, password: string, meta?: { prenom?: string; nom?: string; plan?: string; period?: string }) => {
+    const plan = meta?.plan === 'pro' || meta?.plan === 'ultimate' ? meta.plan : 'free'
+    const period = meta?.period === 'yearly' ? 'yearly' : 'monthly'
+    const destination = plan === 'free' ? '/app' : `/app/pricing?plan=${plan}&period=${period}`
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: meta ?? {},
-        emailRedirectTo: `${window.location.origin}/app`,
+        emailRedirectTo: `${window.location.origin}${destination}`,
       },
     })
     if (error) throw error
