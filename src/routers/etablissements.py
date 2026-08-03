@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from src.auth import get_active_user_id
+from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
 from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE
-from src.models import Candidature, Etablissement
+from src.models import Candidature, Etablissement, Profile
 from src.schemas.etablissements import (
     EtablissementCreate,
     EtablissementSchema,
@@ -134,11 +134,13 @@ def update_etablissement(
     etablissement_id: str,
     payload: EtablissementUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> EtablissementSchema:
     etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    if etablissement.created_by != profile.id and profile.role != "admin":
+        raise HTTPException(status_code=403, detail="Modification non autorisee")
 
     if payload.nom is not None:
         etablissement.nom = payload.nom
@@ -152,7 +154,7 @@ def update_etablissement(
     db.commit()
     db.refresh(etablissement)
     candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
+        Candidature.user_id == profile.id,
         or_(
             Candidature.client_final_id == etablissement_id,
             and_(Candidature.client_final_id.is_(None), Candidature.etablissement_id == etablissement_id),
@@ -165,11 +167,13 @@ def update_etablissement(
 def delete_etablissement(
     etablissement_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> dict[str, bool]:
     etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    if etablissement.created_by != profile.id and profile.role != "admin":
+        raise HTTPException(status_code=403, detail="Suppression non autorisee")
 
     has_candidatures = db.query(Candidature).filter(Candidature.etablissement_id == etablissement_id).first()
     if has_candidatures:
