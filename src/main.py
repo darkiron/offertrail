@@ -13,10 +13,10 @@ from slowapi.util import get_remote_address
 from . import legacy_database as database
 from sqlalchemy.orm import Session
 
-from .auth import _user_can_see_contact, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
+from .auth import _user_can_see_contact, get_active_profile, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
 from .database import get_db as get_saas_db, init_db as init_saas_db
 from .enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
-from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Relance
+from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Profile, Relance
 from .routers import auth as auth_router
 from .routers import admin as admin_router
 from .routers import candidatures as candidatures_router
@@ -26,6 +26,7 @@ from .routers import etablissements as etablissements_router
 from .routers import me as me_router
 from .routers import relances as relances_router
 from .routers import subscription as subscription_router
+from .services.subscription import require_plan_feature
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -1028,7 +1029,9 @@ def api_process_import(
     data: dict,
     db: Session = Depends(get_saas_db),
     user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ):
+    require_plan_feature(profile, "import_csv")
     tsv_data = data.get("tsv", "")
     lines = tsv_data.strip().split("\n")
     if not lines:
