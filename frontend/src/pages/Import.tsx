@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import {
-  Group, List, Paper, SimpleGrid, Stack, Text, Textarea,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { applicationService } from '../services/api';
 import type { ImportResponse } from '../services/api';
 import { Button } from '../components/atoms/Button';
@@ -16,6 +12,7 @@ export const Import: React.FC = () => {
   const [tsv, setTsv] = useState('');
   const [results, setResults] = useState<ImportResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<{tone:'success'|'error'; message:string} | null>(null);
 
   React.useEffect(() => {
     document.title = t('import.pageTitle');
@@ -30,92 +27,59 @@ export const Import: React.FC = () => {
       setResults(response);
       if (response.created > 0) {
         setTsv('');
-        notifications.show({
-          message: `${response.created} ${t('import.importedSuffix')}`,
-          color: 'green',
-        });
+        setNotice({ tone: 'success', message: `${response.created} ${t('import.importedSuffix')}` });
       }
     } catch (importError: unknown) {
       const detail = (axios.isAxiosError(importError) && importError.response?.data?.detail) || t('import.errorDefault');
-      notifications.show({ message: detail, color: 'red' });
+      setNotice({ tone: 'error', message: detail });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
+    <main className={`ot-stack ${classes.shell}`}>
       <PageHeader
         title={t('import.title')}
         description={t('import.description')}
       />
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
-        <Paper p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.sectionTsv')}</Text>
-          <Text size="sm" c="dimmed" mb="md">{t('import.tsvHint')}</Text>
+      {notice && <div className="ot-alert" data-tone={notice.tone}>{notice.message}</div>}
+      <div className={classes.grid}>
+        <section className="ot-panel">
+          <span className="ot-kicker">{t('import.sectionTsv')}</span>
+          <p className="ot-subtitle">{t('import.tsvHint')}</p>
           <form onSubmit={handleImport}>
-            <Textarea
-              classNames={{ input: classes.tsvArea }}
+            <textarea className={`ot-control ${classes.tsvArea}`}
               value={tsv}
               onChange={(event) => setTsv(event.target.value)}
               placeholder={'Entreprise\tPoste\tType\tSource\tStatut...'}
-              mb="md"
             />
             <Button type="submit" variant="primary" disabled={loading}>
               {loading ? t('import.loading') : t('import.submit')}
             </Button>
           </form>
-        </Paper>
+        </section>
 
-        <Stack gap="md">
+        <div className="ot-stack">
           {results ? (
-            <Paper p="lg" radius="lg" withBorder>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.resultsTitle')}</Text>
-              <Stack gap="xs">
-                <Group justify="space-between">
-                  <Text size="sm">{t('import.totalRows')}</Text>
-                  <Text size="sm" fw={700}>{results.total}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">{t('import.created')}</Text>
-                  <Text size="sm" fw={700} c="green">{results.created}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">{t('import.skipped')}</Text>
-                  <Text size="sm" fw={700} c="red">{results.skipped}</Text>
-                </Group>
-              </Stack>
+            <section className="ot-panel"><span className="ot-kicker">{t('import.resultsTitle')}</span><div className={classes.metrics}><span>{t('import.totalRows')} <b>{results.total}</b></span><span>{t('import.created')} <b>{results.created}</b></span><span>{t('import.skipped')} <b>{results.skipped}</b></span></div>
 
               {results.errors?.length > 0 ? (
-                <Stack gap="xs" mt="md">
-                  <Text size="sm" fw={700} c="red">{t('import.errorsTitle')}</Text>
-                  <Stack gap={4} style={{ maxHeight: 200, overflowY: 'auto' }}>
+                <div className="ot-stack-tight"><strong>{t('import.errorsTitle')}</strong><div className={classes.errors}>
                     {results.errors.map((item: ImportResponse['errors'][number], index: number) => (
-                      <Text key={index} size="xs" c="dimmed">
+                      <span key={index} className="ot-subtitle">
                         {t('import.rowPrefix')} {item.row} : {item.reason}
-                      </Text>
+                      </span>
                     ))}
-                  </Stack>
-                </Stack>
+                  </div></div>
               ) : null}
-            </Paper>
+            </section>
           ) : null}
 
-          <Paper p="lg" radius="lg" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed" mb="md">{t('import.columnsTitle')}</Text>
-            <List size="sm" c="dimmed" spacing="xs">
-              <List.Item>{t('import.colCompany')}</List.Item>
-              <List.Item>{t('import.colPosition')}</List.Item>
-              <List.Item>{t('import.colType')}</List.Item>
-              <List.Item>{t('import.colSource')}</List.Item>
-              <List.Item>{t('import.colStatus')}</List.Item>
-              <List.Item>{t('import.colDate')}</List.Item>
-              <List.Item>{t('import.colNotes')}</List.Item>
-            </List>
-          </Paper>
-        </Stack>
-      </SimpleGrid>
-    </Stack>
+          <section className="ot-panel"><span className="ot-kicker">{t('import.columnsTitle')}</span><ul className="ot-subtitle"><li>{t('import.colCompany')}</li><li>{t('import.colPosition')}</li><li>{t('import.colType')}</li><li>{t('import.colSource')}</li><li>{t('import.colStatus')}</li><li>{t('import.colDate')}</li><li>{t('import.colNotes')}</li></ul></section>
+        </div>
+      </div>
+    </main>
   );
 };

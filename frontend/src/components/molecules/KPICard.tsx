@@ -1,4 +1,3 @@
-import { Card, Text, Stack } from '@mantine/core';
 import classes from './KPICard.module.css';
 
 interface KPICardProps {
@@ -9,12 +8,10 @@ interface KPICardProps {
 
 export function KPICard({ label, value, subValue }: KPICardProps) {
   return (
-    <Card className={classes.card} radius="lg" padding="lg">
-      <Stack gap={4}>
-        <Text className={classes.label} c="dimmed">{label}</Text>
-        <Text size="xl" fw={700} lh={1}>{value}</Text>
-        {subValue && <Text size="sm" c="dimmed">{subValue}</Text>}
-      </Stack>
-    </Card>
+    <article className={classes.card}>
+      <span className={classes.label}>{label}</span>
+      <strong className={classes.value}>{value}</strong>
+      {subValue && <span className={classes.subValue}>{subValue}</span>}
+    </article>
   );
 }

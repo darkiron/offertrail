@@ -48,6 +48,7 @@
   color: white;
   flex-shrink: 0;
 }
+.logoName{font-size:.88rem;font-weight:800;letter-spacing:-.02em}
 
 .navCenter {
   display: flex;
@@ -139,6 +140,9 @@
   align-items: center;
   gap: 8px;
 }
+.themeButton,.menuButton{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--border);border-radius:999px;color:var(--text-main);background:transparent;font-size:1rem;cursor:pointer}.themeButton:hover,.menuButton:hover{background:color-mix(in srgb,var(--bg-surface) 70%,transparent)}
+.mobileMenu{position:absolute;z-index:99;top:61px;right:20px;left:20px;display:grid;gap:var(--space-2);padding:1rem;border:1px solid var(--border);border-radius:var(--ot-radius-md);background:var(--bg-base);box-shadow:var(--ot-shadow-float)}
+.footerCopy{font-size:.72rem;color:var(--text-dim)}.footerCopy a{color:inherit;text-decoration:underline;text-underline-offset:3px}.footerLinks{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap}
 
 @media (max-width: 720px) {
   .navCenter { display: none; }

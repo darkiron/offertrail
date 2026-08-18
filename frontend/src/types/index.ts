@@ -56,6 +56,7 @@ export interface Application {
   applied_at: string | null;
   response_date: string | null;
   salary: number | null;
+  daily_rate: number | null;
   notes: string | null;
   next_followup_at: string | null;
   created_at: string;
@@ -139,4 +140,24 @@ export interface SubscriptionStatus {
   plan_started_at: string | null;
   limits?: Record<string, unknown>;
   usage?: Record<string, unknown>;
+}
+
+export interface TodayAction {
+  id: string;
+  kind: 'followup';
+  due_at: string;
+  urgency: 'overdue' | 'today' | 'upcoming';
+  application: { id: string; title: string; status: string };
+  organization: { id: string; name: string };
+  contact: { id: string; display_name: string; role: string | null } | null;
+  context: { last_event_label?: string; last_event_at?: string } | null;
+}
+
+export interface TodayData {
+  generated_at: string;
+  timezone: string;
+  activation: { state: 'active' | 'onboarding'; first_application_created: boolean; first_next_action_scheduled: boolean };
+  actions: { due_count: number; items: TodayAction[]; next_due_at: string | null };
+  summary: { active_applications: number; responses_30d: number; interviews_30d: number };
+  recent_activity: Array<Record<string, unknown>>;
 }

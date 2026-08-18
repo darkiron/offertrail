@@ -1,4 +1,3 @@
-import { Badge } from '@mantine/core';
 import { type Statut } from '../../constants/statuts';
 import { useI18n } from '../../i18n';
 import classes from './StatusBadge.module.css';
@@ -23,16 +22,7 @@ export function StatusBadge({ status, size = 'sm', className }: StatusBadgeProps
   const label = key in CLASS_MAP ? t(`statut.${key}`) : (status ? status.replace(/_/g, ' ') : 'N/A');
   const colorClass = CLASS_MAP[key] ?? classes.neutral;
 
-  return (
-    <Badge
-      size={size === 'sm' ? 'sm' : 'md'}
-      radius="xl"
-      className={`${classes.badge} ${colorClass} ${className ?? ''}`}
-      variant="light"
-    >
-      {label}
-    </Badge>
-  );
+  return <span className={`${classes.badge} ${colorClass} ${className ?? ''}`} data-size={size}>{label}</span>;
 }
 
 export default StatusBadge;

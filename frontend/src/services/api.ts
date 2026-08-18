@@ -9,6 +9,7 @@ import type {
   PaginatedResponse,
   RegisterPayload,
   SubscriptionStatus,
+  TodayData,
 } from '../types';
 
 // En mode dev avec proxy Vite, VITE_API_URL est vide → baseURL "" = même origine → pas de CORS.
@@ -23,6 +24,93 @@ export interface ApplicationListParams {
   page?: number;
   limit?: number;
 }
+
+export interface WorkflowApplicationListParams {
+  q?: string;
+  status?: string;
+  due?: string;
+  sort?: string;
+  page?: number;
+  per_page?: number;
+  include_closed?: boolean;
+}
+
+export interface WorkflowApplication {
+  id: string;
+  poste: string;
+  statut: string;
+  date_candidature: string | null;
+  updated_at: string;
+  organization: { id: string; name: string };
+  next_action: { id: string; kind: string; due_at: string; urgency: string } | null;
+  last_event: { kind: string; occurred_at: string } | null;
+}
+
+export interface WorkflowApplicationPage {
+  items: WorkflowApplication[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+export interface ApplicationWorkspace {
+  application: {
+    id: string; etablissement_id: string; client_final_id: string | null; poste: string; statut: string; url_offre: string | null;
+    description: string | null; type_contrat: string | null; notes: string | null; source: string | null;
+    date_candidature: string | null; salaire_vise: number | null; tjm_vise: number | null;
+  };
+  organization: {
+    id: string; name: string; type: string; website: string | null; description: string | null;
+    relationship_summary: { applications: number; responses: number };
+  };
+  final_customer: { id:string; name:string } | null;
+  contacts: Array<{ id: string; first_name: string; last_name: string; role: string | null; email: string | null; linkedin_url: string | null }>;
+  next_action: { id: string; kind: string; due_at: string; channel: string | null } | null;
+  future_actions: Array<{ id: string; due_at: string; channel: string | null }>;
+  timeline: { items: Array<{ id: string; type: string; ancien_statut: string | null; nouveau_statut: string | null; contenu: string | null; created_at: string }>; next_cursor: string | null };
+  capabilities: { can_update: boolean; can_delete: boolean; can_create_followup: boolean };
+}
+
+export interface WorkflowOrganization {
+  id: string;
+  nom: string;
+  type: string;
+}
+
+export interface OrganizationPortfolioItem {
+  id: string;
+  name: string;
+  type: string;
+  website: string | null;
+  description: string | null;
+  type_contrat: string | null;
+  created_at: string;
+  updated_at: string;
+  applications_count: number;
+  responses_count: number;
+  positive_count: number;
+  response_rate: number;
+}
+
+export interface OrganizationPortfolioPage {
+  items: OrganizationPortfolioItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+export interface OrganizationWorkspace {
+  organization: OrganizationPortfolioItem;
+  applications: Array<{ id: string; title: string; status: string; applied_at: string | null; updated_at: string; source: string | null }>;
+  contacts: Array<{ id: string; first_name: string; last_name: string; role: string | null; email: string | null; linkedin_url: string | null }>;
+  activity: Array<{ id: string; application_id: string; type: string; content: string | null; created_at: string }>;
+  capabilities: { can_edit: boolean };
+}
+
+export interface ContactPortfolioItem { id:string; first_name:string; last_name:string; role:string|null; email:string|null; phone:string|null; is_recruiter:boolean; updated_at:string; organization:{id:string;name:string;type:string}|null }
+export interface ContactPortfolioPage { items:ContactPortfolioItem[]; total:number; page:number; per_page:number; pages:number }
 
 export interface DashboardParams {
   status?: string;
@@ -50,6 +138,7 @@ export interface ApplicationPayload {
   final_customer_organization_id?: number | null;
   notes?: string | null;
   salary?: number | null;
+  daily_rate?: number | null;
   response_date?: string | null;
 }
 
@@ -74,6 +163,7 @@ interface CandidatureApi {
   date_candidature: string | null;
   date_reponse: string | null;
   salaire_vise: number | null;
+  tjm_vise: number | null;
   source: string | null;
   notes: string | null;
   created_at: string;
@@ -150,7 +240,7 @@ interface ContactApi {
 }
 
 interface ContactDetailsApi extends ContactApi {
-  organization: Organization | null;
+  organization: { id:string; name:string; type:string } | null;
   applications: Application[];
   events: Array<{
     id: string | number;
@@ -341,13 +431,14 @@ function mapCandidatureToApplication(
     final_customer_name: finalCustomer?.nom ?? null,
     company: etablissement?.nom ?? 'Etablissement',
     title: candidature.poste,
-    type: candidature.description ?? 'CDI',
+    type: candidature.type_contrat ?? 'autre',
     status: candidature.statut ?? 'en_attente',
     source: candidature.source,
     job_url: candidature.url_offre,
     applied_at: normalizeDate(candidature.date_candidature),
     response_date: normalizeDate(candidature.date_reponse),
     salary: candidature.salaire_vise,
+    daily_rate: candidature.tjm_vise,
     notes: candidature.notes,
     next_followup_at: null,
     created_at: candidature.created_at,
@@ -369,13 +460,14 @@ function mapPayloadToSaas(data: ApplicationPayload): Partial<CandidatureApi> {
       : null;
   }
   if (has('title')) payload.poste = data.title ?? '';
-  if (has('type')) payload.description = data.type ?? null;
+  if (has('type')) payload.type_contrat = data.type?.toLowerCase() ?? null;
   if (has('status')) payload.statut = data.status ?? undefined;
   if (has('source')) payload.source = data.source ?? null;
   if (has('job_url')) payload.url_offre = data.job_url ?? null;
   if (has('applied_at')) payload.date_candidature = data.applied_at ?? null;
   if (has('response_date')) payload.date_reponse = data.response_date ?? null;
   if (has('salary')) payload.salaire_vise = data.salary ?? null;
+  if (has('daily_rate')) payload.tjm_vise = data.daily_rate ?? null;
   if (has('notes')) payload.notes = data.notes ?? null;
 
   return payload;
@@ -469,11 +561,35 @@ export const authService = {
 };
 
 export const organizationService = {
+  getPortfolio: async (params?: { page?: number; per_page?: number; q?: string; relationship_role?: string; sort?: string }) => {
+    const response = await axiosInstance.get<OrganizationPortfolioPage>('/me/etablissements', { params });
+    return response.data;
+  },
+  getWorkspace: async (id: string) => {
+    const response = await axiosInstance.get<OrganizationWorkspace>(`/me/etablissements/${id}/workspace`);
+    return response.data;
+  },
+  getWorkflowAll: async () => {
+    const response = await axiosInstance.get<WorkflowOrganization[]>('/etablissements');
+    return response.data;
+  },
+  searchWorkflow: async (query: string) => {
+    const response = await axiosInstance.get<WorkflowOrganization[]>('/etablissements', { params: { q: query, limit: 10 } });
+    return response.data;
+  },
+  createWorkflow: async (payload: { nom: string; type: string }) => {
+    const response = await axiosInstance.post<WorkflowOrganization>('/etablissements', payload);
+    return response.data;
+  },
+  updateWorkflow: async (id: string, payload: { nom:string; type:string; site_web:string|null; description:string|null }) => {
+    const response = await axiosInstance.patch<EtablissementApi>(`/etablissements/${id}`, payload);
+    return response.data;
+  },
   getAll: async (params?: { type?: string; search?: string }) => {
-    const response = await axiosInstance.get<EtablissementApi[]>('/etablissements', { params });
+    const response = await axiosInstance.get<EtablissementApi[]>('/etablissements', { params: { type:params?.type, q:params?.search, limit:params?.search?10:undefined } });
     return response.data.map(mapEtablissementToOrganization);
   },
-  getById: async (id: number) => {
+  getById: async (id: number | string) => {
     const resolvedId = await ensureOrganizationIdResolved(id);
     const response = await axiosInstance.get<EtablissementApi>(`/etablissements/${resolvedId}`);
     return mapEtablissementToOrganization(response.data);
@@ -488,7 +604,7 @@ export const organizationService = {
     const mapped = mapEtablissementToOrganization(response.data);
     return { id: mapped.id };
   },
-  update: async (id: number, data: Partial<Organization>) => {
+  update: async (id: number | string, data: Partial<Organization>) => {
     const resolvedId = await ensureOrganizationIdResolved(id);
     const response = await axiosInstance.patch(`/etablissements/${resolvedId}`, {
       nom: data.name,
@@ -499,13 +615,22 @@ export const organizationService = {
     return mapEtablissementToOrganization(response.data);
   },
   merge: async (id: number, targetOrganizationId: number) => {
-    const response = await axiosInstance.post(`/etablissements/${id}/merge`, {
-      target_organization_id: targetOrganizationId,
+    const sourceId = await ensureOrganizationIdResolved(id);
+    const targetId = await ensureOrganizationIdResolved(targetOrganizationId);
+    const response = await axiosInstance.post(`/etablissements/${sourceId}/merge`, {
+      target_organization_id: targetId,
     });
     return response.data;
   },
   split: async (id: number, data: Partial<Organization> & { move_contacts?: boolean }) => {
-    const response = await axiosInstance.post<{ id: number }>(`/etablissements/${id}/split`, data);
+    const sourceId = await ensureOrganizationIdResolved(id);
+    const response = await axiosInstance.post<{ id: number }>(`/etablissements/${sourceId}/split`, {
+      name: data.name,
+      type: data.type,
+      website: data.website ?? null,
+      notes: data.notes ?? null,
+      move_contacts: data.move_contacts,
+    });
     return response.data;
   },
   delete: async (id: number) => {
@@ -516,6 +641,10 @@ export const organizationService = {
 };
 
 export const contactService = {
+  getPortfolio: async (params: { page:number; per_page:number; q?:string; view?:string }) => {
+    const response = await axiosInstance.get<ContactPortfolioPage>('/me/contacts', { params });
+    return response.data;
+  },
   getAll: async (params?: { organization_id?: number }) => {
     const response = await axiosInstance.get<ContactApi[]>('/contacts', {
       params: {
@@ -580,6 +709,41 @@ export const subscriptionService = {
 };
 
 export const applicationService = {
+  createWorkflowApplication: async (payload: {
+    etablissement_id: string; client_final_id?: string | null; poste: string; statut: string;
+    date_candidature?: string | null; source?: string | null; url_offre?: string | null; type_contrat?: string | null;
+  }) => {
+    const response = await axiosInstance.post<CandidatureApi>('/me/candidatures', payload);
+    return response.data;
+  },
+  getWorkflowApplications: async (params: WorkflowApplicationListParams) => {
+    const response = await axiosInstance.get<WorkflowApplicationPage>('/me/candidatures', { params });
+    return response.data;
+  },
+  getWorkspace: async (id: string) => {
+    const candidatureId = await ensureCandidatureIdResolved(id);
+    const response = await axiosInstance.get<ApplicationWorkspace>(`/me/candidatures/${candidatureId}/workspace`);
+    return response.data;
+  },
+  updateWorkflowStatus: async (id: string, status: string) => {
+    const candidatureId = await ensureCandidatureIdResolved(id);
+    const response = await axiosInstance.patch(`/me/candidatures/${candidatureId}/status`, { status });
+    return response.data;
+  },
+  updateWorkflowDetails: async (id: string, payload: Partial<CandidatureApi>) => {
+    const response = await axiosInstance.patch<CandidatureApi>(`/candidatures/${id}`, payload);
+    return response.data;
+  },
+  addWorkflowNote: async (id: string, content: string) => {
+    const candidatureId = await ensureCandidatureIdResolved(id);
+    const response = await axiosInstance.post('/candidature-events', { candidature_id:candidatureId, type:'note_ajout', contenu:content });
+    return response.data;
+  },
+  scheduleWorkflowAction: async (id: string, payload: { due_at: string; channel?: string; note?: string }) => {
+    const candidatureId = await ensureCandidatureIdResolved(id);
+    const response = await axiosInstance.post(`/me/candidatures/${candidatureId}/actions`, payload);
+    return response.data;
+  },
   getApplications: async (params?: ApplicationListParams) => {
     const etablissementIndex = await fetchEtablissementsIndex();
     const response = await axiosInstance.get<CandidatureApi[]>('/candidatures', { params });
@@ -741,6 +905,18 @@ export const applicationService = {
 };
 
 export const dashboardService = {
+  getToday: async () => {
+    const response = await axiosInstance.get<TodayData>('/me/today');
+    return response.data;
+  },
+  completeAction: async (actionId: string, payload: {
+    outcome: string;
+    note?: string;
+    next_action?: { due_at: string; channel?: string } | null;
+  }) => {
+    const response = await axiosInstance.post(`/me/actions/${actionId}/complete`, payload);
+    return response.data;
+  },
   getDashboardData: async (params?: DashboardParams) => {
     const [statsResponse, relancesResponse, applicationsResponse] = await Promise.all([
       axiosInstance.get<MeStatsApi>('/me/stats', { params }),
@@ -798,10 +974,7 @@ export const dashboardService = {
 };
 
 export const api = {
-  getCompany: async (id: number) => {
-    const response = await axiosInstance.get(`/api/companies/${id}`);
-    return response.data;
-  },
+  getCompany: async (id: string) => organizationService.getWorkspace(id),
 };
 
 export default axiosInstance;

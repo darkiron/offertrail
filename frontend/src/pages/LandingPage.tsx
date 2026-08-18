@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { SegmentedControl } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { PlanCard } from '../components/PlanCard';
@@ -159,14 +158,9 @@ export const LandingPage: React.FC = () => {
           <p className="lp-section-sub">{t('landing.pricing.landingSub')}</p>
           <div className="lp-pricing-controls">
             <span>{t('landing.pricing.periodLabel')}</span>
-            <SegmentedControl
-              data={[
-                { label: t('landing.pricing.monthly'), value: 'monthly' },
-                { label: t('landing.pricing.yearly'), value: 'yearly' },
-              ]}
-              value={period}
-              onChange={(value) => setPeriod(value as BillingPeriod)}
-            />
+            <div className="lp-segmented" role="group" aria-label={t('landing.pricing.periodLabel')}>
+              {(['monthly', 'yearly'] as BillingPeriod[]).map((value) => <button type="button" key={value} className={period === value ? 'is-active' : ''} onClick={() => setPeriod(value)}>{t(`landing.pricing.${value}`)}</button>)}
+            </div>
             {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
           </div>
           <div className="lp-pricing-grid lp-pricing-grid-three lp-plan-card-grid">
@@ -200,15 +194,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
             <div className="lp-pricing-controls" style={{ justifyContent: 'center', marginBottom: '16px' }}>
-              <SegmentedControl
-                size="xs"
-                data={[
-                  { label: t('landing.pricing.monthly'), value: 'monthly' },
-                  { label: t('landing.pricing.yearly'), value: 'yearly' },
-                ]}
-                value={breakdownPeriod}
-                onChange={(value) => setBreakdownPeriod(value as BillingPeriod)}
-              />
+              <div className="lp-segmented" role="group"><button type="button" className={breakdownPeriod === 'monthly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('monthly')}>{t('landing.pricing.monthly')}</button><button type="button" className={breakdownPeriod === 'yearly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('yearly')}>{t('landing.pricing.yearly')}</button></div>
             </div>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
               Prix transparent · Pro à {proPrice?.amount}{proPrice?.suffix}

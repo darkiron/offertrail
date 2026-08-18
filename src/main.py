@@ -297,7 +297,7 @@ def _map_candidature_to_legacy(
         "final_customer_name": candidature.client_final.nom if candidature.client_final else None,
         "company": etablissement.nom if etablissement else "Etablissement",
         "title": candidature.poste,
-        "type": candidature.description or "CDI",
+        "type": candidature.type_contrat or "autre",
         "status": SAAS_TO_LEGACY_STATUS.get(candidature.statut, "APPLIED"),
         "source": candidature.source,
         "job_url": candidature.url_offre,
@@ -631,8 +631,6 @@ async def api_get_contact(
     contact = db.query(Contact).filter(Contact.id == resolved_contact_id).first()
     if not contact or not _user_can_see_contact(db, user_id, contact):
         raise HTTPException(status_code=404, detail="Contact not found")
-    if contact.created_by != user_id:
-        raise HTTPException(status_code=403, detail="Contact update not authorized")
     interaction = (
         db.query(ContactInteraction)
         .filter(ContactInteraction.contact_id == contact.id, ContactInteraction.user_id == user_id)
@@ -665,7 +663,7 @@ async def api_get_contact(
         for event in application.events:
             mapped = _map_event_to_legacy(event, application)
             mapped["application"] = {
-                "id": _legacy_hash(application.id),
+                "id": application.id,
                 "title": application.poste,
                 "status": SAAS_TO_LEGACY_STATUS.get(application.statut, "APPLIED"),
             }
@@ -678,12 +676,16 @@ async def api_get_contact(
             Candidature.etablissement_id == contact.etablissement.id,
         ).all()
         organization = _map_etablissement_to_legacy(contact.etablissement, org_candidatures)
+        organization["id"] = contact.etablissement.id
 
     return {
         **_map_contact_to_legacy(contact, interaction),
         "organization": organization,
         "applications": [
-            _map_candidature_to_legacy(item, item.etablissement, relances_by_candidature.get(item.id))
+            {
+                **_map_candidature_to_legacy(item, item.etablissement, relances_by_candidature.get(item.id)),
+                "id": item.id,
+            }
             for item in applications
         ],
         "events": events,
@@ -730,8 +732,6 @@ async def api_update_contact(
     contact = db.query(Contact).filter(Contact.id == resolved_contact_id).first()
     if not contact or not _user_can_see_contact(db, user_id, contact):
         raise HTTPException(status_code=404, detail="Contact not found")
-    if contact.created_by != user_id:
-        raise HTTPException(status_code=403, detail="Contact deletion not authorized")
     if "organization_id" in data:
         contact.etablissement_id = _resolve_hashed_uuid(db, Etablissement, data.get("organization_id"), prefix="org:")
     if "first_name" in data:
@@ -769,6 +769,8 @@ async def api_delete_contact(
     contact = db.query(Contact).filter(Contact.id == resolved_contact_id).first()
     if not contact or not _user_can_see_contact(db, user_id, contact):
         raise HTTPException(status_code=404, detail="Contact not found")
+    if contact.created_by != user_id:
+        raise HTTPException(status_code=403, detail="Contact deletion not authorized")
     db.delete(contact)
     db.commit()
     return {"success": True}

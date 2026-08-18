@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Breadcrumbs, Anchor, Text } from '@mantine/core';
 import { useI18n } from '../i18n';
 import '../styles/legal.css';
 
@@ -16,10 +15,9 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ eyebrow, title, update
 
   return (
     <main className="legal-content">
-      <Breadcrumbs mb="lg" separatorMargin="xs">
-        <Anchor component={Link} to="/" size="sm" c="dimmed">{t('common.home')}</Anchor>
-        <Text size="sm" c="dimmed">{title}</Text>
-      </Breadcrumbs>
+      <nav className="legal-breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/">{t('common.home')}</Link><span aria-hidden="true">/</span><span>{title}</span>
+      </nav>
       <div className="legal-eyebrow">{eyebrow}</div>
       <h1 className="legal-title">{title}</h1>
       {updated ? <p className="legal-updated">{updated}</p> : null}

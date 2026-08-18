@@ -12,6 +12,8 @@
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
+.value { display:block; font-size:1.65rem; line-height:1; margin-top:10px; color:var(--ot-ink); }
+.subValue { display:block; margin-top:8px; color:var(--ot-muted); font-size:.85rem; }
 
 @media (max-width: 640px) {
   .card {

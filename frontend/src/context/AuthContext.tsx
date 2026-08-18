@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, meta?: { prenom?: string; nom?: string; plan?: string; period?: string }) => {
     const plan = meta?.plan === 'pro' || meta?.plan === 'ultimate' ? meta.plan : 'free'
     const period = meta?.period === 'yearly' ? 'yearly' : 'monthly'
-    const destination = plan === 'free' ? '/app' : `/app/pricing?plan=${plan}&period=${period}`
+    const destination = plan === 'free' ? '/app' : `/app/checkout?plan=${plan}&period=${period}`
     const { error } = await supabase.auth.signUp({
       email,
       password,

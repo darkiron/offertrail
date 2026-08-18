@@ -1,181 +1,99 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Stack, Paper, Group, Table, TextInput, Select,
-  Checkbox, Center, Loader, Text,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { useApplications } from '../hooks/useApplications';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useWorkflowApplications } from '../hooks/useApplications';
+import { useListingController } from '../hooks/useListingController';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
-import { ProbityBadge } from '../components/atoms/ProbityBadge';
-import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge';
-import { StatusBadge } from '../components/atoms/StatusBadge';
-import { EmptyState } from '../components/atoms/EmptyState';
-import { Button } from '../components/atoms/Button';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { useI18n } from '../i18n';
-import { useStatusOptions } from '../hooks/useStatusOptions';
 import classes from './ApplicationsPage.module.css';
+import { SearchField, SelectField } from '../components/atoms/FormField';
+import { ActionButton } from '../components/atoms/Action';
+import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
+import { SaasPageHeader } from '../components/molecules/SaasPageHeader';
+import { FilterBar } from '../components/molecules/FilterBar';
+import { PortfolioListing } from '../components/organisms/PortfolioListing';
+
+const STATUS_OPTIONS = [
+  ['', 'Tous les statuts'], ['en_attente', 'À préparer'], ['envoyee', 'Envoyée'],
+  ['entretien', 'Entretien'], ['offre_recue', 'Offre reçue'], ['refusee', 'Refusée'],
+];
+const DUE_OPTIONS = [['', 'Toutes les échéances'], ['overdue', 'En retard'], ['today', "Aujourd’hui"], ['week', 'Cette semaine'], ['none', 'Sans prochaine action']];
+const SORT_OPTIONS = [['created_at', 'Ajoutées récemment'], ['priority', 'Priorité des actions'], ['applied_at', 'Date de candidature'], ['updated_at', 'Activité récente']];
+
+function formatDate(value?: string | null) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(value));
+}
+
+function actionLabel(action: { due_at: string; urgency: string } | null) {
+  if (!action) return 'Rien de planifié';
+  if (action.urgency === 'overdue') return `En retard · ${formatDate(action.due_at)}`;
+  if (action.urgency === 'today') return "Aujourd’hui";
+  return formatDate(action.due_at);
+}
+
+function statusLabel(status: string) {
+  return STATUS_OPTIONS.find(([value]) => value === status)?.[1] ?? status.replaceAll('_', ' ');
+}
 
 export function ApplicationsPage() {
-  const { t } = useI18n();
-  const STATUS_OPTIONS = useStatusOptions();
   const navigate = useNavigate();
+  const location = useLocation();
+  const listing = useListingController('/app/candidatures', { sort: 'created_at' });
+  const [showCreate, setShowCreate] = useState(false);
+  const resultsTitle = useRef<HTMLDivElement>(null);
+  const status = listing.value('status');
+  const due = listing.value('due');
+  const sort = listing.value('sort');
+  const includeClosed = listing.value('closed') === '1';
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(20);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [showHidden, setShowHidden] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const params = useMemo(() => ({ q: listing.query || undefined, status: status || undefined, due: due || undefined, sort, page: listing.page, per_page: 15, include_closed: includeClosed || status === 'refusee' }), [listing.query, listing.page, status, due, sort, includeClosed]);
+  const query = useWorkflowApplications(params);
+  const data = query.data;
+  const hasFilters = Boolean(params.q || status || due || includeClosed);
 
-  const { apps, total, orgMap, loading, error, refetch } = useApplications({
-    search: searchTerm,
-    status: statusFilter,
-    page,
-    limit,
-    showHidden,
-  });
+  useEffect(() => { document.title = 'Candidatures — OfferTrail'; }, []);
+  useEffect(() => {
+    const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY;
+    if (typeof restoreScrollY === 'number') window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY }));
+  }, [location.state]);
+  const clearFilters = listing.clear;
+  const openRow = (id: string) => navigate(`/app/candidatures/${id}`, { state: { from: `${location.pathname}${location.search}`, scrollY: window.scrollY } });
 
-  useEffect(() => { document.title = t('application.pageTitle'); }, [t]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setPage(1);
-  };
-
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
-  };
-
-  const handleShowHiddenChange = (checked: boolean) => {
-    setShowHidden(checked);
-    setPage(1);
-  };
-
-  if (error && (error as { response?: { status?: number } }).response?.status === 401) {
-    navigate('/login');
+  if (query.error && (query.error as { response?: { status?: number } }).response?.status === 401) {
+    navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
     return null;
   }
 
   return (
-    <Stack gap="lg" className={classes.shell}>
-      {showModal && (
-        <NewApplicationModal
-          onClose={() => setShowModal(false)}
-          onCreated={() => {
-            notifications.show({ message: t('application.added'), color: 'green' });
-            refetch();
-          }}
-        />
-      )}
+    <main className={classes.page} aria-busy={query.isFetching}>
+      {showCreate && <NewApplicationModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void query.refetch(); }} />}
+      <SaasPageHeader eyebrow="Portefeuille actif" title="Candidatures" description="Retrouvez chaque opportunité et la prochaine décision à prendre." actions={<ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>} />
+      <FilterBar label="Filtres des candidatures" columns="minmax(220px,1.5fr) repeat(3,minmax(140px,.65fr))">
+        <SearchField className={classes.search} label="Rechercher" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Poste ou entreprise…" />
+        <SelectField label="Statut" value={status} onChange={(event) => listing.update('status', event.target.value)} options={STATUS_OPTIONS} />
+        <SelectField label="Échéance" value={due} onChange={(event) => listing.update('due', event.target.value)} options={DUE_OPTIONS} />
+        <SelectField label="Trier par" value={sort} onChange={(event) => listing.update('sort', event.target.value)} options={SORT_OPTIONS} />
+        <label className={classes.closed}><input type="checkbox" checked={includeClosed} onChange={(event) => listing.update('closed', event.target.checked ? '1' : '')} /> Inclure les candidatures refusées</label>
+      </FilterBar>
 
-      <PageHeader
-        title={t('application.pageHeader')}
-        count={loading ? null : total}
-        actions={
-          <Button variant="primary" onClick={() => setShowModal(true)}>
-            {t('dashboard.newApplication')}
-          </Button>
-        }
-      />
-
-      <Paper p="lg" radius="lg" withBorder className={classes.panel}>
-        <Group gap="sm" mb="md" wrap="wrap">
-          <TextInput
-            label={t('dashboard.search')}
-            placeholder={t('application.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            style={{ flex: 1, minWidth: 180 }}
-          />
-          <Select
-            label={t('dashboard.status')}
-            data={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={(v) => handleStatusChange(v ?? '')}
-            style={{ minWidth: 160 }}
-          />
-          <Checkbox
-            mt="xl"
-            label={t('dashboard.showHidden')}
-            checked={showHidden}
-            onChange={(e) => handleShowHiddenChange(e.target.checked)}
-          />
-        </Group>
-
-        {loading ? (
-          <Center h={120}><Loader /></Center>
-        ) : apps.length === 0 ? (
-          <EmptyState
-            title={t('application.emptyTitle')}
-            description={t('application.emptyDesc')}
-            action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
-          />
-        ) : (
-          <Table.ScrollContainer minWidth={760}>
-            <Table striped highlightOnHover verticalSpacing="sm" className={classes.table}>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th className={classes.companyCell}>{t('dashboard.company')}</Table.Th>
-                  <Table.Th className={classes.positionCell}>{t('dashboard.position')}</Table.Th>
-                  <Table.Th className={classes.statusCell}>{t('dashboard.status')}</Table.Th>
-                  <Table.Th className={classes.dateCell}>{t('dashboard.applied')}</Table.Th>
-                  <Table.Th className={classes.actionCell}>{t('dashboard.action')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {apps.map((app) => {
-                  const org = orgMap.get(app.organization_id || -1);
-                  return (
-                    <Table.Tr key={app.id}>
-                      <Table.Td className={classes.companyCell}>
-                        <Stack gap={4}>
-                          <Group gap="xs" wrap="wrap">
-                            <Text fw={700} className={classes.primaryText}>{app.company}</Text>
-                            {org && <OrganizationTypeBadge type={org.type} size="xs" />}
-                            {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
-                          </Group>
-                          <Text size="xs" c="dimmed" className={classes.secondaryText}>{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
-                          {app.final_customer_organization_id && (
-                            <Text size="xs" c="dimmed" className={classes.secondaryText}>
-                              {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Table.Td>
-                      <Table.Td className={classes.positionCell}><Text className={classes.primaryText}>{app.title}</Text></Table.Td>
-                      <Table.Td className={classes.statusCell}><StatusBadge status={app.status} size="md" /></Table.Td>
-                      <Table.Td className={classes.dateCell}>{app.applied_at || '-'}</Table.Td>
-                      <Table.Td className={classes.actionCell}>
-                        <Link to={`/app/candidatures/${app.id}`}>
-                          <Button variant="ghost" size="small">{t('common.details')}</Button>
-                        </Link>
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-
-        {total > limit && (
-          <Group justify="center" mt="md">
-            <Button variant="ghost" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-              {t('dashboard.previous')}
-            </Button>
-            <Text size="sm" c="dimmed">
-              {t('dashboard.page')} {page} / {Math.ceil(total / limit)}
-            </Text>
-            <Button variant="ghost" disabled={page >= Math.ceil(total / limit)} onClick={() => setPage((p) => p + 1)}>
-              {t('dashboard.next')}
-            </Button>
-          </Group>
-        )}
-      </Paper>
-    </Stack>
+      <div ref={resultsTitle} tabIndex={-1}><PortfolioListing
+        label="Candidatures" headings={['Poste / entreprise','Statut','Prochaine action','Dernier signal']}
+        data={data} loading={query.isLoading} fetching={query.isFetching} error={query.isError}
+        summary={`${data?.total ?? 0} candidature${data?.total === 1 ? '' : 's'}`}
+        summaryAction={hasFilters ? <ActionButton variant="quiet" onClick={clearFilters}>Effacer les filtres</ActionButton> : undefined}
+        loadingLabel="Chargement des candidatures…" errorTitle="La liste ne répond pas"
+        emptyTitle={hasFilters ? 'Aucun résultat pour ces filtres' : 'Aucune candidature pour le moment'}
+        emptyDescription={hasFilters ? 'Modifiez ou effacez les critères actifs.' : 'Ajoutez la première pour centraliser son contexte et planifier la suite.'}
+        emptyAction={hasFilters ? <ActionButton onClick={clearFilters}>Effacer les filtres</ActionButton> : <ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>}
+        getKey={(item) => item.id} onOpen={(item) => openRow(item.id)}
+        renderCells={(item) => <>
+              <EntityIdentity title={item.poste} detail={item.organization.name} />
+              <EntityValue value={statusLabel(item.statut)} />
+              <EntityValue value={actionLabel(item.next_action)} tone={item.next_action?.urgency === 'overdue' ? 'danger' : 'default'} />
+              <EntityValue value={item.last_event ? statusLabel(item.last_event.kind) : 'Aucune activité'} detail={item.last_event ? formatDate(item.last_event.occurred_at) : undefined} tone={item.last_event ? 'default' : 'muted'} />
+        </>}
+        onRetry={() => void query.refetch()} getPageHref={listing.pageHref} onPageChange={() => window.requestAnimationFrame(() => resultsTitle.current?.focus())}
+      /></div>
+    </main>
   );
 }
 

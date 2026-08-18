@@ -57,6 +57,12 @@ def create_checkout(
     if body.period not in ("monthly", "yearly"):
         raise HTTPException(400, "Periode invalide")
 
+    # Never create a second subscription for an already active plan. Downgrades
+    # are handled from the Stripe billing portal; only an explicit upgrade may
+    # start a new checkout session.
+    if profile.subscription_status == "active":
+        raise HTTPException(409, "Abonnement deja actif. Modifiez votre offre depuis le portail de facturation.")
+
     if not is_configured():
         raise HTTPException(
             status_code=503,
@@ -100,7 +106,7 @@ def create_billing_portal(
             customer=profile.stripe_customer_id,
             return_url=f"{APP_BASE_URL}/app/mon-compte",
         )
-    except stripe.error.StripeError as exc:
+    except stripe.StripeError as exc:
         logger.exception(
             "Stripe billing portal session creation failed for profile %s: %s",
             profile.id,

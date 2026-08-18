@@ -2,6 +2,8 @@
 .shell {
   composes: shellNarrow from '../styles/appShell.module.css';
 }
+.page{composes:shellNarrow from '../styles/appShell.module.css';}
+.segmented{display:inline-flex;overflow:hidden;border:1px solid var(--ot-line-strong);border-radius:999px;background:var(--ot-paper-raised)}.segmented button{min-height:36px;padding:0 .8rem;border:0;color:var(--ot-muted);background:transparent;font:inherit;font-size:.76rem;font-weight:750;cursor:pointer}.segmented button:hover,.segmented .activePeriod{color:var(--ot-ink);background:#e9e3d9}.checkbox{display:flex;gap:.65rem;align-items:flex-start;color:var(--ot-muted);font-size:.78rem;line-height:1.45}.checkbox input{width:17px;height:17px;flex:none;accent-color:var(--ot-accent)}.checkbox a{color:var(--ot-accent);font-weight:750}.promoWrap{display:grid;gap:.35rem}.promoWrap small{color:var(--ot-muted);font-size:.7rem}
 
 /* Header banner with kicker + title + controls */
 .header {
