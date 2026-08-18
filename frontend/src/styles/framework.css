@@ -33,6 +33,11 @@
 
 body { background: var(--ot-paper); color: var(--ot-ink); }
 .ot-stack { display: grid; gap: var(--ot-space-4); }
+.ot-public-brand { display:inline-flex; align-items:center; gap:.6rem; color:var(--ot-ink); text-decoration:none; }
+.ot-public-brand__mark { display:grid; place-items:center; width:2rem; height:2rem; border:1px solid var(--ot-ink); border-radius:50%; font:800 .62rem/1 system-ui,sans-serif; letter-spacing:.02em; }
+.ot-public-brand__name { font:700 1.08rem/1 Georgia,serif; letter-spacing:-.025em; }
+.ot-public-brand:hover { color:var(--ot-accent); }
+.ot-public-brand:hover .ot-public-brand__mark { border-color:var(--ot-accent); }
 .ot-stack-tight { display: grid; gap: var(--ot-space-2); }
 .ot-subtitle { margin: 0; color: var(--ot-muted); font-size: .9rem; line-height: 1.55; }
 .ot-kicker { color: var(--ot-muted); font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
