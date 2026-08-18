@@ -133,6 +133,23 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      <section className="lp-section-wrap" id="workflow" aria-labelledby="workflow-title">
+        <div className="lp-section-inner lp-workflow">
+          <div className="lp-section-kicker">{t('landing.workflow.kicker')}</div>
+          <h2 id="workflow-title" className="lp-section-title">{t('landing.workflow.title')}</h2>
+          <p className="lp-section-sub">{t('landing.workflow.sub')}</p>
+          <ol className="lp-workflow-grid">
+            {(['1', '2', '3'] as const).map((number) => (
+              <li className="lp-workflow-step" key={number}>
+                <span className="lp-workflow-number" aria-hidden="true">{number}</span>
+                <div><h3>{t(`landing.workflow.step${number}Title`)}</h3><p>{t(`landing.workflow.step${number}Desc`)}</p></div>
+              </li>
+            ))}
+          </ol>
+          <div className="lp-proof-line"><span>✓</span>{t('landing.workflow.proof')}</div>
+        </div>
+      </section>
+
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap" id="tarifs">
         <div className="lp-section-inner">
@@ -174,27 +191,6 @@ export const LandingPage: React.FC = () => {
                 <p>{t(`landing.faq.a${number}`)}</p>
               </details>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── CraftCodes section ─── */}
-      <section className="lp-section-wrap" id="craftcodes" aria-labelledby="craftcodes-title">
-        <div className="lp-section-inner lp-section-inner--narrow">
-          <div className="lp-section-kicker">{t('landing.craftcodes.kicker')}</div>
-          <h2 id="craftcodes-title" className="lp-section-title">{t('landing.craftcodes.title')}</h2>
-          <p className="lp-section-copy">
-            {t('landing.craftcodes.descPrefix')}{' '}
-            <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
-              CraftCodes
-            </a>
-            {t('landing.craftcodes.descSuffix')}
-          </p>
-
-          <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-            <p style={{ fontSize: '14px', lineHeight: 1.7, margin: 0, opacity: 0.75 }}>
-              {t('landing.craftcodes.noInvestors')}
-            </p>
           </div>
         </div>
       </section>
