@@ -36,6 +36,8 @@ export const LandingPage: React.FC = () => {
 
   useEffect(() => {
     document.title = t('landing.hero.pageTitle');
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (description) description.content = t('landing.hero.sub');
   }, [t]);
 
   const handlePricingCta = (id: 'free' | 'pro' | 'ultimate', selectedPeriod: BillingPeriod) => {
@@ -51,9 +53,9 @@ export const LandingPage: React.FC = () => {
     <div className="lp-root">
 
       {/* ─── Hero ─── */}
-      <section className="lp-hero">
+      <header className="lp-hero" aria-labelledby="landing-title">
         <div className="lp-badge">{t('landing.hero.badge')}</div>
-        <h1 className="lp-h1">
+        <h1 id="landing-title" className="lp-h1">
           {t('landing.hero.titleLine1')}<br />
           <span>{t('landing.hero.titleLine2')}</span>
         </h1>
@@ -62,7 +64,7 @@ export const LandingPage: React.FC = () => {
           <Link to="/register" className="lp-btn-primary">{t('landing.hero.ctaPrimary')}</Link>
           <a href="#features" className="lp-btn-outline">{t('landing.hero.ctaSecondary')}</a>
         </div>
-      </section>
+      </header>
 
       {/* ─── Dashboard mockup ─── */}
       <div className="lp-mockup-wrap">
@@ -171,11 +173,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ─── CraftCodes section ─── */}
-      <section className="lp-section-wrap" id="craftcodes">
-        <div className="lp-section-inner" style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto' }}>
+      <section className="lp-section-wrap" id="craftcodes" aria-labelledby="craftcodes-title">
+        <div className="lp-section-inner lp-section-inner--narrow">
           <div className="lp-section-kicker">{t('landing.craftcodes.kicker')}</div>
-          <h2 className="lp-section-title">{t('landing.craftcodes.title')}</h2>
-          <p style={{ fontSize: '16px', lineHeight: 1.7, marginBottom: '2rem', opacity: 0.75 }}>
+          <h2 id="craftcodes-title" className="lp-section-title">{t('landing.craftcodes.title')}</h2>
+          <p className="lp-section-copy">
             {t('landing.craftcodes.descPrefix')}{' '}
             <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
               CraftCodes
@@ -183,26 +185,26 @@ export const LandingPage: React.FC = () => {
             {t('landing.craftcodes.descSuffix')}
           </p>
 
-          <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-            <div className="lp-pricing-controls" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+          <div className="lp-plan-card lp-plan-card--breakdown">
+            <div className="lp-pricing-controls lp-pricing-controls--centered">
               <div className="lp-segmented" role="group"><button type="button" className={breakdownPeriod === 'monthly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('monthly')}>{t('landing.pricing.monthly')}</button><button type="button" className={breakdownPeriod === 'yearly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('yearly')}>{t('landing.pricing.yearly')}</button></div>
             </div>
-            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
+            <p className="lp-breakdown-label">
               Prix transparent · Pro à {proPrice?.amount}{proPrice?.suffix}
             </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.stripe')}</span>
-              <span style={{ opacity: 0.6 }}>{eur(stripeFee)}</span>
+            <div className="lp-breakdown-row">
+              <span className="lp-breakdown-muted">{t('landing.craftcodes.stripe')}</span>
+              <span className="lp-breakdown-muted">{eur(stripeFee)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.urssaf')}</span>
-              <span style={{ opacity: 0.6 }}>{eur(urssafFee)}</span>
+            <div className="lp-breakdown-row">
+              <span className="lp-breakdown-muted">{t('landing.craftcodes.urssaf')}</span>
+              <span className="lp-breakdown-muted">{eur(urssafFee)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px', fontWeight: 600 }}>
+            <div className="lp-breakdown-row lp-breakdown-row--total">
               <span>{t('landing.craftcodes.devPay')}</span>
               <span className="lp-link">{eur(devPay)}</span>
             </div>
-            <p style={{ fontSize: '12px', opacity: 0.4, margin: '12px 0 0', lineHeight: 1.6 }}>
+            <p className="lp-breakdown-note">
               {t('landing.craftcodes.noInvestors')}
             </p>
           </div>
