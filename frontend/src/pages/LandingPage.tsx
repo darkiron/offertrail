@@ -74,10 +74,10 @@ export const LandingPage: React.FC = () => {
             <div className="lp-url-bar">app.offertrail.fr/app</div>
           </div>
           <div className="lp-stats-row">
-            <div className="lp-stat"><div className="lp-stat-num">43</div><div className="lp-stat-label">{t('landing.mock.applications')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">69%</div><div className="lp-stat-label">{t('landing.mock.rejectionRate')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">20.9%</div><div className="lp-stat-label">{t('landing.mock.responseRate')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">7 {t('landing.mock.days')}</div><div className="lp-stat-label">{t('landing.mock.avgDelay')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.trackedValue')}</div><div className="lp-stat-label">{t('landing.mock.trackedLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.followupsValue')}</div><div className="lp-stat-label">{t('landing.mock.followupsLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.historyValue')}</div><div className="lp-stat-label">{t('landing.mock.historyLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.networkValue')}</div><div className="lp-stat-label">{t('landing.mock.networkLabel')}</div></div>
           </div>
           <div className="lp-mock-body">
             <div className="lp-mock-grid">
@@ -109,19 +109,10 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="lp-panel">
                 <p className="lp-panel-title">{t('landing.mock.keySignals')}</p>
-                <div className="lp-chart">
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.rejectionRate')}</span><span>69%</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '69%' }} /></div>
-                  </div>
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.responseRate')}</span><span>20.9%</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '20.9%' }} /></div>
-                  </div>
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.activeDossiers')}</span><span>11</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '26%' }} /></div>
-                  </div>
+                <div className="lp-signal-list">
+                  <p>{t('landing.mock.signal1')}</p>
+                  <p>{t('landing.mock.signal2')}</p>
+                  <p>{t('landing.mock.signal3')}</p>
                 </div>
                 <div className="lp-signal">
                   <strong>{t('landing.mock.frictionPoint')}</strong>
