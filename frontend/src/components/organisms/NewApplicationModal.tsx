@@ -1,289 +1,86 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import {
-  Modal, TextInput, Select, Textarea, SimpleGrid, Stack, Group, Text,
-  Autocomplete, Collapse, Paper,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { applicationService, organizationService } from '../../services/api';
-import type { Organization, OrganizationType } from '../../types';
-import { STATUT_FORM_OPTIONS } from '../../constants/statuts';
-import { ProbityBadge } from '../atoms/ProbityBadge';
-import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
-import { Button } from '../atoms/Button';
-import { useI18n } from '../../i18n';
+import { applicationService, organizationService, type WorkflowOrganization } from '../../services/api';
+import classes from './NewApplicationModal.module.css';
 
-interface NewApplicationModalProps {
-  onClose: () => void;
-  onCreated: () => void;
-}
-
-const ORG_TYPE_OPTIONS = [
-  { value: 'CLIENT_FINAL', label: 'Client final' },
-  { value: 'ESN', label: 'ESN' },
-  { value: 'CABINET_RECRUTEMENT', label: 'Cabinet' },
-  { value: 'STARTUP', label: 'Startup' },
-  { value: 'PME', label: 'PME' },
-  { value: 'GRAND_COMPTE', label: 'Grand compte' },
-  { value: 'PORTAGE', label: 'Portage' },
-  { value: 'AUTRE', label: 'Autre' },
-];
-
-const EMPTY_ORG = { name: '', type: 'AUTRE' as OrganizationType, city: '', website: '', linkedin_url: '', notes: '' };
+interface NewApplicationModalProps { onClose: () => void; onCreated: () => void; }
 
 export function NewApplicationModal({ onClose, onCreated }: NewApplicationModalProps) {
-  const { t } = useI18n();
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    company: '',
-    title: '',
-    type: 'CDI',
-    status: 'envoyee',
-    source: '',
-    job_url: '',
-    applied_at: new Date().toISOString().split('T')[0],
-    next_followup_at: '',
-    org_type: 'AUTRE' as OrganizationType,
-  });
-  const [newOrg, setNewOrg] = useState(EMPTY_ORG);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizations, setOrganizations] = useState<WorkflowOrganization[]>([]);
+  const [poste, setPoste] = useState('');
+  const [company, setCompany] = useState('');
+  const [finalCustomer, setFinalCustomer] = useState('');
+  const [status, setStatus] = useState('envoyee');
+  const [contractType, setContractType] = useState('');
+  const [appliedAt, setAppliedAt] = useState(new Date().toISOString().slice(0, 10));
+  const [nextAction, setNextAction] = useState('');
+  const [source, setSource] = useState('');
+  const [jobUrl, setJobUrl] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [showCreateOrg, setShowCreateOrg] = useState(false);
-  const [finalCustomerSearch, setFinalCustomerSearch] = useState('');
-  const [selectedFinalCustomer, setSelectedFinalCustomer] = useState<Organization | null>(null);
 
+  useEffect(() => { organizationService.getWorkflowAll().then(setOrganizations).catch(() => setError('Impossible de charger les entreprises.')); }, []);
   useEffect(() => {
-    organizationService.getAll().then(setOrganizations).catch(() => {});
-  }, []);
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape' && !loading) onClose(); };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [loading, onClose]);
 
-  const matchedOrg = useMemo(
-    () => organizations.find((o) => o.name.toLowerCase() === formData.company.toLowerCase()) || selectedOrg,
-    [organizations, formData.company, selectedOrg],
-  );
+  const suggestions = useMemo(() => {
+    const needle = company.trim().toLocaleLowerCase('fr');
+    return organizations.filter((organization) => !needle || organization.nom.toLocaleLowerCase('fr').includes(needle)).slice(0, 8);
+  }, [company, organizations]);
 
-  const effectiveOrgType = matchedOrg?.type || (showCreateOrg ? newOrg.type : formData.org_type);
-  const needsFinalCustomer = effectiveOrgType === 'ESN' || effectiveOrgType === 'CABINET_RECRUTEMENT';
-
-  const orgAutocompleteData = useMemo(
-    () => organizations.filter((o) => o.name.toLowerCase().includes(formData.company.toLowerCase())).slice(0, 6).map((o) => o.name),
-    [organizations, formData.company],
-  );
-
-  const finalCustomerData = useMemo(
-    () => organizations
-      .filter((o) => !['ESN', 'CABINET_RECRUTEMENT', 'PORTAGE'].includes(o.type))
-      .filter((o) => o.name.toLowerCase().includes(finalCustomerSearch.toLowerCase()))
-      .slice(0, 6)
-      .map((o) => o.name),
-    [organizations, finalCustomerSearch],
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!poste.trim() || !company.trim()) return;
+    setLoading(true); setError(null);
     try {
-      let organizationId = selectedOrg?.id || matchedOrg?.id || null;
-
-      if (!organizationId && newOrg.name.trim()) {
-        const created = await organizationService.create({
-          ...newOrg,
-          name: newOrg.name.trim(),
-          city: newOrg.city || null,
-          website: newOrg.website || null,
-          linkedin_url: newOrg.linkedin_url || null,
-          notes: newOrg.notes || null,
-        });
-        const full = await organizationService.getById(created.id);
-        setOrganizations((current) => [full, ...current]);
-        setShowCreateOrg(false);
-        notifications.show({ message: `Entreprise "${full.name}" créée`, color: 'green' });
-        organizationId = full.id;
+      let organization = organizations.find((item) => item.nom.localeCompare(company.trim(), 'fr', { sensitivity: 'base' }) === 0);
+      if (!organization) organization = await organizationService.createWorkflow({ nom: company.trim(), type: 'AUTRE' });
+      let finalCustomerOrganization = finalCustomer.trim()
+        ? organizations.find((item) => item.nom.localeCompare(finalCustomer.trim(), 'fr', { sensitivity: 'base' }) === 0)
+        : undefined;
+      if (finalCustomer.trim() && !finalCustomerOrganization) {
+        finalCustomerOrganization = await organizationService.createWorkflow({ nom: finalCustomer.trim(), type: 'AUTRE' });
       }
-
-      await applicationService.createApplication({
-        ...formData,
-        company: formData.company.trim(),
-        org_type: matchedOrg?.type || newOrg.type || formData.org_type,
-        organization_id: organizationId,
-        final_customer_organization_id: selectedFinalCustomer?.id || null,
+      const application = await applicationService.createWorkflowApplication({
+        etablissement_id: organization.id,
+        client_final_id: finalCustomerOrganization?.id ?? null,
+        poste: poste.trim(), statut: status,
+        date_candidature: appliedAt ? new Date(`${appliedAt}T12:00:00`).toISOString() : null,
+        source: source.trim() || null, url_offre: jobUrl.trim() || null,
+        type_contrat: contractType || null,
       });
+      if (nextAction) await applicationService.scheduleWorkflowAction(application.id, { due_at: new Date(`${nextAction}T12:00:00`).toISOString(), channel: 'email' });
       onCreated();
-      onClose();
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 402) { onClose(); navigate('/app/pricing?reason=limit_reached'); return; }
-        if (err.response?.status === 401) { onClose(); navigate('/login'); return; }
-        setError(err.response?.data?.detail || t('newApplication.createError'));
-      }
-    } finally {
-      setLoading(false);
-    }
+    } catch (caught: unknown) {
+      if (axios.isAxiosError(caught) && caught.response?.status === 402) { onClose(); navigate('/app/mon-compte?reason=limit_reached'); return; }
+      if (axios.isAxiosError(caught) && caught.response?.status === 401) { onClose(); navigate('/login'); return; }
+      setError(axios.isAxiosError(caught) ? (caught.response?.data?.detail ?? 'Impossible de créer la candidature.') : 'Impossible de créer la candidature.');
+    } finally { setLoading(false); }
   };
 
-  return (
-    <Modal opened onClose={onClose} size="xl" title={
-      <Stack gap={2}>
-        <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('newApplication.kicker')}</Text>
-        <Text size="xl" fw={700}>{t('newApplication.title')}</Text>
-      </Stack>
-    }>
-      {error && <Text c="red" size="sm" mb="md">{error}</Text>}
-
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-            <Stack gap="md">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">◎ {t('newApplication.core')}</Text>
-
-              <div>
-                <Autocomplete
-                  label={t('newApplication.organization')}
-                  placeholder={t('newApplication.organizationPlaceholder')}
-                  value={formData.company}
-                  onChange={(val) => {
-                    setFormData((f) => ({ ...f, company: val }));
-                    const match = organizations.find((o) => o.name === val);
-                    if (match) setSelectedOrg(match);
-                    else { setSelectedOrg(null); setShowCreateOrg(false); }
-                    setNewOrg((n) => ({ ...n, name: val }));
-                  }}
-                  data={orgAutocompleteData}
-                />
-                {matchedOrg && (
-                  <Group gap="xs" mt="xs">
-                    <OrganizationTypeBadge type={matchedOrg.type} size="xs" />
-                    <ProbityBadge score={matchedOrg.probity_score} level={matchedOrg.probity_level} showScore={false} />
-                    <Text size="sm" c="dimmed">{matchedOrg.name}</Text>
-                  </Group>
-                )}
-                {!matchedOrg && formData.company && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    mt="xs"
-                    onClick={() => { setShowCreateOrg((v) => !v); setNewOrg((n) => ({ ...n, name: formData.company })); }}
-                  >
-                    {t('newApplication.createOrg')} "{formData.company}"
-                  </Button>
-                )}
-              </div>
-
-              <Collapse mounted={showCreateOrg}>
-                <Paper p="md" withBorder radius="md">
-                  <Group justify="space-between" mb="sm">
-                    <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">▣ Nouvel ETS</Text>
-                    <Button type="button" variant="ghost" size="small" onClick={() => setShowCreateOrg(false)}>Replier</Button>
-                  </Group>
-                  <SimpleGrid cols={2} spacing="sm">
-                    <TextInput label="Nom" value={newOrg.name} onChange={(e) => setNewOrg((n) => ({ ...n, name: e.target.value }))} />
-                    <Select label="Type" data={ORG_TYPE_OPTIONS} value={newOrg.type} onChange={(v) => setNewOrg((n) => ({ ...n, type: (v as OrganizationType) || 'AUTRE' }))} />
-                    <TextInput label="Ville" value={newOrg.city} onChange={(e) => setNewOrg((n) => ({ ...n, city: e.target.value }))} />
-                    <TextInput label="Site web" value={newOrg.website} onChange={(e) => setNewOrg((n) => ({ ...n, website: e.target.value }))} />
-                    <TextInput label="LinkedIn" value={newOrg.linkedin_url} onChange={(e) => setNewOrg((n) => ({ ...n, linkedin_url: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
-                    <Textarea label="Notes" rows={2} value={newOrg.notes} onChange={(e) => setNewOrg((n) => ({ ...n, notes: e.target.value }))} style={{ gridColumn: '1 / -1' }} />
-                  </SimpleGrid>
-                </Paper>
-              </Collapse>
-
-              <TextInput
-                label={t('newApplication.jobTitle')}
-                required
-                value={formData.title}
-                onChange={(e) => setFormData((f) => ({ ...f, title: e.target.value }))}
-              />
-
-              {needsFinalCustomer && (
-                <div>
-                  <Autocomplete
-                    label="Client final"
-                    placeholder="Rechercher le client final"
-                    value={finalCustomerSearch}
-                    onChange={(val) => {
-                      setFinalCustomerSearch(val);
-                      const match = organizations.find((o) => o.name === val);
-                      setSelectedFinalCustomer(match || null);
-                    }}
-                    data={finalCustomerData}
-                  />
-                  {selectedFinalCustomer && (
-                    <Group gap="xs" mt="xs">
-                      <OrganizationTypeBadge type={selectedFinalCustomer.type} size="xs" />
-                      <Text size="sm" c="dimmed">{selectedFinalCustomer.name}</Text>
-                    </Group>
-                  )}
-                  <Text size="xs" c="dimmed" mt="xs">
-                    Lien utile quand la candidature passe par un cabinet ou une ESN.
-                  </Text>
-                </div>
-              )}
-
-              <SimpleGrid cols={2} spacing="sm">
-                <Select
-                  label={t('newApplication.type')}
-                  data={[
-                    { value: 'CDI', label: 'CDI' },
-                    { value: 'FREELANCE', label: 'FREELANCE' },
-                    { value: 'CDD', label: 'CDD' },
-                    { value: 'INTERN', label: 'INTERNSHIP' },
-                  ]}
-                  value={formData.type}
-                  onChange={(v) => setFormData((f) => ({ ...f, type: v || 'CDI' }))}
-                />
-                <Select
-                  label={t('newApplication.initialStatus')}
-                  data={[
-                    ...STATUT_FORM_OPTIONS,
-                  ]}
-                  value={formData.status}
-                  onChange={(v) => setFormData((f) => ({ ...f, status: v || 'envoyee' }))}
-                />
-              </SimpleGrid>
-            </Stack>
-
-            <Stack gap="md">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">◷ {t('newApplication.tracking')}</Text>
-              <TextInput
-                label={t('newApplication.appliedAt')}
-                type="date"
-                value={formData.applied_at}
-                onChange={(e) => setFormData((f) => ({ ...f, applied_at: e.target.value }))}
-              />
-              <TextInput
-                label={t('newApplication.nextFollowup')}
-                type="date"
-                value={formData.next_followup_at}
-                onChange={(e) => setFormData((f) => ({ ...f, next_followup_at: e.target.value }))}
-              />
-              <TextInput
-                label={t('newApplication.source')}
-                placeholder={t('newApplication.sourcePlaceholder')}
-                value={formData.source}
-                onChange={(e) => setFormData((f) => ({ ...f, source: e.target.value }))}
-              />
-              <TextInput
-                label={t('newApplication.jobUrl')}
-                placeholder={t('newApplication.jobUrlPlaceholder')}
-                value={formData.job_url}
-                onChange={(e) => setFormData((f) => ({ ...f, job_url: e.target.value }))}
-              />
-              <Text size="xs" c="dimmed">{t('newApplication.tip')}</Text>
-            </Stack>
-          </SimpleGrid>
-
-          <Group justify="space-between">
-            <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-            <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Création...' : t('newApplication.createAction')}
-            </Button>
-          </Group>
-        </Stack>
+  return <div className={classes.backdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) onClose(); }}>
+    <section className={classes.dialog} role="dialog" aria-modal="true" aria-labelledby="new-application-title">
+      <header><div><p>Nouvelle opportunité</p><h2 id="new-application-title">Ajouter une candidature</h2></div><button type="button" aria-label="Fermer" onClick={onClose}>×</button></header>
+      <form onSubmit={submit}>
+        <div className={classes.core}>
+          <label><span className={classes.labelText}>Poste <b>*</b></span><input autoFocus required value={poste} onChange={(event) => setPoste(event.target.value)} placeholder="Product Designer" /></label>
+          <label className={classes.companyField}><span className={classes.labelText}>Entreprise <b>*</b></span><input required value={company} onFocus={() => setSuggestionsOpen(true)} onChange={(event) => { setCompany(event.target.value); setSuggestionsOpen(true); }} placeholder="Atelier Noma" autoComplete="off" />{suggestionsOpen && company.trim() && suggestions.length > 0 && <div className={classes.suggestions}>{suggestions.map((organization) => <button type="button" key={organization.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { setCompany(organization.nom); setSuggestionsOpen(false); }}><strong>{organization.nom}</strong><span>{organization.type.replaceAll('_', ' ').toLowerCase()}</span></button>)}</div>}<small>{company && !organizations.some((item) => item.nom.localeCompare(company.trim(), 'fr', { sensitivity: 'base' }) === 0) ? `Nouvelle entreprise : « ${company} »` : 'Recherchez une entreprise existante ou créez-la en saisissant son nom.'}</small></label>
+          <label><span className={classes.labelText}>Client final <em>si connu</em></span><input list="final-customer-organizations" value={finalCustomer} onChange={(event) => setFinalCustomer(event.target.value)} placeholder="Entreprise où la mission aura lieu" autoComplete="off" /><datalist id="final-customer-organizations">{organizations.filter((item) => item.nom !== company).map((item) => <option key={item.id} value={item.nom} />)}</datalist><small>À renseigner lorsque l’entreprise ci-dessus est une ESN, un cabinet ou un intermédiaire.</small></label>
+          <div className={classes.split}><label><span className={classes.labelText}>Statut</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="en_attente">À préparer</option><option value="envoyee">Envoyée</option><option value="entretien">Entretien</option><option value="offre_recue">Offre reçue</option></select></label><label><span className={classes.labelText}>Type de contrat</span><select value={contractType} onChange={(event) => setContractType(event.target.value)}><option value="">Non renseigné</option><option value="cdi">CDI</option><option value="cdd">CDD</option><option value="freelance">Freelance</option><option value="stage">Stage</option><option value="alternance">Alternance</option><option value="autre">Autre</option></select></label></div><label><span className={classes.labelText}>Date de candidature</span><input type="date" value={appliedAt} onChange={(event) => setAppliedAt(event.target.value)} /></label>
+          <label className={classes.next}><span className={classes.labelText}>Prochaine relance <em>facultative</em></span><input type="date" value={nextAction} min={appliedAt || undefined} onChange={(event) => setNextAction(event.target.value)} /><small>Vous pourrez aussi la planifier plus tard depuis le dossier.</small></label>
+        </div>
+        <button className={classes.detailsToggle} type="button" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? 'Masquer les détails' : 'Ajouter des détails'} <span>{detailsOpen ? '−' : '+'}</span></button>
+        {detailsOpen && <div className={classes.details}><label><span className={classes.labelText}>Source</span><input value={source} onChange={(event) => setSource(event.target.value)} placeholder="LinkedIn, Welcome to the Jungle…" /></label><label><span className={classes.labelText}>Lien de l’offre</span><input type="url" value={jobUrl} onChange={(event) => setJobUrl(event.target.value)} placeholder="https://…" /></label></div>}
+        {error && <p className={classes.error} role="alert">{error}</p>}
+        <footer><button type="button" onClick={onClose} disabled={loading}>Annuler</button><button type="submit" disabled={loading || !poste.trim() || !company.trim()}>{loading ? 'Création…' : nextAction ? 'Créer et planifier la suite' : 'Créer la candidature'}</button></footer>
       </form>
-    </Modal>
-  );
+    </section>
+  </div>;
 }

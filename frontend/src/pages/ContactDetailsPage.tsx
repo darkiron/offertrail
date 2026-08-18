@@ -1,280 +1,50 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  Anchor, Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, Title,
-} from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { contactService } from '../services/api';
-import type { Application, Contact, Organization } from '../types';
-import { Button } from '../components/atoms/Button';
-import StatusBadge from '../components/atoms/StatusBadge';
-import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
-import ProbityBadge from '../components/atoms/ProbityBadge';
+import type { Contact } from '../types';
 import ContactEditModal from '../components/organisms/ContactEditModal';
-import { useI18n } from '../i18n';
+import { DetailHeader } from '../components/organisms/DetailHeader';
+import { ActionButton, ExternalAction } from '../components/atoms/Action';
+import { LoadingStatus } from '../components/atoms/LoadingStatus';
+import { DetailSummary } from '../components/molecules/DetailSummary';
+import { RelatedRecord, RelatedRecords } from '../components/molecules/RelatedRecords';
+import { Tabs } from '../components/molecules/Tabs';
+import { EntityLink } from '../components/atoms/EntityLink';
 import classes from './ContactDetailsPage.module.css';
 
-type ContactDetails = Contact & {
-  organization: Organization | null;
-  applications: Application[];
-  events: Array<{
-    id: number;
-    ts: string;
-    type: string;
-    event_type?: string;
-    payload?: Record<string, unknown>;
-    application?: { id: number; title: string; status: string };
-  }>;
-};
+type Details = Contact & { organization: {id:string;name:string;type:string}|null; applications: Array<{id:string;title:string;company:string;applied_at:string|null;status:string}>; events: Array<{ id: string | number; ts: string; type: string; event_type?: string; payload?: Record<string, unknown>; application?: { id: string; title: string; status: string } }> };
+type Tab = 'overview' | 'applications' | 'activity';
+const STATUS: Record<string,string> = { en_attente:'À préparer', envoyee:'Envoyée', entretien:'Entretien', offre_recue:'Offre reçue', refusee:'Refusée' };
+const EVENT_LABELS: Record<string,string> = { creation:'Contact ajouté', modification:'Contact mis à jour', changement_statut:'Statut modifié', note:'Note ajoutée', relance:'Relance', contact_ajout:'Contact ajouté', note_ajout:'Note ajoutée', entretien_planifie:'Entretien planifié' };
+const date = (value?: string | null) => value ? new Date(value).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : 'Non renseignée';
 
-type ContactTab = 'overview' | 'applications' | 'activity';
-
-const formatDate = (value?: string | null, withTime = false) => {
-  if (!value) {
-    return '-';
-  }
-  return new Date(value).toLocaleString('fr-FR', withTime ? {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  } : {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-};
-
-export const ContactDetailsPage: React.FC = () => {
-  const { t } = useI18n();
-  const { id } = useParams<{ id: string }>();
+export const ContactDetailsPage = () => {
+  const { id } = useParams<{id:string}>();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [data, setData] = useState<ContactDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ContactTab>('overview');
-  const [editing, setEditing] = useState(false);
+  const [tab,setTab] = useState<Tab>('overview');
+  const [editing,setEditing] = useState(false);
+  const navigationState = location.state as { from?: string; scrollY?: number } | null;
+  const from = navigationState?.from ?? '/app/contacts';
+  const query = useQuery<Details>({ queryKey:['contact-details',id], queryFn:()=>contactService.getById(id!), enabled:Boolean(id) });
+  const data = query.data;
 
-  const fetchContact = async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await contactService.getById(Number(id));
-      setData(response);
-    } catch {
-      setError(t('contacts.detailError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(()=>{document.title=data?`${data.first_name} ${data.last_name} — OfferTrail`:'Contact — OfferTrail';},[data]);
+  if(query.isLoading)return <main className={classes.page}><div className={classes.state}><LoadingStatus>Chargement du contact…</LoadingStatus></div></main>;
+  if(query.isError||!data)return <main className={classes.page}><Link className={classes.back} to={from}>← Contacts</Link><div className={classes.state}><h1>Contact introuvable</h1><p>Cette fiche n’est plus accessible.</p></div></main>;
 
-  useEffect(() => { document.title = 'Contact — OfferTrail'; }, []);
-
-  useEffect(() => {
-    fetchContact();
-  }, [id]);
-
-  if (loading && !data) {
-    return (
-      <Stack gap="lg" p="lg" className={classes.shell}>
-        <Paper p="xl" radius="lg" withBorder>
-          <Text c="dimmed" ta="center">{t('contacts.loadingDetail')}</Text>
-        </Paper>
-      </Stack>
-    );
-  }
-
-  if (!data) {
-    return (
-      <Stack gap="lg" p="lg" className={classes.shell}>
-        <Paper p="xl" radius="lg" withBorder>
-          <Text c="dimmed" ta="center">{error || t('contacts.detailError')}</Text>
-        </Paper>
-      </Stack>
-    );
-  }
-
-  const tabDefinitions: Array<{ id: ContactTab; label: string }> = [
-    { id: 'overview', label: t('contacts.overview') },
-    { id: 'applications', label: t('contacts.applications') },
-    { id: 'activity', label: t('contacts.activity') },
-  ];
-
-  return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
-      <Anchor component={Link} to="/app/contacts" c="dimmed" size="sm">← {t('common.backToContacts')}</Anchor>
-
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'stretch' }}>
-        <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-          <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.detailKicker')}</Text>
-          <Title order={1} mt="xs">{data.first_name} {data.last_name}</Title>
-          <Text c="dimmed" mt={4}>{data.role || t('contacts.detailNoRole')}</Text>
-          <Group mt="md" gap="xs" wrap="wrap">
-            {data.is_recruiter ? <Badge variant="light" color="pink">{t('contacts.recruiter')}</Badge> : null}
-            {data.organization ? <OrganizationTypeBadge type={data.organization.type} /> : null}
-            {data.organization ? <ProbityBadge score={data.organization.probity_score} level={data.organization.probity_level} showScore={false} /> : null}
-          </Group>
-          <Group mt="lg" gap="xs" wrap="wrap">
-            <Button variant="primary" onClick={() => setEditing(true)}>{t('common.edit')}</Button>
-            {data.email ? (
-              <a href={`mailto:${data.email}`}>
-                <Button variant="ghost">{t('contacts.sendEmail')}</Button>
-              </a>
-            ) : null}
-            {data.linkedin_url ? (
-              <a href={data.linkedin_url} target="_blank" rel="noreferrer">
-                <Button variant="ghost">{t('contacts.linkedin')}</Button>
-              </a>
-            ) : null}
-          </Group>
-        </Paper>
-
-        <Paper p="xl" radius="lg" withBorder>
-          <Stack gap="md">
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.linkedOrg')}</Text>
-              <Text size="sm" c="dimmed">
-                {data.organization ? (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/app/etablissements/${data.organization?.id}`)}
-                    className={classes.linkedOrgButton}
-                  >
-                    {data.organization.name}
-                  </button>
-                ) : t('contacts.noLinkedOrg')}
-              </Text>
-            </Stack>
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.applicationsLinked')}</Text>
-              <Text size="xl" fw={700}>{data.applications.length}</Text>
-            </Stack>
-            <Stack gap={4}>
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.updatedAt')}</Text>
-              <Text size="sm" c="dimmed">{formatDate(data.updated_at, true)}</Text>
-            </Stack>
-          </Stack>
-        </Paper>
-      </SimpleGrid>
-
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" style={{ alignItems: 'start' }}>
-        <Paper p="xl" radius="lg" withBorder>
-          <Group gap="xs" mb="lg">
-            {tabDefinitions.map((tab) => (
-              <Chip
-                key={tab.id}
-                checked={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                size="sm"
-              >
-                {tab.label}
-              </Chip>
-            ))}
-          </Group>
-
-          {activeTab === 'overview' ? (
-            <Stack gap="sm">
-              {[
-                { label: t('contacts.email'), value: data.email || t('contacts.notDefined') },
-                { label: t('contacts.phone'), value: data.phone || t('contacts.notDefined') },
-                { label: t('contacts.notes'), value: data.notes || t('contacts.noNotes') },
-              ].map((item) => (
-                <Paper key={item.label} p="md" radius="md" withBorder>
-                  <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{item.label}</Text>
-                  <Text size="sm" c="dimmed" mt={6}>{item.value}</Text>
-                </Paper>
-              ))}
-            </Stack>
-          ) : null}
-
-          {activeTab === 'applications' ? (
-            data.applications.length > 0 ? (
-              <Stack gap="sm">
-                {data.applications.map((application) => (
-                  <Paper key={application.id} p="md" radius="md" withBorder>
-                    <Group justify="space-between" align="flex-start">
-                      <Stack gap={2}>
-                        <Text fw={700} size="sm">{application.title}</Text>
-                        <Group gap="xs" wrap="wrap">
-                          <Text size="xs" c="dimmed">{application.company}</Text>
-                          <Text size="xs" c="dimmed">{application.type}</Text>
-                          <Text size="xs" c="dimmed">{t('dashboard.applied')} {formatDate(application.applied_at)}</Text>
-                        </Group>
-                      </Stack>
-                      <StatusBadge status={application.status} />
-                    </Group>
-                    <Group mt="sm">
-                      <Link to={`/app/candidatures/${application.id}`}>
-                        <Text size="xs" c="blue">{t('contacts.openApplication')}</Text>
-                      </Link>
-                    </Group>
-                  </Paper>
-                ))}
-              </Stack>
-            ) : (
-              <Text c="dimmed" ta="center" py="xl">{t('contacts.noApplications')}</Text>
-            )
-          ) : null}
-
-          {activeTab === 'activity' ? (
-            data.events.length > 0 ? (
-              <Stack gap="sm">
-                {data.events.map((event) => (
-                  <Paper key={`${event.id}-${event.ts}`} p="md" radius="md" withBorder>
-                    <Text fw={700} size="sm">{String(event.type || event.event_type).replace(/_/g, ' ')}</Text>
-                    <Text size="xs" c="dimmed" mt={4}>{formatDate(event.ts, true)}</Text>
-                    {event.application ? (
-                      <Group gap="xs" mt="xs">
-                        <Text size="xs" c="dimmed">{event.application.title}</Text>
-                        <StatusBadge status={event.application.status} size="sm" />
-                      </Group>
-                    ) : null}
-                    {event.payload && Object.keys(event.payload).length > 0 ? (
-                      <Text size="xs" c="dimmed" mt={6}>{JSON.stringify(event.payload)}</Text>
-                    ) : null}
-                  </Paper>
-                ))}
-              </Stack>
-            ) : (
-              <Text c="dimmed" ta="center" py="xl">{t('contacts.noActivity')}</Text>
-            )
-          ) : null}
-        </Paper>
-
-        <Paper p="xl" radius="lg" withBorder>
-          <Stack gap="md">
-            {[
-              {
-                label: t('contacts.identity'),
-                items: [`${data.first_name} ${data.last_name}`, data.role || t('contacts.noRole')],
-              },
-              {
-                label: t('contacts.channels'),
-                items: [data.email || t('contacts.noEmail'), data.phone || t('contacts.noPhone')],
-              },
-              {
-                label: t('contacts.created'),
-                items: [formatDate(data.created_at)],
-              },
-            ].map((section) => (
-              <Stack key={section.label} gap={4} pb="md" className={classes.sectionDivider}>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{section.label}</Text>
-                {section.items.map((item) => (
-                  <Text key={item} size="sm" c="dimmed">{item}</Text>
-                ))}
-              </Stack>
-            ))}
-          </Stack>
-        </Paper>
-      </SimpleGrid>
-
-      {editing ? (
-        <ContactEditModal
-          contact={data}
-          onClose={() => setEditing(false)}
-          onSaved={() => {
-            setEditing(false);
-            fetchContact();
-          }}
-        />
-      ) : null}
-    </Stack>
-  );
+  return <main className={classes.page}>
+    {editing&&<ContactEditModal contact={data} organizationName={data.organization?.name} onClose={()=>setEditing(false)} onSaved={()=>{setEditing(false);void query.refetch();}}/>}
+    <DetailHeader backTo={from} backLabel="Tous les contacts" backState={{restoreScrollY:navigationState?.scrollY}} eyebrow="Relation professionnelle" title={`${data.first_name} ${data.last_name}`} subtitle={<>{data.role||'Fonction non renseignée'}{data.organization?` · ${data.organization.name}`:''}</>} badges={<>{data.is_recruiter&&<span>Recruteur</span>}{data.organization&&<span>{data.organization.type.replaceAll('_',' ')}</span>}</>} actions={<><ActionButton variant="primary" onClick={()=>setEditing(true)}>Modifier</ActionButton>{data.email&&<a className={classes.contactAction} href={`mailto:${data.email}`}>Envoyer un email</a>}{data.linkedin_url&&<ExternalAction href={data.linkedin_url}>LinkedIn ↗</ExternalAction>}</>}/>
+    <DetailSummary label="Synthèse du contact" items={[{label:'Entreprise liée',value:data.organization?<EntityLink to={`/app/etablissements/${data.organization.id}`} from={`${location.pathname}${location.search}`}>{data.organization.name}</EntityLink>:'Aucune'},{label:'Candidatures liées',value:data.applications.length},{label:'Dernière mise à jour',value:date(data.updated_at)}]}/>
+    <Tabs label="Contenu du contact" value={tab} onChange={setTab} items={[["overview","Coordonnées"],["applications",`Candidatures · ${data.applications.length}`],["activity",`Activité · ${data.events.length}`]]}/>
+    <section className={classes.content}>
+      {tab==='overview'&&<div className={classes.details}><article><span>Email</span>{data.email?<a href={`mailto:${data.email}`}>{data.email}</a>:<strong>Non renseigné</strong>}</article><article><span>Téléphone</span>{data.phone?<a href={`tel:${data.phone}`}>{data.phone}</a>:<strong>Non renseigné</strong>}</article><article className={classes.notes}><span>Notes privées</span><p>{data.notes||'Aucune note enregistrée.'}</p></article></div>}
+      {tab==='applications'&&(data.applications.length?<RelatedRecords label="Candidatures liées">{data.applications.map(item=><RelatedRecord key={item.id} title={item.title} detail={`${item.company} · ${date(item.applied_at)}`} meta={STATUS[item.status]??item.status} onOpen={()=>navigate(`/app/candidatures/${item.id}`,{state:{from:`${location.pathname}${location.search}`,scrollY:window.scrollY}})}/>)}</RelatedRecords>:<Empty text="Aucune candidature liée à ce contact."/>)}
+      {tab==='activity'&&(data.events.length?<ol className={classes.timeline}>{data.events.map(event=>{const kind=String(event.type||event.event_type);return <li key={`${event.id}-${event.ts}`}><time>{date(event.ts)}</time><div><strong>{EVENT_LABELS[kind]??kind.replaceAll('_',' ')}</strong>{event.application&&<EntityLink to={`/app/candidatures/${event.application.id}`} from={`${location.pathname}${location.search}`}>{event.application.title}</EntityLink>}</div></li>})}</ol>:<Empty text="Aucune activité enregistrée."/>)}
+    </section>
+  </main>;
 };
-
+function Empty({text}:{text:string}){return <div className={classes.empty}>{text}</div>}
 export default ContactDetailsPage;

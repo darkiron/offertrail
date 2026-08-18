@@ -1,223 +1,51 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Badge, Chip, Group, Paper, SimpleGrid, Stack, Text, TextInput,
-} from '@mantine/core';
-import { contactService, organizationService } from '../services/api';
-import { Spinner } from '../components/atoms/Spinner';
-import type { Contact, Organization } from '../types';
-import OrganizationTypeBadge from '../components/atoms/OrganizationTypeBadge';
-import ProbityBadge from '../components/atoms/ProbityBadge';
-import { Button } from '../components/atoms/Button';
-import { PageHeader } from '../components/molecules/PageHeader';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { contactService } from '../services/api';
+import { useListingController, usePaginatedListing } from '../hooks/useListingController';
 import ContactCreateModal from '../components/organisms/ContactCreateModal';
-import { useI18n } from '../i18n';
+import { ActionButton } from '../components/atoms/Action';
+import { SearchField, SelectField } from '../components/atoms/FormField';
+import { SaasPageHeader } from '../components/molecules/SaasPageHeader';
+import { FilterBar } from '../components/molecules/FilterBar';
+import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
+import { PortfolioListing } from '../components/organisms/PortfolioListing';
 import classes from './ContactsPage.module.css';
 
-type ContactTab = 'all' | 'recruiters' | 'linked' | 'unlinked';
+type View = 'all' | 'recruiters' | 'linked' | 'unlinked';
+const VIEWS: ReadonlyArray<readonly [View, string]> = [['all', 'Tous les contacts'], ['recruiters', 'Recruteurs'], ['linked', 'Liés à une entreprise'], ['unlinked', 'Sans entreprise']];
 
-export const ContactsPage: React.FC = () => {
-  const { t } = useI18n();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<ContactTab>('all');
+export const ContactsPage = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Contacts — OfferTrail';
-  }, []);
-
-  const tabs: Array<{ id: ContactTab; label: string; hint: string }> = [
-    { id: 'all', label: t('contacts.tabAll'), hint: t('contacts.tabAllHint') },
-    { id: 'recruiters', label: t('contacts.tabRecruiters'), hint: t('contacts.tabRecruitersHint') },
-    { id: 'linked', label: t('contacts.tabLinked'), hint: t('contacts.tabLinkedHint') },
-    { id: 'unlinked', label: t('contacts.tabUnlinked'), hint: t('contacts.tabUnlinkedHint') },
-  ];
-
-  const fetchContacts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await contactService.getAll();
-      setContacts(data);
-    } catch {
-      setError(t('contacts.loadError'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void fetchContacts();
-    organizationService.getAll().then(setOrganizations).catch(() => {});
-  }, [fetchContacts]);
-
-  const organizationsMap = useMemo(() => new Map(organizations.map((org) => [org.id, org])), [organizations]);
-
-  const visibleContacts = contacts.filter((contact) => {
-    const organization = contact.organization_id ? organizationsMap.get(contact.organization_id) : null;
-    const needle = search.trim().toLowerCase();
-    const matchesSearch = !needle || [
-      contact.first_name,
-      contact.last_name,
-      `${contact.first_name} ${contact.last_name}`,
-      contact.role,
-      contact.email,
-      contact.phone,
-      contact.linkedin_url,
-      contact.notes,
-      organization?.name,
-      organization?.city,
-    ]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(needle));
-
-    if (!matchesSearch) {
-      return false;
-    }
-
-    switch (activeTab) {
-      case 'recruiters': return !!contact.is_recruiter;
-      case 'linked': return !!contact.organization_id;
-      case 'unlinked': return !contact.organization_id;
-      default: return true;
-    }
-  });
-
-  const recruitersCount = contacts.filter((contact) => !!contact.is_recruiter).length;
-  const linkedCount = contacts.filter((contact) => !!contact.organization_id).length;
-
-  return (
-    <Stack gap="lg" className={classes.shell}>
-      <PageHeader
-        title={t('contacts.title')}
-        count={loading ? null : contacts.length}
-        actions={
-          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            {t('contacts.newContact')}
-          </Button>
-        }
-      />
-
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-        {[
-          { label: t('contacts.total'), value: contacts.length, hint: t('contacts.totalHint') },
-          { label: t('contacts.recruiters'), value: recruitersCount, hint: t('contacts.recruitersHint') },
-          { label: t('contacts.linked'), value: linkedCount, hint: t('contacts.linkedHint') },
-        ].map((stat) => (
-          <Paper key={stat.label} p="md" radius="md" withBorder>
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{stat.label}</Text>
-            <Text size="xl" fw={700} mt={4}>{stat.value}</Text>
-            <Text size="xs" c="dimmed">{stat.hint}</Text>
-          </Paper>
-        ))}
-      </SimpleGrid>
-
-      <Paper p="lg" radius="lg" withBorder>
-        <Group justify="space-between" mb="md" wrap="wrap" gap="md">
-          <TextInput
-            placeholder={t('contacts.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 240 }}
-          />
-          <Text size="sm" c="dimmed">
-            {loading ? t('contacts.loading') : `${visibleContacts.length} ${t('contacts.results')}`}
-          </Text>
-        </Group>
-        <Group gap="xs" wrap="wrap" mb="xs">
-          {tabs.map((tab) => (
-            <Chip
-              key={tab.id}
-              checked={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              size="sm"
-            >
-              {tab.label}
-            </Chip>
-          ))}
-        </Group>
-        <Text size="xs" c="dimmed">{tabs.find((tab) => tab.id === activeTab)?.hint}</Text>
-      </Paper>
-
-      <Paper p="lg" radius="lg" withBorder>
-        {loading ? (
-          <Spinner />
-        ) : error ? (
-          <Text c="red">{error}</Text>
-        ) : visibleContacts.length > 0 ? (
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-            {visibleContacts.map((contact) => {
-              const organization = contact.organization_id ? organizationsMap.get(contact.organization_id) : null;
-              return (
-                <Paper
-                  key={contact.id}
-                  p="lg"
-                  radius="lg"
-                  withBorder
-                  className={classes.card}
-                  onClick={() => navigate(`/app/contacts/${contact.id}`)}
-                >
-                  <Group justify="space-between" align="flex-start">
-                    <Stack gap={2}>
-                      <Text fw={700} size="lg">{contact.first_name} {contact.last_name}</Text>
-                      <Text c="dimmed" size="sm">{contact.role || t('contacts.noRole')}</Text>
-                    </Stack>
-                    {contact.is_recruiter ? (
-                      <Badge variant="light" color="pink" size="sm">{t('contacts.recruiter')}</Badge>
-                    ) : null}
-                  </Group>
-
-                  <Group mt="sm" gap="xs" wrap="wrap">
-                    {organization ? (
-                      <>
-                        <OrganizationTypeBadge type={organization.type} size="xs" />
-                        <ProbityBadge score={organization.probity_score} level={organization.probity_level} showScore={false} />
-                        <Text size="xs" c="dimmed">{organization.name}</Text>
-                      </>
-                    ) : (
-                      <Text size="xs" c="dimmed">{t('contacts.noOrg')}</Text>
-                    )}
-                  </Group>
-
-                  <SimpleGrid cols={2} spacing="xs" mt="md">
-                    <Paper p="sm" radius="md" withBorder>
-                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.email')}</Text>
-                      <Text size="xs" c="dimmed" mt={4}>{contact.email || t('contacts.notDefined')}</Text>
-                    </Paper>
-                    <Paper p="sm" radius="md" withBorder>
-                      <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{t('contacts.phone')}</Text>
-                      <Text size="xs" c="dimmed" mt={4}>{contact.phone || t('contacts.notDefined')}</Text>
-                    </Paper>
-                  </SimpleGrid>
-
-                  <Group justify="space-between" mt="md">
-                    <Text size="xs" c="dimmed">{t('contacts.updated')} {new Date(contact.updated_at).toLocaleDateString('fr-FR')}</Text>
-                    <Text size="xs" c="dimmed">{t('contacts.openCard')} →</Text>
-                  </Group>
-                </Paper>
-              );
-            })}
-          </SimpleGrid>
-        ) : (
-          <Text c="dimmed" ta="center" py="xl">{t('contacts.noMatches')}</Text>
-        )}
-      </Paper>
-
-      {showCreateModal ? (
-        <ContactCreateModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => {
-            setShowCreateModal(false);
-            fetchContacts();
-            organizationService.getAll().then(setOrganizations).catch(() => {});
-          }}
-        />
-      ) : null}
-    </Stack>
+  const location = useLocation();
+  const listing = useListingController('/app/contacts', { view: 'all' });
+  const view = listing.value('view') as View;
+  const result = usePaginatedListing(
+    ['contact-portfolio', { page: listing.page, q: listing.query, view }],
+    () => contactService.getPortfolio({ page: listing.page, per_page: 15, q: listing.query || undefined, view }),
   );
+  const data = result.data;
+  const [creating, setCreating] = useState(false);
+  useEffect(() => { document.title = 'Contacts — OfferTrail'; }, []);
+  useEffect(() => {
+    const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY;
+    if (typeof restoreScrollY === 'number') window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY }));
+  }, [location.state]);
+
+  return <main className={classes.page}>
+    {creating && <ContactCreateModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); void result.refetch(); }} />}
+    <SaasPageHeader eyebrow="Réseau professionnel" title="Contacts" description="Retrouvez les interlocuteurs liés à vos candidatures et le contexte de chaque relation." actions={<ActionButton variant="primary" onClick={() => setCreating(true)}>Ajouter un contact</ActionButton>} />
+    <FilterBar label="Filtres des contacts" columns="1fr 260px"><SearchField label="Rechercher" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Nom, rôle, entreprise…" /><SelectField label="Vue" value={view} onChange={(event) => listing.update('view',event.target.value)} options={VIEWS} /></FilterBar>
+    <PortfolioListing
+      label="Contacts" headings={['Contact','Entreprise','Coordonnées','Dernière activité']}
+      data={data} loading={result.isLoading} fetching={result.isFetching} error={result.isError}
+      summary={`${data?.total ?? 0} contact${data?.total === 1 ? '' : 's'}`}
+      summaryAction={(listing.query || view !== 'all') ? <ActionButton variant="quiet" onClick={listing.clear}>Effacer les filtres</ActionButton> : undefined}
+      loadingLabel="Chargement des contacts…" errorTitle="Impossible de charger les contacts"
+      emptyTitle="Aucun contact pour cette vue" emptyDescription="Modifiez les filtres ou ajoutez un nouvel interlocuteur."
+      emptyAction={<ActionButton variant="primary" onClick={() => setCreating(true)}>Ajouter un contact</ActionButton>}
+      getKey={(contact) => contact.id} onOpen={(contact) => navigate(`/app/contacts/${contact.id}`, { state: { from: `${location.pathname}${location.search}`, scrollY: window.scrollY } })}
+      renderCells={(contact) => <><EntityIdentity title={`${contact.first_name} ${contact.last_name}`} detail={`${contact.role || 'Fonction non renseignée'}${contact.is_recruiter ? ' · Recruteur' : ''}`} /><EntityValue value={contact.organization?.name || 'Non rattaché'} detail={contact.organization?.type.replaceAll('_',' ') || '—'} /><EntityValue value={contact.email || 'Email non renseigné'} detail={contact.phone || 'Téléphone non renseigné'} /><EntityValue value={new Date(contact.updated_at).toLocaleDateString('fr-FR')} /></>}
+      onRetry={() => void result.refetch()} getPageHref={listing.pageHref} onPageChange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    />
+  </main>;
 };

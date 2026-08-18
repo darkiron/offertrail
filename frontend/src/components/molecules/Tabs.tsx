@@ -1,0 +1,2 @@
+import classes from './Tabs.module.css';
+export function Tabs<T extends string>({label,value,items,onChange}:{label:string;value:T;items:ReadonlyArray<readonly[T,string]>;onChange:(value:T)=>void}){return <nav className={classes.tabs} aria-label={label}>{items.map(([id,text])=><button type="button" key={id} className={`${classes.tab} ${value===id?classes.active:''}`} aria-current={value===id?'page':undefined} onClick={()=>onChange(id)}>{text}</button>)}</nav>}

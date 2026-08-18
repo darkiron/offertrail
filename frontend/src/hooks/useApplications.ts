@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { usePaginatedListing } from './useListingController';
 import { applicationService, organizationService } from '../services/api';
 
 interface UseApplicationsOptions {
@@ -8,6 +9,13 @@ interface UseApplicationsOptions {
   page?: number;
   limit?: number;
   showHidden?: boolean;
+}
+
+export function useWorkflowApplications(params: import('../services/api').WorkflowApplicationListParams) {
+  return usePaginatedListing(
+    ['workflow-applications', params],
+    () => applicationService.getWorkflowApplications(params),
+  );
 }
 
 export function useApplications({
