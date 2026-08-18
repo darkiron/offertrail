@@ -24,7 +24,12 @@ from src.schemas.me import (
     CandidatureStatusUpdate,
     NextActionCreate,
 )
-from src.services.subscription import check_can_create_candidature, check_can_create_relance
+from src.services.subscription import (
+    check_can_create_candidature,
+    check_can_create_relance,
+    has_plan_feature,
+    history_cutoff,
+)
 
 router = APIRouter()
 
@@ -375,12 +380,19 @@ def get_candidature_workspace(
     candidature: Candidature = Depends(own_candidature),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ):
     organization = candidature.etablissement
     final_customer = candidature.client_final
     related = db.query(Candidature).filter(Candidature.user_id == user_id, Candidature.etablissement_id == organization.id).all()
     contacts = get_visible_contacts(db, user_id, etablissement_id=organization.id)
     actions = db.query(Relance).filter(Relance.user_id == user_id, Relance.candidature_id == candidature.id, Relance.statut == "a_faire").order_by(Relance.date_prevue.asc()).all()
+    timeline_enabled = has_plan_feature(profile, "timeline")
+    cutoff = history_cutoff(profile)
+    timeline_events = [
+        event for event in reversed(candidature.events)
+        if cutoff is None or event.created_at >= cutoff
+    ] if timeline_enabled else []
     return {
         "application": CandidatureSchema.model_validate(candidature).model_dump(),
         "organization": {
@@ -392,8 +404,8 @@ def get_candidature_workspace(
         "contacts": [{"id": item.id, "first_name": item.prenom, "last_name": item.nom, "role": item.poste, "email": item.email_pro, "linkedin_url": item.linkedin_url} for item in contacts],
         "next_action": ({"id": actions[0].id, "kind": "followup", "due_at": actions[0].date_prevue, "channel": actions[0].canal} if actions else None),
         "future_actions": [{"id": item.id, "due_at": item.date_prevue, "channel": item.canal} for item in actions[1:]],
-        "timeline": {"items": [EventSchema.model_validate(item).model_dump() for item in reversed(candidature.events)], "next_cursor": None},
-        "capabilities": {"can_update": True, "can_delete": True, "can_create_followup": True},
+        "timeline": {"items": [EventSchema.model_validate(item).model_dump() for item in timeline_events], "next_cursor": None},
+        "capabilities": {"can_update": True, "can_delete": True, "can_create_followup": True, "timeline": timeline_enabled},
     }
 
 
@@ -511,13 +523,17 @@ def get_my_candidature(candidature: Candidature = Depends(own_candidature)) -> C
 def get_my_candidature_history(
     candidature: Candidature = Depends(own_candidature),
     db: Session = Depends(get_db),
+    profile: Profile = Depends(get_active_profile),
 ) -> list[EventSchema]:
-    events = (
+    query = (
         db.query(CandidatureEvent)
         .filter(CandidatureEvent.candidature_id == candidature.id)
         .order_by(CandidatureEvent.created_at.desc())
-        .all()
     )
+    cutoff = history_cutoff(profile)
+    if cutoff is not None:
+        query = query.filter(CandidatureEvent.created_at >= cutoff)
+    events = query.all()
     return [EventSchema.model_validate(event) for event in events]
 
 
