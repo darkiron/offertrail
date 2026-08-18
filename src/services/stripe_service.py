@@ -33,7 +33,7 @@ def create_checkout_session(
         "line_items": [{"price": price_id, "quantity": 1}],
         "mode": "subscription",
         "success_url": f"{APP_BASE_URL}/app/mon-compte?payment=success",
-        "cancel_url": f"{APP_BASE_URL}/app/pricing?payment=cancelled",
+        "cancel_url": f"{APP_BASE_URL}/app/checkout?plan={plan}&period={period}&payment=cancelled",
         "metadata": {"user_id": user_id, "plan": plan, "period": period},
         "consent_collection": {"terms_of_service": "required"},
     }

@@ -761,3 +761,6 @@
   .lp-feature-grid { grid-template-columns: 1fr; }
   .lp-stats-row    { gap: 20px; }
 }
+.lp-segmented { display:inline-flex; border:1px solid rgba(24,32,29,.18); border-radius:999px; padding:3px; gap:2px; }
+.lp-segmented button { border:0; border-radius:999px; padding:7px 12px; background:transparent; color:inherit; font:inherit; font-size:.78rem; cursor:pointer; }
+.lp-segmented button.is-active { background:var(--ot-ink, #18201d); color:#fffaf3; }

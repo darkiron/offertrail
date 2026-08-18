@@ -1,4 +1,4 @@
-import { Button } from '@mantine/core';
+import { Button } from './atoms/Button';
 import { useI18n } from '../i18n';
 import type { BillingPeriod, PlanId, PricingPlan } from '../lib/pricingPlans';
 import classes from './PlanCard.module.css';
@@ -80,21 +80,22 @@ export function PlanCard({
       </ul>
       <div className={classes.footer}>
         {isCurrent ? (
-          <Button variant="light" disabled>
+          <Button variant="ghost" size="small" disabled>
             {t('landing.pricing.currentPlan')}
           </Button>
         ) : mode === 'public' ? (
-          <Button variant={plan.id === 'free' ? 'light' : 'filled'} onClick={handleCtaClick}>
+          <Button variant={plan.id === 'free' ? 'ghost' : 'primary'} size="small" onClick={handleCtaClick}>
             {plan.id === 'free' ? t('landing.pricing.freeCta') : t('landing.pricing.trialCta')}
           </Button>
         ) : plan.id === 'free' ? (
-          <Button variant="light" disabled>
+          <Button variant="ghost" size="small" disabled>
             {t('landing.pricing.downgrade')}
           </Button>
         ) : (
           <div className={classes.ctaGroup}>
             <Button 
-              variant="filled" 
+              variant="primary"
+              size="small"
               onClick={handleCtaClick}
               disabled={checkoutDisabled || loading}
               loading={loading}

@@ -72,6 +72,9 @@
   margin: 0 auto;
   padding: 56px 24px 88px;
 }
+.legal-breadcrumbs { display:flex; gap:8px; align-items:center; margin-bottom:28px; color:var(--text-dim); font-size:13px; }
+.legal-breadcrumbs a { color:inherit; text-decoration:none; }
+.legal-breadcrumbs a:hover { color:var(--text-main); }
 
 .legal-eyebrow {
   font-size: 11px;

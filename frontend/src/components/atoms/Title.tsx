@@ -1,5 +1,3 @@
-import { Title as MantineTitle, Text, type TitleProps as MantineTitleProps } from '@mantine/core';
-import type { JSX } from 'react';
 
 interface TitleProps {
   children: React.ReactNode;
@@ -10,17 +8,9 @@ interface TitleProps {
 
 export function Title({ children, level = 1, subtitle = false, className }: TitleProps) {
   if (subtitle) {
-    return (
-      <Text c="dimmed" size="sm" className={className}>
-        {children}
-      </Text>
-    );
+    return <p className={`ot-subtitle ${className ?? ''}`}>{children}</p>;
   }
 
-  const order = level as MantineTitleProps['order'];
-  return (
-    <MantineTitle order={order} className={className}>
-      {children}
-    </MantineTitle>
-  );
+  const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
+  return <Tag className={`ot-title ot-title--${level} ${className ?? ''}`}>{children}</Tag>;
 }

@@ -11,3 +11,10 @@
   font-size: 12px;
   min-height: 300px;
 }
+.grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr); gap:var(--ot-space-6); align-items:start; }
+.grid > section { padding:var(--ot-space-6); }
+.metrics { display:grid; gap:10px; margin-top:16px; }
+.metrics span { display:flex; justify-content:space-between; color:var(--ot-muted); }
+.metrics b { color:var(--ot-ink); }
+.errors { max-height:200px; overflow:auto; display:grid; gap:4px; }
+@media (max-width: 760px) { .grid { grid-template-columns:1fr; } }

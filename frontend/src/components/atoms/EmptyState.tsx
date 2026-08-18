@@ -1,4 +1,3 @@
-import { Stack, ThemeIcon, Text } from '@mantine/core';
 import { IconFolderOpen } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { Title } from './Title';
@@ -17,21 +16,17 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, icon, action, className }: EmptyStateProps) {
   return (
-    <Stack align="center" justify="center" gap="md" py="xl" className={className}>
-      <ThemeIcon size={64} radius="xl" variant="light" color="gray">
+    <div className={`ot-empty-state ${className ?? ''}`}>
+      <span className="ot-empty-state__icon">
         {icon ?? <IconFolderOpen size={32} />}
-      </ThemeIcon>
+      </span>
       <Title level={4}>{title}</Title>
-      {description && (
-        <Text c="dimmed" size="sm" ta="center">
-          {description}
-        </Text>
-      )}
+      {description && <p className="ot-subtitle">{description}</p>}
       {action && (
         <Button variant="primary" onClick={action.onClick}>
           {action.label}
         </Button>
       )}
-    </Stack>
+    </div>
   );
 }

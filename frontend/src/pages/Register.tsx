@@ -2,157 +2,16 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
-import {
-  Alert, Anchor, Badge, Button, Group, Paper,
-  PasswordInput, SimpleGrid, Stack, Text, TextInput, Title,
-} from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 
-type RegisterFormData = { email: string; password: string; prenom?: string; nom?: string };
-
-export function RegisterPage() {
-  const { signUp, isAuthenticated } = useAuth();
-  const { t } = useI18n();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [searchParams] = useSearchParams();
-  const requestedPlan = searchParams.get('plan');
-  const requestedPeriod = searchParams.get('period');
-  const plan = requestedPlan === 'pro' || requestedPlan === 'ultimate' ? requestedPlan : 'free';
-  const period = requestedPeriod === 'yearly' ? 'yearly' : 'monthly';
-  const destination = plan === 'free' ? '/app' : `/app/pricing?plan=${plan}&period=${period}`;
-
-  const registerSchema = useMemo(() => z.object({
-    email: z.string().email(t('auth.emailInvalid')),
-    password: z.string().min(8, t('auth.passwordMin')),
-    prenom: z.string().trim().optional(),
-    nom: z.string().trim().optional(),
-  }), [t]);
-
-  const {
-    register,
-    handleSubmit,
-    setError,
-    clearErrors,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterFormData>({
-    defaultValues: { email: '', password: '', prenom: '', nom: '' },
-  });
-
-  if (isAuthenticated) return <Navigate to={destination} replace />;
-
-  if (confirmed) {
-    return (
-      <section className={classes.shell}>
-        <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
-          <Stack gap="md" ta="center">
-            <Title order={2}>{t('auth.register.confirmTitle')}</Title>
-            <Text c="dimmed">{t('auth.register.confirmDesc')}</Text>
-            <Button component={Link} to="/login" variant="light" fullWidth>
-              {t('auth.register.backToLogin')}
-            </Button>
-          </Stack>
-        </Paper>
-      </section>
-    );
-  }
-
-  const onSubmit = handleSubmit(async (values) => {
-    const result = registerSchema.safeParse(values);
-    if (!result.success) {
-      clearErrors();
-      result.error.issues.forEach((issue) => {
-        const fieldName = issue.path[0];
-        if (fieldName === 'email' || fieldName === 'password' || fieldName === 'prenom' || fieldName === 'nom') {
-          setError(fieldName as keyof RegisterFormData, { type: 'manual', message: issue.message });
-        }
-      });
-      setFormError(result.error.issues[0]?.message ?? t('auth.invalidForm'));
-      return;
-    }
-
-    try {
-      setFormError(null);
-      clearErrors();
-      await signUp(result.data.email, result.data.password, {
-        prenom: result.data.prenom || undefined,
-        nom: result.data.nom || undefined,
-        plan,
-        period,
-      });
-      setConfirmed(true);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : t('auth.register.error'));
-    }
-  });
-
-  return (
-    <section className={classes.shell}>
-      <Paper className={classes.card} radius="xl" withBorder shadow="xl" p={42}>
-        <Anchor component={Link} to="/" size="sm" fw={700} c="dimmed" mb="lg" display="inline-block">
-          {t('auth.register.backLink')}
-        </Anchor>
-
-        <Group gap="xs" mb="xs">
-          <Badge variant="light" size="sm">{t('auth.register.badge')}</Badge>
-        </Group>
-        <Title order={2} mb={4}>{t('auth.register.title')}</Title>
-        <Text c="dimmed" size="sm" mb="xl">{t('auth.register.subtitle')}</Text>
-
-        <Stack component="form" gap="md" onSubmit={onSubmit}>
-          <SimpleGrid cols={2} spacing="md">
-            <TextInput
-              label={t('auth.register.firstNameLabel')}
-              placeholder={t('auth.register.firstNamePlaceholder')}
-              autoComplete="given-name"
-              error={errors.prenom?.message}
-              {...register('prenom')}
-            />
-            <TextInput
-              label={t('auth.register.lastNameLabel')}
-              placeholder={t('auth.register.lastNamePlaceholder')}
-              autoComplete="family-name"
-              error={errors.nom?.message}
-              {...register('nom')}
-            />
-          </SimpleGrid>
-
-          <TextInput
-            label={t('auth.emailLabel')}
-            placeholder={t('auth.emailPlaceholder')}
-            type="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            error={errors.email?.message}
-            {...register('email')}
-          />
-
-          <PasswordInput
-            label={t('auth.passwordLabel')}
-            placeholder={t('auth.register.passwordPlaceholder')}
-            autoComplete="new-password"
-            description={t('auth.register.passwordHint')}
-            error={errors.password?.message}
-            {...register('password')}
-          />
-
-          {formError && (
-            <Alert color="red" variant="light">{formError}</Alert>
-          )}
-
-          <Button type="submit" loading={isSubmitting} fullWidth mt="xs">
-            {t('auth.register.submit')}
-          </Button>
-        </Stack>
-
-        <Text size="sm" c="dimmed" mt="lg">
-          {t('auth.register.alreadyAccount')}{' '}
-          <Anchor component={Link} to="/login" size="sm">{t('auth.register.loginLink')}</Anchor>
-        </Text>
-      </Paper>
-    </section>
-  );
+type RegisterFormData = { email:string; password:string; prenom?:string; nom?:string };
+export function RegisterPage(){
+  const { signUp,isAuthenticated }=useAuth(); const { t }=useI18n(); const [formError,setFormError]=useState<string|null>(null); const [confirmed,setConfirmed]=useState(false); const [searchParams]=useSearchParams(); const requestedPlan=searchParams.get('plan'); const requestedPeriod=searchParams.get('period'); const plan=requestedPlan==='pro'||requestedPlan==='ultimate'?requestedPlan:'free'; const period=requestedPeriod==='yearly'?'yearly':'monthly'; const destination=plan==='free'?'/app':`/app/checkout?plan=${plan}&period=${period}`;
+  const schema=useMemo(()=>z.object({email:z.string().email(t('auth.emailInvalid')),password:z.string().min(8,t('auth.passwordMin')),prenom:z.string().trim().optional(),nom:z.string().trim().optional()}),[t]); const {register,handleSubmit,setError,clearErrors,formState:{errors,isSubmitting}}=useForm<RegisterFormData>({defaultValues:{email:'',password:'',prenom:'',nom:''}});
+  if(isAuthenticated)return <Navigate to={destination} replace/>;
+  if(confirmed)return <section className={classes.shell}><div className={classes.card}><span className="ot-badge" data-tone="success">{t('auth.register.badge')}</span><h1>{t('auth.register.confirmTitle')}</h1><p>{t('auth.register.confirmDesc')}</p><Link className="ot-button" data-variant="primary" to="/login">{t('auth.register.backToLogin')}</Link></div></section>;
+  const onSubmit=handleSubmit(async(values)=>{const result=schema.safeParse(values);if(!result.success){clearErrors();result.error.issues.forEach(issue=>{const field=issue.path[0];if(field==='email'||field==='password'||field==='prenom'||field==='nom')setError(field as keyof RegisterFormData,{type:'manual',message:issue.message})});setFormError(result.error.issues[0]?.message??t('auth.invalidForm'));return}try{setFormError(null);clearErrors();await signUp(result.data.email,result.data.password,{prenom:result.data.prenom||undefined,nom:result.data.nom||undefined,plan,period});setConfirmed(true)}catch(error){setFormError(error instanceof Error?error.message:t('auth.register.error'))}});
+  return <section className={classes.shell}><div className={classes.card}><Link className={classes.back} to="/">{t('auth.register.backLink')}</Link><span className="ot-badge" data-tone="accent">{t('auth.register.badge')}</span><h1>{t('auth.register.title')}</h1><p className={classes.subtitle}>{t('auth.register.subtitle')}</p><form className={classes.form} onSubmit={onSubmit}><div className={classes.grid}><label className="ot-field"><span>{t('auth.register.firstNameLabel')}</span><input className="ot-control" autoComplete="given-name" placeholder={t('auth.register.firstNamePlaceholder')} {...register('prenom')}/>{errors.prenom&&<small className={classes.fieldError}>{errors.prenom.message}</small>}</label><label className="ot-field"><span>{t('auth.register.lastNameLabel')}</span><input className="ot-control" autoComplete="family-name" placeholder={t('auth.register.lastNamePlaceholder')} {...register('nom')}/>{errors.nom&&<small className={classes.fieldError}>{errors.nom.message}</small>}</label></div><label className="ot-field"><span>{t('auth.emailLabel')}</span><input className="ot-control" type="email" autoComplete="email" autoCapitalize="none" placeholder={t('auth.emailPlaceholder')} {...register('email')}/>{errors.email&&<small className={classes.fieldError}>{errors.email.message}</small>}</label><label className="ot-field"><span>{t('auth.passwordLabel')}</span><input className="ot-control" type="password" autoComplete="new-password" placeholder={t('auth.register.passwordPlaceholder')} {...register('password')}/><small className={classes.hint}>{t('auth.register.passwordHint')}</small>{errors.password&&<small className={classes.fieldError}>{errors.password.message}</small>}</label>{formError&&<div className="ot-alert" data-tone="error">{formError}</div>}<button className="ot-button" data-variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting?'…':t('auth.register.submit')}</button></form><p className={classes.meta}>{t('auth.register.alreadyAccount')} <Link to="/login">{t('auth.register.loginLink')}</Link></p></div></section>;
 }

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Group, Badge, Title, Text, Stack } from '@mantine/core';
 
 interface PageHeaderProps {
   title: string;
@@ -7,30 +6,25 @@ interface PageHeaderProps {
   count?: number | null;
   actions?: ReactNode;
   description?: string;
+  variant?: 'compact' | 'editorial';
 }
 
-export function PageHeader({ title, kicker, count, actions, description }: PageHeaderProps) {
+export function PageHeader({ title, kicker, count, actions, description, variant = 'compact' }: PageHeaderProps) {
+  const Heading = variant === 'editorial' ? 'h1' : 'h2';
   return (
-    <Stack gap={4}>
-      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-        <Stack gap={2} style={{ minWidth: 0, flex: '1 1 280px' }}>
+    <header className="ot-page-header" data-variant={variant}>
+      <div className="ot-page-header__row">
+        <div className="ot-page-header__intro">
           {kicker && (
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">{kicker}</Text>
+            <span className="ot-kicker">{kicker}</span>
           )}
-          <Group gap="sm" align="center" wrap="wrap">
-            <Title order={2}>{title}</Title>
-            {count != null && (
-              <Badge variant="light" size="md" radius="xl">{count}</Badge>
-            )}
-          </Group>
-        </Stack>
-        {actions && (
-          <Group gap="sm" wrap="wrap" mt={kicker ? 18 : 0}>{actions}</Group>
-        )}
-      </Group>
+          <div className="ot-page-header__title"><Heading>{title}</Heading>{count != null && <span className="ot-count">{count}</span>}</div>
+        </div>
+        {actions && <div className="ot-page-header__actions">{actions}</div>}
+      </div>
       {description && (
-        <Text size="sm" c="dimmed">{description}</Text>
+        <p className="ot-subtitle">{description}</p>
       )}
-    </Stack>
+    </header>
   );
 }

@@ -1,4 +1,3 @@
-import { Badge } from '@mantine/core';
 import type { OrganizationType } from '../../types';
 import classes from './OrganizationTypeBadge.module.css';
 
@@ -21,16 +20,7 @@ const TYPE_CONFIG: Record<OrganizationType, { label: string; className: string }
 export function OrganizationTypeBadge({ type, size = 'sm' }: OrganizationTypeBadgeProps) {
   const config = TYPE_CONFIG[type] ?? TYPE_CONFIG.AUTRE;
 
-  return (
-    <Badge
-      size={size === 'xs' ? 'xs' : 'sm'}
-      radius="xl"
-      className={`${classes.badge} ${config.className}`}
-      variant="light"
-    >
-      {config.label}
-    </Badge>
-  );
+  return <span className={`${classes.badge} ${config.className}`} data-size={size}>{config.label}</span>;
 }
 
 export default OrganizationTypeBadge;

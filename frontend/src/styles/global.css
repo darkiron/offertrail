@@ -4,6 +4,7 @@
  */
 
 @import './variables.css';
+@import './framework.css';
 
 /* ─── Reset ──────────────────────────────────────────────── */
 *, *::before, *::after {

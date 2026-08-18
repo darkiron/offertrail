@@ -72,6 +72,8 @@ def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch
     try:
         profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
         profile.stripe_customer_id = "cus_test_123"
+        profile.plan = "free"
+        profile.subscription_status = "pending"
         db.commit()
     finally:
         db.close()
@@ -90,6 +92,19 @@ def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch
         "checkout_url": "https://checkout.stripe.test/session",
     }
     assert captured["customer"] == "cus_test_123"
+
+
+def test_checkout_rejects_second_active_subscription(client, user_a, monkeypatch):
+    monkeypatch.setattr("src.routers.subscription.is_configured", lambda: True)
+
+    response = client.post(
+        "/subscription/checkout",
+        headers=user_a["headers"],
+        json={"plan": "ultimate", "period": "monthly"},
+    )
+
+    assert response.status_code == 409
+    assert "portail de facturation" in response.json()["detail"]
 
 
 def test_portal_returns_stripe_error_as_http_response(client, user_a, monkeypatch):
