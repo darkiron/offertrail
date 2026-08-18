@@ -1,7 +1,22 @@
 .lp-root {
   min-height: 100vh;
-  background: var(--bg-base);
-  color: var(--text-main);
+  background: var(--ot-paper);
+  color: var(--ot-ink);
+  --lp-surface: var(--ot-paper-raised);
+  --lp-muted: var(--ot-muted);
+  --lp-line: var(--ot-line);
+  --lp-accent: var(--ot-accent);
+  --lp-accent-soft: var(--ot-accent-soft);
+  /* Landing aliases: one internal palette, independent from Mantine. */
+  --bg-base: var(--ot-paper);
+  --bg-mantle: var(--ot-paper-raised);
+  --bg-crust: var(--ot-ink);
+  --bg-surface: var(--ot-paper-raised);
+  --text-main: var(--ot-ink);
+  --text-dim: var(--ot-muted);
+  --accent: var(--ot-accent);
+  --accent-hover: var(--ot-accent);
+  --border: var(--ot-line);
 }
 
 /* ─── Nav ─── */
@@ -43,7 +58,7 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: var(--ot-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,8 +90,8 @@
 }
 
 .lp-nav-cta {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
-  color: white;
+  background: var(--ot-ink);
+  color: var(--ot-paper);
   font-weight: 700;
   font-size: 14px;
   padding: 8px 20px;
@@ -136,8 +151,8 @@
 }
 
 .lp-btn-primary {
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
-  color: white;
+  background: var(--ot-ink);
+  color: var(--ot-paper);
   font-weight: 700;
   font-size: 15px;
   padding: 14px 28px;
@@ -359,6 +374,9 @@
   padding: 80px 24px;
 }
 
+.lp-section-inner--narrow { max-width: 680px; text-align: center; }
+.lp-section-copy { margin: 0 auto 2rem; max-width: 620px; font-size: 1rem; line-height: 1.7; color: var(--lp-muted); }
+
 .lp-section-kicker {
   text-align: center;
   font-size: 11px;
@@ -520,6 +538,14 @@
   box-shadow: 0 28px 56px rgba(0, 0, 0, 0.2);
 }
 
+.lp-plan-card--breakdown { max-width: 400px; margin: 0 auto; text-align: left; }
+.lp-pricing-controls--centered { justify-content: center; margin-bottom: 1rem; }
+.lp-breakdown-label { margin: 0 0 1rem; color: var(--lp-muted); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.lp-breakdown-row { display: flex; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid color-mix(in srgb, var(--lp-line) 60%, transparent); font-size: .875rem; color: var(--lp-muted); }
+.lp-breakdown-muted { opacity: .72; }
+.lp-breakdown-row--total { padding-top: .65rem; border-bottom: 0; color: var(--ot-ink); font-weight: 700; }
+.lp-breakdown-note { margin: .75rem 0 0; color: var(--lp-muted); opacity: .7; font-size: .75rem; line-height: 1.6; }
+
 .lp-plan-card-featured {
   border-color: color-mix(in srgb, var(--accent) 62%, transparent);
   box-shadow:
@@ -639,8 +665,8 @@
   display: block;
   width: 100%;
   text-align: center;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
-  color: white;
+  background: var(--ot-ink);
+  color: var(--ot-paper);
   font-weight: 800;
   font-size: 15px;
   padding: 14px;
