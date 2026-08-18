@@ -14,16 +14,6 @@ export const LandingPage: React.FC = () => {
   const plans = usePricingPlans();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
-  const [breakdownPeriod, setBreakdownPeriod] = useState<BillingPeriod>('monthly');
-
-  // Répartition transparente du prix Pro (charges URSSAF 33%, Stripe 2,2% + 0,25€).
-  const proPlan = plans.find((p) => p.id === 'pro');
-  const proPrice = (breakdownPeriod === 'yearly' && proPlan?.prices.yearly) || proPlan?.prices.monthly;
-  const priceValue = proPrice ? Number(proPrice.amount.replace('€', '').replace(',', '.')) : 0;
-  const eur = (n: number) => `~${n.toFixed(2).replace('.', ',')}€`;
-  const stripeFee = priceValue * 0.022 + 0.25;
-  const urssafFee = priceValue * 0.33;
-  const devPay = priceValue - stripeFee - urssafFee;
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -172,6 +162,22 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ─── FAQ ─── */}
+      <section className="lp-section-wrap lp-alt" id="faq">
+        <div className="lp-section-inner lp-faq">
+          <div className="lp-section-kicker">{t('landing.faq.kicker')}</div>
+          <h2 className="lp-section-title">{t('landing.faq.title')}</h2>
+          <div className="lp-faq-list">
+            {(['1', '2', '3', '4', '5'] as const).map((number) => (
+              <details className="lp-faq-item" key={number}>
+                <summary>{t(`landing.faq.q${number}`)}</summary>
+                <p>{t(`landing.faq.a${number}`)}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── CraftCodes section ─── */}
       <section className="lp-section-wrap" id="craftcodes" aria-labelledby="craftcodes-title">
         <div className="lp-section-inner lp-section-inner--narrow">
@@ -185,26 +191,8 @@ export const LandingPage: React.FC = () => {
             {t('landing.craftcodes.descSuffix')}
           </p>
 
-          <div className="lp-plan-card lp-plan-card--breakdown">
-            <div className="lp-pricing-controls lp-pricing-controls--centered">
-              <div className="lp-segmented" role="group"><button type="button" className={breakdownPeriod === 'monthly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('monthly')}>{t('landing.pricing.monthly')}</button><button type="button" className={breakdownPeriod === 'yearly' ? 'is-active' : ''} onClick={() => setBreakdownPeriod('yearly')}>{t('landing.pricing.yearly')}</button></div>
-            </div>
-            <p className="lp-breakdown-label">
-              Prix transparent · Pro à {proPrice?.amount}{proPrice?.suffix}
-            </p>
-            <div className="lp-breakdown-row">
-              <span className="lp-breakdown-muted">{t('landing.craftcodes.stripe')}</span>
-              <span className="lp-breakdown-muted">{eur(stripeFee)}</span>
-            </div>
-            <div className="lp-breakdown-row">
-              <span className="lp-breakdown-muted">{t('landing.craftcodes.urssaf')}</span>
-              <span className="lp-breakdown-muted">{eur(urssafFee)}</span>
-            </div>
-            <div className="lp-breakdown-row lp-breakdown-row--total">
-              <span>{t('landing.craftcodes.devPay')}</span>
-              <span className="lp-link">{eur(devPay)}</span>
-            </div>
-            <p className="lp-breakdown-note">
+          <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+            <p style={{ fontSize: '14px', lineHeight: 1.7, margin: 0, opacity: 0.75 }}>
               {t('landing.craftcodes.noInvestors')}
             </p>
           </div>
