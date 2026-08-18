@@ -475,6 +475,7 @@ const translations = {
     landing: {
       nav: {
         features: 'Features',
+        workflow: 'How it works',
         pricing: 'Pricing',
         faq: 'FAQ',
         login: 'Log in',
@@ -537,6 +538,18 @@ const translations = {
         contacts_desc: 'Link your recruiters to their companies. Your network builds up application by application.',
         start_title: 'Ready in a few minutes',
         start_desc: 'Create an account, add an application and plan the next follow-up without a heavy setup.',
+      },
+      workflow: {
+        kicker: 'How it works',
+        title: 'From a new lead to a clear next action.',
+        sub: 'OfferTrail keeps the useful context close to the decision you need to make next.',
+        step1Title: 'Capture the opportunity',
+        step1Desc: 'Add a position, its company and the contact who matters. Keep the source and dates in one record.',
+        step2Title: 'Keep the context',
+        step2Desc: 'Update the status, write a note and link each exchange to the right application.',
+        step3Title: 'Plan the follow-up',
+        step3Desc: 'Set the next reminder and return to a dashboard that shows what deserves your attention.',
+        proof: 'No inflated results: every signal comes from the information you choose to track.',
       },
       pricing: {
         kicker: 'Pricing',
@@ -1119,6 +1132,7 @@ const translations = {
     landing: {
       nav: {
         features: 'Fonctionnalites',
+        workflow: 'Fonctionnement',
         pricing: 'Tarifs',
         faq: 'FAQ',
         login: 'Se connecter',
@@ -1181,6 +1195,18 @@ const translations = {
         contacts_desc: 'Rattache tes recruteurs a leurs entreprises. Le reseau se construit candidature apres candidature.',
         start_title: 'Prêt en quelques minutes',
         start_desc: 'Crée ton compte, ajoute une candidature et programme une relance sans configuration lourde.',
+      },
+      workflow: {
+        kicker: 'Comment ça marche',
+        title: 'D’une nouvelle piste à une prochaine action claire.',
+        sub: 'OfferTrail garde le bon contexte près de la décision que tu dois prendre ensuite.',
+        step1Title: 'Capture ta piste',
+        step1Desc: 'Ajoute un poste, son établissement et le contact utile. Les sources et les dates restent dans la même fiche.',
+        step2Title: 'Garde le contexte',
+        step2Desc: 'Mets à jour le statut, ajoute une note et rattache chaque échange à la bonne candidature.',
+        step3Title: 'Planifie la relance',
+        step3Desc: 'Définis la prochaine relance et retrouve dans le dashboard ce qui mérite ton attention.',
+        proof: 'Pas de résultats gonflés : chaque signal vient des informations que tu choisis de suivre.',
       },
       pricing: {
         kicker: 'Tarif',

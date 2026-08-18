@@ -440,6 +440,17 @@
 .lp-feature h3 { font-size: 15px; font-weight: 800; margin: 0 0 8px; }
 .lp-feature p  { font-size: 13px; color: var(--text-dim); line-height: 1.65; margin: 0; }
 
+/* ─── Workflow proof ─── */
+.lp-workflow { max-width: 1040px; }
+.lp-workflow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; list-style: none; padding: 0; margin: 0; }
+.lp-workflow-step { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 8px 28px; border-left: 1px solid var(--border); }
+.lp-workflow-step:first-child { border-left: 0; }
+.lp-workflow-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ot-ink); color: var(--ot-paper); font-size: 12px; font-weight: 800; }
+.lp-workflow-step h3 { margin: 2px 0 8px; font-size: 15px; font-weight: 800; }
+.lp-workflow-step p { margin: 0; color: var(--text-dim); font-size: 13px; line-height: 1.65; }
+.lp-proof-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 44px auto 0; color: var(--text-dim); font-size: 12px; }
+.lp-proof-line span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); font-weight: 800; }
+
 /* ─── Pricing ─── */
 .lp-pricing-grid {
   display: grid;
@@ -781,6 +792,8 @@
   .lp-plan-card-featured { transform: none; }
   .lp-footer-inner    { grid-template-columns: 1fr; }
   .lp-footer-links    { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+  .lp-workflow-grid { grid-template-columns: 1fr; gap: 22px; }
+  .lp-workflow-step, .lp-workflow-step:first-child { border-left: 0; padding: 0; }
 }
 
 @media (max-width: 560px) {
