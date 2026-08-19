@@ -1,20 +1,7 @@
 import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Paper,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { UiBadge as Badge, UiGroup as Group, UiPaper as Paper, UiGrid as SimpleGrid, UiStack as Stack, UiText as Text, UiTextInput as TextInput, UiLoader as Loader } from '../components/atoms/UiPrimitives';
 import {
   Area,
   AreaChart,
@@ -32,24 +19,40 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { notifications } from '@mantine/notifications';
 import { IconDownload, IconSearch } from '@tabler/icons-react';
 import { axiosInstance } from '../services/api';
 import classes from './Admin.module.css';
 
+const Button = (props: any) => <button {...props} className={`ot-button ${props.className ?? ''}`} data-variant={props.variant === 'light' ? 'secondary' : 'primary'} disabled={props.disabled || props.loading}>{props.loading ? '…' : <>{props.leftSection}{props.children}</>}</button>;
+const Alert = ({ children }: any) => <div className="ot-alert ot-alert-error" role="alert">{children}</div>;
+const Skeleton = ({ height = 14 }: { height?: number }) => <span className="ot-skeleton" style={{ height }} aria-hidden="true" />;
+const Title = ({ children }: any) => <h2>{children}</h2>;
+const notify = ({ title, message }: { title?: string; message: string }) => { console.info(title ? `${title}: ${message}` : message); };
+const Table = Object.assign(
+  ({ children, ...props }: any) => <table {...props} className="ot-table">{children}</table>,
+  {
+    ScrollContainer: ({ children }: any) => <div className="ot-table-scroll">{children}</div>,
+    Thead: ({ children }: any) => <thead>{children}</thead>,
+    Tbody: ({ children }: any) => <tbody>{children}</tbody>,
+    Tr: ({ children, ...props }: any) => <tr {...props}>{children}</tr>,
+    Th: ({ children }: any) => <th>{children}</th>,
+    Td: ({ children, ...props }: any) => <td {...props}>{children}</td>,
+  },
+);
+
 const COLORS = {
-  free: 'var(--mantine-color-gray-6)',
-  pro: 'var(--mantine-color-blue-6)',
-  ultimate: 'var(--mantine-color-violet-6)',
-  green: 'var(--mantine-color-green-6)',
+  free: 'var(--ot-muted)',
+  pro: 'var(--ot-accent)',
+  ultimate: 'var(--ot-ink)',
+  green: 'var(--ot-success)',
 };
-const TICK = { fill: 'var(--mantine-color-dimmed)', fontSize: 11 } as const;
-const GRID = { stroke: 'var(--mantine-color-default-border)', strokeDasharray: '3 3' } as const;
+const TICK = { fill: 'var(--ot-muted)', fontSize: 11 } as const;
+const GRID = { stroke: 'var(--ot-line)', strokeDasharray: '3 3' } as const;
 const TT_STYLE = {
-  background: 'var(--mantine-color-body)',
-  border: '1px solid var(--mantine-color-default-border)',
+  background: 'var(--ot-paper)',
+  border: '1px solid var(--ot-line)',
   borderRadius: 8,
-  color: 'var(--mantine-color-text)',
+  color: 'var(--ot-ink)',
   fontSize: 12,
 } as const;
 
@@ -187,7 +190,7 @@ export function Admin() {
         await refresh();
       } catch (err) {
         if (handle403(err)) return;
-        notifications.show({ title: 'Erreur', message: 'Impossible de charger le backoffice.', color: 'red' });
+        notify({ title: 'Erreur', message: 'Impossible de charger le backoffice.' });
       } finally {
         setLoading(false);
       }
@@ -203,10 +206,10 @@ export function Admin() {
         billing_period: plan === 'free' ? null : 'monthly',
       });
       await refresh();
-      notifications.show({ message: 'Plan mis à jour.', color: 'green' });
+      notify({ message: 'Plan mis à jour.' });
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Impossible de mettre à jour le plan.', color: 'red' });
+      notify({ message: 'Impossible de mettre à jour le plan.' });
     } finally {
       setPendingAction(null);
     }
@@ -217,10 +220,10 @@ export function Admin() {
       setPendingAction(`${userId}:toggle`);
       await axiosInstance.patch(`/admin/users/${userId}/toggle-active`);
       await refresh();
-      notifications.show({ message: 'Compte mis à jour.', color: 'blue' });
+      notify({ message: 'Compte mis à jour.' });
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Impossible de modifier le compte.', color: 'red' });
+      notify({ message: 'Impossible de modifier le compte.' });
     } finally {
       setPendingAction(null);
     }
@@ -237,7 +240,7 @@ export function Admin() {
       URL.revokeObjectURL(url);
     } catch (err) {
       if (handle403(err)) return;
-      notifications.show({ message: 'Erreur export CSV.', color: 'red' });
+      notify({ message: 'Erreur export CSV.' });
     }
   };
 

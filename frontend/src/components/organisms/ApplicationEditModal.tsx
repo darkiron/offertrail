@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import {
-  Modal, TextInput, Textarea, NumberInput, Select, SimpleGrid, Stack, Group, Text,
-} from '@mantine/core';
+  UiModal as Modal, UiTextInput as TextInput, UiTextarea as Textarea,
+  UiNumberInput as NumberInput, UiSelect as Select, UiGrid as SimpleGrid,
+  UiStack as Stack, UiGroup as Group, UiText as Text,
+} from '../atoms/UiPrimitives';
 import type { Application } from '../../types';
 import type { ApplicationPayload } from '../../services/api';
 import { Button } from '../atoms/Button';

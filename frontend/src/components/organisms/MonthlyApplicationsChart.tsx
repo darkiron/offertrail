@@ -1,4 +1,4 @@
-import { Card, Group, Text, Badge } from '@mantine/core';
+import { UiBadge as Badge, UiGroup as Group, UiText as Text, UiPaper as Card } from '../atoms/UiPrimitives';
 import type { MonthlyStats } from '../../types';
 import classes from './MonthlyApplicationsChart.module.css';
 
@@ -40,7 +40,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
                 y1={chartHeight * (1 - percent)}
                 x2={chartWidth}
                 y2={chartHeight * (1 - percent)}
-                stroke="var(--mantine-color-default-border)"
+                stroke="var(--ot-line)"
                 strokeDasharray="4 2"
               />
             ))}
@@ -57,7 +57,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
                     y={y}
                     width={barWidth}
                     height={barHeight}
-                    fill="var(--mantine-color-blue-6)"
+                    fill="var(--ot-accent)"
                     rx="4"
                     className={classes.bar}
                   >
@@ -67,7 +67,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
                     x={x + barWidth / 2}
                     y={chartHeight + 20}
                     textAnchor="middle"
-                    fill="var(--mantine-color-dimmed)"
+                    fill="var(--ot-muted)"
                     fontSize="11"
                   >
                     {d.month}
@@ -77,7 +77,7 @@ export function MonthlyApplicationsChart({ data, year }: MonthlyApplicationsChar
                       x={x + barWidth / 2}
                       y={y - 5}
                       textAnchor="middle"
-                      fill="var(--mantine-color-text)"
+                      fill="var(--ot-ink)"
                       fontSize="11"
                       fontWeight="bold"
                     >
