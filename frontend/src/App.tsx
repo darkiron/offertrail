@@ -9,6 +9,8 @@ import appClasses from './App.module.css';
 
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
+import { LoadingStatus } from './components/atoms/LoadingStatus';
+import { PublicBrand } from './components/atoms/PublicBrand';
 
 const named = <T extends Record<string, React.ComponentType>>(loader: () => Promise<T>, name: keyof T) => lazy(async () => ({ default: (await loader())[name] }));
 const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard');
@@ -59,6 +61,13 @@ function NotFoundPage() {
   );
 }
 
+function RouteLoading() {
+  return <main className={appClasses.routeLoading} role="status">
+    <PublicBrand />
+    <LoadingStatus>Chargement de l’espace…</LoadingStatus>
+  </main>;
+}
+
 function AppRoutes() {
   const navigate = useNavigate();
 
@@ -74,7 +83,7 @@ function AppRoutes() {
   return (
     <>
       <ScrollToTop />
-    <Suspense fallback={<main className={appClasses.routeLoading} role="status">Chargement de l’espace…</main>}><Routes>
+    <Suspense fallback={<RouteLoading />}><Routes>
       {/* ── Pages publiques (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />

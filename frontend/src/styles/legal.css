@@ -38,11 +38,12 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  border: 1px solid var(--ot-ink);
+  background: var(--ot-paper-raised);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--ot-ink);
   font-size: 12px;
   font-weight: 800;
   flex-shrink: 0;
