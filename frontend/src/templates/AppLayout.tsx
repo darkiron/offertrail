@@ -7,6 +7,7 @@ import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import { AppErrorBoundary } from '../components/AppErrorBoundary';
 import { useI18n } from '../i18n';
+import { PublicBrand } from '../components/atoms/PublicBrand';
 import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.css';
 
@@ -38,7 +39,7 @@ export function AppLayout() {
   return <div className={classes.shell}>
     {showCreate && <NewApplicationModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void queryClient.invalidateQueries({ queryKey: ['today'] }); void queryClient.invalidateQueries({ queryKey: ['workflow-applications'] }); }} />}
     <header className={classes.header}>
-      <Link className={classes.brand} to="/app"><span aria-hidden="true" className={classes.mark} /><strong>OfferTrail</strong></Link>
+      <PublicBrand to="/app" />
       <nav className={classes.desktopNav} aria-label={t('nav.dashboard')}>{links.map(([label, to]) => <NavLink key={to} end={to === '/app'} to={to} className={({ isActive }) => isActive ? classes.active : ''}>{label}</NavLink>)}</nav>
       <button className={classes.avatar} onClick={() => setMenu((value) => !value)} aria-expanded={menu} aria-label={t('nav.monCompte')}>{initials}</button>
       {menu && <div className={classes.accountMenu} role="menu">
