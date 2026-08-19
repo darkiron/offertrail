@@ -1,7 +1,7 @@
 .legal-shell {
   min-height: 100vh;
-  background: var(--bg-base);
-  color: var(--text-main);
+  background: var(--ot-paper);
+  color: var(--ot-ink);
 }
 
 /* ─── Nav ─── */
@@ -10,8 +10,8 @@
   top: 0;
   z-index: 100;
   backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--bg-base) 85%, transparent 15%);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent 20%);
+  background: color-mix(in srgb, var(--ot-paper) 85%, transparent 15%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent 20%);
 }
 
 .legal-nav-inner {
@@ -31,7 +31,7 @@
   font-size: 17px;
   letter-spacing: 0.04em;
   text-decoration: none;
-  color: var(--text-main);
+  color: var(--ot-ink);
 }
 
 .legal-brand-mark {
@@ -50,20 +50,20 @@
 
 .legal-back {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 70%, transparent);
   transition: color 0.15s, background 0.15s;
 }
 
 .legal-back:hover {
-  color: var(--text-main);
-  background: color-mix(in srgb, var(--bg-surface) 50%, transparent);
+  color: var(--ot-ink);
+  background: color-mix(in srgb, var(--ot-paper-raised) 50%, transparent);
 }
 
 /* ─── Content ─── */
@@ -72,16 +72,16 @@
   margin: 0 auto;
   padding: 56px 24px 88px;
 }
-.legal-breadcrumbs { display:flex; gap:8px; align-items:center; margin-bottom:28px; color:var(--text-dim); font-size:13px; }
+.legal-breadcrumbs { display:flex; gap:8px; align-items:center; margin-bottom:28px; color:var(--ot-muted); font-size:13px; }
 .legal-breadcrumbs a { color:inherit; text-decoration:none; }
-.legal-breadcrumbs a:hover { color:var(--text-main); }
+.legal-breadcrumbs a:hover { color:var(--ot-ink); }
 
 .legal-eyebrow {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin-bottom: 12px;
 }
 
@@ -94,7 +94,7 @@
 
 .legal-updated {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin-bottom: 40px;
 }
 
@@ -102,15 +102,15 @@
   margin-bottom: 20px;
   padding: 24px 26px;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: var(--bg-mantle);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
+  background: var(--ot-paper-raised);
 }
 
 .legal-section h2 {
   font-size: 15px;
   font-weight: 800;
   margin: 0 0 12px;
-  color: var(--text-main);
+  color: var(--ot-ink);
 }
 
 .legal-section h3 {
@@ -119,12 +119,12 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 20px 0 8px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .legal-section p {
   font-size: 14px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   line-height: 1.75;
   margin: 0;
 }
@@ -143,12 +143,12 @@
 
 .legal-section li {
   font-size: 14px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   line-height: 1.65;
 }
 
 .legal-section a {
-  color: var(--accent);
+  color: var(--ot-accent);
   text-decoration: none;
 }
 
@@ -158,8 +158,8 @@
 
 /* ─── Footer ─── */
 .legal-footer {
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--bg-crust) 80%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ot-line) 70%, transparent);
+  background: color-mix(in srgb, var(--ot-ink) 80%, transparent);
   padding: 28px 24px;
 }
 
@@ -172,20 +172,20 @@
   justify-content: center;
   gap: 6px 20px;
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .legal-footer-inner a {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   text-decoration: none;
   transition: color 0.15s;
 }
 
 .legal-footer-inner a:hover {
-  color: var(--text-main);
+  color: var(--ot-ink);
 }
 
 .legal-footer-sep {
-  color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: color-mix(in srgb, var(--ot-line) 80%, transparent);
   user-select: none;
 }
