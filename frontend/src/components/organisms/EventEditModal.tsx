@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import axios from 'axios';
 import {
-  Modal, TextInput, Textarea, Select, Stack, Group, Text,
-} from '@mantine/core';
+  UiModal as Modal, UiTextInput as TextInput, UiTextarea as Textarea,
+  UiSelect as Select, UiStack as Stack, UiGroup as Group, UiText as Text,
+} from '../atoms/UiPrimitives';
 import type { EventUpdatePayload } from '../../services/api';
 import { Button } from '../atoms/Button';
 
