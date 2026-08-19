@@ -7,16 +7,6 @@
   --lp-line: var(--ot-line);
   --lp-accent: var(--ot-accent);
   --lp-accent-soft: var(--ot-accent-soft);
-  /* Landing aliases: one internal palette, independent from Mantine. */
-  --bg-base: var(--ot-paper);
-  --bg-mantle: var(--ot-paper-raised);
-  --bg-crust: var(--ot-ink);
-  --bg-surface: var(--ot-paper-raised);
-  --text-main: var(--ot-ink);
-  --text-dim: var(--ot-muted);
-  --accent: var(--ot-accent);
-  --accent-hover: var(--ot-accent);
-  --border: var(--ot-line);
 }
 
 /* ─── Nav ─── */
@@ -25,8 +15,8 @@
   top: 0;
   z-index: 100;
   backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--bg-base) 85%, transparent 15%);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent 20%);
+  background: color-mix(in srgb, var(--ot-paper) 85%, transparent 15%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent 20%);
   transition: box-shadow 0.2s;
 }
 
@@ -51,7 +41,7 @@
   font-size: 18px;
   letter-spacing: 0.04em;
   text-decoration: none;
-  color: var(--text-main);
+  color: var(--ot-ink);
 }
 
 .lp-brand-mark {
@@ -75,7 +65,7 @@
 }
 
 .lp-nav-ghost {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -85,8 +75,8 @@
 }
 
 .lp-nav-ghost:hover {
-  color: var(--text-main);
-  background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+  color: var(--ot-ink);
+  background: color-mix(in srgb, var(--ot-paper-raised) 60%, transparent);
 }
 
 .lp-nav-cta {
@@ -112,9 +102,9 @@
 
 .lp-badge {
   display: inline-block;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--ot-accent) 14%, transparent);
+  color: var(--ot-accent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 28%, transparent);
   font-size: 12px;
   font-weight: 700;
   padding: 5px 14px;
@@ -132,11 +122,11 @@
   margin: 0 0 20px;
 }
 
-.lp-h1 span { color: var(--accent); }
+.lp-h1 span { color: var(--ot-accent); }
 
 .lp-hero-sub {
   font-size: 18px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   max-width: 520px;
   margin: 0 auto 40px;
   line-height: 1.65;
@@ -165,19 +155,19 @@
 .lp-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
 
 .lp-btn-outline {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   padding: 10px 20px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
   transition: color 0.15s, background 0.15s;
 }
 
 .lp-btn-outline:hover {
-  color: var(--text-main);
-  background: color-mix(in srgb, var(--bg-surface) 50%, transparent);
+  color: var(--ot-ink);
+  background: color-mix(in srgb, var(--ot-paper-raised) 50%, transparent);
 }
 
 /* ─── Mockup ─── */
@@ -189,19 +179,19 @@
 
 .lp-mockup-frame {
   border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: var(--bg-mantle);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
+  background: var(--ot-paper-raised);
   overflow: hidden;
   box-shadow: 0 40px 80px rgba(0, 0, 0, 0.28);
 }
 
 .lp-mockup-bar {
-  background: var(--bg-crust);
+  background: var(--ot-ink);
   padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
 }
 
 .lp-dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -212,11 +202,11 @@
 .lp-url-bar {
   flex: 1;
   text-align: center;
-  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  background: color-mix(in srgb, var(--ot-paper) 80%, transparent);
   border-radius: 6px;
   padding: 4px 14px;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   max-width: 280px;
   margin: 0 auto;
 }
@@ -227,7 +217,7 @@
   gap: 40px;
   flex-wrap: wrap;
   padding: 18px 24px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
 }
 
 .lp-stat { text-align: center; }
@@ -235,20 +225,20 @@
 .lp-stat-num {
   font-size: 28px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--ot-accent);
 }
 
 .lp-stat-label {
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin-top: 2px;
 }
 
 .lp-mock-body {
   padding: 24px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 30%),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 8%, transparent), transparent);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--ot-accent) 10%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ot-paper-raised) 8%, transparent), transparent);
 }
 
 .lp-mock-grid {
@@ -258,9 +248,9 @@
 }
 
 .lp-panel {
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-crust) 72%, transparent);
+  background: color-mix(in srgb, var(--ot-ink) 72%, transparent);
   padding: 18px;
 }
 
@@ -268,7 +258,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   font-weight: 700;
   margin: 0 0 14px;
 }
@@ -285,8 +275,8 @@
   align-items: center;
   padding: 12px 14px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--bg-surface) 40%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--ot-paper-raised) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 60%, transparent);
 }
 
 .lp-pipeline-item strong {
@@ -297,7 +287,7 @@
 
 .lp-pipeline-item .lp-meta {
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .lp-pill {
@@ -322,13 +312,13 @@
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .lp-bar-track {
   height: 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--ot-line) 60%, transparent);
   overflow: hidden;
 }
 
@@ -342,8 +332,8 @@
   margin-top: 14px;
   padding: 14px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 20%, transparent);
+  background: color-mix(in srgb, var(--ot-accent) 8%, transparent);
 }
 
 .lp-signal strong {
@@ -354,18 +344,18 @@
 
 .lp-signal p {
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   line-height: 1.55;
   margin: 0;
 }
 
 /* ─── Section header shared ─── */
 .lp-section-wrap {
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ot-line) 70%, transparent);
 }
 
 .lp-section-wrap.lp-alt {
-  background: color-mix(in srgb, var(--bg-mantle) 50%, transparent);
+  background: color-mix(in srgb, var(--ot-paper-raised) 50%, transparent);
 }
 
 .lp-section-inner {
@@ -383,7 +373,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin-bottom: 12px;
 }
 
@@ -396,7 +386,7 @@
 }
 
 .lp-section-sub {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   line-height: 1.65;
   margin: -28px auto 40px;
   max-width: 620px;
@@ -411,15 +401,15 @@
 }
 
 .lp-feature {
-  background: var(--bg-mantle);
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--ot-paper-raised);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 80%, transparent);
   border-radius: 18px;
   padding: 26px 22px;
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .lp-feature:hover {
-  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  border-color: color-mix(in srgb, var(--ot-accent) 36%, transparent);
   transform: translateY(-3px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
 }
@@ -428,8 +418,8 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--ot-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 20%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,18 +428,18 @@
 }
 
 .lp-feature h3 { font-size: 15px; font-weight: 800; margin: 0 0 8px; }
-.lp-feature p  { font-size: 13px; color: var(--text-dim); line-height: 1.65; margin: 0; }
+.lp-feature p  { font-size: 13px; color: var(--ot-muted); line-height: 1.65; margin: 0; }
 
 /* ─── Workflow proof ─── */
 .lp-workflow { max-width: 1040px; }
 .lp-workflow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; list-style: none; padding: 0; margin: 0; }
-.lp-workflow-step { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 8px 28px; border-left: 1px solid var(--border); }
+.lp-workflow-step { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 8px 28px; border-left: 1px solid var(--ot-line); }
 .lp-workflow-step:first-child { border-left: 0; }
 .lp-workflow-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ot-ink); color: var(--ot-paper); font-size: 12px; font-weight: 800; }
 .lp-workflow-step h3 { margin: 2px 0 8px; font-size: 15px; font-weight: 800; }
-.lp-workflow-step p { margin: 0; color: var(--text-dim); font-size: 13px; line-height: 1.65; }
-.lp-proof-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 44px auto 0; color: var(--text-dim); font-size: 12px; }
-.lp-proof-line span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); font-weight: 800; }
+.lp-workflow-step p { margin: 0; color: var(--ot-muted); font-size: 13px; line-height: 1.65; }
+.lp-proof-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 44px auto 0; color: var(--ot-muted); font-size: 12px; }
+.lp-proof-line span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--ot-accent) 15%, transparent); color: var(--ot-accent); font-weight: 800; }
 
 /* ─── Pricing ─── */
 .lp-pricing-grid {
@@ -469,8 +459,8 @@
   margin: 28px auto 0;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-  background: color-mix(in srgb, var(--bg-surface) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 65%, transparent);
+  background: color-mix(in srgb, var(--ot-paper-raised) 42%, transparent);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -478,7 +468,7 @@
 }
 
 .lp-pricing-controls span {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -515,13 +505,13 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--ot-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 28%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--ot-accent);
   font-weight: 900;
   margin-top: 2px;
 }
@@ -534,16 +524,16 @@
 
 .lp-pricing-point-desc {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   line-height: 1.6;
 }
 
 .lp-plan-card {
   background: linear-gradient(145deg,
-    color-mix(in srgb, var(--accent) 10%, var(--bg-mantle)),
-    color-mix(in srgb, var(--accent-hover) 6%, var(--bg-crust))
+    color-mix(in srgb, var(--ot-accent) 10%, var(--ot-paper-raised)),
+    color-mix(in srgb, var(--ot-accent) 6%, var(--ot-ink))
   );
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 34%, transparent);
   border-radius: 22px;
   padding: 30px;
   box-shadow: 0 28px 56px rgba(0, 0, 0, 0.2);
@@ -558,10 +548,10 @@
 .lp-breakdown-note { margin: .75rem 0 0; color: var(--lp-muted); opacity: .7; font-size: .75rem; line-height: 1.6; }
 
 .lp-plan-card-featured {
-  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+  border-color: color-mix(in srgb, var(--ot-accent) 62%, transparent);
   box-shadow:
     0 28px 56px rgba(0, 0, 0, 0.24),
-    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--ot-accent) 24%, transparent);
   transform: translateY(-8px);
 }
 
@@ -576,17 +566,17 @@
 .lp-plan-name {
   font-size: 11px;
   font-weight: 800;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 0 0 10px;
 }
 
 .lp-plan-badge {
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 24%, transparent);
   border-radius: 999px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--ot-accent);
+  background: color-mix(in srgb, var(--ot-accent) 10%, transparent);
   font-size: 10px;
   font-weight: 800;
   padding: 4px 8px;
@@ -603,7 +593,7 @@
 }
 
 .lp-plan-yearly {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   font-size: 13px;
   font-weight: 700;
   min-height: 20px;
@@ -612,12 +602,12 @@
 .lp-plan-period {
   font-size: 14px;
   font-weight: 400;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .lp-plan-divider {
   height: 1px;
-  background: color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--ot-line) 60%, transparent);
   margin: 18px 0;
 }
 
@@ -635,12 +625,12 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .lp-plan-features li::before {
   content: "+";
-  color: var(--accent);
+  color: var(--ot-accent);
   font-weight: 900;
   font-size: 14px;
   flex-shrink: 0;
@@ -658,16 +648,16 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 52%, transparent);
   font-size: 13px;
 }
 
 .lp-plan-spec span {
-  color: var(--text-dim);
+  color: var(--ot-muted);
 }
 
 .lp-plan-spec strong {
-  color: var(--text-main);
+  color: var(--ot-ink);
   font-weight: 800;
   text-align: right;
 }
@@ -690,19 +680,19 @@
 
 .lp-plan-cta-secondary {
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
-  color: var(--text-main);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 32%, transparent);
+  color: var(--ot-ink);
 }
 
 .lp-plan-cta-secondary:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--ot-accent) 10%, transparent);
   opacity: 1;
 }
 
 .lp-plan-note {
   text-align: center;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin-top: 12px;
 }
 
@@ -710,8 +700,8 @@
 .lp-cta-section {
   text-align: center;
   padding: 88px 24px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 4%, transparent));
+  border-top: 1px solid color-mix(in srgb, var(--ot-line) 70%, transparent);
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ot-accent) 4%, transparent));
 }
 
 .lp-cta-section h2 {
@@ -722,15 +712,15 @@
 }
 
 .lp-cta-section p {
-  color: var(--text-dim);
+  color: var(--ot-muted);
   margin: 0 0 36px;
   font-size: 16px;
 }
 
 /* ─── Footer ─── */
 .lp-footer {
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--bg-crust) 80%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ot-line) 70%, transparent);
+  background: color-mix(in srgb, var(--ot-ink) 80%, transparent);
   padding: 44px 24px;
 }
 
@@ -748,7 +738,7 @@
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: var(--text-main);
+  color: var(--ot-ink);
   font-weight: 800;
   font-size: 16px;
   margin-bottom: 10px;
@@ -756,7 +746,7 @@
 
 .lp-footer-tagline {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   max-width: 300px;
   line-height: 1.6;
   margin: 0 0 16px;
@@ -764,7 +754,7 @@
 
 .lp-footer-copy {
   font-size: 12px;
-  color: color-mix(in srgb, var(--text-dim) 70%, transparent);
+  color: color-mix(in srgb, var(--ot-muted) 70%, transparent);
 }
 
 .lp-footer-links {
@@ -776,12 +766,12 @@
 
 .lp-footer-links a {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ot-muted);
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.lp-footer-links a:hover { color: var(--text-main); }
+.lp-footer-links a:hover { color: var(--ot-ink); }
 
 /* ─── Responsive ─── */
 @media (max-width: 860px) {
