@@ -5,7 +5,6 @@ import type {
   ContactDetailsApi,
   ContactPortfolioPage,
 } from './contracts';
-import { resolveCandidatureId, resolveOrganizationId } from './identifiers';
 import { mapContactApiToContact } from './mappers';
 
 export const contactService = {
@@ -21,12 +20,10 @@ export const contactService = {
     );
     return response.data;
   },
-  getAll: async (params?: { organization_id?: number }) => {
+  getAll: async (params?: { organization_id?: string }) => {
     const response = await axiosInstance.get<ContactApi[]>('/contacts', {
       params: {
-        organization_id: params?.organization_id
-          ? resolveOrganizationId(params.organization_id)
-          : undefined,
+        organization_id: params?.organization_id,
       },
     });
     return response.data.map(mapContactApiToContact);
@@ -59,18 +56,14 @@ export const contactService = {
   create: async (data: Partial<Contact>) => {
     const response = await axiosInstance.post<{ id: string }>('/contacts', {
       ...data,
-      organization_id: data.organization_id
-        ? resolveOrganizationId(data.organization_id)
-        : null,
+      organization_id: data.organization_id ?? null,
     });
     return { id: response.data.id };
   },
   update: async (id: string, data: Partial<Contact>) => {
     const response = await axiosInstance.patch(`/contacts/${id}`, {
       ...data,
-      organization_id: data.organization_id
-        ? resolveOrganizationId(data.organization_id)
-        : null,
+      organization_id: data.organization_id ?? null,
     });
     return response.data;
   },
@@ -78,9 +71,9 @@ export const contactService = {
     const response = await axiosInstance.delete(`/contacts/${id}`);
     return response.data;
   },
-  linkToApplication: async (contactId: string, applicationId: number) => {
+  linkToApplication: async (contactId: string, applicationId: string) => {
     const response = await axiosInstance.post('/candidature-events', {
-      candidature_id: resolveCandidatureId(applicationId),
+      candidature_id: applicationId,
       type: 'contact_ajout',
       contenu: `Contact lie: ${contactId}`,
     });

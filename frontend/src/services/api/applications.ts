@@ -12,10 +12,6 @@ import type {
   RelanceApi,
 } from './contracts';
 import {
-  ensureCandidatureIdResolved,
-  toLegacyOrganizationId,
-} from './identifiers';
-import {
   fetchEtablissementsIndex,
   mapCandidatureToApplication,
   mapEtablissementToOrganization,
@@ -47,14 +43,13 @@ export const applicationService = {
       limit: params?.limit ?? items.length,
     } satisfies PaginatedResponse<Application>;
   },
-  getApplication: async (id: number | string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
+  getApplication: async (id: string) => {
     const etablissementIndex = await fetchEtablissementsIndex();
     const candidatureResponse = await axiosInstance.get<CandidatureApi>(
-      `/candidatures/${candidatureId}`,
+      `/candidatures/${id}`,
     );
     const historyResponse = await axiosInstance.get<EventApi[]>(
-      `/candidatures/${candidatureId}/events`,
+      `/candidatures/${id}/events`,
     );
     const candidature = candidatureResponse.data;
     const etablissement =
@@ -69,17 +64,15 @@ export const applicationService = {
     );
 
     const contactsResponse = await contactService.getAll({
-      organization_id: etablissement
-        ? toLegacyOrganizationId(etablissement.id)
-        : undefined,
+      organization_id: etablissement ? etablissement.id : undefined,
     });
 
     return {
       application,
       organization: etablissement
         ? {
-            id: toLegacyOrganizationId(etablissement.id),
-            organization_id: toLegacyOrganizationId(etablissement.id),
+            id: etablissement.id,
+            organization_id: etablissement.id,
             total_applications: 0,
             total_responses: 0,
             response_rate: 0,
@@ -125,30 +118,23 @@ export const applicationService = {
     const response = await axiosInstance.post('/candidatures', payload);
     return response.data;
   },
-  updateApplication: async (id: number | string, data: ApplicationPayload) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
+  updateApplication: async (id: string, data: ApplicationPayload) => {
     const payload = mapPayloadToSaas(data);
-    const response = await axiosInstance.patch(
-      `/candidatures/${candidatureId}`,
-      payload,
-    );
+    const response = await axiosInstance.patch(`/candidatures/${id}`, payload);
     return response.data;
   },
-  addNote: async (id: number, text: string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
+  addNote: async (id: string, text: string) => {
     const response = await axiosInstance.post('/candidature-events', {
-      candidature_id: candidatureId,
+      candidature_id: id,
       type: 'note_ajout',
       contenu: text,
     });
     return response.data;
   },
-  markFollowup: async (id: number) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
+  markFollowup: async (id: string) => {
     const relances = await axiosInstance.get<RelanceApi[]>('/relances');
     const target = relances.data.find(
-      (item) =>
-        item.candidature_id === candidatureId && item.statut === 'a_faire',
+      (item) => item.candidature_id === id && item.statut === 'a_faire',
     );
     if (!target) {
       return { success: true };
@@ -159,8 +145,7 @@ export const applicationService = {
     });
     return response.data;
   },
-  addEvent: async (id: number, eventType: string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
+  addEvent: async (id: string, eventType: string) => {
     const eventTypeMap: Record<string, string> = {
       RESPONSE_RECEIVED: 'note_ajout',
     };
@@ -168,18 +153,18 @@ export const applicationService = {
       RESPONSE_RECEIVED: 'Reponse recue',
     };
     const response = await axiosInstance.post('/candidature-events', {
-      candidature_id: candidatureId,
+      candidature_id: id,
       type: eventTypeMap[eventType] ?? eventType.toLowerCase(),
       contenu: contentMap[eventType] ?? eventType,
     });
     return response.data;
   },
-  linkContact: async (appId: number, contactId: string) => {
+  linkContact: async (appId: string, contactId: string) => {
     const response = await contactService.linkToApplication(contactId, appId);
     return response.data;
   },
   createContact: async (
-    appId: number,
+    appId: string,
     data: {
       first_name?: string;
       last_name?: string;

@@ -11,7 +11,7 @@ export type OrganizationType =
 type ProbityLevel = 'fiable' | 'moyen' | 'méfiance' | 'insuffisant';
 
 interface OrganizationStats {
-  organization_id: number;
+  organization_id: string;
   total_applications: number;
   total_responses: number;
   response_rate: number;
@@ -24,7 +24,7 @@ interface OrganizationStats {
 }
 
 export interface Organization extends OrganizationStats {
-  id: number;
+  id: string;
   name: string;
   type: OrganizationType;
   website: string | null;
@@ -52,13 +52,13 @@ export interface Contact {
 }
 
 export interface Application {
-  id: number;
-  organization_id: number | null;
-  final_customer_organization_id: number | null;
+  id: string;
+  organization_id: string | null;
+  final_customer_organization_id: string | null;
   final_customer_name?: string | null;
   company: string;
   company_name: string;
-  organization: { id: number; name: string } | null;
+  organization: { id: string; name: string } | null;
   title: string;
   type: string;
   status: string;

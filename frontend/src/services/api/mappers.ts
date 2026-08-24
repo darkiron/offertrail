@@ -11,11 +11,6 @@ import type {
   ContactApi,
   EtablissementApi,
 } from './contracts';
-import {
-  resolveOrganizationId,
-  toLegacyId,
-  toLegacyOrganizationId,
-} from './identifiers';
 
 function normalizeDate(value: string | null | undefined): string | null {
   if (!value) {
@@ -64,8 +59,8 @@ export function mapEtablissementToOrganization(
       ? etablissement.probity_level
       : 'insuffisant';
   return {
-    id: toLegacyOrganizationId(etablissement.id),
-    organization_id: toLegacyOrganizationId(etablissement.id),
+    id: etablissement.id,
+    organization_id: etablissement.id,
     total_applications: etablissement.total_applications,
     total_responses: etablissement.total_responses,
     response_rate: etablissement.response_rate,
@@ -96,19 +91,15 @@ export function mapCandidatureToApplication(
   finalCustomer?: EtablissementApi | null,
 ): Application {
   return {
-    id: toLegacyId(candidature.id),
-    organization_id: etablissement
-      ? toLegacyOrganizationId(etablissement.id)
-      : null,
-    final_customer_organization_id: finalCustomer
-      ? toLegacyOrganizationId(finalCustomer.id)
-      : null,
+    id: candidature.id,
+    organization_id: etablissement ? etablissement.id : null,
+    final_customer_organization_id: finalCustomer ? finalCustomer.id : null,
     final_customer_name: finalCustomer?.nom ?? null,
     company: etablissement?.nom ?? 'Etablissement',
     company_name: etablissement?.nom ?? 'Etablissement',
     organization: etablissement
       ? {
-          id: toLegacyOrganizationId(etablissement.id),
+          id: etablissement.id,
           name: etablissement.nom,
         }
       : null,
@@ -138,12 +129,10 @@ export function mapPayloadToSaas(
     Object.prototype.hasOwnProperty.call(data, key);
 
   if (has('organization_id') && data.organization_id) {
-    payload.etablissement_id = resolveOrganizationId(data.organization_id);
+    payload.etablissement_id = data.organization_id;
   }
   if (has('final_customer_organization_id')) {
-    payload.client_final_id = data.final_customer_organization_id
-      ? resolveOrganizationId(data.final_customer_organization_id)
-      : null;
+    payload.client_final_id = data.final_customer_organization_id ?? null;
   }
   if (has('title')) payload.poste = data.title ?? '';
   if (has('type')) payload.type_contrat = data.type?.toLowerCase() ?? null;

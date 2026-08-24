@@ -5,7 +5,6 @@ import type {
   WorkflowApplicationListParams,
   WorkflowApplicationPage,
 } from './contracts';
-import { ensureCandidatureIdResolved } from './identifiers';
 
 export const workflowApplicationService = {
   createWorkflowApplication: async (payload: {
@@ -32,16 +31,14 @@ export const workflowApplicationService = {
     return response.data;
   },
   getWorkspace: async (id: string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
     const response = await axiosInstance.get<ApplicationWorkspace>(
-      `/me/candidatures/${candidatureId}/workspace`,
+      `/me/candidatures/${id}/workspace`,
     );
     return response.data;
   },
   updateWorkflowStatus: async (id: string, status: string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
     const response = await axiosInstance.patch(
-      `/me/candidatures/${candidatureId}/status`,
+      `/me/candidatures/${id}/status`,
       { status },
     );
     return response.data;
@@ -57,9 +54,8 @@ export const workflowApplicationService = {
     return response.data;
   },
   addWorkflowNote: async (id: string, content: string) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
     const response = await axiosInstance.post('/candidature-events', {
-      candidature_id: candidatureId,
+      candidature_id: id,
       type: 'note_ajout',
       contenu: content,
     });
@@ -69,9 +65,8 @@ export const workflowApplicationService = {
     id: string,
     payload: { due_at: string; channel?: string; note?: string },
   ) => {
-    const candidatureId = await ensureCandidatureIdResolved(id);
     const response = await axiosInstance.post(
-      `/me/candidatures/${candidatureId}/actions`,
+      `/me/candidatures/${id}/actions`,
       payload,
     );
     return response.data;

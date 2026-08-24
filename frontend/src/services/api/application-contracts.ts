@@ -116,8 +116,8 @@ export interface ApplicationPayload {
   applied_at?: string | null;
   next_followup_at?: string | null;
   org_type?: string;
-  organization_id?: number | null;
-  final_customer_organization_id?: number | null;
+  organization_id?: string | null;
+  final_customer_organization_id?: string | null;
   notes?: string | null;
   salary?: number | null;
   daily_rate?: number | null;

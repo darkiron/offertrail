@@ -1,5 +1,4 @@
 import { http as axiosInstance } from '@shared/api/http';
-import { ensureCandidatureIdResolved } from '../../services/api/identifiers';
 import {
   applicationWorkspaceSchema,
   completeActionResponseSchema,
@@ -15,10 +14,8 @@ export const applicationApi = {
       (await axiosInstance.get('/me/candidatures', { params })).data,
     ),
   workspace: async (id: string) => {
-    const resolvedId = await ensureCandidatureIdResolved(id);
     return applicationWorkspaceSchema.parse(
-      (await axiosInstance.get(`/me/candidatures/${resolvedId}/workspace`))
-        .data,
+      (await axiosInstance.get(`/me/candidatures/${id}/workspace`)).data,
     );
   },
   today: async () =>
