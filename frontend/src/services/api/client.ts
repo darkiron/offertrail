@@ -1,10 +1,15 @@
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+import { env } from '@shared/config/env';
+import { toApiError } from '@shared/api/ApiError';
 
 export const axiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: env.apiUrl,
 });
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => Promise.reject(toApiError(error)),
+);
 
 // Nettoyage de l'ancien token legacy (pré-Supabase) si présent en localStorage
 localStorage.removeItem('offertrail.auth.token');

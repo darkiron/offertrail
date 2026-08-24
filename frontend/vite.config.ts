@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath, URL } from 'node:url';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -8,14 +9,31 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@app': fileURLToPath(new URL('./src/app', import.meta.url)),
+        '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
+        '@entities': fileURLToPath(new URL('./src/entities', import.meta.url)),
+        '@features': fileURLToPath(new URL('./src/features', import.meta.url)),
+        '@widgets': fileURLToPath(new URL('./src/widgets', import.meta.url)),
+        '@routes': fileURLToPath(new URL('./src/routes', import.meta.url)),
+      },
+    },
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-query': ['@tanstack/react-query'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-            'vendor-charts': ['recharts'],
+          manualChunks(id: string) {
+            if (id.includes('/node_modules/recharts/')) return 'vendor-charts';
+            if (id.includes('/node_modules/@supabase/'))
+              return 'vendor-supabase';
+            if (id.includes('/node_modules/@tanstack/react-query/'))
+              return 'vendor-query';
+            if (
+              id.includes('/node_modules/react/') ||
+              id.includes('/node_modules/react-dom/') ||
+              id.includes('/node_modules/react-router')
+            )
+              return 'vendor-react';
           },
         },
       },

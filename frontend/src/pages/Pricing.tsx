@@ -6,6 +6,7 @@ import { Button } from '../components/atoms/Button';
 import { PlanCard } from '../components/PlanCard';
 import { useI18n } from '../i18n';
 import { PLAN_RANK, usePricingPlans } from '../lib/pricingPlans';
+import { CONFIG } from '../config';
 import classes from './Pricing.module.scss';
 type PlanId = 'free' | 'pro' | 'ultimate';
 type Period = 'monthly' | 'yearly';
@@ -37,8 +38,7 @@ export function Pricing() {
     text: string;
   } | null>(null);
   const promoPlaceholder =
-    import.meta.env.VITE_PROMO_PLACEHOLDER ||
-    t('landing.pricing.promoPlaceholder');
+    CONFIG.PROMO_PLACEHOLDER || t('landing.pricing.promoPlaceholder');
   const loadSubscription = useCallback(async () => {
     setSubscriptionLoading(true);
     setSubscriptionLoadFailed(false);
