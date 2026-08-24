@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { PublicShell } from '../templates/PublicShell';
 import { useI18n } from '../i18n';
-import { supabase } from '../lib/supabase';
+import { useRequestPasswordResetMutation } from '@features/auth/useRequestPasswordResetMutation';
 import classes from './Auth.module.scss';
 
 type ForgotPasswordForm = { email: string };
 
 export function ForgotPasswordPage() {
   const { t } = useI18n();
+  const requestPasswordReset = useRequestPasswordResetMutation();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const schema = useMemo(
@@ -40,13 +41,7 @@ export function ForgotPasswordPage() {
     try {
       setError(null);
       setMessage(null);
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        parsed.data.email,
-        {
-          redirectTo: `${window.location.origin}/reset-password`,
-        },
-      );
-      if (resetError) throw resetError;
+      await requestPasswordReset.mutateAsync(parsed.data.email);
       setMessage(t('auth.forgot.successMessage'));
     } catch {
       setError(t('auth.forgot.errorMessage'));

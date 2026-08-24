@@ -5,11 +5,8 @@ import { z } from 'zod';
 import { PublicShell } from '../templates/PublicShell';
 import { useAuth } from '../context/auth-context';
 import { useI18n } from '../i18n';
-import { supabase } from '../lib/supabase';
-import {
-  clearPasswordRecoveryMarker,
-  finalizePasswordRecovery,
-} from '../utils/passwordRecovery';
+import { useConfirmPasswordResetMutation } from '@features/auth/useConfirmPasswordResetMutation';
+import { clearPasswordRecoveryMarker } from '../utils/passwordRecovery';
 import classes from './Auth.module.scss';
 
 type ResetPasswordForm = { password: string; confirmPassword: string };
@@ -18,6 +15,7 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { isLoading, isPasswordRecovery } = useAuth();
+  const confirmPasswordReset = useConfirmPasswordResetMutation();
   const [error, setError] = useState<string | null>(null);
   const hasAuthError = /(^|[?#&])error=|error_description=/.test(
     window.location.hash + window.location.search,
@@ -61,7 +59,7 @@ export function ResetPasswordPage() {
     }
     try {
       setError(null);
-      await finalizePasswordRecovery(supabase.auth, parsed.data.password);
+      await confirmPasswordReset.mutateAsync(parsed.data.password);
       clearPasswordRecoveryMarker(sessionStorage);
       navigate('/login', {
         replace: true,
