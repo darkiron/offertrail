@@ -142,6 +142,13 @@ export const todayDataSchema = z.object({
   recent_activity: z.array(z.record(z.string(), z.unknown())),
 });
 
+export const completeActionResponseSchema = z.object({
+  completed_action: z.object({ id: z.string(), status: z.string() }),
+  created_event: z.object({ id: z.string(), kind: z.string() }),
+  next_action: z.object({ id: z.string(), due_at: z.string() }).nullable(),
+  today: z.object({ remaining_due_count: z.number().int().nonnegative() }),
+});
+
 export type WorkflowApplicationListParams = {
   q?: string;
   status?: string;
@@ -152,3 +159,8 @@ export type WorkflowApplicationListParams = {
   include_closed?: boolean;
 };
 export type TodayAction = z.infer<typeof todayActionSchema>;
+export type CompleteActionPayload = {
+  outcome: string;
+  note?: string;
+  next_action?: { due_at: string; channel?: string } | null;
+};

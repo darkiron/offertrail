@@ -2,8 +2,10 @@ import { http as axiosInstance } from '@shared/api/http';
 import { ensureCandidatureIdResolved } from '../../services/api/identifiers';
 import {
   applicationWorkspaceSchema,
+  completeActionResponseSchema,
   todayDataSchema,
   workflowApplicationPageSchema,
+  type CompleteActionPayload,
   type WorkflowApplicationListParams,
 } from './model';
 
@@ -21,4 +23,9 @@ export const applicationApi = {
   },
   today: async () =>
     todayDataSchema.parse((await axiosInstance.get('/me/today')).data),
+  completeAction: async (actionId: string, payload: CompleteActionPayload) =>
+    completeActionResponseSchema.parse(
+      (await axiosInstance.post(`/me/actions/${actionId}/complete`, payload))
+        .data,
+    ),
 };

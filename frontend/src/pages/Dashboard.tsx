@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { dashboardService } from '../services/api/dashboard';
 import type { TodayAction } from '@entities/application/model';
-import { applicationKeys } from '@entities/application/queryKeys';
 import { useTodayQuery } from '@features/applications/dashboard/useTodayQuery';
+import { useCompleteActionMutation } from '@features/applications/dashboard/useCompleteActionMutation';
 import classes from './Dashboard.module.scss';
 import { ActionButton } from '@shared/ui/Action';
 import { SelectField } from '@shared/ui/FormField';
@@ -25,31 +23,29 @@ function ActionDialog({
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const queryClient = useQueryClient();
   const [outcome, setOutcome] = useState('no_response');
   const [note, setNote] = useState('');
   const [next, setNext] = useState('3');
-  const mutation = useMutation({
-    mutationFn: () =>
-      dashboardService.completeAction(action.id, {
-        outcome,
-        note: note.trim() || undefined,
-        next_action:
-          next === 'none'
-            ? null
-            : {
-                due_at: new Date(
-                  Date.now() + Number(next) * 86400000,
-                ).toISOString(),
-              },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: applicationKeys.today(),
-      });
-      onClose();
-    },
-  });
+  const mutation = useCompleteActionMutation();
+  const submit = () =>
+    mutation.mutate(
+      {
+        actionId: action.id,
+        payload: {
+          outcome,
+          note: note.trim() || undefined,
+          next_action:
+            next === 'none'
+              ? null
+              : {
+                  due_at: new Date(
+                    Date.now() + Number(next) * 86400000,
+                  ).toISOString(),
+                },
+        },
+      },
+      { onSuccess: onClose },
+    );
   return (
     <Dialog
       eyebrow={t('dashboard.actionEyebrow')}
@@ -108,7 +104,7 @@ function ActionDialog({
         <ActionButton
           variant="primary"
           disabled={mutation.isPending}
-          onClick={() => mutation.mutate()}
+          onClick={submit}
         >
           {mutation.isPending ? t('dashboard.saving') : t('dashboard.save')}
         </ActionButton>

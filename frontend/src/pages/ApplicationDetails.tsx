@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { applicationService, dashboardService } from '../services/api';
+import { applicationService } from '../services/api';
 import classes from './ApplicationDetails.module.scss';
 import { ActionButton, ExternalAction } from '@shared/ui/Action';
 import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
@@ -14,6 +14,7 @@ import { EntityLink } from '@shared/ui/EntityLink';
 import { StatePanel } from '@shared/ui/StatePanel';
 import { useI18n } from '../i18n';
 import { useApplicationWorkspaceQuery } from '@features/applications/detail/useApplicationWorkspaceQuery';
+import { useCompleteActionMutation } from '@features/applications/dashboard/useCompleteActionMutation';
 import { applicationKeys } from '@entities/application/queryKeys';
 
 function formatDate(
@@ -79,22 +80,26 @@ export function ApplicationDetails() {
   } | null;
   const from = navigationState?.from ?? '/app/candidatures';
   const query = useApplicationWorkspaceQuery(id);
-  const complete = useMutation({
-    mutationFn: () =>
-      dashboardService.completeAction(query.data!.next_action!.id, {
-        outcome,
-        note: note.trim() || undefined,
-      }),
-    onSuccess: async () => {
-      setShowComplete(false);
-      setNote('');
-      await Promise.all([
-        query.refetch(),
-        queryClient.invalidateQueries({ queryKey: applicationKeys.today() }),
-        queryClient.invalidateQueries({ queryKey: applicationKeys.lists() }),
-      ]);
-    },
-  });
+  const complete = useCompleteActionMutation();
+  const submitComplete = () =>
+    complete.mutate(
+      {
+        actionId: query.data!.next_action!.id,
+        payload: { outcome, note: note.trim() || undefined },
+      },
+      {
+        onSuccess: async () => {
+          setShowComplete(false);
+          setNote('');
+          await Promise.all([
+            query.refetch(),
+            queryClient.invalidateQueries({
+              queryKey: applicationKeys.lists(),
+            }),
+          ]);
+        },
+      },
+    );
   const schedule = useMutation({
     mutationFn: () =>
       applicationService.scheduleWorkflowAction(id!, {
@@ -431,7 +436,7 @@ export function ApplicationDetails() {
             className={classes.dialog}
             onSubmit={(event) => {
               event.preventDefault();
-              complete.mutate();
+              submitComplete();
             }}
           >
             <header>
