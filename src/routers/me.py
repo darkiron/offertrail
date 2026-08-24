@@ -136,8 +136,9 @@ def complete_action(
     action_id: str,
     payload: CompleteActionPayload,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ):
+    user_id = profile.id
     relance = db.query(Relance).filter(Relance.id == action_id, Relance.user_id == user_id).first()
     if relance is None:
         raise HTTPException(status_code=404, detail="Action introuvable")
@@ -154,6 +155,11 @@ def complete_action(
     if payload.next_action:
         due_at = payload.next_action.get("due_at")
         if due_at:
+            # The completed action is no longer active, so count quota after
+            # transitioning it before creating its replacement.
+            relance.statut = "faite"
+            db.flush()
+            check_can_create_relance(db, profile)
             created_next = Relance(
                 candidature_id=relance.candidature_id, user_id=user_id,
                 date_prevue=datetime.fromisoformat(str(due_at).replace("Z", "+00:00")),

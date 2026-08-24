@@ -1,4 +1,5 @@
 import stripe
+import pytest
 
 from src.auth import get_current_profile
 from src.database import SessionLocal
@@ -94,7 +95,17 @@ def test_checkout_returns_stripe_url_when_configured(client, user_a, monkeypatch
     assert captured["customer"] == "cus_test_123"
 
 
-def test_checkout_rejects_second_active_subscription(client, user_a, monkeypatch):
+@pytest.mark.parametrize("subscription_status", ["active", "trialing"])
+def test_checkout_rejects_second_paid_subscription(
+    client, user_a, monkeypatch, subscription_status
+):
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).one()
+        profile.subscription_status = subscription_status
+        db.commit()
+    finally:
+        db.close()
     monkeypatch.setattr("src.routers.subscription.is_configured", lambda: True)
 
     response = client.post(

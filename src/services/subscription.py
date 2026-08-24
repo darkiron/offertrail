@@ -47,15 +47,25 @@ PLANS = {
     },
 }
 
+PAID_SUBSCRIPTION_STATUSES = frozenset({"active", "trialing"})
+
+
+def is_paid_subscription_status(subscription_status: str | None) -> bool:
+    """Return whether Stripe currently grants paid access for this status."""
+    return subscription_status in PAID_SUBSCRIPTION_STATUSES
+
 
 def get_plan_config(plan: str) -> dict:
     return PLANS.get(plan, PLANS["free"])
 
 
 def get_effective_plan(profile: Profile) -> str:
-    if profile.plan in ("pro", "ultimate"):
+    if (
+        profile.plan in ("pro", "ultimate")
+        and is_paid_subscription_status(profile.subscription_status)
+    ):
         return profile.plan
-    if profile.subscription_status == "active":
+    if is_paid_subscription_status(profile.subscription_status):
         return "pro"
     return "free"
 

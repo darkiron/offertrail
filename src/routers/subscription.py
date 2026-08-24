@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from src.auth import get_current_profile, get_jwt_payload
 from src.database import get_db
 from src.models import Profile
-from src.services.subscription import _set_cancelled, get_usage
+from src.services.subscription import _set_cancelled, get_usage, is_paid_subscription_status
 from src.services.stripe_service import (
     APP_BASE_URL,
     create_checkout_session,
@@ -60,7 +60,7 @@ def create_checkout(
     # Never create a second subscription for an already active plan. Downgrades
     # are handled from the Stripe billing portal; only an explicit upgrade may
     # start a new checkout session.
-    if profile.subscription_status == "active":
+    if is_paid_subscription_status(profile.subscription_status):
         raise HTTPException(409, "Abonnement deja actif. Modifiez votre offre depuis le portail de facturation.")
 
     if not is_configured():

@@ -12,10 +12,14 @@ from jose import jwt
 
 TEST_DB_PATH = Path("test_runtime_offertrail.db").resolve()
 TEST_JWT_SECRET = "test-jwt-secret-for-testing-only"
+TEST_JWT_ISSUER = "https://test-project.supabase.co/auth/v1"
+TEST_JWT_AUDIENCE = "authenticated"
 
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH.as_posix()}"
 os.environ["OFFERTAIL_DB_PATH"] = TEST_DB_PATH.as_posix()
 os.environ["SUPABASE_JWT_SECRET"] = TEST_JWT_SECRET
+os.environ["SUPABASE_JWT_ISSUER"] = TEST_JWT_ISSUER
+os.environ["SUPABASE_JWT_AUDIENCE"] = TEST_JWT_AUDIENCE
 
 import sqlite3
 
@@ -230,7 +234,16 @@ legacy_database.init_db()
 
 def make_token(user_id: str, email: str = "test@example.com") -> str:
     """Crée un JWT Supabase-compatible signé avec le secret de test."""
-    return jwt.encode({"sub": user_id, "email": email}, TEST_JWT_SECRET, algorithm="HS256")
+    return jwt.encode(
+        {
+            "sub": user_id,
+            "email": email,
+            "iss": TEST_JWT_ISSUER,
+            "aud": TEST_JWT_AUDIENCE,
+        },
+        TEST_JWT_SECRET,
+        algorithm="HS256",
+    )
 
 
 @pytest.fixture(autouse=True)

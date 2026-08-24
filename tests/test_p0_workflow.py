@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
 
+from src.database import SessionLocal
+from src.models import Relance
+
 
 def _application(client, headers, organization_id):
     response = client.post(
@@ -117,6 +120,43 @@ def test_complete_action_is_atomic_and_creates_next(client, user_a, ets):
     assert data["today"]["remaining_due_count"] == 0
     history = client.get(f"/candidatures/{application['id']}/events", headers=user_a["headers"]).json()
     assert any(event["type"] == "relance_envoyee" and event["contenu"] == "Message envoyé" for event in history)
+
+
+def test_complete_action_cannot_bypass_followup_quota(client, user_a, ets):
+    from tests.test_plan_entitlements import _set_plan
+
+    _set_plan(user_a["user_id"], "free", "pending")
+    application = _application(client, user_a["headers"], ets["id"])
+    action = _followup(client, user_a["headers"], application["id"], datetime.now())
+    db = SessionLocal()
+    try:
+        db.add(Relance(
+            candidature_id=application["id"],
+            user_id=user_a["user_id"],
+            date_prevue=datetime.now() + timedelta(days=1),
+            statut="a_faire",
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.post(
+        f"/me/actions/{action['id']}/complete",
+        headers=user_a["headers"],
+        json={
+            "outcome": "no_response",
+            "next_action": {"due_at": (datetime.now() + timedelta(days=3)).isoformat()},
+        },
+    )
+
+    assert response.status_code == 402
+    assert response.json()["detail"]["code"] == "RELANCE_LIMIT"
+    db = SessionLocal()
+    try:
+        unchanged = db.query(Relance).filter(Relance.id == action["id"]).one()
+        assert unchanged.statut == "a_faire"
+    finally:
+        db.close()
 
 
 def test_complete_action_cannot_cross_users(client, user_a, user_b, ets):

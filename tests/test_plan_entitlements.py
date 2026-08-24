@@ -1,7 +1,10 @@
 """Vérifie que les capacités payantes suivent le catalogue des plans."""
 
 from src.database import SessionLocal
+import pytest
+
 from src.models import Profile
+from src.services.subscription import get_effective_plan
 
 
 def _set_plan(user_id: str, plan: str, status: str) -> None:
@@ -46,3 +49,18 @@ def test_pro_timeline_is_not_exposed_when_not_included(client, user_a, ets):
     assert response.status_code == 200
     assert response.json()["capabilities"]["timeline"] is False
     assert response.json()["timeline"]["items"] == []
+
+
+@pytest.mark.parametrize("status", ["pending", "cancelled", "past_due", "unpaid", "incomplete"])
+@pytest.mark.parametrize("stored_plan", ["pro", "ultimate"])
+def test_paid_plan_is_not_effective_for_ineligible_status(status, stored_plan):
+    profile = Profile(plan=stored_plan, subscription_status=status)
+
+    assert get_effective_plan(profile) == "free"
+
+
+@pytest.mark.parametrize("status", ["active", "trialing"])
+def test_paid_plan_is_effective_for_eligible_status(status):
+    profile = Profile(plan="ultimate", subscription_status=status)
+
+    assert get_effective_plan(profile) == "ultimate"

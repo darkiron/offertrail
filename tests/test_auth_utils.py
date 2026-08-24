@@ -3,14 +3,18 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 
 from src.auth import (
     _extract_profile_names,
     _load_supabase_jwks,
+    _matching_jwks,
     _user_can_see_contact,
     get_visible_contacts,
     start_scheduler,
     _run_probite_recompute,
+    get_jwt_payload,
 )
 from src.database import SessionLocal
 from src.models import Candidature, Contact, Etablissement, Profile
@@ -69,6 +73,49 @@ def test_load_supabase_jwks_empty_keys(monkeypatch):
         assert result == []
     finally:
         auth_mod.SUPABASE_URL = original
+
+
+@pytest.mark.parametrize(
+    ("claim", "invalid_value"),
+    (("iss", "https://attacker.invalid/auth/v1"), ("aud", "service_role")),
+)
+def test_get_jwt_payload_rejects_wrong_identity_claim(monkeypatch, claim, invalid_value):
+    import src.auth as auth_mod
+    from jose import jwt as jose_jwt
+    from tests.conftest import TEST_JWT_AUDIENCE, TEST_JWT_ISSUER, TEST_JWT_SECRET
+
+    issuer = "https://project.supabase.co/auth/v1"
+    monkeypatch.setattr(auth_mod, "SUPABASE_JWT_ISSUER", issuer)
+    monkeypatch.setattr(auth_mod, "SUPABASE_JWT_AUDIENCE", "authenticated")
+    payload = {
+        "sub": str(uuid4()),
+        "iss": issuer,
+        "aud": "authenticated",
+    }
+    payload[claim] = invalid_value
+    token = jose_jwt.encode(payload, TEST_JWT_SECRET, algorithm="HS256")
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_jwt_payload(HTTPAuthorizationCredentials(scheme="Bearer", credentials=token))
+
+    assert exc_info.value.status_code == 401
+
+
+def test_matching_jwks_selects_token_kid():
+    from jose import jwt as jose_jwt
+    from tests.conftest import TEST_JWT_SECRET
+
+    token = jose_jwt.encode(
+        {"sub": str(uuid4())},
+        TEST_JWT_SECRET,
+        algorithm="HS256",
+        headers={"kid": "current-key"},
+    )
+
+    assert _matching_jwks(token, [
+        {"kid": "old-key", "alg": "ES256"},
+        {"kid": "current-key", "alg": "ES256"},
+    ]) == [{"kid": "current-key", "alg": "ES256"}]
 
 
 # ── _extract_profile_names ───────────────────────────────────────────────────
@@ -170,12 +217,14 @@ def test_get_current_profile_updates_names(client):
         db.close()
 
     from jose import jwt as jose_jwt
-    from tests.conftest import TEST_JWT_SECRET
+    from tests.conftest import TEST_JWT_AUDIENCE, TEST_JWT_ISSUER, TEST_JWT_SECRET
     payload = {
         "sub": user_id,
         "email": "update@example.com",
         "given_name": "Updated",
         "family_name": "Name",
+        "iss": TEST_JWT_ISSUER,
+        "aud": TEST_JWT_AUDIENCE,
     }
     token = jose_jwt.encode(payload, TEST_JWT_SECRET, algorithm="HS256")
     resp = client.get("/me/stats", headers={"Authorization": f"Bearer {token}"})
