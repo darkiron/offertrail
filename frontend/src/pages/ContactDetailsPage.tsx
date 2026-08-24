@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useContactDetails } from '../features/relationships/queries';
-import {
-  toLegacyContactId,
-  toLegacyOrganizationId,
-} from '../services/api/identifiers';
 import ContactEditModal from '@widgets/contacts/ContactEditModal';
 import { DetailHeader } from '@shared/ui/DetailHeader';
 import { ActionButton, ExternalAction } from '@shared/ui/Action';
@@ -96,14 +92,7 @@ export const ContactDetailsPage = () => {
     <main className={classes.page}>
       {editing && (
         <ContactEditModal
-          contact={{
-            ...data,
-            id: toLegacyContactId(data.id),
-            organization_id:
-              data.organization_id != null
-                ? toLegacyOrganizationId(data.organization_id)
-                : null,
-          }}
+          contact={data}
           organizationName={data.organization?.name}
           onClose={() => setEditing(false)}
           onSaved={() => {

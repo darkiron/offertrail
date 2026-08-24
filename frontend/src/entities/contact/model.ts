@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 const nullableText = z.string().nullable();
 const contactSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  organization_id: z.union([z.string(), z.number()]).nullable(),
+  id: z.string(),
+  organization_id: z.string().nullable(),
   first_name: z.string(),
   last_name: z.string(),
   email: nullableText,

@@ -13,7 +13,6 @@ import type {
 } from './contracts';
 import {
   resolveOrganizationId,
-  toLegacyContactId,
   toLegacyId,
   toLegacyOrganizationId,
 } from './identifiers';
@@ -161,15 +160,10 @@ export function mapPayloadToSaas(
 }
 
 export function mapContactApiToContact(contact: ContactApi): Contact {
-  const organizationId =
-    typeof contact.organization_id === 'number'
-      ? contact.organization_id
-      : contact.organization_id
-        ? toLegacyOrganizationId(contact.organization_id)
-        : null;
   return {
-    id: toLegacyContactId(contact.id),
-    organization_id: organizationId,
+    id: String(contact.id),
+    organization_id:
+      contact.organization_id != null ? String(contact.organization_id) : null,
     first_name: contact.first_name,
     last_name: contact.last_name,
     email: contact.email,

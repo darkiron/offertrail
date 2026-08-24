@@ -174,7 +174,7 @@ export const applicationService = {
     });
     return response.data;
   },
-  linkContact: async (appId: number, contactId: number) => {
+  linkContact: async (appId: number, contactId: string) => {
     const response = await contactService.linkToApplication(contactId, appId);
     return response.data;
   },
@@ -185,7 +185,7 @@ export const applicationService = {
       last_name?: string;
       email?: string | null;
       phone?: string | null;
-      organization_id?: number | null;
+      organization_id?: string | null;
       role?: string | null;
       is_recruiter?: number;
     },
