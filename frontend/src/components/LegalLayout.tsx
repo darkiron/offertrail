@@ -1,27 +1,65 @@
-import React from 'react';
+import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import '../styles/legal.css';
+import { legalDocuments } from '../legal/documents';
+import type { LegalDocumentId } from '../legal/documents';
+import classes from './LegalLayout.module.scss';
 
-interface LegalLayoutProps {
-  eyebrow: string;
-  title: string;
-  updated?: string;
-  children: React.ReactNode;
-}
+type LegalLayoutProps =
+  | { documentId: LegalDocumentId; children?: never }
+  | {
+      documentId?: never;
+      eyebrow: string;
+      title: string;
+      updated?: string;
+      children: ReactNode;
+    };
 
-export const LegalLayout: React.FC<LegalLayoutProps> = ({ eyebrow, title, updated, children }) => {
-  const { t } = useI18n();
-
+export function LegalLayout(props: LegalLayoutProps) {
+  const { locale, t } = useI18n();
+  const legalDocument = props.documentId
+    ? legalDocuments[locale][props.documentId]
+    : null;
+  const legacy = 'title' in props ? props : null;
+  useEffect(() => {
+    if (legalDocument) document.title = legalDocument.pageTitle;
+  }, [legalDocument]);
+  const title = legalDocument?.title ?? legacy?.title ?? '';
+  const eyebrow = legalDocument?.eyebrow ?? legacy?.eyebrow ?? '';
+  const updated = legalDocument?.updated ?? legacy?.updated;
   return (
-    <main className="legal-content">
-      <nav className="legal-breadcrumbs" aria-label="Breadcrumb">
-        <Link to="/">{t('common.home')}</Link><span aria-hidden="true">/</span><span>{title}</span>
+    <article
+      className={classes.content}
+      data-document={legalDocument?.id}
+      data-version={legalDocument?.version}
+    >
+      <nav className={classes.breadcrumbs} aria-label={t('common.breadcrumb')}>
+        <Link to="/">{t('common.home')}</Link>
+        <span aria-hidden="true">/</span>
+        <span>{title}</span>
       </nav>
-      <div className="legal-eyebrow">{eyebrow}</div>
-      <h1 className="legal-title">{title}</h1>
-      {updated ? <p className="legal-updated">{updated}</p> : null}
-      {children}
-    </main>
+      <div className={classes.eyebrow}>{eyebrow}</div>
+      <h1 className={classes.title}>{title}</h1>
+      {updated ? <p className={classes.updated}>{updated}</p> : null}
+      {legalDocument
+        ? legalDocument.sections.map((section) => (
+            <section key={section.heading} className={classes.section}>
+              <h2>{section.heading}</h2>
+              {section.subheading ? <h3>{section.subheading}</h3> : null}
+              {section.paragraphs?.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+              {section.items ? (
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))
+        : legacy?.children}
+    </article>
   );
-};
+}

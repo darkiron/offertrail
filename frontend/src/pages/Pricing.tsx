@@ -7,6 +7,203 @@ import { PlanCard } from '../components/PlanCard';
 import { useI18n } from '../i18n';
 import { PLAN_RANK, usePricingPlans } from '../lib/pricingPlans';
 import classes from './Pricing.module.css';
-type PlanId='free'|'pro'|'ultimate';type Period='monthly'|'yearly';
-export function Pricing(){const navigate=useNavigate();const [searchParams]=useSearchParams();const {t}=useI18n();const plans=usePricingPlans();const [sub,setSub]=useState<SubscriptionStatus|null>(null);const [loadingPlan,setLoadingPlan]=useState<PlanId|null>(null);const requestedPlan=searchParams.get('plan');const requestedPeriod=searchParams.get('period');const [selectedPlan,setSelectedPlan]=useState<PlanId|null>(requestedPlan==='pro'||requestedPlan==='ultimate'?requestedPlan:null);const [period,setPeriod]=useState<Period>(requestedPeriod==='yearly'?'yearly':'monthly');const [cgvAccepted,setCgvAccepted]=useState(false);const [promoCode,setPromoCode]=useState('');const [notice,setNotice]=useState<string|null>(null);const promoPlaceholder=import.meta.env.VITE_PROMO_PLACEHOLDER||t('landing.pricing.promoPlaceholder');useEffect(()=>{document.title=t('landing.pricing.pageTitle');void subscriptionService.getMe().then(setSub).catch(()=>{})},[t]);const currentPlan=useMemo<PlanId>(()=>sub?.plan==='pro'||sub?.plan==='ultimate'?sub.plan:'free',[sub]);const handleCheckout=async(plan:Exclude<PlanId,'free'>,chosenPeriod:Period)=>{setLoadingPlan(plan);setNotice(null);try{const checkout=await subscriptionService.checkout({plan,period:chosenPeriod,coupon:promoCode.trim()||undefined});if(checkout.mode==='stripe'&&checkout.checkout_url){window.location.assign(checkout.checkout_url);return}setSub(await subscriptionService.getMe());setNotice(t('monCompte.proActivated'))}catch{setNotice(t('monCompte.proActivateError'))}finally{setLoadingPlan(null)}};const handleCta=(id:PlanId,chosenPeriod:Period)=>{if(id==='free'||PLAN_RANK[id]<PLAN_RANK[currentPlan])return;void handleCheckout(id as Exclude<PlanId,'free'>,chosenPeriod)};return <main className={classes.page}><header className={classes.header}><div><p className={classes.kicker}>{t('landing.pricing.pageKicker')}</p><h1 className={classes.title}>{t('landing.pricing.pageTitle2')}</h1><p className={classes.subtitle}>{t('landing.pricing.pageSubtitle')}</p></div><Button variant="ghost" onClick={()=>navigate(-1)}>{t('landing.pricing.back')}</Button></header><div className={classes.controlsRow}><div className={classes.periodControl}><span className={classes.controlsLabel}>{t('landing.pricing.periodLabel')}</span><div className={classes.segmented} role="group" aria-label={t('landing.pricing.periodLabel')}><button type="button" className={period==='monthly'?classes.activePeriod:''} onClick={()=>setPeriod('monthly')}>{t('landing.pricing.monthly')}</button><button type="button" className={period==='yearly'?classes.activePeriod:''} onClick={()=>setPeriod('yearly')}>{t('landing.pricing.yearly')}</button></div>{period==='yearly'&&<span className={classes.savingsBadge}>{t('landing.pricing.savingsBadge')}</span>}</div><label className={classes.promoWrap}><span className={classes.controlsLabel}>{t('landing.pricing.promoLabel')}</span><input className="ot-control" placeholder={promoPlaceholder} value={promoCode} onChange={(event)=>setPromoCode(event.target.value.toUpperCase())}/><small>{t('landing.pricing.promoDescription')}</small></label></div>{notice&&<div className="ot-alert" data-tone={notice.includes('impossible')||notice.includes('Impossible')?'error':'success'}>{notice}</div>}<div className={classes.grid}>{plans.map((plan)=><PlanCard key={plan.id} plan={plan} isSelected={selectedPlan===plan.id} isCurrent={currentPlan===plan.id} period={period} onSelect={setSelectedPlan} onCta={handleCta} mode="app" loading={loadingPlan===plan.id} checkoutDisabled={!cgvAccepted}/>)}</div><section className={classes.checkoutPanel}><label className={classes.checkbox}><input type="checkbox" checked={cgvAccepted} onChange={(event)=>setCgvAccepted(event.target.checked)}/><span>{t('landing.pricing.cgvLabel')} <a href="/app/legal/cgv" target="_blank" rel="noreferrer">{t('landing.pricing.cgvLink')}</a> {t('landing.pricing.cgvSuffix')}</span></label><p>{t('landing.pricing.checkoutLegalHint')}</p></section><section className={classes.transparency}><p className={classes.kicker}>{t('landing.pricing.transparencyKicker')}</p><h2 className={classes.transparencyTitle}>{t('landing.pricing.transparencyTitle')}</h2><div className={classes.transparencyGrid}>{[[t('landing.pricing.transparencyItem1Title'),t('landing.pricing.transparencyItem1Desc')],[t('landing.pricing.transparencyItem2Title'),t('landing.pricing.transparencyItem2Desc')],[t('landing.pricing.transparencyItem3Title'),t('landing.pricing.transparencyItem3Desc')]].map(([title,description])=><div key={title} className={classes.transparencyItem}><h3>{title}</h3><p>{description}</p></div>)}</div></section></main>}
+type PlanId = 'free' | 'pro' | 'ultimate';
+type Period = 'monthly' | 'yearly';
+export function Pricing() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { t } = useI18n();
+  const plans = usePricingPlans();
+  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
+  const requestedPlan = searchParams.get('plan');
+  const requestedPeriod = searchParams.get('period');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(
+    requestedPlan === 'pro' || requestedPlan === 'ultimate'
+      ? requestedPlan
+      : null,
+  );
+  const [period, setPeriod] = useState<Period>(
+    requestedPeriod === 'yearly' ? 'yearly' : 'monthly',
+  );
+  const [cgvAccepted, setCgvAccepted] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
+  const promoPlaceholder =
+    import.meta.env.VITE_PROMO_PLACEHOLDER ||
+    t('landing.pricing.promoPlaceholder');
+  useEffect(() => {
+    document.title = t('landing.pricing.pageTitle');
+    void subscriptionService
+      .getMe()
+      .then(setSub)
+      .catch(() => {});
+  }, [t]);
+  const currentPlan = useMemo<PlanId>(
+    () => (sub?.plan === 'pro' || sub?.plan === 'ultimate' ? sub.plan : 'free'),
+    [sub],
+  );
+  const handleCheckout = async (
+    plan: Exclude<PlanId, 'free'>,
+    chosenPeriod: Period,
+  ) => {
+    setLoadingPlan(plan);
+    setNotice(null);
+    try {
+      const checkout = await subscriptionService.checkout({
+        plan,
+        period: chosenPeriod,
+        coupon: promoCode.trim() || undefined,
+      });
+      if (checkout.mode === 'stripe' && checkout.checkout_url) {
+        window.location.assign(checkout.checkout_url);
+        return;
+      }
+      setSub(await subscriptionService.getMe());
+      setNotice(t('monCompte.proActivated'));
+    } catch {
+      setNotice(t('monCompte.proActivateError'));
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+  const handleCta = (id: PlanId, chosenPeriod: Period) => {
+    if (id === 'free' || PLAN_RANK[id] < PLAN_RANK[currentPlan]) return;
+    void handleCheckout(id as Exclude<PlanId, 'free'>, chosenPeriod);
+  };
+  return (
+    <main className={classes.page}>
+      <header className={classes.header}>
+        <div>
+          <p className={classes.kicker}>{t('landing.pricing.pageKicker')}</p>
+          <h1 className={classes.title}>{t('landing.pricing.pageTitle2')}</h1>
+          <p className={classes.subtitle}>
+            {t('landing.pricing.pageSubtitle')}
+          </p>
+        </div>
+        <Button variant="ghost" onClick={() => navigate(-1)}>
+          {t('landing.pricing.back')}
+        </Button>
+      </header>
+      <div className={classes.controlsRow}>
+        <div className={classes.periodControl}>
+          <span className={classes.controlsLabel}>
+            {t('landing.pricing.periodLabel')}
+          </span>
+          <div
+            className={classes.segmented}
+            role="group"
+            aria-label={t('landing.pricing.periodLabel')}
+          >
+            <button
+              type="button"
+              className={period === 'monthly' ? classes.activePeriod : ''}
+              onClick={() => setPeriod('monthly')}
+            >
+              {t('landing.pricing.monthly')}
+            </button>
+            <button
+              type="button"
+              className={period === 'yearly' ? classes.activePeriod : ''}
+              onClick={() => setPeriod('yearly')}
+            >
+              {t('landing.pricing.yearly')}
+            </button>
+          </div>
+          {period === 'yearly' && (
+            <span className={classes.savingsBadge}>
+              {t('landing.pricing.savingsBadge')}
+            </span>
+          )}
+        </div>
+        <label className={classes.promoWrap}>
+          <span className={classes.controlsLabel}>
+            {t('landing.pricing.promoLabel')}
+          </span>
+          <input
+            className="ot-control"
+            placeholder={promoPlaceholder}
+            value={promoCode}
+            onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+          />
+          <small>{t('landing.pricing.promoDescription')}</small>
+        </label>
+      </div>
+      {notice && (
+        <div
+          className="ot-alert"
+          data-tone={
+            notice.includes('impossible') || notice.includes('Impossible')
+              ? 'error'
+              : 'success'
+          }
+        >
+          {notice}
+        </div>
+      )}
+      <div className={classes.grid}>
+        {plans.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isSelected={selectedPlan === plan.id}
+            isCurrent={currentPlan === plan.id}
+            period={period}
+            onSelect={setSelectedPlan}
+            onCta={handleCta}
+            mode="app"
+            loading={loadingPlan === plan.id}
+            checkoutDisabled={!cgvAccepted}
+          />
+        ))}
+      </div>
+      <section className={classes.checkoutPanel}>
+        <label className={classes.checkbox}>
+          <input
+            type="checkbox"
+            checked={cgvAccepted}
+            onChange={(event) => setCgvAccepted(event.target.checked)}
+          />
+          <span>
+            {t('landing.pricing.cgvLabel')}{' '}
+            <a href="/cgv" target="_blank" rel="noreferrer">
+              {t('landing.pricing.cgvLink')}
+            </a>{' '}
+            {t('landing.pricing.cgvSuffix')}
+          </span>
+        </label>
+        <p>{t('landing.pricing.checkoutLegalHint')}</p>
+      </section>
+      <section className={classes.transparency}>
+        <p className={classes.kicker}>
+          {t('landing.pricing.transparencyKicker')}
+        </p>
+        <h2 className={classes.transparencyTitle}>
+          {t('landing.pricing.transparencyTitle')}
+        </h2>
+        <div className={classes.transparencyGrid}>
+          {[
+            [
+              t('landing.pricing.transparencyItem1Title'),
+              t('landing.pricing.transparencyItem1Desc'),
+            ],
+            [
+              t('landing.pricing.transparencyItem2Title'),
+              t('landing.pricing.transparencyItem2Desc'),
+            ],
+            [
+              t('landing.pricing.transparencyItem3Title'),
+              t('landing.pricing.transparencyItem3Desc'),
+            ],
+          ].map(([title, description]) => (
+            <div key={title} className={classes.transparencyItem}>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
 export default Pricing;

@@ -15,6 +15,11 @@ export const en = {
     },
     common: {
       languageLabel: 'Language',
+      breadcrumb: 'Breadcrumb',
+      primaryNavigation: 'Primary navigation',
+      changeTheme: 'Change theme',
+      openMenu: 'Open menu',
+      closeMenu: 'Close menu',
       home: 'Home',
       close: 'Close',
       cancel: 'Cancel',
@@ -27,6 +32,10 @@ export const en = {
       backToOrganizations: 'Back to companies',
       backToContacts: 'Back to contacts',
       noData: 'No data available.',
+      notFoundEyebrow: 'ERROR 404',
+      notFoundTitle: 'This trail leads nowhere.',
+      notFoundBody: 'The requested page does not exist or has moved.',
+      notFoundBack: 'Return to the OfferTrail home page',
     },
     dashboard: {
       kicker: 'Control centre',

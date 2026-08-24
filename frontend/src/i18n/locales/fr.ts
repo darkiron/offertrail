@@ -18,6 +18,11 @@ export const fr = {
     },
     common: {
       languageLabel: 'Langue',
+      breadcrumb: 'Fil d’Ariane',
+      primaryNavigation: 'Navigation principale',
+      changeTheme: 'Changer le thème',
+      openMenu: 'Ouvrir le menu',
+      closeMenu: 'Fermer le menu',
       home: 'Accueil',
       close: 'Fermer',
       cancel: 'Annuler',
@@ -30,6 +35,10 @@ export const fr = {
       backToOrganizations: 'Retour aux etablissements',
       backToContacts: 'Retour aux contacts',
       noData: 'Aucune donnee disponible.',
+      notFoundEyebrow: 'ERREUR 404',
+      notFoundTitle: 'Cette piste ne mène nulle part.',
+      notFoundBody: 'La page demandée n’existe pas ou a été déplacée.',
+      notFoundBack: 'Revenir à l’accueil OfferTrail',
     },
     dashboard: {
       kicker: 'Poste de pilotage',
