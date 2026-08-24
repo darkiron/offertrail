@@ -1,7 +1,7 @@
 import { Button } from './atoms/Button';
 import { useI18n } from '../i18n';
 import type { BillingPeriod, PlanId, PricingPlan } from '../lib/pricingPlans';
-import classes from './PlanCard.module.css';
+import classes from './PlanCard.module.scss';
 
 interface Props {
   plan: PricingPlan;

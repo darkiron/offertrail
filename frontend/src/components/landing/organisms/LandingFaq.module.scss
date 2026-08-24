@@ -92,7 +92,8 @@
   h2 {
     max-width: 900px;
     margin: 0;
-    font: 500 clamp(3.2rem, 8vw, 7rem) / 0.88 var(--font-display, Georgia, serif);
+    font: 500 clamp(3.2rem, 8vw, 7rem) / 0.88
+      var(--font-display, Georgia, serif);
     letter-spacing: -0.065em;
   }
 

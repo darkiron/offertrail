@@ -17,7 +17,12 @@ export interface AuthContextType {
   profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signUp: (email: string, password: string, meta?: { prenom?: string; nom?: string; plan?: string; period?: string }) => Promise<void>;
+  isPasswordRecovery: boolean;
+  signUp: (
+    email: string,
+    password: string,
+    meta?: { prenom?: string; nom?: string; plan?: string; period?: string },
+  ) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;

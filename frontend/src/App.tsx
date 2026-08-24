@@ -4,17 +4,15 @@ import {
   Routes,
   Route,
   Navigate,
-  useNavigate,
+  Link,
   useLocation,
   useParams,
 } from 'react-router-dom';
-import { supabase } from './lib/supabase';
-
 import { I18nProvider, useI18n } from './i18n';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
-import appClasses from './App.module.css';
+import appClasses from './App.module.scss';
 
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout as PublicLayout } from './templates/LandingLayout';
@@ -97,12 +95,12 @@ function ScrollToTop() {
 function NotFoundPage() {
   const { t } = useI18n();
   useEffect(() => {
-    document.title = 'Page introuvable — OfferTrail';
+    document.title = t('common.notFoundPageTitle');
     const robots = document.querySelector('meta[name="robots"]');
     robots?.setAttribute('content', 'noindex,follow');
     return () =>
       robots?.setAttribute('content', 'index,follow,max-image-preview:large');
-  }, []);
+  }, [t]);
 
   return (
     <main className={appClasses.notFound}>
@@ -111,7 +109,7 @@ function NotFoundPage() {
       </p>
       <h1>{t('common.notFoundTitle')}</h1>
       <p>{t('common.notFoundBody')}</p>
-      <a href="/">{t('common.notFoundBack')}</a>
+      <Link to="/">{t('common.notFoundBack')}</Link>
     </main>
   );
 }
@@ -127,19 +125,6 @@ function RouteLoading() {
 }
 
 function AppRoutes() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        navigate('/reset-password', { replace: true });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
   return (
     <>
       <ScrollToTop />
@@ -150,6 +135,7 @@ function AppRoutes() {
             <Route index element={<LandingPage />} />
             <Route path="/cgv" element={<TermsPage />} />
             <Route path="/terms" element={<Navigate to="/cgv" replace />} />
+            <Route path="/cgu" element={<CGU />} />
             <Route path="/mentions-legales" element={<LegalNoticePage />} />
             <Route
               path="/legal-notice"
@@ -159,10 +145,13 @@ function AppRoutes() {
             <Route path="/privacy" element={<Navigate to="/rgpd" replace />} />
             <Route path="/contact" element={<ContactPage />} />
             {/* Public — accessible sans connexion (requis Stripe live) */}
-            <Route path="/app/legal/cgu" element={<CGU />} />
+            <Route
+              path="/app/legal/cgu"
+              element={<Navigate to="/cgu" replace />}
+            />
             <Route
               path="/app/legal/terms-of-use"
-              element={<Navigate to="/app/legal/cgu" replace />}
+              element={<Navigate to="/cgu" replace />}
             />
             <Route
               path="/app/legal/confidentialite"

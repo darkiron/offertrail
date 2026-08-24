@@ -1,0 +1,96 @@
+.card {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.6rem, 5vw, 2.5rem);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-lg);
+  background: var(--ot-paper-raised);
+  box-shadow: var(--ot-shadow-float);
+}
+
+.card h1 {
+  margin: 0.25rem 0 0;
+  font:
+    500 clamp(2rem, 5vw, 2.8rem) / 1 Georgia,
+    serif;
+  letter-spacing: -0.055em;
+}
+
+.card > p {
+  margin: 0;
+  color: var(--ot-muted);
+  line-height: 1.55;
+}
+
+.back {
+  width: fit-content;
+  margin-bottom: 0.7rem;
+  color: var(--ot-muted);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.fieldError {
+  color: var(--ot-danger);
+  font-size: 0.72rem;
+}
+
+.hint {
+  color: var(--ot-muted);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.meta {
+  font-size: 0.78rem;
+}
+
+.meta a {
+  color: var(--ot-accent);
+  font-weight: 750;
+}
+
+.card > :global(.ot-button) {
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
+.heading {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  color: var(--ot-accent);
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+@media (width <= 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

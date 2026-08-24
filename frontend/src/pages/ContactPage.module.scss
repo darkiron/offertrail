@@ -1,0 +1,82 @@
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.infoCard,
+.formSection {
+  padding: 1.5rem;
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-paper-raised);
+}
+
+.infoCard {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.infoIcon {
+  width: fit-content;
+  color: var(--ot-accent);
+  font:
+    800 0.75rem/1 Georgia,
+    serif;
+  letter-spacing: 0.04em;
+}
+
+.infoCard h2,
+.formSection h2 {
+  margin: 0;
+  color: var(--ot-ink);
+  font-size: 0.95rem;
+}
+
+.infoCard p,
+.hint {
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.infoCard a {
+  width: fit-content;
+  color: var(--ot-accent);
+  overflow-wrap: anywhere;
+}
+
+.formSection {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.form button {
+  width: fit-content;
+}
+
+@media (width <= 560px) {
+  .cards,
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

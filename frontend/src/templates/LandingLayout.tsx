@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconMenu2, IconMoon, IconSun, IconX } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
 import type { TranslationKey } from '../i18n';
@@ -22,6 +22,8 @@ export function LandingLayout() {
     () => localStorage.getItem('offertrail.color-scheme') === 'dark',
   );
   const { t } = useI18n();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLElement>(null);
   const toggleTheme = () => {
     setDark((current) => {
       const next = !current;
@@ -32,11 +34,30 @@ export function LandingLayout() {
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileMenuOpen(false);
+    const menu = mobileMenuRef.current;
+    const focusable = menu?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.[0]?.focus();
+    const keepFocusInMenu = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab' || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
+    document.addEventListener('keydown', keepFocusInMenu);
+    return () => document.removeEventListener('keydown', keepFocusInMenu);
   }, [mobileMenuOpen]);
   const renderNavigation = () =>
     publicNavigation.map((item) => (
@@ -51,6 +72,9 @@ export function LandingLayout() {
     ));
   return (
     <div className={classes.root} data-theme={dark ? 'dark' : 'light'}>
+      <a className={classes.skipLink} href="#public-content">
+        {t('common.skipToContent')}
+      </a>
       <nav className={classes.nav} aria-label={t('common.primaryNavigation')}>
         <div className={classes.navInner}>
           <PublicBrand />
@@ -90,6 +114,7 @@ export function LandingLayout() {
               )}
             </button>
             <button
+              ref={menuButtonRef}
               className={classes.menuButton}
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
@@ -110,6 +135,7 @@ export function LandingLayout() {
       </nav>
       {mobileMenuOpen ? (
         <nav
+          ref={mobileMenuRef}
           id="public-mobile-menu"
           className={classes.mobileMenu}
           aria-label={t('common.primaryNavigation')}
@@ -132,7 +158,7 @@ export function LandingLayout() {
           <LanguageSwitcher />
         </nav>
       ) : null}
-      <main className={classes.main}>
+      <main id="public-content" className={classes.main} tabIndex={-1}>
         <Outlet />
       </main>
       <footer className={classes.footer}>
@@ -151,7 +177,7 @@ export function LandingLayout() {
             <a href="/#tarifs" className={classes.footerLink}>
               {t('landing.footer.pricing')}
             </a>
-            <Link to="/app/legal/cgu" className={classes.footerLink}>
+            <Link to="/cgu" className={classes.footerLink}>
               {t('landing.footer.terms')}
             </Link>
             <Link to="/rgpd" className={classes.footerLink}>

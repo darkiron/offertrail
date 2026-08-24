@@ -1,20 +1,62 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import classes from './AppErrorBoundary.module.css';
+import { useI18n } from '../i18n';
+import classes from './AppErrorBoundary.module.scss';
 
-interface Props { children: ReactNode }
-interface State { failed: boolean }
+interface Props {
+  children: ReactNode;
+  copy: {
+    eyebrow: string;
+    title: string;
+    reload: string;
+  };
+}
+interface State {
+  failed: boolean;
+}
 
-export class AppErrorBoundary extends Component<Props, State> {
+class AppErrorBoundaryInner extends Component<Props, State> {
   state: State = { failed: false };
 
-  static getDerivedStateFromError(): State { return { failed: true }; }
+  static getDerivedStateFromError(): State {
+    return { failed: true };
+  }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('OfferTrail app area failed', error, info.componentStack);
   }
 
   render() {
-    if (this.state.failed) return <section className={classes.fallback} role="alert"><p>La zone n’a pas pu s’afficher</p><h1>Votre session et vos données sont intactes.</h1><button type="button" onClick={() => { this.setState({ failed: false }); window.location.reload(); }}>Recharger cette page</button></section>;
+    if (this.state.failed)
+      return (
+        <section className={classes.fallback} role="alert">
+          <p>{this.props.copy.eyebrow}</p>
+          <h1>{this.props.copy.title}</h1>
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ failed: false });
+              window.location.reload();
+            }}
+          >
+            {this.props.copy.reload}
+          </button>
+        </section>
+      );
     return this.props.children;
   }
+}
+
+export function AppErrorBoundary({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  return (
+    <AppErrorBoundaryInner
+      copy={{
+        eyebrow: t('common.errorBoundary.eyebrow'),
+        title: t('common.errorBoundary.title'),
+        reload: t('common.errorBoundary.reload'),
+      }}
+    >
+      {children}
+    </AppErrorBoundaryInner>
+  );
 }

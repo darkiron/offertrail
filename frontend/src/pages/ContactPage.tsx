@@ -1,107 +1,132 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { LegalLayout } from '../components/LegalLayout';
-import { useI18n } from '../i18n';
 import { LEGAL_CONFIG } from '../config/legal';
+import { useI18n } from '../i18n';
+import classes from './ContactPage.module.scss';
 
-import classes from './ContactPage.module.css';
-
-const C = {
-  fr: {
-    pageTitle: 'Contact — OfferTrail',
-    eyebrow: 'Support & assistance',
-    title: 'Nous contacter',
-    updated: 'Une question, un bug, une demande RGPD ? On vous répond sous 48h ouvrées.',
-    emailLabel: 'Email direct',
-    delayLabel: 'Délai de réponse',
-    delayValue: 'Sous 48h ouvrées en général.',
-    formTitle: 'Envoyer un message',
-    success: 'Message envoyé — merci ! On vous répond dès que possible.',
-    name: 'Nom', namePlaceholder: 'Votre nom',
-    email: 'Email', emailPlaceholder: 'vous@exemple.fr',
-    subject: 'Sujet', subjectPlaceholder: "Question sur l'abonnement, bug, demande RGPD...",
-    message: 'Message', messagePlaceholder: 'Décrivez votre demande...',
-    send: 'Envoyer le message', sending: 'Envoi...',
-  },
-  en: {
-    pageTitle: 'Contact — OfferTrail',
-    eyebrow: 'Support & assistance',
-    title: 'Contact us',
-    updated: 'A question, a bug, a GDPR request? We reply within 48 business hours.',
-    emailLabel: 'Direct email',
-    delayLabel: 'Response time',
-    delayValue: 'Usually within 48 business hours.',
-    formTitle: 'Send a message',
-    success: 'Message sent — thank you! We will get back to you as soon as possible.',
-    name: 'Name', namePlaceholder: 'Your name',
-    email: 'Email', emailPlaceholder: 'you@example.com',
-    subject: 'Subject', subjectPlaceholder: 'Subscription question, bug, GDPR request...',
-    message: 'Message', messagePlaceholder: 'Describe your request...',
-    send: 'Send message', sending: 'Sending...',
-  },
+type ContactForm = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+const EMPTY_FORM: ContactForm = {
+  name: '',
+  email: '',
+  subject: '',
+  message: '',
 };
 
-export const ContactPage: React.FC = () => {
-  const { locale } = useI18n();
-  const c = locale === 'en' ? C.en : C.fr;
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+export const ContactPage = () => {
+  const { t } = useI18n();
+  const [form, setForm] = useState<ContactForm>(EMPTY_FORM);
 
-  React.useEffect(() => { document.title = c.pageTitle; }, [c.pageTitle]);
+  useEffect(() => {
+    document.title = t('contactPage.pageTitle');
+  }, [t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    setSent(true);
+  const update = (field: keyof ContactForm, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const subject = form.subject.trim() || t('contactPage.emailSubject');
+    const body = `${t('contactPage.emailFrom')}: ${form.name} <${form.email}>\n\n${form.message}`;
+    window.location.assign(
+      `mailto:${LEGAL_CONFIG.company.email}?${new URLSearchParams({ subject, body })}`,
+    );
   };
 
   return (
-    <LegalLayout eyebrow={c.eyebrow} title={c.title} updated={c.updated}>
+    <LegalLayout
+      eyebrow={t('contactPage.eyebrow')}
+      title={t('contactPage.title')}
+      updated={t('contactPage.introduction')}
+    >
       <div className={classes.cards}>
-        <div className={classes.infoCard}>
-          <div className={classes.infoIcon}>✉️</div>
-          <h3>{c.emailLabel}</h3>
-          <a href={`mailto:${LEGAL_CONFIG.company.email}`}>{LEGAL_CONFIG.company.email}</a>
-        </div>
-        <div className={classes.infoCard}>
-          <div className={classes.infoIcon}>⏱️</div>
-          <h3>{c.delayLabel}</h3>
-          <p>{c.delayValue}</p>
-        </div>
+        <section className={classes.infoCard}>
+          <span className={classes.infoIcon} aria-hidden="true">
+            @
+          </span>
+          <h2>{t('contactPage.emailLabel')}</h2>
+          <a href={`mailto:${LEGAL_CONFIG.company.email}`}>
+            {LEGAL_CONFIG.company.email}
+          </a>
+        </section>
+        <section className={classes.infoCard}>
+          <span className={classes.infoIcon} aria-hidden="true">
+            48h
+          </span>
+          <h2>{t('contactPage.responseLabel')}</h2>
+          <p>{t('contactPage.responseValue')}</p>
+        </section>
       </div>
 
-      <div className="legal-section">
-        <h2>{c.formTitle}</h2>
-        {sent ? (
-          <div className={classes.success}>{c.success}</div>
-        ) : (
-          <form className={classes.form} onSubmit={handleSubmit}>
-            <div className={classes.row}>
-              <div className={classes.field}>
-                <label className={classes.label}>{c.name}</label>
-                <input className={classes.input} type="text" placeholder={c.namePlaceholder} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </div>
-              <div className={classes.field}>
-                <label className={classes.label}>{c.email}</label>
-                <input className={classes.input} type="email" placeholder={c.emailPlaceholder} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-              </div>
-            </div>
-            <div className={classes.field}>
-              <label className={classes.label}>{c.subject}</label>
-              <input className={classes.input} type="text" placeholder={c.subjectPlaceholder} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required />
-            </div>
-            <div className={classes.field}>
-              <label className={classes.label}>{c.message}</label>
-              <textarea className={classes.textarea} placeholder={c.messagePlaceholder} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
-            </div>
-            <button className={classes.submit} type="submit" disabled={loading}>
-              {loading ? c.sending : c.send}
-            </button>
-          </form>
-        )}
-      </div>
+      <section
+        className={classes.formSection}
+        aria-labelledby="contact-form-title"
+      >
+        <h2 id="contact-form-title">{t('contactPage.formTitle')}</h2>
+        <p className={classes.hint}>{t('contactPage.formHint')}</p>
+        <form className={classes.form} onSubmit={handleSubmit}>
+          <div className={classes.row}>
+            <label className="ot-field" htmlFor="contact-name">
+              <span>{t('contactPage.name')}</span>
+              <input
+                id="contact-name"
+                className="ot-control"
+                type="text"
+                autoComplete="name"
+                placeholder={t('contactPage.namePlaceholder')}
+                value={form.name}
+                onChange={(event) => update('name', event.target.value)}
+                required
+              />
+            </label>
+            <label className="ot-field" htmlFor="contact-email">
+              <span>{t('contactPage.email')}</span>
+              <input
+                id="contact-email"
+                className="ot-control"
+                type="email"
+                autoComplete="email"
+                placeholder={t('contactPage.emailPlaceholder')}
+                value={form.email}
+                onChange={(event) => update('email', event.target.value)}
+                required
+              />
+            </label>
+          </div>
+          <label className="ot-field" htmlFor="contact-subject">
+            <span>{t('contactPage.subject')}</span>
+            <input
+              id="contact-subject"
+              className="ot-control"
+              type="text"
+              placeholder={t('contactPage.subjectPlaceholder')}
+              value={form.subject}
+              onChange={(event) => update('subject', event.target.value)}
+              required
+            />
+          </label>
+          <label className="ot-field" htmlFor="contact-message">
+            <span>{t('contactPage.message')}</span>
+            <textarea
+              id="contact-message"
+              className={`ot-control ${classes.textarea}`}
+              placeholder={t('contactPage.messagePlaceholder')}
+              value={form.message}
+              onChange={(event) => update('message', event.target.value)}
+              required
+            />
+          </label>
+          <button className="ot-button" data-variant="primary" type="submit">
+            {t('contactPage.send')}
+          </button>
+        </form>
+      </section>
     </LegalLayout>
   );
 };

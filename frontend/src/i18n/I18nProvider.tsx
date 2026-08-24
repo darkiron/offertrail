@@ -18,7 +18,8 @@ const getValue = (locale: Locale, key: TranslationKey): string => {
   let current: unknown = locales[locale];
 
   for (const part of key.split('.')) {
-    if (!current || typeof current !== 'object' || !(part in current)) return key;
+    if (!current || typeof current !== 'object' || !(part in current))
+      return key;
     current = (current as Record<string, unknown>)[part];
   }
 
@@ -37,11 +38,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const value = useMemo<I18nValue>(() => ({
-    locale,
-    setLocale,
-    t: (key) => getValue(locale, key),
-  }), [locale, setLocale]);
+  const value = useMemo<I18nValue>(
+    () => ({
+      locale,
+      setLocale,
+      t: (key) => getValue(locale, key),
+    }),
+    [locale, setLocale],
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

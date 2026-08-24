@@ -1,5 +1,5 @@
 .page {
-  composes: shellnarrow from '../styles/appShell.module.css';
+  composes: shell-narrow from '../styles/appShell.module.scss';
 }
 
 .header {

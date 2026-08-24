@@ -7,8 +7,9 @@ export const locales = { en, fr } as const;
 export type TranslationKey = TranslationKeyOf<typeof en>;
 
 type IsEqual<Left, Right> =
-  (<Type>() => Type extends Left ? 1 : 2) extends
-  (<Type>() => Type extends Right ? 1 : 2)
+  (<Type>() => Type extends Left ? 1 : 2) extends <Type>() => Type extends Right
+    ? 1
+    : 2
     ? true
     : false;
 
