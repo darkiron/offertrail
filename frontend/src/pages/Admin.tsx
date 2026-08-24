@@ -35,7 +35,7 @@ import {
   YAxis,
 } from 'recharts';
 import { IconDownload, IconSearch } from '@tabler/icons-react';
-import { axiosInstance } from '../services/api/client';
+import { http as axiosInstance } from '@shared/api/http';
 import { useI18n } from '../i18n';
 import classes from './Admin.module.scss';
 

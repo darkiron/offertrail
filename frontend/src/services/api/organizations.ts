@@ -1,5 +1,5 @@
 import type { Organization } from '../../types';
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 import type {
   EtablissementApi,
   OrganizationPortfolioPage,

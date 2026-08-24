@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { organizationService } from '../services/api/organizations';
+import {
+  relationshipApi,
+  relationshipKeys,
+} from '../features/relationships/queries';
 import {
   useListingController,
   usePaginatedListing,
@@ -36,12 +39,14 @@ export const OrganizationsPage = () => {
   const role = listing.value('role');
   const sort = listing.value('sort');
   const result = usePaginatedListing(
-    [
-      'organization-portfolio',
-      { page: listing.page, q: listing.query, role, sort },
-    ],
+    relationshipKeys.organizationPortfolio({
+      page: listing.page,
+      q: listing.query,
+      role,
+      sort,
+    }),
     () =>
-      organizationService.getPortfolio({
+      relationshipApi.organizationPortfolio({
         page: listing.page,
         per_page: 15,
         q: listing.query || undefined,

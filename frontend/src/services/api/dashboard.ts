@@ -1,11 +1,6 @@
-import type { TodayData } from '../../types';
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 
 export const dashboardService = {
-  getToday: async () => {
-    const response = await axiosInstance.get<TodayData>('/me/today');
-    return response.data;
-  },
   completeAction: async (
     actionId: string,
     payload: {

@@ -1,4 +1,4 @@
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 
 export interface ProfileUpdate {
   prenom?: string;

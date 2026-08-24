@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { contactService } from '../services/api/contacts';
+import {
+  relationshipApi,
+  relationshipKeys,
+} from '../features/relationships/queries';
 import {
   useListingController,
   usePaginatedListing,
@@ -41,9 +44,13 @@ export const ContactsPage = () => {
   const listing = useListingController('/app/contacts', { view: 'all' });
   const view = listing.value('view') as View;
   const result = usePaginatedListing(
-    ['contact-portfolio', { page: listing.page, q: listing.query, view }],
+    relationshipKeys.contactPortfolio({
+      page: listing.page,
+      q: listing.query,
+      view,
+    }),
     () =>
-      contactService.getPortfolio({
+      relationshipApi.contactPortfolio({
         page: listing.page,
         per_page: 15,
         q: listing.query || undefined,

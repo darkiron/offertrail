@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { contactService } from '../services/api/contacts';
-import type { Contact } from '../types';
+import { useContactDetails } from '../features/relationships/queries';
+import {
+  toLegacyContactId,
+  toLegacyOrganizationId,
+} from '../services/api/identifiers';
 import ContactEditModal from '../components/organisms/ContactEditModal';
 import { DetailHeader } from '../components/organisms/DetailHeader';
 import { ActionButton, ExternalAction } from '../components/atoms/Action';
@@ -24,24 +26,6 @@ import {
 } from '../features/relationships/locale';
 import { useRelationshipAuthRedirect } from '../features/relationships/auth';
 
-type Details = Contact & {
-  organization: { id: string; name: string; type: string } | null;
-  applications: Array<{
-    id: string;
-    title: string;
-    company: string;
-    applied_at: string | null;
-    status: string;
-  }>;
-  events: Array<{
-    id: string | number;
-    ts: string;
-    type: string;
-    event_type?: string;
-    payload?: Record<string, unknown>;
-    application?: { id: string; title: string; status: string };
-  }>;
-};
 type Tab = 'overview' | 'applications' | 'activity';
 export const ContactDetailsPage = () => {
   const { locale } = useI18n();
@@ -59,11 +43,7 @@ export const ContactDetailsPage = () => {
     scrollY?: number;
   } | null;
   const from = navigationState?.from ?? '/app/contacts';
-  const query = useQuery<Details>({
-    queryKey: ['contact-details', id],
-    queryFn: () => contactService.getById(id!),
-    enabled: Boolean(id),
-  });
+  const query = useContactDetails(id);
   const data = query.data;
   useRelationshipAuthRedirect(query.error);
 
@@ -119,7 +99,14 @@ export const ContactDetailsPage = () => {
     <main className={classes.page}>
       {editing && (
         <ContactEditModal
-          contact={data}
+          contact={{
+            ...data,
+            id: toLegacyContactId(data.id),
+            organization_id:
+              data.organization_id != null
+                ? toLegacyOrganizationId(data.organization_id)
+                : null,
+          }}
           organizationName={data.organization?.name}
           onClose={() => setEditing(false)}
           onSaved={() => {

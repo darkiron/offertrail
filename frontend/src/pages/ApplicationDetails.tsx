@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { applicationService, dashboardService } from '../services/api';
 import classes from './ApplicationDetails.module.scss';
@@ -17,6 +17,8 @@ import { WorkflowApplicationEditModal } from '../components/organisms/WorkflowAp
 import { EntityLink } from '../components/atoms/EntityLink';
 import { StatePanel } from '../components/molecules/StatePanel';
 import { useI18n } from '../i18n';
+import { useApplicationWorkspaceQuery } from '@features/applications/detail/useApplicationWorkspaceQuery';
+import { applicationKeys } from '@entities/application/queryKeys';
 
 function formatDate(
   value: string | null | undefined,
@@ -80,11 +82,7 @@ export function ApplicationDetails() {
     scrollY?: number;
   } | null;
   const from = navigationState?.from ?? '/app/candidatures';
-  const query = useQuery({
-    queryKey: ['application-workspace', id],
-    queryFn: () => applicationService.getWorkspace(id!),
-    enabled: Boolean(id),
-  });
+  const query = useApplicationWorkspaceQuery(id);
   const complete = useMutation({
     mutationFn: () =>
       dashboardService.completeAction(query.data!.next_action!.id, {
@@ -96,8 +94,8 @@ export function ApplicationDetails() {
       setNote('');
       await Promise.all([
         query.refetch(),
-        queryClient.invalidateQueries({ queryKey: ['today'] }),
-        queryClient.invalidateQueries({ queryKey: ['workflow-applications'] }),
+        queryClient.invalidateQueries({ queryKey: applicationKeys.today() }),
+        queryClient.invalidateQueries({ queryKey: applicationKeys.lists() }),
       ]);
     },
   });
@@ -112,8 +110,8 @@ export function ApplicationDetails() {
       setDueAt('');
       await Promise.all([
         query.refetch(),
-        queryClient.invalidateQueries({ queryKey: ['today'] }),
-        queryClient.invalidateQueries({ queryKey: ['workflow-applications'] }),
+        queryClient.invalidateQueries({ queryKey: applicationKeys.today() }),
+        queryClient.invalidateQueries({ queryKey: applicationKeys.lists() }),
       ]);
     },
   });
@@ -188,9 +186,11 @@ export function ApplicationDetails() {
             setEditing(false);
             void Promise.all([
               query.refetch(),
-              queryClient.invalidateQueries({ queryKey: ['today'] }),
               queryClient.invalidateQueries({
-                queryKey: ['workflow-applications'],
+                queryKey: applicationKeys.today(),
+              }),
+              queryClient.invalidateQueries({
+                queryKey: applicationKeys.lists(),
               }),
             ]);
           }}

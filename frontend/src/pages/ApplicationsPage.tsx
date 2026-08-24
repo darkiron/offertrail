@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useWorkflowApplications } from '../hooks/useApplications';
+import { useApplicationsQuery } from '@features/applications/list/useApplicationsQuery';
 import { useListingController } from '../hooks/useListingController';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import classes from './ApplicationsPage.module.scss';
@@ -88,7 +88,7 @@ export function ApplicationsPage() {
     }),
     [listing.query, listing.page, status, due, sort, includeClosed],
   );
-  const query = useWorkflowApplications(params);
+  const query = useApplicationsQuery(params);
   const data = query.data;
   const hasFilters = Boolean(params.q || status || due || includeClosed);
 

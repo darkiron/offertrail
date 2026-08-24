@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { organizationService } from '../services/api/organizations';
+import { useOrganizationWorkspace } from '../features/relationships/queries';
 import classes from './CompanyDetailsPage.module.scss';
 import {
   ActionButton,
@@ -44,11 +43,7 @@ export const CompanyDetailsPage = () => {
     scrollY?: number;
   } | null;
   const from = navigationState?.from ?? '/app/etablissements';
-  const query = useQuery({
-    queryKey: ['organization-workspace', id],
-    queryFn: () => organizationService.getWorkspace(id!),
-    enabled: Boolean(id),
-  });
+  const query = useOrganizationWorkspace(id);
   const data = query.data;
   useRelationshipAuthRedirect(query.error);
 

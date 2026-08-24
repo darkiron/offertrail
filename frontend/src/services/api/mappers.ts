@@ -4,7 +4,7 @@ import type {
   Organization,
   OrganizationType,
 } from '../../types';
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 import type {
   ApplicationPayload,
   CandidatureApi,

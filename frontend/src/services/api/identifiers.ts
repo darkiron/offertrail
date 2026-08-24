@@ -1,4 +1,4 @@
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 import type { CandidatureApi, ContactApi, EtablissementApi } from './contracts';
 
 const candidatureNumericToUuid = new Map<number, string>();

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { axiosInstance, setAxiosAuthToken } from '../services/api/client';
+import { http, setHttpAuthToken } from '@shared/api/http';
 import { AuthContext, type Profile } from './auth-context';
 import {
   clearPasswordRecoveryMarker,
@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async () => {
     try {
-      const res = await axiosInstance.get<Profile>('/auth/me');
+      const res = await http.get<Profile>('/auth/me');
       setProfile(res.data);
     } catch {
       // profil pas encore créé ou token expiré — ignorer
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applySession = (s: Session | null) => {
     setSession(s);
     setUser(s?.user ?? null);
-    setAxiosAuthToken(s?.access_token ?? null);
+    setHttpAuthToken(s?.access_token ?? null);
     if (!s) setProfile(null);
   };
 

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { dashboardService } from '../services/api/dashboard';
-import type { TodayAction } from '../types';
+import type { TodayAction } from '@entities/application/model';
+import { applicationKeys } from '@entities/application/queryKeys';
+import { useTodayQuery } from '@features/applications/dashboard/useTodayQuery';
 import classes from './Dashboard.module.scss';
 import { ActionButton } from '../components/atoms/Action';
 import { SelectField } from '../components/atoms/FormField';
@@ -42,7 +44,9 @@ function ActionDialog({
               },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['today'] });
+      await queryClient.invalidateQueries({
+        queryKey: applicationKeys.today(),
+      });
       onClose();
     },
   });
@@ -120,10 +124,7 @@ export function Dashboard() {
     openCreateApplication: () => void;
   }>();
   const [selected, setSelected] = useState<TodayAction | null>(null);
-  const query = useQuery({
-    queryKey: ['today'],
-    queryFn: dashboardService.getToday,
-  });
+  const query = useTodayQuery();
   useEffect(() => {
     document.title = t('dashboard.todayTitle');
   }, [t]);

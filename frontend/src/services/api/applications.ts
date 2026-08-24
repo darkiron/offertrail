@@ -1,5 +1,5 @@
 import type { Application, PaginatedResponse } from '../../types';
-import { axiosInstance } from './client';
+import { http as axiosInstance } from '@shared/api/http';
 import { contactService } from './contacts';
 import type {
   ApplicationDetailsResponse,
