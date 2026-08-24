@@ -1,5 +1,11 @@
+/**
+ * variables.css — CSS custom properties OfferTrail
+ * Complète le thème Mantine pour les composants custom et les utilitaires.
+ * Référencé depuis global.css.
+ */
+
+/* ─── Catppuccin Latte (Light) ─────────────────────────────── */
 :root {
-  /* Latte (Light) */
   --ctp-latte-rosewater: #dc8a78;
   --ctp-latte-flamingo: #dd7878;
   --ctp-latte-pink: #ea76cb;
@@ -26,8 +32,10 @@
   --ctp-latte-base: #eff1f5;
   --ctp-latte-mantle: #e6e9ef;
   --ctp-latte-crust: #dce0e8;
+}
 
-  /* Mocha (Dark) */
+/* ─── Catppuccin Mocha (Dark) ──────────────────────────────── */
+:root {
   --ctp-mocha-rosewater: #f5e0dc;
   --ctp-mocha-flamingo: #f2cdcd;
   --ctp-mocha-pink: #f5c2e7;
@@ -56,7 +64,10 @@
   --ctp-mocha-crust: #11111b;
 }
 
-[data-theme='light'] {
+/* ─── Semantic tokens (light) ──────────────────────────────── */
+[data-theme='light'],
+[data-mantine-color-scheme='light'],
+:root {
   --bg-base: var(--ctp-latte-base);
   --bg-mantle: var(--ctp-latte-mantle);
   --bg-crust: var(--ctp-latte-crust);
@@ -66,15 +77,22 @@
   --accent: var(--ctp-latte-blue);
   --accent-hover: var(--ctp-latte-sapphire);
   --border: var(--ctp-latte-surface1);
+  --card-shadow: 0 2px 5px rgb(0 0 0 / 5%);
+
+  /* Statuts */
   --status-interested: var(--ctp-latte-overlay1);
   --status-applied: var(--ctp-latte-blue);
   --status-interview: var(--ctp-latte-yellow);
   --status-offer: var(--ctp-latte-green);
   --status-rejected: var(--ctp-latte-red);
-  --card-shadow: 0 2px 5px rgba(0,0,0,0.05);
+
+  /* Mantine color scheme override */
+  --mantine-color-scheme: light;
 }
 
-[data-theme='dark'] {
+/* ─── Semantic tokens (dark) ───────────────────────────────── */
+[data-theme='dark'],
+[data-mantine-color-scheme='dark'] {
   --bg-base: var(--ctp-mocha-base);
   --bg-mantle: var(--ctp-mocha-mantle);
   --bg-crust: var(--ctp-mocha-crust);
@@ -84,10 +102,25 @@
   --accent: var(--ctp-mocha-blue);
   --accent-hover: var(--ctp-mocha-sky);
   --border: var(--ctp-mocha-surface1);
+  --card-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+
+  /* Statuts */
   --status-interested: var(--ctp-mocha-overlay1);
   --status-applied: var(--ctp-mocha-blue);
   --status-interview: var(--ctp-mocha-yellow);
   --status-offer: var(--ctp-mocha-green);
   --status-rejected: var(--ctp-mocha-red);
-  --card-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  --mantine-color-scheme: dark;
+}
+
+/* ─── Spacing ───────────────────────────────────────────────── */
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 }
