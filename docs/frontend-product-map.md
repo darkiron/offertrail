@@ -1,4 +1,6 @@
-# Cartographie qualité du frontend
+# Cartographie qualité du frontend — audit historique
+
+> **Statut : audit daté, non source de vérité courante.** Les constats et métriques reflètent l'état du 24 août 2026 avant les lots de correction. Utiliser `docs/product-definition.md` pour le produit et `docs/architecture/frontend.md` pour l'architecture actuelle/cible.
 
 Audit du 24 août 2026 sur `refactor/frontend-atomic-scss`. Ce document est la source de vérité avant les prochaines réécritures. Il couvre les routes, les parcours, les pages, les états, les composants, les styles, les appels de données et les droits.
 
@@ -107,4 +109,3 @@ Chaque slice est une branche Gitflow dédiée depuis cette branche d'intégratio
 - Tests backend paramétrés par endpoint, méthode, utilisateur A/B, statut actif/désactivé, plan et rôle.
 - Tests contractuels interdisant tout appel frontend absent de l'OpenAPI.
 - `lint`, `typecheck`, `stylelint`, `test`, `build`, budget bundle et matrice E2E verts dans la PR.
-

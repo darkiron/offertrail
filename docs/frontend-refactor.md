@@ -1,4 +1,6 @@
-# Frontend refactor — working agreement
+# Frontend refactor — working agreement historique
+
+> **Statut : cible initiale et baseline historique.** Les métriques ne décrivent plus le dépôt courant. La séparation AS-IS/TO-BE et la règle de migration applicables sont dans `docs/architecture/frontend.md`; les règles Git communes sont dans `CONTRIBUTING.md`.
 
 ## Git flow
 
@@ -69,4 +71,3 @@ Dependencies: `1 → (2 + 3)`, `2 → 4`, `(3 + 4) → (5 + 6)`, `(5 + 6) → 7 
 - `i18n.tsx`: 1,382 lines; `services/api.ts`: 980 lines; `Admin.tsx`: 444 lines.
 - Main bundle: 575.11 kB minified; Admin bundle: 421.67 kB minified.
 - 729 literal color occurrences and 20 `!important` declarations.
-

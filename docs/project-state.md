@@ -1,4 +1,6 @@
-# État du projet — 2026-04-07 (v0.2.0)
+# État du projet — 2026-04-07 (v0.2.0) — archive
+
+> Photographie historique, non valable pour l'onboarding courant. Voir `docs/product-definition.md` et `docs/architecture/frontend.md`. Les mentions JWT local, Mantine et Starter/Pro ci-dessous décrivent la version 0.2.0.
 
 ## Ce qui fonctionne
 

@@ -1,4 +1,6 @@
-# Vision - OfferTrail
+# Vision - OfferTrail — contexte historique
+
+> Le terme « local-first » ci-dessous décrit l'origine du projet, pas son architecture de production actuelle. La définition produit canonique est `docs/product-definition.md`.
 
 OfferTrail est un **CRM local-first** pour suivre des candidatures CDI et freelance avec plus de clarté, plus de trace, et moins de friction 🙂
 

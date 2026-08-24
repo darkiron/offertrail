@@ -18,7 +18,7 @@ FRONT_NODE_VERSION ?= $(strip $(shell cat $(FRONTEND_DIR)/.nvmrc 2>/dev/null))
 NVM_BOOTSTRAP = export NVM_DIR="$(NVM_DIR)"; [ -s "$$NVM_DIR/nvm.sh" ] && . "$$NVM_DIR/nvm.sh"
 endif
 
-.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage check-front-env build-front lint-front migrate-prod alembic-migrate alembic-revision db-shell
+.PHONY: install run run-back run-front migrate drop-legacy db-diagnostic reset-db clean test test-isolation test-coverage validate check-front-env build-front lint-front migrate-prod alembic-migrate alembic-revision db-shell
 
 install: install-back install-front
 
@@ -91,11 +91,15 @@ db-diagnostic:
 	$(PYTHON) scripts/diagnostic.py
 
 test:
-	$(PYTHON) -m pytest tests/test_auth.py -v --tb=short
-	$(PYTHON) -m pytest tests/test_candidatures.py -v --tb=short
-	$(PYTHON) -m pytest tests/test_etablissements.py -v --tb=short
-	$(PYTHON) -m pytest tests/test_isolation.py -v --tb=short
-	$(PYTHON) -m pytest tests/test_subscription.py -v --tb=short
+	$(PYTHON) -m pytest tests/ -v --tb=short
+
+validate: test
+	@$(MAKE) check-front-env
+ifeq ($(OS),Windows_NT)
+	cd frontend && $(NPM) run check && $(NPM) test && $(NPM) run build
+else
+	cd $(FRONTEND_DIR) && bash -lc '$(NVM_BOOTSTRAP); nvm use $(FRONT_NODE_VERSION) >/dev/null; npm run check && npm test && npm run build'
+endif
 
 test-isolation:
 	$(PYTHON) -m pytest tests/test_isolation.py -v

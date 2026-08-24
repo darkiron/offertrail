@@ -1,0 +1,24 @@
+name: Dette technique
+description: Rendre une dette mesurable et planifiable
+title: "chore: "
+labels: [tech-debt, triage]
+body:
+  - type: textarea
+    id: evidence
+    attributes: { label: Symptôme et preuves }
+    validations: { required: true }
+  - type: textarea
+    id: consequence
+    attributes: { label: Risque produit ou coût équipe }
+    validations: { required: true }
+  - type: textarea
+    id: target
+    attributes: { label: État cible et mesure de sortie }
+    validations: { required: true }
+  - type: textarea
+    id: migration
+    attributes: { label: Migration, compatibilité et rollback }
+  - type: input
+    id: owner
+    attributes: { label: Owner }
+    validations: { required: true }

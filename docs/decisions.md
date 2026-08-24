@@ -1,4 +1,6 @@
-# Decisions - OfferTrail
+# Decisions - OfferTrail — archive
+
+> **Statut historique.** Ce journal explique l'évolution du dépôt mais ne constitue plus une source de vérité. Les décisions courantes sont dans `docs/adr/`; la définition canonique est `docs/product-definition.md`. Les entrées sans date complète restent conservées comme contexte et ne valent pas décision active.
 
 Ce fichier garde les décisions structurantes du projet, en version courte et relisible.
 

@@ -1,0 +1,11 @@
+# Owner GitHub actuel. Remplacer progressivement par des équipes de domaine réelles.
+* @darkiron
+/frontend/ @darkiron
+/frontend/src/styles/ @darkiron
+/frontend/src/components/ @darkiron
+/src/auth.py @darkiron
+/src/routers/subscription.py @darkiron
+/src/services/stripe_service.py @darkiron
+/alembic/ @darkiron
+/.github/ @darkiron
+/docs/ @darkiron
