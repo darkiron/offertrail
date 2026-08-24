@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { contactService } from '../services/api';
+import { contactService } from '../services/api/contacts';
 import type { Contact } from '../types';
 import ContactEditModal from '../components/organisms/ContactEditModal';
 import { DetailHeader } from '../components/organisms/DetailHeader';

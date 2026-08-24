@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { applicationService } from '../services/api';
-import type { ImportResponse } from '../services/api';
+import { applicationService, type ImportResponse } from '../services/api/applications';
 import { Button } from '../components/atoms/Button';
 import { PageHeader } from '../components/molecules/PageHeader';
 import { useI18n } from '../i18n';

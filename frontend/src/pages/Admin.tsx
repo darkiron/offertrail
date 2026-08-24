@@ -21,7 +21,7 @@ import {
   YAxis,
 } from 'recharts';
 import { IconDownload, IconSearch } from '@tabler/icons-react';
-import { axiosInstance } from '../services/api';
+import { axiosInstance } from '../services/api/client';
 import classes from './Admin.module.css';
 
 type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'light' | 'filled'; loading?: boolean; leftSection?: ReactNode };

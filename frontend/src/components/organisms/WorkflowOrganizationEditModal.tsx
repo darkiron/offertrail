@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { organizationService, type OrganizationPortfolioItem } from '../../services/api';
+import { organizationService, type OrganizationPortfolioItem } from '../../services/api/organizations';
 import { ActionButton } from '../atoms/Action';
 import { SelectField, TextAreaField, TextField } from '../atoms/FormField';
 import { Dialog } from '../molecules/Dialog';

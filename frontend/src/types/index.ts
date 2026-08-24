@@ -1,4 +1,12 @@
-export type OrganizationType = 'CLIENT_FINAL' | 'ESN' | 'CABINET_RECRUTEMENT' | 'STARTUP' | 'PME' | 'GRAND_COMPTE' | 'PORTAGE' | 'AUTRE';
+export type OrganizationType =
+  | 'CLIENT_FINAL'
+  | 'ESN'
+  | 'CABINET_RECRUTEMENT'
+  | 'STARTUP'
+  | 'PME'
+  | 'GRAND_COMPTE'
+  | 'PORTAGE'
+  | 'AUTRE';
 
 export type ProbityLevel = 'fiable' | 'moyen' | 'méfiance' | 'insuffisant';
 
@@ -25,6 +33,7 @@ export interface Organization extends OrganizationStats {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  metrics: Pick<OrganizationStats, 'probity_score' | 'probity_level'>;
 }
 
 export interface Contact {
@@ -48,10 +57,13 @@ export interface Application {
   final_customer_organization_id: number | null;
   final_customer_name?: string | null;
   company: string;
+  company_name: string;
+  organization: { id: number; name: string } | null;
   title: string;
   type: string;
   status: string;
   source: string | null;
+  channel: string | null;
   job_url: string | null;
   applied_at: string | null;
   response_date: string | null;
@@ -62,6 +74,36 @@ export interface Application {
   created_at: string;
   updated_at: string;
   hidden: number;
+}
+
+export interface ApplicationEvent {
+  id: string | number;
+  type: string;
+  ts: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ContactApplicationSummary {
+  id: string;
+  title: string;
+  company: string;
+  applied_at: string | null;
+  status: string;
+}
+
+export interface ContactEvent {
+  id: string | number;
+  ts: string;
+  type: string;
+  event_type?: string;
+  payload?: Record<string, unknown>;
+  application?: { id: string; title: string; status: string };
+}
+
+export interface ContactDetails extends Contact {
+  organization: { id: string; name: string; type: string } | null;
+  applications: ContactApplicationSummary[];
+  events: ContactEvent[];
 }
 
 export interface PaginatedResponse<T> {
@@ -156,8 +198,20 @@ export interface TodayAction {
 export interface TodayData {
   generated_at: string;
   timezone: string;
-  activation: { state: 'active' | 'onboarding'; first_application_created: boolean; first_next_action_scheduled: boolean };
-  actions: { due_count: number; items: TodayAction[]; next_due_at: string | null };
-  summary: { active_applications: number; responses_30d: number; interviews_30d: number };
+  activation: {
+    state: 'active' | 'onboarding';
+    first_application_created: boolean;
+    first_next_action_scheduled: boolean;
+  };
+  actions: {
+    due_count: number;
+    items: TodayAction[];
+    next_due_at: string | null;
+  };
+  summary: {
+    active_applications: number;
+    responses_30d: number;
+    interviews_30d: number;
+  };
   recent_activity: Array<Record<string, unknown>>;
 }

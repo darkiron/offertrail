@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { organizationService } from '../services/api';
+import { organizationService } from '../services/api/organizations';
 
 export function useOrganizations() {
   const { data, isLoading, error, refetch } = useQuery({

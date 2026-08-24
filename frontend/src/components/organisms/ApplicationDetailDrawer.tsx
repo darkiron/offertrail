@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applicationService } from '../../services/api';
-import type { ApplicationDetailsResponse } from '../../services/api';
+import { applicationService, type ApplicationDetailsResponse } from '../../services/api/applications';
 import type { Contact } from '../../types';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
@@ -43,7 +42,7 @@ export function ApplicationDetailDrawer({ appId, onClose, onUpdate }: Applicatio
         <Tabs label="Détails de la candidature" value={tab} items={[["overview", "Aperçu"], ["timeline", "Historique"]] as const} onChange={setTab} />
         {tab === 'overview' ? <div className={classes.panel}>
           {data.organization && <ProbityBadge score={data.organization.metrics?.probity_score} level={data.organization.metrics?.probity_level || 'insuffisant'} size="md" />}
-          <section className={classes.section}><p className={classes.label}>Informations</p><div className={classes.grid}><div><p className={classes.label}>Candidaté le</p><p className={classes.value}>{new Date(data.application.applied_at).toLocaleDateString()}</p></div><div><p className={classes.label}>Canal</p><p className={classes.value}>{data.application.channel || 'Non renseigné'}</p></div></div></section>
+          <section className={classes.section}><p className={classes.label}>Informations</p><div className={classes.grid}><div><p className={classes.label}>Candidaté le</p><p className={classes.value}>{data.application.applied_at ? new Date(data.application.applied_at).toLocaleDateString() : 'Non renseignée'}</p></div><div><p className={classes.label}>Canal</p><p className={classes.value}>{data.application.channel || 'Non renseigné'}</p></div></div></section>
           <section className={classes.section}><p className={classes.label}>Notes</p><p className={classes.muted}>{data.application.notes || 'Aucune note.'}</p></section>
           {data.contacts?.length > 0 && <section className={classes.section}><p className={classes.label}>Contacts</p><div className={classes.list}>{data.contacts.map((contact: Contact) => <div className={classes.row} key={contact.id}><span className={classes.value}>{contact.first_name} {contact.last_name}</span><span className={classes.muted}>{contact.role}</span></div>)}</div></section>}
         </div> : <div className={classes.panel}><section className={classes.timeline}>{data.events?.length ? data.events.map((event, index) => <article className={classes.event} key={event.id || index}><p className={classes.value}>{event.type}</p><p className={classes.muted}>{new Date(event.ts).toLocaleString()}</p>{event.payload && Object.keys(event.payload).length > 0 && <p className={classes.muted}>{JSON.stringify(event.payload)}</p>}</article>) : <p className={classes.muted}>Aucun événement enregistré.</p>}</section></div>}

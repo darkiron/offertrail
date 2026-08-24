@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { contactService } from '../services/api';
+import { contactService } from '../services/api/contacts';
 
 export function useContacts(options?: { organization_id?: number }) {
   const { data, isLoading, error, refetch } = useQuery({
