@@ -10,6 +10,7 @@ interface Props {
   loading?: boolean;
   period: BillingPeriod;
   checkoutDisabled?: boolean;
+  appCtaLabel?: string;
   onSelect: (id: PlanId) => void;
   onCta: (id: PlanId, period: BillingPeriod) => void;
   mode: 'app' | 'public';
@@ -22,6 +23,7 @@ export function PlanCard({
   loading = false,
   period,
   checkoutDisabled = false,
+  appCtaLabel,
   onSelect,
   onCta,
   mode,
@@ -30,8 +32,12 @@ export function PlanCard({
 
   const hasYearly = !!plan.prices.yearly;
   const activePeriod = hasYearly ? period : 'monthly';
-  const currentPrice = activePeriod === 'yearly' && plan.prices.yearly ? plan.prices.yearly : plan.prices.monthly;
-  const badge = activePeriod === 'yearly' ? plan.badgeYearly : plan.badgeMonthly;
+  const currentPrice =
+    activePeriod === 'yearly' && plan.prices.yearly
+      ? plan.prices.yearly
+      : plan.prices.monthly;
+  const badge =
+    activePeriod === 'yearly' ? plan.badgeYearly : plan.badgeMonthly;
 
   const handleCardClick = () => {
     onSelect(plan.id);
@@ -42,12 +48,14 @@ export function PlanCard({
   };
 
   return (
-    <div 
-      className={`${classes.card} ${isSelected ? classes.selected : ''} ${isCurrent ? classes.current : ''}`} 
+    <div
+      className={`${classes.card} ${isSelected ? classes.selected : ''} ${isCurrent ? classes.current : ''}`}
       onClick={handleCardClick}
     >
       {badge && (
-        <div className={`${classes.badge} ${badge.violet ? classes.violet : ''}`}>
+        <div
+          className={`${classes.badge} ${badge.violet ? classes.violet : ''}`}
+        >
           {badge.label}
         </div>
       )}
@@ -84,8 +92,14 @@ export function PlanCard({
             {t('landing.pricing.currentPlan')}
           </Button>
         ) : mode === 'public' ? (
-          <Button variant={plan.id === 'free' ? 'ghost' : 'primary'} size="small" onClick={handleCtaClick}>
-            {plan.id === 'free' ? t('landing.pricing.freeCta') : t('landing.pricing.trialCta')}
+          <Button
+            variant={plan.id === 'free' ? 'ghost' : 'primary'}
+            size="small"
+            onClick={handleCtaClick}
+          >
+            {plan.id === 'free'
+              ? t('landing.pricing.freeCta')
+              : t('landing.pricing.trialCta')}
           </Button>
         ) : plan.id === 'free' ? (
           <Button variant="ghost" size="small" disabled>
@@ -93,14 +107,16 @@ export function PlanCard({
           </Button>
         ) : (
           <div className={classes.ctaGroup}>
-            <Button 
+            <Button
               variant="primary"
               size="small"
               onClick={handleCtaClick}
               disabled={checkoutDisabled || loading}
               loading={loading}
             >
-              {loading ? t('landing.pricing.redirecting') : t('landing.pricing.trialCta')}
+              {loading
+                ? t('landing.pricing.redirecting')
+                : (appCtaLabel ?? t('landing.pricing.trialCta'))}
             </Button>
           </div>
         )}

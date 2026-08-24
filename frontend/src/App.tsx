@@ -13,6 +13,7 @@ import { supabase } from './lib/supabase';
 import { I18nProvider, useI18n } from './i18n';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import appClasses from './App.module.css';
 
 import { AppLayout } from './templates/AppLayout';
@@ -77,7 +78,7 @@ const TermsPage = named(() => import('./pages/TermsPage'), 'TermsPage');
 const ContactPage = named(() => import('./pages/ContactPage'), 'ContactPage');
 const MonCompte = named(() => import('./pages/MonCompte'), 'MonCompte');
 const Admin = named(() => import('./pages/Admin'), 'Admin');
-const Checkout = named(() => import('./pages/Checkout'), 'Checkout');
+const Checkout = named(() => import('./pages/Pricing'), 'Pricing');
 const CGU = named(() => import('./pages/legal/CGU'), 'CGU');
 
 function CompanyAliasRedirect() {
@@ -216,11 +217,20 @@ function AppRoutes() {
             <Route path="contacts/:id" element={<ContactDetailsPage />} />
             <Route path="import" element={<Import />} />
             <Route path="mon-compte" element={<MonCompte />} />
-            <Route path="admin" element={<Admin />} />
+            <Route
+              path="admin"
+              element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              }
+            />
             {/* Legacy URL kept as a redirect: subscription actions live in account/checkout. */}
             <Route
               path="pricing"
-              element={<Navigate to="/app/mon-compte" replace />}
+              element={
+                <Navigate to="/app/checkout?plan=pro&period=monthly" replace />
+              }
             />
           </Route>
 

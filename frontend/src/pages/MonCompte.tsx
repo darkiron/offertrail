@@ -17,55 +17,259 @@ export function MonCompte() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
-  const { data: sub } = useQuery({ queryKey: ['subscription'], queryFn: () => subscriptionService.getMe(), staleTime: 60000 });
-  const [form, setForm] = useState({ prenom: profile?.prenom || '', nom: profile?.nom || '' });
+  const { data: sub } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => subscriptionService.getMe(),
+    staleTime: 60000,
+  });
+  const [form, setForm] = useState({
+    prenom: profile?.prenom || '',
+    nom: profile?.nom || '',
+  });
   const [saving, setSaving] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [notice, setNotice] = useState<{
+    tone: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const hasPaidSubscription =
+    sub?.subscription_status === 'active' ||
+    sub?.subscription_status === 'trialing';
 
-  useEffect(() => { document.title = t('monCompte.pageTitle'); }, [t]);
-  useEffect(() => { if (profile) setForm({ prenom: profile.prenom || '', nom: profile.nom || '' }); }, [profile]);
+  useEffect(() => {
+    document.title = t('monCompte.pageTitle');
+  }, [t]);
+  useEffect(() => {
+    if (profile)
+      setForm({ prenom: profile.prenom || '', nom: profile.nom || '' });
+  }, [profile]);
   useEffect(() => {
     const payment = searchParams.get('payment');
     const reason = searchParams.get('reason');
     if (!payment && !reason) return;
-    setNotice({ tone: payment === 'success' ? 'success' : payment === 'cancelled' ? 'error' : 'error', text: payment === 'success' ? t('monCompte.paymentSuccess') : payment === 'cancelled' ? t('monCompte.paymentCancelled') : t('monCompte.upgradeFromPricing') });
+    setNotice({
+      tone:
+        payment === 'success'
+          ? 'success'
+          : payment === 'cancelled'
+            ? 'error'
+            : 'error',
+      text:
+        payment === 'success'
+          ? t('monCompte.paymentSuccess')
+          : payment === 'cancelled'
+            ? t('monCompte.paymentCancelled')
+            : t('monCompte.upgradeFromPricing'),
+    });
     void queryClient.invalidateQueries({ queryKey: ['subscription'] });
-    const next = new URLSearchParams(searchParams); next.delete('payment'); next.delete('reason'); setSearchParams(next, { replace: true });
+    const next = new URLSearchParams(searchParams);
+    next.delete('payment');
+    next.delete('reason');
+    setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams, queryClient, t]);
 
   const saveProfile = async (event: React.FormEvent) => {
-    event.preventDefault(); setSaving(true); setNotice(null);
-    try { await authService.updateMe(form); await refreshProfile(); setNotice({ tone: 'success', text: t('monCompte.profileSaved') }); }
-    catch (error) { if (axios.isAxiosError(error) && error.response?.status === 401) { navigate('/login'); return; } setNotice({ tone: 'error', text: t('monCompte.profileError') }); }
-    finally { setSaving(false); }
+    event.preventDefault();
+    setSaving(true);
+    setNotice(null);
+    try {
+      await authService.updateMe(form);
+      await refreshProfile();
+      setNotice({ tone: 'success', text: t('monCompte.profileSaved') });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      setNotice({ tone: 'error', text: t('monCompte.profileError') });
+    } finally {
+      setSaving(false);
+    }
   };
   const changePassword = async (event: React.FormEvent) => {
-    event.preventDefault(); setPasswordSaving(true); setNotice(null);
-    try { const result = await supabase.auth.updateUser({ password }); if (result.error) throw result.error; setPassword(''); setPasswordOpen(false); setNotice({ tone: 'success', text: t('monCompte.passwordUpdated') }); }
-    catch { setNotice({ tone: 'error', text: t('monCompte.passwordError') }); }
-    finally { setPasswordSaving(false); }
+    event.preventDefault();
+    setPasswordSaving(true);
+    setNotice(null);
+    try {
+      const result = await supabase.auth.updateUser({ password });
+      if (result.error) throw result.error;
+      setPassword('');
+      setPasswordOpen(false);
+      setNotice({ tone: 'success', text: t('monCompte.passwordUpdated') });
+    } catch {
+      setNotice({ tone: 'error', text: t('monCompte.passwordError') });
+    } finally {
+      setPasswordSaving(false);
+    }
   };
   const openPortal = async () => {
-    setPortalLoading(true); setNotice(null);
-    try { const result = await subscriptionService.portal(); window.location.assign(result.portal_url); }
-    catch (error) { const detail = axios.isAxiosError(error) && error.response?.status && error.response.status < 500 && typeof error.response?.data?.detail === 'string' ? error.response.data.detail : t('monCompte.portalError'); setNotice({ tone: 'error', text: detail }); setPortalLoading(false); }
+    setPortalLoading(true);
+    setNotice(null);
+    try {
+      const result = await subscriptionService.portal();
+      window.location.assign(result.portal_url);
+    } catch (error) {
+      const detail =
+        axios.isAxiosError(error) &&
+        error.response?.status &&
+        error.response.status < 500 &&
+        typeof error.response?.data?.detail === 'string'
+          ? error.response.data.detail
+          : t('monCompte.portalError');
+      setNotice({ tone: 'error', text: detail });
+      setPortalLoading(false);
+    }
   };
 
-  return <main className="ot-page ot-account-page">
-    <PageHeader variant="editorial" kicker={t('monCompte.bannerEyebrow')} title={t('monCompte.bannerTitle')} description={t('monCompte.bannerSub')} />
-    {notice && <div className="ot-alert" data-tone={notice.tone}>{notice.text}</div>}
-    <SubscriptionOverview subscription={sub} loading={portalLoading} onManage={() => void openPortal()} onUpgrade={() => navigate('/app/checkout?plan=pro&period=monthly')} onUpgradeUltimate={() => void openPortal()} />
-    <div className="ot-layout-two ot-account-layout">
-      <section id="profil" className="ot-panel"><div className="ot-section-head"><span className="ot-kicker">{t('monCompte.profileTitle')}</span><h2>{t('monCompte.profileTitle')}</h2></div><form className="ot-stack" onSubmit={saveProfile}><div className="ot-form-grid"><label className="ot-field"><span>{t('monCompte.firstName')}</span><input className="ot-control" value={form.prenom} onChange={(event) => setForm((current) => ({ ...current, prenom: event.target.value }))} /></label><label className="ot-field"><span>{t('monCompte.lastName')}</span><input className="ot-control" value={form.nom} onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))} /></label></div><label className="ot-field"><span>{t('monCompte.email')}</span><input className="ot-control" value={user?.email || ''} disabled /></label><div className="ot-actions"><Button type="submit" variant="primary" disabled={saving}>{saving ? t('monCompte.saving') : t('monCompte.save')}</Button></div></form></section>
-      <div className="ot-stack">
-        <section id="securite" className="ot-panel"><div className="ot-section-head"><span className="ot-kicker">{t('monCompte.passwordModalTitle')}</span><h2>{t('monCompte.changePassword')}</h2></div><p className="ot-subtitle">{t('monCompte.securityDescription')}</p><Button variant="ghost" size="small" onClick={() => setPasswordOpen(true)}>{t('monCompte.changePassword')}</Button></section>
-        <section id="facturation" className="ot-panel"><div className="ot-section-head"><span className="ot-kicker">{t('monCompte.invoicesTitle')}</span><h2>{t('monCompte.invoicesTitle')}</h2></div><p className="ot-subtitle">{sub?.is_active ? t('monCompte.invoicesDesc') : t('monCompte.invoicesNA')}</p>{sub?.is_active ? <Button variant="ghost" size="small" onClick={() => void openPortal()} disabled={portalLoading}>{t('monCompte.viewInvoices')}</Button> : <button className="ot-text-button" type="button" onClick={() => navigate('/app/checkout?plan=pro&period=monthly')}>{t('monCompte.invoicesUpgrade')}</button>}</section>
+  return (
+    <main className="ot-page ot-account-page">
+      <PageHeader
+        variant="editorial"
+        kicker={t('monCompte.bannerEyebrow')}
+        title={t('monCompte.bannerTitle')}
+        description={t('monCompte.bannerSub')}
+      />
+      {notice && (
+        <div className="ot-alert" data-tone={notice.tone}>
+          {notice.text}
+        </div>
+      )}
+      <SubscriptionOverview
+        subscription={sub}
+        loading={portalLoading}
+        onManage={() => void openPortal()}
+        onUpgrade={() => navigate('/app/checkout?plan=pro&period=monthly')}
+        onUpgradeUltimate={() => void openPortal()}
+      />
+      <div className="ot-layout-two ot-account-layout">
+        <section id="profil" className="ot-panel">
+          <div className="ot-section-head">
+            <span className="ot-kicker">{t('monCompte.profileTitle')}</span>
+            <h2>{t('monCompte.profileTitle')}</h2>
+          </div>
+          <form className="ot-stack" onSubmit={saveProfile}>
+            <div className="ot-form-grid">
+              <label className="ot-field">
+                <span>{t('monCompte.firstName')}</span>
+                <input
+                  className="ot-control"
+                  value={form.prenom}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      prenom: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="ot-field">
+                <span>{t('monCompte.lastName')}</span>
+                <input
+                  className="ot-control"
+                  value={form.nom}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      nom: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <label className="ot-field">
+              <span>{t('monCompte.email')}</span>
+              <input
+                className="ot-control"
+                value={user?.email || ''}
+                disabled
+              />
+            </label>
+            <div className="ot-actions">
+              <Button type="submit" variant="primary" disabled={saving}>
+                {saving ? t('monCompte.saving') : t('monCompte.save')}
+              </Button>
+            </div>
+          </form>
+        </section>
+        <div className="ot-stack">
+          <section id="securite" className="ot-panel">
+            <div className="ot-section-head">
+              <span className="ot-kicker">
+                {t('monCompte.passwordModalTitle')}
+              </span>
+              <h2>{t('monCompte.changePassword')}</h2>
+            </div>
+            <p className="ot-subtitle">{t('monCompte.securityDescription')}</p>
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => setPasswordOpen(true)}
+            >
+              {t('monCompte.changePassword')}
+            </Button>
+          </section>
+          <section id="facturation" className="ot-panel">
+            <div className="ot-section-head">
+              <span className="ot-kicker">{t('monCompte.invoicesTitle')}</span>
+              <h2>{t('monCompte.invoicesTitle')}</h2>
+            </div>
+            <p className="ot-subtitle">
+              {hasPaidSubscription
+                ? t('monCompte.invoicesDesc')
+                : t('monCompte.invoicesNA')}
+            </p>
+            {hasPaidSubscription ? (
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => void openPortal()}
+                disabled={portalLoading}
+              >
+                {t('monCompte.viewInvoices')}
+              </Button>
+            ) : (
+              <button
+                className="ot-text-button"
+                type="button"
+                onClick={() =>
+                  navigate('/app/checkout?plan=pro&period=monthly')
+                }
+              >
+                {t('monCompte.invoicesUpgrade')}
+              </button>
+            )}
+          </section>
+        </div>
       </div>
-    </div>
-    {passwordOpen && <Dialog eyebrow={t('monCompte.passwordModalTitle')} title={t('monCompte.passwordModalTitle')} onClose={() => setPasswordOpen(false)}><form className="ot-stack" onSubmit={changePassword}><label className="ot-field"><span>{t('monCompte.newPassword')}</span><input className="ot-control" type="password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} /></label><Button type="submit" variant="primary" disabled={passwordSaving}>{passwordSaving ? t('monCompte.updatingPassword') : t('monCompte.savePassword')}</Button></form></Dialog>}
-  </main>;
+      {passwordOpen && (
+        <Dialog
+          eyebrow={t('monCompte.passwordModalTitle')}
+          title={t('monCompte.passwordModalTitle')}
+          onClose={() => setPasswordOpen(false)}
+        >
+          <form className="ot-stack" onSubmit={changePassword}>
+            <label className="ot-field">
+              <span>{t('monCompte.newPassword')}</span>
+              <input
+                className="ot-control"
+                type="password"
+                minLength={8}
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+            <Button type="submit" variant="primary" disabled={passwordSaving}>
+              {passwordSaving
+                ? t('monCompte.updatingPassword')
+                : t('monCompte.savePassword')}
+            </Button>
+          </form>
+        </Dialog>
+      )}
+    </main>
+  );
 }
