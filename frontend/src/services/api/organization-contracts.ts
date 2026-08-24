@@ -1,5 +1,3 @@
-import type { Organization } from '../../types';
-
 export interface WorkflowOrganization {
   id: string;
   nom: string;
@@ -55,22 +53,6 @@ export interface OrganizationWorkspace {
     created_at: string;
   }>;
   capabilities: { can_edit: boolean };
-}
-
-export interface OrganizationDetails extends Organization {
-  applications: Array<{
-    id: number;
-    title: string;
-    applied_at: string;
-    status: string;
-  }>;
-  contacts: Array<{
-    id: number;
-    first_name: string;
-    last_name: string;
-    role: string;
-    email?: string;
-  }>;
 }
 
 export interface EtablissementApi {

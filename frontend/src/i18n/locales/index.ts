@@ -15,6 +15,9 @@ type IsEqual<Left, Right> =
 type Assert<Type extends true> = Type;
 
 /** Compile-time parity guard: either locale changing keys fails the typecheck. */
-export type LocaleKeyParity = Assert<
+type LocaleKeyParity = Assert<
   IsEqual<TranslationKeyOf<typeof en>, TranslationKeyOf<typeof fr>>
 >;
+
+const localeKeyParity: LocaleKeyParity = true;
+void localeKeyParity;

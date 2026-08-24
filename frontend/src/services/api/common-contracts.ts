@@ -1,23 +1,7 @@
-export interface DashboardParams {
-  status?: string;
-  type?: string;
-  source?: string;
-}
-
 export interface CheckoutPayload {
   plan: 'pro' | 'ultimate';
   period: 'monthly' | 'yearly';
   coupon?: string;
-}
-
-export interface MeStatsApi {
-  total_candidatures: number;
-  pipeline_actif: number;
-  taux_refus: number;
-  temps_moyen_reponse: number | null;
-  delai_moyen_reponse: number | null;
-  taux_reponse: number;
-  relances_dues: number;
 }
 
 export interface RelanceApi {

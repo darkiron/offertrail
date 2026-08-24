@@ -221,13 +221,9 @@ export const applicationService = {
 };
 
 export type {
-  ApplicationDetailsResponse,
   ApplicationListParams,
   ApplicationPayload,
   ApplicationWorkspace,
   EventUpdatePayload,
   ImportResponse,
-  WorkflowApplication,
-  WorkflowApplicationListParams,
-  WorkflowApplicationPage,
 } from './contracts';

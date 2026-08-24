@@ -2,21 +2,12 @@ import type { Organization } from '../../types';
 import { axiosInstance } from './client';
 import type {
   EtablissementApi,
-  OrganizationDetails,
   OrganizationPortfolioPage,
   OrganizationWorkspace,
   WorkflowOrganization,
 } from './contracts';
-import {
-  ensureOrganizationIdResolved,
-  toLegacyContactId,
-  toLegacyId,
-  toLegacyOrganizationId,
-} from './identifiers';
-import {
-  mapEtablissementToOrganization,
-  normalizeOrganizationType,
-} from './mappers';
+import { ensureOrganizationIdResolved } from './identifiers';
+import { mapEtablissementToOrganization } from './mappers';
 
 export const organizationService = {
   getPortfolio: async (params?: {
@@ -154,52 +145,7 @@ export const organizationService = {
     return response.data;
   },
 };
-export const api = {
-  getCompany: async (id: number | string): Promise<OrganizationDetails> => {
-    const workspace = await organizationService.getWorkspace(
-      await ensureOrganizationIdResolved(id),
-    );
-    const organizationId = toLegacyOrganizationId(workspace.organization.id);
-    return {
-      id: organizationId,
-      organization_id: organizationId,
-      name: workspace.organization.name,
-      type: normalizeOrganizationType(workspace.organization.type),
-      website: workspace.organization.website,
-      linkedin_url: null,
-      city: null,
-      notes: workspace.organization.description,
-      created_at: workspace.organization.created_at,
-      updated_at: workspace.organization.updated_at,
-      total_applications: workspace.organization.applications_count,
-      total_responses: workspace.organization.responses_count,
-      response_rate: workspace.organization.response_rate,
-      avg_response_days: null,
-      ghosting_count: 0,
-      positive_count: workspace.organization.positive_count,
-      positive_rate: 0,
-      probity_score: null,
-      probity_level: 'insuffisant',
-      metrics: { probity_score: null, probity_level: 'insuffisant' },
-      applications: workspace.applications.map((application) => ({
-        id: toLegacyId(application.id),
-        title: application.title,
-        applied_at: application.applied_at ?? application.updated_at,
-        status: application.status,
-      })),
-      contacts: workspace.contacts.map((contact) => ({
-        id: toLegacyContactId(contact.id),
-        first_name: contact.first_name,
-        last_name: contact.last_name,
-        role: contact.role ?? '',
-        email: contact.email ?? undefined,
-      })),
-    };
-  },
-};
-
 export type {
-  OrganizationDetails,
   OrganizationPortfolioItem,
   OrganizationPortfolioPage,
   OrganizationWorkspace,

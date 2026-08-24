@@ -24,7 +24,7 @@ export interface WorkflowApplicationListParams {
   include_closed?: boolean;
 }
 
-export interface WorkflowApplication {
+interface WorkflowApplication {
   id: string;
   poste: string;
   statut: string;

@@ -18,14 +18,14 @@ import {
   toLegacyOrganizationId,
 } from './identifiers';
 
-export function normalizeDate(value: string | null | undefined): string | null {
+function normalizeDate(value: string | null | undefined): string | null {
   if (!value) {
     return null;
   }
   return value.includes('T') ? value.slice(0, 10) : value;
 }
 
-export function normalizeOrganizationType(value: string): OrganizationType {
+function normalizeOrganizationType(value: string): OrganizationType {
   switch (value.toUpperCase()) {
     case 'CLIENT_FINAL':
       return 'CLIENT_FINAL';

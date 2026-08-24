@@ -1,13 +1,9 @@
-import { useId } from 'react';
 import type {
   CSSProperties,
   HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
 } from 'react';
-import { Dialog } from '../molecules/Dialog';
 import classes from './UiPrimitives.module.scss';
 
 type Space = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
@@ -24,25 +20,6 @@ const mergeStyle = (
   style: CSSProperties | undefined,
   custom: PrimitiveStyle,
 ): CSSProperties => ({ ...custom, ...style });
-
-export function UiModal({
-  opened,
-  onClose,
-  title,
-  children,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  title: ReactNode;
-  size?: string;
-  children: ReactNode;
-}) {
-  return opened ? (
-    <Dialog title={title} onClose={onClose}>
-      {children}
-    </Dialog>
-  ) : null;
-}
 
 interface TextProps extends HTMLAttributes<HTMLSpanElement> {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -179,7 +156,7 @@ export function UiGrid({
   );
 }
 
-export function UiField({
+function UiField({
   label,
   children,
   ...props
@@ -209,65 +186,6 @@ export function UiTextInput({
     </UiField>
   );
 }
-export function UiNumberInput({
-  label,
-  onChange,
-  ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
-  label?: string;
-  onChange?: (value: string | number) => void;
-}) {
-  return (
-    <UiField label={label}>
-      <input
-        {...props}
-        type="number"
-        className={`${classes.control} ${props.className ?? ''}`}
-        onChange={(event) => onChange?.(event.target.value)}
-      />
-    </UiField>
-  );
-}
-export function UiTextarea({
-  label,
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
-  return (
-    <UiField label={label}>
-      <textarea
-        {...props}
-        className={`${classes.control} ${classes.area} ${props.className ?? ''}`}
-      />
-    </UiField>
-  );
-}
-export function UiSelect({
-  label,
-  data = [],
-  onChange,
-  ...props
-}: Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> & {
-  label?: string;
-  data?: readonly { value: string; label: string }[];
-  onChange?: (value: string | null) => void;
-}) {
-  return (
-    <UiField label={label}>
-      <select
-        {...props}
-        className={`${classes.control} ${props.className ?? ''}`}
-        onChange={(event) => onChange?.(event.target.value)}
-      >
-        {data.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </UiField>
-  );
-}
-
 export function UiBadge({
   children,
   color,
@@ -308,67 +226,5 @@ export function UiPaper({
       data-radius={radius}
       style={mergeStyle(style, { '--ui-p': space(p ?? padding) })}
     />
-  );
-}
-export function UiCenter({
-  h,
-  style,
-  ...props
-}: HTMLAttributes<HTMLDivElement> & { h?: number | string }) {
-  return (
-    <div
-      {...props}
-      className={`${classes.center} ${props.className ?? ''}`}
-      style={{ minHeight: h, ...style }}
-    />
-  );
-}
-export function UiLoader({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  return (
-    <span
-      className={classes.loader}
-      data-size={size}
-      role="status"
-      aria-label="Chargement"
-    />
-  );
-}
-
-export function UiAutocomplete({
-  label,
-  value,
-  onChange,
-  data = [],
-  onOptionSubmit,
-  placeholder,
-}: {
-  label?: string;
-  value: string;
-  onChange: (value: string) => void;
-  data?: string[];
-  onOptionSubmit?: (value: string) => void;
-  placeholder?: string;
-}) {
-  const id = useId();
-  return (
-    <UiField label={label}>
-      <input
-        list={id}
-        value={value}
-        placeholder={placeholder}
-        autoComplete="off"
-        className={classes.control}
-        onChange={(event) => {
-          onChange(event.target.value);
-          if (data.includes(event.target.value))
-            onOptionSubmit?.(event.target.value);
-        }}
-      />
-      <datalist id={id}>
-        {data.map((item) => (
-          <option key={item} value={item} />
-        ))}
-      </datalist>
-    </UiField>
   );
 }

@@ -4,7 +4,7 @@ import type {
   ContactEvent,
 } from '../../types';
 
-export interface ContactPortfolioItem {
+interface ContactPortfolioItem {
   id: string;
   first_name: string;
   last_name: string;

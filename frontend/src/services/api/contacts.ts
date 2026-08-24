@@ -97,4 +97,4 @@ export const contactService = {
   },
 };
 
-export type { ContactPortfolioItem, ContactPortfolioPage } from './contracts';
+export type { ContactPortfolioPage } from './contracts';

@@ -4,13 +4,13 @@ import { useI18n } from '../i18n';
 export type PlanId = 'free' | 'pro' | 'ultimate';
 export type BillingPeriod = 'monthly' | 'yearly';
 
-export interface PlanPrice {
+interface PlanPrice {
   amount: string;
   suffix: string;
   note: string;
 }
 
-export interface PlanBadge {
+interface PlanBadge {
   label: string;
   violet?: boolean;
 }
