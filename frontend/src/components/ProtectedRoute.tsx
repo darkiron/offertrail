@@ -9,7 +9,13 @@ export function ProtectedRoute({ children }: PropsWithChildren) {
   if (isLoading) return null;
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
   }
 
   return <>{children}</>;

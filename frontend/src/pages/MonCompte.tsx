@@ -10,6 +10,7 @@ import { Button } from '../components/atoms/Button';
 import { Dialog } from '../components/molecules/Dialog';
 import { PageHeader } from '../components/molecules/PageHeader';
 import { SubscriptionOverview } from '../components/organisms/SubscriptionOverview';
+import classes from './MonCompte.module.scss';
 
 export function MonCompte() {
   const { t } = useI18n();
@@ -17,7 +18,12 @@ export function MonCompte() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
-  const { data: sub } = useQuery({
+  const {
+    data: sub,
+    isLoading: subscriptionLoading,
+    isError: subscriptionError,
+    refetch: retrySubscription,
+  } = useQuery({
     queryKey: ['subscription'],
     queryFn: () => subscriptionService.getMe(),
     staleTime: 60000,
@@ -125,7 +131,7 @@ export function MonCompte() {
   };
 
   return (
-    <main className="ot-page ot-account-page">
+    <main className={classes.shell}>
       <PageHeader
         variant="editorial"
         kicker={t('monCompte.bannerEyebrow')}
@@ -133,29 +139,49 @@ export function MonCompte() {
         description={t('monCompte.bannerSub')}
       />
       {notice && (
-        <div className="ot-alert" data-tone={notice.tone}>
+        <div
+          className={classes.notice}
+          data-tone={notice.tone}
+          role={notice.tone === 'error' ? 'alert' : 'status'}
+        >
           {notice.text}
         </div>
       )}
-      <SubscriptionOverview
-        subscription={sub}
-        loading={portalLoading}
-        onManage={() => void openPortal()}
-        onUpgrade={() => navigate('/app/checkout?plan=pro&period=monthly')}
-        onUpgradeUltimate={() => void openPortal()}
-      />
-      <div className="ot-layout-two ot-account-layout">
-        <section id="profil" className="ot-panel">
-          <div className="ot-section-head">
-            <span className="ot-kicker">{t('monCompte.profileTitle')}</span>
+      {subscriptionError ? (
+        <section className={classes.state} role="alert">
+          <strong>{t('monCompte.subscriptionErrorTitle')}</strong>
+          <p>{t('monCompte.subscriptionErrorDescription')}</p>
+          <Button variant="secondary" onClick={() => void retrySubscription()}>
+            {t('common.retry')}
+          </Button>
+        </section>
+      ) : subscriptionLoading ? (
+        <section className={classes.state} aria-live="polite">
+          {t('monCompte.subscriptionLoading')}
+        </section>
+      ) : (
+        <SubscriptionOverview
+          subscription={sub}
+          loading={portalLoading}
+          onManage={() => void openPortal()}
+          onUpgrade={() => navigate('/app/checkout?plan=pro&period=monthly')}
+          onUpgradeUltimate={() => void openPortal()}
+        />
+      )}
+      <div className={classes.layout}>
+        <section id="profil" className={classes.panel}>
+          <div className={classes.sectionHead}>
+            <span className={classes.kicker}>
+              {t('monCompte.profileTitle')}
+            </span>
             <h2>{t('monCompte.profileTitle')}</h2>
           </div>
-          <form className="ot-stack" onSubmit={saveProfile}>
-            <div className="ot-form-grid">
-              <label className="ot-field">
+          <form className={classes.stack} onSubmit={saveProfile}>
+            <div className={classes.formGrid}>
+              <label className={classes.field}>
                 <span>{t('monCompte.firstName')}</span>
                 <input
-                  className="ot-control"
+                  className={classes.control}
                   value={form.prenom}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -165,10 +191,10 @@ export function MonCompte() {
                   }
                 />
               </label>
-              <label className="ot-field">
+              <label className={classes.field}>
                 <span>{t('monCompte.lastName')}</span>
                 <input
-                  className="ot-control"
+                  className={classes.control}
                   value={form.nom}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -179,30 +205,32 @@ export function MonCompte() {
                 />
               </label>
             </div>
-            <label className="ot-field">
+            <label className={classes.field}>
               <span>{t('monCompte.email')}</span>
               <input
-                className="ot-control"
+                className={classes.control}
                 value={user?.email || ''}
                 disabled
               />
             </label>
-            <div className="ot-actions">
+            <div className={classes.actions}>
               <Button type="submit" variant="primary" disabled={saving}>
                 {saving ? t('monCompte.saving') : t('monCompte.save')}
               </Button>
             </div>
           </form>
         </section>
-        <div className="ot-stack">
-          <section id="securite" className="ot-panel">
-            <div className="ot-section-head">
-              <span className="ot-kicker">
+        <div className={classes.stack}>
+          <section id="securite" className={classes.panel}>
+            <div className={classes.sectionHead}>
+              <span className={classes.kicker}>
                 {t('monCompte.passwordModalTitle')}
               </span>
               <h2>{t('monCompte.changePassword')}</h2>
             </div>
-            <p className="ot-subtitle">{t('monCompte.securityDescription')}</p>
+            <p className={classes.subtitle}>
+              {t('monCompte.securityDescription')}
+            </p>
             <Button
               variant="ghost"
               size="small"
@@ -211,12 +239,14 @@ export function MonCompte() {
               {t('monCompte.changePassword')}
             </Button>
           </section>
-          <section id="facturation" className="ot-panel">
-            <div className="ot-section-head">
-              <span className="ot-kicker">{t('monCompte.invoicesTitle')}</span>
+          <section id="facturation" className={classes.panel}>
+            <div className={classes.sectionHead}>
+              <span className={classes.kicker}>
+                {t('monCompte.invoicesTitle')}
+              </span>
               <h2>{t('monCompte.invoicesTitle')}</h2>
             </div>
-            <p className="ot-subtitle">
+            <p className={classes.subtitle}>
               {hasPaidSubscription
                 ? t('monCompte.invoicesDesc')
                 : t('monCompte.invoicesNA')}
@@ -232,7 +262,7 @@ export function MonCompte() {
               </Button>
             ) : (
               <button
-                className="ot-text-button"
+                className={classes.textButton}
                 type="button"
                 onClick={() =>
                   navigate('/app/checkout?plan=pro&period=monthly')
@@ -250,11 +280,11 @@ export function MonCompte() {
           title={t('monCompte.passwordModalTitle')}
           onClose={() => setPasswordOpen(false)}
         >
-          <form className="ot-stack" onSubmit={changePassword}>
-            <label className="ot-field">
+          <form className={classes.stack} onSubmit={changePassword}>
+            <label className={classes.field}>
               <span>{t('monCompte.newPassword')}</span>
               <input
-                className="ot-control"
+                className={classes.control}
                 type="password"
                 minLength={8}
                 required

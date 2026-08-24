@@ -1,6 +1,7 @@
 import type { SubscriptionStatus } from '../../types';
 import { useI18n } from '../../i18n';
 import { Button } from '../atoms/Button';
+import classes from './SubscriptionOverview.module.scss';
 
 interface SubscriptionOverviewProps {
   subscription?: SubscriptionStatus;
@@ -28,9 +29,9 @@ export function SubscriptionOverview({
     subscription?.subscription_status === 'trialing';
   const plan = hasPaidSubscription
     ? subscription.plan === 'ultimate'
-      ? 'Ultimate'
-      : 'Pro'
-    : 'Free';
+      ? t('admin.planUltimate')
+      : t('admin.planPro')
+    : t('admin.planFree');
   const applications = numberFrom(subscription?.usage, 'candidatures');
   const applicationsLimit = numberFrom(
     subscription?.limits,
@@ -47,15 +48,14 @@ export function SubscriptionOverview({
     : '—';
 
   return (
-    <section
-      className="ot-subscription-overview"
-      aria-labelledby="subscription-title"
-    >
-      <div className="ot-subscription-overview__lead">
-        <span className="ot-kicker">{t('monCompte.subscriptionTitle')}</span>
-        <div className="ot-subscription-overview__title">
+    <section className={classes.shell} aria-labelledby="subscription-title">
+      <div className={classes.lead}>
+        <span className={classes.kicker}>
+          {t('monCompte.subscriptionTitle')}
+        </span>
+        <div className={classes.title}>
           <h2 id="subscription-title">{plan}</h2>
-          <span className="ot-badge" data-tone="success">
+          <span className={classes.badge} data-tone="success">
             {hasPaidSubscription
               ? t('monCompte.active')
               : t('monCompte.freeStatus')}
@@ -66,7 +66,7 @@ export function SubscriptionOverview({
             ? `${t('monCompte.planStartedAt')} ${startedAt}`
             : t('monCompte.upgradeFromPricing')}
         </p>
-        <div className="ot-subscription-overview__actions">
+        <div className={classes.actions}>
           <Button
             variant="ghost"
             onClick={hasPaidSubscription ? onManage : onUpgrade}
@@ -89,7 +89,7 @@ export function SubscriptionOverview({
           ) : null}
         </div>
       </div>
-      <dl className="ot-subscription-overview__metrics">
+      <dl className={classes.metrics}>
         <div>
           <dt>{t('monCompte.billingPeriod')}</dt>
           <dd>
