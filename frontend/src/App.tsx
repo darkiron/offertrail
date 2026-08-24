@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 
-import { I18nProvider } from './i18n';
+import { I18nProvider, useI18n } from './i18n';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import appClasses from './App.module.css';

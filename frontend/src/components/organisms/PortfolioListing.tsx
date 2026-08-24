@@ -42,7 +42,7 @@ export function PortfolioListing<T>({
 }: PortfolioListingProps<T>) {
   return <>
     <ResultHeader action={summaryAction}>{summary}</ResultHeader>
-    {fetching && data && <LoadingStatus>Chargement de la page {data.page}…</LoadingStatus>}
+    {fetching && data && <LoadingStatus>{`Chargement de la page ${data.page}…`}</LoadingStatus>}
     {loading ? (
       <StatePanel><LoadingStatus>{loadingLabel}</LoadingStatus></StatePanel>
     ) : error ? (
