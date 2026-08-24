@@ -1,0 +1,292 @@
+.page {
+  max-width: 1240px;
+  margin: auto;
+  padding: 3.5rem clamp(1.25rem, 5vw, 5rem) 5rem;
+  color: #18201d;
+}
+
+.pageHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: #a73e29;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.page h1 {
+  max-width: 780px;
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: clamp(2.7rem, 5vw, 4.7rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.lede {
+  color: #59615d;
+  font-size: 1.05rem;
+}
+
+.darkButton,
+.primary,
+.secondary {
+  min-height: 43px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: 1px solid #18201d;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.darkButton,
+.primary {
+  color: white;
+  background: #18201d;
+}
+
+.secondary {
+  background: transparent;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.65fr);
+  gap: clamp(3rem, 7vw, 7rem);
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #18201d;
+}
+
+.sectionTitle h2,
+aside h2 {
+  font:
+    600 1.2rem Georgia,
+    serif;
+}
+
+.sectionTitle span {
+  color: #59615d;
+  font-size: 0.75rem;
+}
+
+.priority {
+  margin-top: 1rem;
+  padding: clamp(1.8rem, 4vw, 3rem);
+  color: #f8f5ec;
+  background: #18201d;
+  border-radius: 3px 3px 30px;
+}
+
+.priorityMeta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+  color: #efb7a7;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.priority h2 {
+  margin: 0;
+  font:
+    500 clamp(2rem, 4vw, 3.3rem) Georgia,
+    serif;
+}
+
+.company {
+  color: #c7cec9;
+}
+
+.actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.actions button {
+  min-height: 43px;
+  padding: 0 1rem;
+  border: 1px solid #f8f5ec;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actions button + button {
+  color: #f8f5ec;
+  background: transparent;
+}
+
+.queue {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding: 1.1rem 0.25rem;
+  border: 0;
+  border-bottom: 1px solid #d8d3c8;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.queue strong,
+.queue small {
+  display: block;
+}
+
+.queue small,
+.queue time {
+  color: #59615d;
+}
+
+aside dl {
+  border-top: 1px solid #18201d;
+}
+
+aside dl div {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  align-items: baseline;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid #d8d3c8;
+}
+
+dt {
+  font:
+    500 2rem Georgia,
+    serif;
+}
+
+dd {
+  margin: 0;
+  color: #59615d;
+}
+
+.outcomes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  border: 0;
+  padding: 0;
+}
+
+.outcomes legend,
+.field {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.outcomes label {
+  padding: 0.8rem;
+  border: 1px solid #d8d3c8;
+  border-radius: 10px;
+}
+
+.outcomes input {
+  margin-right: 0.5rem;
+}
+
+.selected {
+  background: #f3ddd5;
+  border-color: #b5462f !important;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+
+.field textarea,
+.field select {
+  padding: 0.75rem;
+  border: 1px solid #d8d3c8;
+  border-radius: 10px;
+  background: white;
+}
+
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.error {
+  color: #a73e29;
+}
+
+.skeleton,
+.skeletonCard {
+  height: 90px;
+  margin-bottom: 2rem;
+  background: #e8e3d8;
+  border-radius: 12px;
+}
+
+.skeletonCard {
+  height: 340px;
+}
+
+.onboarding {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.empty {
+  padding: 3rem 0;
+  color: #59615d;
+}
+
+@media (width <= 800px) {
+  .page {
+    padding-top: 2rem;
+  }
+
+  .pageHead {
+    align-items: start;
+  }
+
+  .pageHead .darkButton {
+    width: 44px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .pageHead .darkButton::first-letter {
+    font-size: 1.2rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .outcomes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

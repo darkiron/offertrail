@@ -3,100 +3,289 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useWorkflowApplications } from '../hooks/useApplications';
 import { useListingController } from '../hooks/useListingController';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
-import classes from './ApplicationsPage.module.css';
+import classes from './ApplicationsPage.module.scss';
 import { SearchField, SelectField } from '../components/atoms/FormField';
 import { ActionButton } from '../components/atoms/Action';
-import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
+import {
+  EntityIdentity,
+  EntityValue,
+} from '../components/molecules/EntityList';
 import { PageHeader } from '../components/molecules/PageHeader';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { PortfolioListing } from '../components/organisms/PortfolioListing';
+import { StatePanel } from '../components/molecules/StatePanel';
+import { useI18n } from '../i18n';
 
 type FilterOption = readonly [value: string, label: string];
 
-const STATUS_OPTIONS: readonly FilterOption[] = [
-  ['', 'Tous les statuts'], ['en_attente', 'À préparer'], ['envoyee', 'Envoyée'],
-  ['entretien', 'Entretien'], ['offre_recue', 'Offre reçue'], ['refusee', 'Refusée'],
-];
-const DUE_OPTIONS: readonly FilterOption[] = [['', 'Toutes les échéances'], ['overdue', 'En retard'], ['today', "Aujourd’hui"], ['week', 'Cette semaine'], ['none', 'Sans prochaine action']];
-const SORT_OPTIONS: readonly FilterOption[] = [['created_at', 'Ajoutées récemment'], ['priority', 'Priorité des actions'], ['applied_at', 'Date de candidature'], ['updated_at', 'Activité récente']];
-
-function formatDate(value?: string | null) {
+function formatDate(value: string | null | undefined, locale: string) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(value));
 }
-
-function actionLabel(action: { due_at: string; urgency: string } | null) {
-  if (!action) return 'Rien de planifié';
-  if (action.urgency === 'overdue') return `En retard · ${formatDate(action.due_at)}`;
-  if (action.urgency === 'today') return "Aujourd’hui";
-  return formatDate(action.due_at);
-}
-
-function statusLabel(status: string) {
-  return STATUS_OPTIONS.find(([value]) => value === status)?.[1] ?? status.replaceAll('_', ' ');
-}
+const interpolate = (value: string, count: number) =>
+  value.replace('{count}', String(count));
+const errorStatus = (error: unknown) =>
+  (error as { response?: { status?: number } } | null)?.response?.status;
 
 export function ApplicationsPage() {
+  const { locale, t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  const listing = useListingController('/app/candidatures', { sort: 'created_at' });
+  const listing = useListingController('/app/candidatures', {
+    sort: 'created_at',
+  });
   const [showCreate, setShowCreate] = useState(false);
   const resultsTitle = useRef<HTMLDivElement>(null);
   const status = listing.value('status');
   const due = listing.value('due');
   const sort = listing.value('sort');
   const includeClosed = listing.value('closed') === '1';
+  const statusOptions: readonly FilterOption[] = [
+    ['', t('applications.allStatuses')],
+    ['en_attente', t('statut.en_attente')],
+    ['envoyee', t('statut.envoyee')],
+    ['entretien', t('statut.entretien')],
+    ['offre_recue', t('statut.offre_recue')],
+    ['refusee', t('statut.refusee')],
+  ];
+  const dueOptions: readonly FilterOption[] = [
+    ['', t('applications.allDeadlines')],
+    ['overdue', t('applications.overdue')],
+    ['today', t('applications.today')],
+    ['week', t('applications.thisWeek')],
+    ['none', t('applications.noNextAction')],
+  ];
+  const sortOptions: readonly FilterOption[] = [
+    ['created_at', t('applications.recentlyAdded')],
+    ['priority', t('applications.actionPriority')],
+    ['applied_at', t('applications.applicationDate')],
+    ['updated_at', t('applications.recentActivity')],
+  ];
+  const statusLabel = (value: string) =>
+    statusOptions.find(([option]) => option === value)?.[1] ??
+    value.replaceAll('_', ' ');
+  const actionLabel = (action: { due_at: string; urgency: string } | null) =>
+    !action
+      ? t('applications.nothingPlanned')
+      : action.urgency === 'overdue'
+        ? `${t('applications.overdue')} · ${formatDate(action.due_at, locale)}`
+        : action.urgency === 'today'
+          ? t('applications.today')
+          : formatDate(action.due_at, locale);
 
-  const params = useMemo(() => ({ q: listing.query || undefined, status: status || undefined, due: due || undefined, sort, page: listing.page, per_page: 15, include_closed: includeClosed || status === 'refusee' }), [listing.query, listing.page, status, due, sort, includeClosed]);
+  const params = useMemo(
+    () => ({
+      q: listing.query || undefined,
+      status: status || undefined,
+      due: due || undefined,
+      sort,
+      page: listing.page,
+      per_page: 15,
+      include_closed: includeClosed || status === 'refusee',
+    }),
+    [listing.query, listing.page, status, due, sort, includeClosed],
+  );
   const query = useWorkflowApplications(params);
   const data = query.data;
   const hasFilters = Boolean(params.q || status || due || includeClosed);
 
-  useEffect(() => { document.title = 'Candidatures — OfferTrail'; }, []);
   useEffect(() => {
-    const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY;
-    if (typeof restoreScrollY === 'number') window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY }));
+    document.title = t('application.pageTitle');
+  }, [t]);
+  useEffect(() => {
+    const restoreScrollY = (
+      location.state as { restoreScrollY?: number } | null
+    )?.restoreScrollY;
+    if (typeof restoreScrollY === 'number')
+      window.requestAnimationFrame(() =>
+        window.scrollTo({ top: restoreScrollY }),
+      );
   }, [location.state]);
   const clearFilters = listing.clear;
-  const openRow = (id: string) => navigate(`/app/candidatures/${id}`, { state: { from: `${location.pathname}${location.search}`, scrollY: window.scrollY } });
+  const openRow = (id: string) =>
+    navigate(`/app/candidatures/${id}`, {
+      state: {
+        from: `${location.pathname}${location.search}`,
+        scrollY: window.scrollY,
+      },
+    });
 
-  if (query.error && (query.error as { response?: { status?: number } }).response?.status === 401) {
-    navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
-    return null;
-  }
+  useEffect(() => {
+    if (errorStatus(query.error) === 401)
+      navigate(
+        `/login?next=${encodeURIComponent(location.pathname + location.search)}`,
+        { replace: true },
+      );
+  }, [query.error, location.pathname, location.search, navigate]);
+  if (errorStatus(query.error) === 401) return null;
+  if (errorStatus(query.error) === 403)
+    return (
+      <main className={classes.page}>
+        <StatePanel title={t('applications.forbidden')} />
+      </main>
+    );
+  if (errorStatus(query.error) === 404)
+    return (
+      <main className={classes.page}>
+        <StatePanel title={t('applications.notFound')} />
+      </main>
+    );
 
   return (
     <main className={classes.page} aria-busy={query.isFetching}>
-      {showCreate && <NewApplicationModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void query.refetch(); }} />}
-    <PageHeader variant="saas" kicker="Portefeuille actif" title="Candidatures" description="Retrouvez chaque opportunité et la prochaine décision à prendre." actions={<ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>} />
-      <FilterBar label="Filtres des candidatures" columns="minmax(220px,1.5fr) repeat(3,minmax(140px,.65fr))">
-        <SearchField className={classes.search} label="Rechercher" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Poste ou entreprise…" />
-        <SelectField label="Statut" value={status} onChange={(event) => listing.update('status', event.target.value)} options={STATUS_OPTIONS} />
-        <SelectField label="Échéance" value={due} onChange={(event) => listing.update('due', event.target.value)} options={DUE_OPTIONS} />
-        <SelectField label="Trier par" value={sort} onChange={(event) => listing.update('sort', event.target.value)} options={SORT_OPTIONS} />
-        <label className={classes.closed}><input type="checkbox" checked={includeClosed} onChange={(event) => listing.update('closed', event.target.checked ? '1' : '')} /> Inclure les candidatures refusées</label>
+      {showCreate && (
+        <NewApplicationModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            void query.refetch();
+          }}
+        />
+      )}
+      <PageHeader
+        variant="saas"
+        kicker={t('applications.portfolio')}
+        title={t('applications.title')}
+        description={t('applications.description')}
+        actions={
+          <ActionButton variant="primary" onClick={() => setShowCreate(true)}>
+            {t('applications.add')}
+          </ActionButton>
+        }
+      />
+      <FilterBar
+        label={t('applications.filters')}
+        columns="minmax(220px,1.5fr) repeat(3,minmax(140px,.65fr))"
+      >
+        <SearchField
+          className={classes.search}
+          label={t('applications.search')}
+          value={listing.search}
+          onChange={(event) => listing.setSearch(event.target.value)}
+          placeholder={t('applications.searchPlaceholder')}
+        />
+        <SelectField
+          label={t('applications.status')}
+          value={status}
+          onChange={(event) => listing.update('status', event.target.value)}
+          options={statusOptions}
+        />
+        <SelectField
+          label={t('applications.due')}
+          value={due}
+          onChange={(event) => listing.update('due', event.target.value)}
+          options={dueOptions}
+        />
+        <SelectField
+          label={t('applications.sort')}
+          value={sort}
+          onChange={(event) => listing.update('sort', event.target.value)}
+          options={sortOptions}
+        />
+        <label className={classes.closed}>
+          <input
+            type="checkbox"
+            checked={includeClosed}
+            onChange={(event) =>
+              listing.update('closed', event.target.checked ? '1' : '')
+            }
+          />{' '}
+          {t('applications.includeDeclined')}
+        </label>
       </FilterBar>
 
-      <div ref={resultsTitle} tabIndex={-1}><PortfolioListing
-        label="Candidatures" headings={['Poste / entreprise','Statut','Prochaine action','Dernier signal']}
-        data={data} loading={query.isLoading} fetching={query.isFetching} error={query.isError}
-        summary={`${data?.total ?? 0} candidature${data?.total === 1 ? '' : 's'}`}
-        summaryAction={hasFilters ? <ActionButton variant="quiet" onClick={clearFilters}>Effacer les filtres</ActionButton> : undefined}
-        loadingLabel="Chargement des candidatures…" errorTitle="La liste ne répond pas"
-        emptyTitle={hasFilters ? 'Aucun résultat pour ces filtres' : 'Aucune candidature pour le moment'}
-        emptyDescription={hasFilters ? 'Modifiez ou effacez les critères actifs.' : 'Ajoutez la première pour centraliser son contexte et planifier la suite.'}
-        emptyAction={hasFilters ? <ActionButton onClick={clearFilters}>Effacer les filtres</ActionButton> : <ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>}
-        getKey={(item) => item.id} onOpen={(item) => openRow(item.id)}
-        renderCells={(item) => <>
-              <EntityIdentity title={item.poste} detail={item.organization.name} />
+      <div ref={resultsTitle} tabIndex={-1}>
+        <PortfolioListing
+          label={t('applications.title')}
+          headings={[
+            t('applications.headingIdentity'),
+            t('applications.headingStatus'),
+            t('applications.headingNextAction'),
+            t('applications.headingLastSignal'),
+          ]}
+          data={data}
+          loading={query.isLoading}
+          fetching={query.isFetching}
+          error={query.isError}
+          summary={interpolate(
+            t(
+              data?.total === 1
+                ? 'applications.countSingular'
+                : 'applications.countPlural',
+            ),
+            data?.total ?? 0,
+          )}
+          summaryAction={
+            hasFilters ? (
+              <ActionButton variant="quiet" onClick={clearFilters}>
+                {t('applications.clearFilters')}
+              </ActionButton>
+            ) : undefined
+          }
+          loadingLabel={t('applications.loading')}
+          errorTitle={t('applications.error')}
+          emptyTitle={t(
+            hasFilters ? 'applications.emptyFiltered' : 'applications.empty',
+          )}
+          emptyDescription={t(
+            hasFilters
+              ? 'applications.emptyFilteredCopy'
+              : 'applications.emptyCopy',
+          )}
+          emptyAction={
+            hasFilters ? (
+              <ActionButton onClick={clearFilters}>
+                {t('applications.clearFilters')}
+              </ActionButton>
+            ) : (
+              <ActionButton
+                variant="primary"
+                onClick={() => setShowCreate(true)}
+              >
+                {t('applications.add')}
+              </ActionButton>
+            )
+          }
+          getKey={(item) => item.id}
+          onOpen={(item) => openRow(item.id)}
+          renderCells={(item) => (
+            <>
+              <EntityIdentity
+                title={item.poste}
+                detail={item.organization.name}
+              />
               <EntityValue value={statusLabel(item.statut)} />
-              <EntityValue value={actionLabel(item.next_action)} tone={item.next_action?.urgency === 'overdue' ? 'danger' : 'default'} />
-              <EntityValue value={item.last_event ? statusLabel(item.last_event.kind) : 'Aucune activité'} detail={item.last_event ? formatDate(item.last_event.occurred_at) : undefined} tone={item.last_event ? 'default' : 'muted'} />
-        </>}
-        onRetry={() => void query.refetch()} getPageHref={listing.pageHref} onPageChange={() => window.requestAnimationFrame(() => resultsTitle.current?.focus())}
-      /></div>
+              <EntityValue
+                value={actionLabel(item.next_action)}
+                tone={
+                  item.next_action?.urgency === 'overdue' ? 'danger' : 'default'
+                }
+              />
+              <EntityValue
+                value={
+                  item.last_event
+                    ? statusLabel(item.last_event.kind)
+                    : t('applications.noActivity')
+                }
+                detail={
+                  item.last_event
+                    ? formatDate(item.last_event.occurred_at, locale)
+                    : undefined
+                }
+                tone={item.last_event ? 'default' : 'muted'}
+              />
+            </>
+          )}
+          onRetry={() => void query.refetch()}
+          getPageHref={listing.pageHref}
+          onPageChange={() =>
+            window.requestAnimationFrame(() => resultsTitle.current?.focus())
+          }
+        />
+      </div>
     </main>
   );
 }
-
-export default ApplicationsPage;
