@@ -53,20 +53,7 @@
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
       }
     </script>
-    <script>
-      (function () {
-        var stored = localStorage.getItem('offertrail.color-scheme');
-        var scheme =
-          stored ||
-          (window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light');
-        document.documentElement.setAttribute(
-          'data-mantine-color-scheme',
-          scheme,
-        );
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root">
