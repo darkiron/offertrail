@@ -1,29 +1,31 @@
-/**
- * global.css — Styles globaux OfferTrail
- * Import : main.tsx importe ce fichier après @mantine/core/styles.css
- */
-
-@import './variables.css';
-@import './framework.css';
+@use '../abstracts/mixins';
 
 /* ─── Reset ──────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
 }
 
 body {
   margin: 0;
   background-color: var(--ot-paper);
   color: var(--ot-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   min-height: 100vh;
 }
 
@@ -38,8 +40,13 @@ a:hover {
 }
 
 /* ─── Typography ─────────────────────────────────────────── */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', system-ui, sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Inter, system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
@@ -62,8 +69,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Focus visible ──────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--ot-accent);
-  outline-offset: 2px;
+  @include mixins.focus-ring;
 }
 
 /* ─── Mantine overrides ──────────────────────────────────── */
@@ -97,15 +103,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Utility classes ────────────────────────────────────── */
 .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  @include mixins.visually-hidden;
 }
 
 .truncate {
