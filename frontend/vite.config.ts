@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      host: '127.0.0.1',
       // Une base URL vide conserve la même origine dans le navigateur ; Vite
       // transmet ensuite les appels au backend choisi sans déclencher de CORS.
       proxy: {
