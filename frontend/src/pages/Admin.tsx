@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   ButtonHTMLAttributes,
   HTMLAttributes,
@@ -35,9 +34,34 @@ import {
   YAxis,
 } from 'recharts';
 import { IconDownload, IconSearch } from '@tabler/icons-react';
-import { http as axiosInstance } from '@shared/api/http';
+import { adminApi } from '@entities/admin/api';
+import type {
+  AdminStats,
+  AdminUserRow,
+  CandPoint,
+  MrrPoint,
+  PlanPoint,
+  PromoRow,
+  SignupPoint,
+} from '@entities/admin/model';
+import {
+  useAdminCandidaturesDailyQuery,
+  useAdminMrrHistoryQuery,
+  useAdminPlanDistributionQuery,
+  useAdminPromosQuery,
+  useAdminSignupsQuery,
+  useAdminStatsQuery,
+  useAdminUsersQuery,
+} from '@features/admin/useAdminDashboardQueries';
+import {
+  useToggleUserActiveMutation,
+  useUpdateUserPlanMutation,
+} from '@features/admin/useAdminUserMutations';
 import { useI18n } from '../i18n';
 import classes from './Admin.module.scss';
+
+const errorStatus = (error: unknown) =>
+  (error as { response?: { status?: number } } | null)?.response?.status;
 
 type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'light' | 'filled';
@@ -169,64 +193,6 @@ const TT_STYLE = {
   fontSize: 12,
 } as const;
 
-interface AdminStats {
-  total_users: number;
-  free_users: number;
-  pro_users: number;
-  ultimate_users: number;
-  mrr: number;
-  arr: number;
-  new_users_7d: number;
-  new_users_30d: number;
-  conversion_rate: number;
-  total_candidatures: number;
-  total_relances: number;
-  total_etablissements: number;
-  avg_cands_per_user: number;
-}
-
-interface AdminUserRow {
-  id: string;
-  email: string | null;
-  prenom: string | null;
-  nom: string | null;
-  plan: 'free' | 'pro' | 'ultimate' | string;
-  billing_period: 'monthly' | 'yearly' | null;
-  role: string;
-  is_active: boolean;
-  nb_candidatures: number;
-  created_at: string | null;
-}
-
-interface MrrPoint {
-  month: string;
-  mrr: number;
-  active_users: number;
-}
-interface SignupPoint {
-  date: string;
-  signups: number;
-  upgrades: number;
-}
-interface PlanPoint {
-  name: string;
-  plan: 'free' | 'pro' | 'ultimate';
-  value: number;
-}
-interface CandPoint {
-  date: string;
-  count: number;
-}
-interface PromoRow {
-  id: string;
-  name: string | null;
-  percent_off: number | null;
-  amount_off: number | null;
-  duration: string;
-  times_redeemed: number;
-  valid: boolean;
-}
-
 const defaultStats: AdminStats = {
   total_users: 0,
   free_users: 0,
@@ -307,18 +273,20 @@ function KpiCard({
 export function Admin() {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<AdminStats>(defaultStats);
-  const [users, setUsers] = useState<AdminUserRow[]>([]);
-  const [mrrData, setMrrData] = useState<MrrPoint[]>([]);
-  const [signups, setSignups] = useState<SignupPoint[]>([]);
-  const [plans, setPlans] = useState<PlanPoint[]>([]);
-  const [cands, setCands] = useState<CandPoint[]>([]);
-  const [promos, setPromos] = useState<PromoRow[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const statsQuery = useAdminStatsQuery();
+  const usersQuery = useAdminUsersQuery();
+  const mrrQuery = useAdminMrrHistoryQuery();
+  const signupsQuery = useAdminSignupsQuery();
+  const plansQuery = useAdminPlanDistributionQuery();
+  const candsQuery = useAdminCandidaturesDailyQuery();
+  const promosQuery = useAdminPromosQuery();
+  const updatePlanMutation = useUpdateUserPlanMutation();
+  const toggleActiveMutation = useToggleUserActiveMutation();
+
   const [accessDenied, setAccessDenied] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [loadError, setLoadError] = useState(false);
   const [notice, setNotice] = useState<{
     tone: 'success' | 'error';
     message: string;
@@ -328,60 +296,52 @@ export function Admin() {
     document.title = t('admin.pageTitle');
   }, [t]);
 
-  const handle403 = useCallback(
-    (err: unknown): boolean => {
-      if (axios.isAxiosError(err) && err.response?.status === 403) {
-        setAccessDenied(true);
-        window.setTimeout(() => navigate('/app', { replace: true }), 1500);
-        return true;
-      }
-      return false;
-    },
-    [navigate],
+  const queries = useMemo(
+    () => [
+      statsQuery,
+      usersQuery,
+      mrrQuery,
+      signupsQuery,
+      plansQuery,
+      candsQuery,
+      promosQuery,
+    ],
+    [
+      statsQuery,
+      usersQuery,
+      mrrQuery,
+      signupsQuery,
+      plansQuery,
+      candsQuery,
+      promosQuery,
+    ],
   );
-
-  const refresh = useCallback(async () => {
-    setLoadError(false);
-    const [
-      statsRes,
-      usersRes,
-      mrrRes,
-      signupsRes,
-      plansRes,
-      candsRes,
-      promosRes,
-    ] = await Promise.all([
-      axiosInstance.get<AdminStats>('/admin/stats'),
-      axiosInstance.get<AdminUserRow[]>('/admin/users'),
-      axiosInstance.get<MrrPoint[]>('/admin/analytics/mrr-history'),
-      axiosInstance.get<SignupPoint[]>('/admin/analytics/signups'),
-      axiosInstance.get<PlanPoint[]>('/admin/analytics/plan-distribution'),
-      axiosInstance.get<CandPoint[]>('/admin/analytics/candidatures-daily'),
-      axiosInstance.get<{ promos: PromoRow[] }>('/admin/promos'),
-    ]);
-    setStats(statsRes.data);
-    setUsers(usersRes.data);
-    setMrrData(mrrRes.data);
-    setSignups(signupsRes.data);
-    setPlans(plansRes.data);
-    setCands(candsRes.data);
-    setPromos(promosRes.data.promos);
-  }, []);
+  const loading = queries.some((query) => query.isLoading);
+  const forbidden = queries.some((query) => errorStatus(query.error) === 403);
+  const loadError = queries.some((query) => query.isError) && !forbidden;
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        await refresh();
-      } catch (err) {
-        if (handle403(err)) return;
-        setLoadError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, [handle403, refresh]);
+    if (!forbidden) return;
+    setAccessDenied(true);
+    const timeout = window.setTimeout(
+      () => navigate('/app', { replace: true }),
+      1500,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [forbidden, navigate]);
+
+  const retry = () => {
+    queries.forEach((query) => void query.refetch());
+  };
+
+  const handleActionError = (err: unknown, fallbackMessage: string) => {
+    if (errorStatus(err) === 403) {
+      setAccessDenied(true);
+      window.setTimeout(() => navigate('/app', { replace: true }), 1500);
+      return;
+    }
+    setNotice({ tone: 'error', message: fallbackMessage });
+  };
 
   const updateUserPlan = async (
     userId: string,
@@ -389,15 +349,13 @@ export function Admin() {
   ) => {
     try {
       setPendingAction(`${userId}:${plan}`);
-      await axiosInstance.patch(`/admin/users/${userId}/status`, {
-        plan,
-        billing_period: plan === 'free' ? null : 'monthly',
+      await updatePlanMutation.mutateAsync({
+        userId,
+        update: { plan, billing_period: plan === 'free' ? null : 'monthly' },
       });
-      await refresh();
       setNotice({ tone: 'success', message: t('admin.planUpdated') });
     } catch (err) {
-      if (handle403(err)) return;
-      setNotice({ tone: 'error', message: t('admin.planUpdateError') });
+      handleActionError(err, t('admin.planUpdateError'));
     } finally {
       setPendingAction(null);
     }
@@ -406,12 +364,10 @@ export function Admin() {
   const toggleActive = async (userId: string) => {
     try {
       setPendingAction(`${userId}:toggle`);
-      await axiosInstance.patch(`/admin/users/${userId}/toggle-active`);
-      await refresh();
+      await toggleActiveMutation.mutateAsync(userId);
       setNotice({ tone: 'success', message: t('admin.accountUpdated') });
     } catch (err) {
-      if (handle403(err)) return;
-      setNotice({ tone: 'error', message: t('admin.accountUpdateError') });
+      handleActionError(err, t('admin.accountUpdateError'));
     } finally {
       setPendingAction(null);
     }
@@ -419,20 +375,28 @@ export function Admin() {
 
   const exportCsv = async () => {
     try {
-      const res = await axiosInstance.get('/admin/export-users', {
-        responseType: 'blob',
-      });
-      const url = URL.createObjectURL(res.data as Blob);
+      const blob = await adminApi.exportUsersCsv();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'offertrail-users.csv';
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      if (handle403(err)) return;
-      setNotice({ tone: 'error', message: t('admin.exportError') });
+      handleActionError(err, t('admin.exportError'));
     }
   };
+
+  const stats: AdminStats = statsQuery.data ?? defaultStats;
+  const users: AdminUserRow[] = useMemo(
+    () => usersQuery.data ?? [],
+    [usersQuery.data],
+  );
+  const mrrData: MrrPoint[] = mrrQuery.data ?? [];
+  const signups: SignupPoint[] = signupsQuery.data ?? [];
+  const plans: PlanPoint[] = plansQuery.data ?? [];
+  const cands: CandPoint[] = candsQuery.data ?? [];
+  const promos: PromoRow[] = promosQuery.data ?? [];
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -489,7 +453,7 @@ export function Admin() {
       {loadError ? (
         <div className={classes.errorState} role="alert">
           <strong>{t('admin.loadError')}</strong>
-          <Button variant="light" onClick={() => void refresh()}>
+          <Button variant="light" onClick={retry}>
             {t('admin.retry')}
           </Button>
         </div>
