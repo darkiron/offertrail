@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { subscriptionService } from '../services/api';
-import type { SubscriptionStatus } from '../types';
 import { Button } from '@shared/ui/Button';
 import { PlanCard } from '@widgets/billing/PlanCard';
+import { useSubscriptionStatusQuery } from '@features/billing/useSubscriptionQueries';
+import {
+  useCheckoutMutation,
+  usePortalMutation,
+} from '@features/billing/useBillingMutations';
 import { useI18n } from '../i18n';
 import { PLAN_RANK, usePricingPlans } from '../lib/pricingPlans';
 import { CONFIG } from '../config';
@@ -15,9 +18,12 @@ export function Pricing() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   const plans = usePricingPlans();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [subscriptionLoadFailed, setSubscriptionLoadFailed] = useState(false);
+  const subscriptionQuery = useSubscriptionStatusQuery();
+  const checkoutMutation = useCheckoutMutation();
+  const portalMutation = usePortalMutation();
+  const sub = subscriptionQuery.data ?? null;
+  const subscriptionLoading = subscriptionQuery.isFetching;
+  const subscriptionLoadFailed = subscriptionQuery.isError;
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const requestedPlan = searchParams.get('plan');
   const requestedPeriod = searchParams.get('period');
@@ -33,33 +39,21 @@ export function Pricing() {
   );
   const [cgvAccepted, setCgvAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
-  const [notice, setNotice] = useState<{
+  const [actionNotice, setActionNotice] = useState<{
     tone: 'success' | 'error';
     text: string;
   } | null>(null);
+  const notice = subscriptionLoadFailed
+    ? {
+        tone: 'error' as const,
+        text: t('landing.pricing.subscriptionLoadError'),
+      }
+    : actionNotice;
   const promoPlaceholder =
     CONFIG.PROMO_PLACEHOLDER || t('landing.pricing.promoPlaceholder');
-  const loadSubscription = useCallback(async () => {
-    setSubscriptionLoading(true);
-    setSubscriptionLoadFailed(false);
-    setNotice(null);
-    try {
-      setSub(await subscriptionService.getMe());
-    } catch {
-      setSub(null);
-      setSubscriptionLoadFailed(true);
-      setNotice({
-        tone: 'error',
-        text: t('landing.pricing.subscriptionLoadError'),
-      });
-    } finally {
-      setSubscriptionLoading(false);
-    }
-  }, [t]);
   useEffect(() => {
     document.title = t('landing.pricing.pageTitle');
-    void loadSubscription();
-  }, [loadSubscription, t]);
+  }, [t]);
   useEffect(() => {
     if (validPlan && validPeriod) return;
     const normalized = new URLSearchParams({
@@ -88,9 +82,9 @@ export function Pricing() {
     chosenPeriod: Period,
   ) => {
     setLoadingPlan(plan);
-    setNotice(null);
+    setActionNotice(null);
     try {
-      const checkout = await subscriptionService.checkout({
+      const checkout = await checkoutMutation.mutateAsync({
         plan,
         period: chosenPeriod,
         coupon: promoCode.trim() || undefined,
@@ -99,10 +93,13 @@ export function Pricing() {
         window.location.assign(checkout.checkout_url);
         return;
       }
-      setSub(await subscriptionService.getMe());
-      setNotice({ tone: 'success', text: t('monCompte.proActivated') });
+      await subscriptionQuery.refetch();
+      setActionNotice({ tone: 'success', text: t('monCompte.proActivated') });
     } catch {
-      setNotice({ tone: 'error', text: t('monCompte.proActivateError') });
+      setActionNotice({
+        tone: 'error',
+        text: t('monCompte.proActivateError'),
+      });
     } finally {
       setLoadingPlan(null);
     }
@@ -111,14 +108,13 @@ export function Pricing() {
     if (id === 'free' || PLAN_RANK[id] < PLAN_RANK[currentPlan]) return;
     if (hasPaidSubscription) {
       setLoadingPlan(id);
-      setNotice(null);
-      void subscriptionService
-        .portal()
-        .then(({ portal_url }) => window.location.assign(portal_url))
-        .catch(() =>
-          setNotice({ tone: 'error', text: t('monCompte.portalError') }),
-        )
-        .finally(() => setLoadingPlan(null));
+      setActionNotice(null);
+      portalMutation.mutate(undefined, {
+        onSuccess: ({ portal_url }) => window.location.assign(portal_url),
+        onError: () =>
+          setActionNotice({ tone: 'error', text: t('monCompte.portalError') }),
+        onSettled: () => setLoadingPlan(null),
+      });
       return;
     }
     void handleCheckout(id as Exclude<PlanId, 'free'>, chosenPeriod);
@@ -213,7 +209,7 @@ export function Pricing() {
             <Button
               variant="ghost"
               size="small"
-              onClick={() => void loadSubscription()}
+              onClick={() => void subscriptionQuery.refetch()}
               disabled={subscriptionLoading}
             >
               {subscriptionLoading
