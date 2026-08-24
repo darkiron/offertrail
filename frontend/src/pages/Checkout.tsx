@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { BillingPeriod, PlanId } from '../lib/pricingPlans';
 import { usePricingPlans } from '../lib/pricingPlans';
-import { subscriptionService } from '../services/api';
+import { subscriptionService } from '../services/api/billing';
 import { useAuth } from '../context/auth-context';
 import { useI18n } from '../i18n';
 import classes from './Checkout.module.css';

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applicationService } from '../../services/api';
-import type { ApplicationDetailsResponse } from '../../services/api';
+import { applicationService, type ApplicationDetailsResponse } from '../../services/api/applications';
 import type { Contact } from '../../types';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { dashboardService } from '../services/api';
+import { dashboardService } from '../services/api/dashboard';
 import type { TodayAction } from '../types';
 import classes from './Dashboard.module.css';
 import { ActionButton } from '../components/atoms/Action';

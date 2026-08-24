@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { organizationService } from '../services/api';
+import { organizationService } from '../services/api/organizations';
 import { useListingController, usePaginatedListing } from '../hooks/useListingController';
 import classes from './OrganizationsPage.module.css';
 import { SearchField, SelectField } from '../components/atoms/FormField';

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import axiosInstance, { setAxiosAuthToken } from '../services/api'
+import { axiosInstance, setAxiosAuthToken } from '../services/api/client'
 import { AuthContext, type Profile } from './auth-context'
 
 

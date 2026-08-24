@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { applicationService, organizationService, type WorkflowOrganization } from '../../services/api';
+import { applicationService } from '../../services/api/applications';
+import { organizationService, type WorkflowOrganization } from '../../services/api/organizations';
 import classes from './NewApplicationModal.module.css';
 
 interface NewApplicationModalProps { onClose: () => void; onCreated: () => void; }

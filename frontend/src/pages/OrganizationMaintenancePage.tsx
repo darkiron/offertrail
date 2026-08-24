@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { organizationService } from '../services/api';
+import { organizationService } from '../services/api/organizations';
 import type { Organization } from '../types';
 import classes from './OrganizationMaintenancePage.module.css';
 import { ActionButton } from '../components/atoms/Action';

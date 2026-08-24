@@ -4,7 +4,7 @@ import {
   UiModal as Modal, UiTextInput as TextInput, UiTextarea as Textarea,
   UiSelect as Select, UiStack as Stack, UiGroup as Group, UiText as Text,
 } from '../atoms/UiPrimitives';
-import type { EventUpdatePayload } from '../../services/api';
+import type { EventUpdatePayload } from '../../services/api/applications';
 import { Button } from '../atoms/Button';
 
 const EVENT_TYPE_OPTIONS = [

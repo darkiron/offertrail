@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type OrganizationDetails } from '../../services/api';
+import { api, type OrganizationDetails } from '../../services/api/organizations';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
 import { ProbityBadge } from '../atoms/ProbityBadge';
 import { StatusBadge } from '../atoms/StatusBadge';

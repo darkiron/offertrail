@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { organizationService } from '../services/api';
+import { organizationService } from '../services/api/organizations';
 import classes from './CompanyDetailsPage.module.css';
 import { ActionButton, ActionLink, ExternalAction } from '../components/atoms/Action';
 import { LoadingStatus } from '../components/atoms/LoadingStatus';

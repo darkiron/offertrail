@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
-import { subscriptionService } from '../services/api';
+import { subscriptionService } from '../services/api/billing';
 import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
 import { AppErrorBoundary } from '../components/AppErrorBoundary';

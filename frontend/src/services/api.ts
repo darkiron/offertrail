@@ -3,4 +3,4 @@
  * `services/api/*`; existing consumers can migrate without a flag day.
  */
 export * from './api/index';
-export { default } from './api/client';
+export { axiosInstance as default } from './api/client';

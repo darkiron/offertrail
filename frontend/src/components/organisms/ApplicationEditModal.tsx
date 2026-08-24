@@ -6,7 +6,7 @@ import {
   UiStack as Stack, UiGroup as Group, UiText as Text,
 } from '../atoms/UiPrimitives';
 import type { Application } from '../../types';
-import type { ApplicationPayload } from '../../services/api';
+import type { ApplicationPayload } from '../../services/api/applications';
 import { Button } from '../atoms/Button';
 import { STATUT_FORM_OPTIONS } from '../../constants/statuts';
 

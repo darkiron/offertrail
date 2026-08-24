@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { contactService } from '../services/api';
+import { contactService } from '../services/api/contacts';
 import { useListingController, usePaginatedListing } from '../hooks/useListingController';
 import ContactCreateModal from '../components/organisms/ContactCreateModal';
 import { ActionButton } from '../components/atoms/Action';
