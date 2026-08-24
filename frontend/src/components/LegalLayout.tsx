@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { legalDocuments } from '../legal/documents';
-import type { LegalDocumentId } from '../legal/documents';
+import { legalDocuments } from '../legal';
+import type { LegalDocumentId } from '../legal';
 import classes from './LegalLayout.module.scss';
 
 type LegalLayoutProps =
