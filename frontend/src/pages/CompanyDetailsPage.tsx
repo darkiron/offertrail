@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { organizationService } from '../services/api/organizations';
-import classes from './CompanyDetailsPage.module.css';
+import classes from './CompanyDetailsPage.module.scss';
 import {
   ActionButton,
   ActionLink,
@@ -18,47 +18,22 @@ import { Tabs } from '../components/molecules/Tabs';
 import { DetailHeader } from '../components/organisms/DetailHeader';
 import { WorkflowOrganizationEditModal } from '../components/organisms/WorkflowOrganizationEditModal';
 import { EntityLink } from '../components/atoms/EntityLink';
+import { useI18n } from '../i18n';
+import {
+  formatRelationshipDate,
+  normalizeRelationshipKey,
+  relationshipErrorStatus,
+  relationshipCopy,
+} from '../features/relationships/locale';
+import { useRelationshipAuthRedirect } from '../features/relationships/auth';
 
 type Tab = 'applications' | 'contacts' | 'activity';
-const TYPE_LABELS: Record<string, string> = {
-  esn: 'ESN',
-  cabinet_recrutement: 'Cabinet',
-  startup: 'Startup',
-  pme: 'PME',
-  grand_compte: 'Grand compte',
-  portage: 'Portage',
-  autre: 'Autre',
-  independant: 'Indépendant',
-  client_final: 'Client final',
-};
-const STATUS_LABELS: Record<string, string> = {
-  brouillon: 'Brouillon',
-  en_attente: 'À préparer',
-  envoyee: 'Envoyée',
-  entretien: 'Entretien',
-  offre_recue: 'Offre reçue',
-  refusee: 'Refusée',
-  abandonnee: 'Abandonnée',
-};
-const EVENT_LABELS: Record<string, string> = {
-  creation: 'Candidature créée',
-  statut_change: 'Statut modifié',
-  relance_planifiee: 'Relance planifiée',
-  relance_envoyee: 'Relance envoyée',
-  note_ajout: 'Note ajoutée',
-  entretien_planifie: 'Entretien planifié',
-  offre_recue: 'Offre reçue',
-};
-const date = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
-    : 'Non renseignée';
-
 export const CompanyDetailsPage = () => {
+  const { locale } = useI18n();
+  const copy = relationshipCopy(locale);
+  const c = copy.organizations;
+  const date = (value: string | null) =>
+    formatRelationshipDate(value, locale, copy.common.missing);
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,6 +50,7 @@ export const CompanyDetailsPage = () => {
     enabled: Boolean(id),
   });
   const data = query.data;
+  useRelationshipAuthRedirect(query.error);
 
   useEffect(() => {
     if (data) document.title = `${data.organization.name} — OfferTrail`;
@@ -83,108 +59,139 @@ export const CompanyDetailsPage = () => {
     return (
       <main className={classes.page}>
         <div className={classes.state}>
-          <LoadingStatus>Chargement de la fiche entreprise…</LoadingStatus>
+          <LoadingStatus>{c.detailLoading}</LoadingStatus>
         </div>
       </main>
     );
-  if (query.isError || !data)
+  if (query.isError || !data) {
+    const status = relationshipErrorStatus(query.error);
+    if (status === 401) return null;
+    const forbidden = status === 403;
+    const notFound = status === 404 || !query.isError;
     return (
       <main className={classes.page}>
         <Link className={classes.back} to={from}>
-          ← Entreprises
+          ← {c.title}
         </Link>
         <div className={classes.state}>
-          <h1>Fiche introuvable</h1>
+          <h1>
+            {forbidden
+              ? copy.common.forbidden
+              : notFound
+                ? c.notFound
+                : c.error}
+          </h1>
           <p>
-            Cette entreprise n’est pas reliée à votre suivi ou n’existe plus.
+            {forbidden
+              ? copy.common.forbiddenDescription
+              : notFound
+                ? c.notFoundDescription
+                : c.emptyFilteredDescription}
           </p>
+          {!forbidden && !notFound && (
+            <ActionButton onClick={() => void query.refetch()}>
+              {copy.common.retry}
+            </ActionButton>
+          )}
         </div>
       </main>
     );
+  }
 
   const { organization } = data;
   return (
     <main className={classes.page}>
       <DetailHeader
         backTo={from}
-        backLabel="Toutes les entreprises"
+        backLabel={c.back}
         backState={{ restoreScrollY: navigationState?.scrollY }}
-        eyebrow="Relation entreprise"
+        eyebrow={c.relationEyebrow}
         title={organization.name}
-        subtitle={`Suivie depuis ${date(organization.created_at)}`}
+        subtitle={`${c.followedSince} ${date(organization.created_at)}`}
         badges={
-          <span>{TYPE_LABELS[organization.type] ?? organization.type}</span>
+          <span>
+            {copy.types[
+              normalizeRelationshipKey(
+                organization.type,
+              ) as keyof typeof copy.types
+            ] ?? organization.type}
+          </span>
         }
         actions={
           <>
             {organization.website && (
               <ExternalAction href={organization.website}>
-                Visiter le site ↗
+                {c.visit}
               </ExternalAction>
             )}
             <ActionButton variant="primary" onClick={() => setEditing(true)}>
-              Modifier
+              {copy.common.edit}
             </ActionButton>
             <ActionLink
               to={`/app/etablissements/maintenance?source=${organization.id}`}
             >
-              Doublons et fusion
+              {c.duplicates}
             </ActionLink>
           </>
         }
       />
       <DetailSummary
-        label="Synthèse de la relation"
+        label={c.summary}
         items={[
           {
-            label: 'Candidatures',
+            label: copy.common.applications,
             value: organization.applications_count,
-            detail: 'historique relié',
+            detail: c.historyLinked,
           },
           {
-            label: 'Réponses',
+            label: c.responses,
             value: organization.responses_count,
-            detail: `${organization.response_rate}% des candidatures`,
+            detail: `${organization.response_rate}% ${c.ofApplications}`,
           },
           {
-            label: 'Issues positives',
+            label: c.positive,
             value: organization.positive_count,
-            detail: 'entretiens ou offres',
+            detail: c.positiveDetail,
           },
           {
-            label: 'Dernière activité',
+            label: c.lastActivity,
             value: date(organization.updated_at),
-            detail: 'dans votre suivi',
+            detail: c.trackingDetail,
           },
         ]}
       />
       {organization.description && (
         <section className={classes.context}>
-          <span>Contexte</span>
+          <span>{c.context}</span>
           <p>{organization.description}</p>
         </section>
       )}
       <Tabs
-        label="Contenu de la fiche"
+        label={c.content}
         value={tab}
         onChange={setTab}
         items={[
-          ['applications', `Candidatures · ${data.applications.length}`],
-          ['contacts', `Contacts · ${data.contacts.length}`],
-          ['activity', `Activité · ${data.activity.length}`],
+          [
+            'applications',
+            `${copy.common.applications} · ${data.applications.length}`,
+          ],
+          ['contacts', `${copy.common.contacts} · ${data.contacts.length}`],
+          ['activity', `${copy.common.activity} · ${data.activity.length}`],
         ]}
       >
         <section className={classes.content}>
           {tab === 'applications' &&
             (data.applications.length ? (
-              <RelatedRecords label="Candidatures liées">
+              <RelatedRecords label={c.linkedApplications}>
                 {data.applications.map((application) => (
                   <RelatedRecord
                     key={application.id}
                     title={application.title}
-                    detail={`${application.source || 'Source non renseignée'} · candidature du ${date(application.applied_at)}`}
+                    detail={`${application.source || c.sourceMissing} · ${date(application.applied_at)}`}
                     meta={
-                      STATUS_LABELS[application.status] ?? application.status
+                      copy.status[
+                        application.status as keyof typeof copy.status
+                      ] ?? application.status
                     }
                     onOpen={() =>
                       navigate(`/app/candidatures/${application.id}`, {
@@ -199,19 +206,19 @@ export const CompanyDetailsPage = () => {
               </RelatedRecords>
             ) : (
               <Empty
-                title="Aucune candidature"
-                text="Cette entreprise n’a encore aucune candidature dans votre suivi."
+                title={c.noApplications}
+                text={c.noApplicationsDescription}
               />
             ))}
           {tab === 'contacts' &&
             (data.contacts.length ? (
-              <RelatedRecords label="Contacts liés">
+              <RelatedRecords label={c.linkedContacts}>
                 {data.contacts.map((contact) => (
                   <RelatedRecord
                     key={contact.id}
                     title={`${contact.first_name} ${contact.last_name}`}
-                    detail={contact.email || 'Email non renseigné'}
-                    meta={contact.role || 'Fonction non renseignée'}
+                    detail={contact.email || copy.contacts.noEmail}
+                    meta={contact.role || copy.contacts.noRole}
                     onOpen={() =>
                       navigate(`/app/contacts/${contact.id}`, {
                         state: {
@@ -224,10 +231,7 @@ export const CompanyDetailsPage = () => {
                 ))}
               </RelatedRecords>
             ) : (
-              <Empty
-                title="Aucun contact"
-                text="Ajoutez les interlocuteurs rencontrés depuis une candidature."
-              />
+              <Empty title={c.noContacts} text={c.noContactsDescription} />
             ))}
           {tab === 'activity' &&
             (data.activity.length ? (
@@ -237,7 +241,7 @@ export const CompanyDetailsPage = () => {
                     <time>{date(item.created_at)}</time>
                     <div>
                       <strong>
-                        {EVENT_LABELS[item.type] ??
+                        {copy.events[item.type as keyof typeof copy.events] ??
                           item.type.replaceAll('_', ' ')}
                       </strong>
                       {item.content && <p>{item.content}</p>}
@@ -245,17 +249,14 @@ export const CompanyDetailsPage = () => {
                         to={`/app/candidatures/${item.application_id}`}
                         from={`${location.pathname}${location.search}`}
                       >
-                        Ouvrir la candidature
+                        {c.openApplication}
                       </EntityLink>
                     </div>
                   </li>
                 ))}
               </ol>
             ) : (
-              <Empty
-                title="Aucune activité"
-                text="Les changements de statut et relances apparaîtront ici."
-              />
+              <Empty title={c.noActivity} text={c.noActivityDescription} />
             ))}
         </section>
       </Tabs>
@@ -280,4 +281,3 @@ function Empty({ title, text }: { title: string; text: string }) {
     </div>
   );
 }
-export default CompanyDetailsPage;

@@ -14,7 +14,15 @@ import {
 } from '../components/molecules/RelatedRecords';
 import { Tabs } from '../components/molecules/Tabs';
 import { EntityLink } from '../components/atoms/EntityLink';
-import classes from './ContactDetailsPage.module.css';
+import classes from './ContactDetailsPage.module.scss';
+import { useI18n } from '../i18n';
+import {
+  formatRelationshipDate,
+  normalizeRelationshipKey,
+  relationshipErrorStatus,
+  relationshipCopy,
+} from '../features/relationships/locale';
+import { useRelationshipAuthRedirect } from '../features/relationships/auth';
 
 type Details = Contact & {
   organization: { id: string; name: string; type: string } | null;
@@ -35,33 +43,12 @@ type Details = Contact & {
   }>;
 };
 type Tab = 'overview' | 'applications' | 'activity';
-const STATUS: Record<string, string> = {
-  en_attente: 'À préparer',
-  envoyee: 'Envoyée',
-  entretien: 'Entretien',
-  offre_recue: 'Offre reçue',
-  refusee: 'Refusée',
-};
-const EVENT_LABELS: Record<string, string> = {
-  creation: 'Contact ajouté',
-  modification: 'Contact mis à jour',
-  changement_statut: 'Statut modifié',
-  note: 'Note ajoutée',
-  relance: 'Relance',
-  contact_ajout: 'Contact ajouté',
-  note_ajout: 'Note ajoutée',
-  entretien_planifie: 'Entretien planifié',
-};
-const date = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
-    : 'Non renseignée';
-
 export const ContactDetailsPage = () => {
+  const { locale } = useI18n();
+  const copy = relationshipCopy(locale);
+  const c = copy.contacts;
+  const date = (value?: string | null) =>
+    formatRelationshipDate(value, locale, copy.common.missing);
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,32 +65,55 @@ export const ContactDetailsPage = () => {
     enabled: Boolean(id),
   });
   const data = query.data;
+  useRelationshipAuthRedirect(query.error);
 
   useEffect(() => {
     document.title = data
       ? `${data.first_name} ${data.last_name} — OfferTrail`
-      : 'Contact — OfferTrail';
-  }, [data]);
+      : c.pageTitle;
+  }, [c.pageTitle, data]);
   if (query.isLoading)
     return (
       <main className={classes.page}>
         <div className={classes.state}>
-          <LoadingStatus>Chargement du contact…</LoadingStatus>
+          <LoadingStatus>{c.detailLoading}</LoadingStatus>
         </div>
       </main>
     );
-  if (query.isError || !data)
+  if (query.isError || !data) {
+    const status = relationshipErrorStatus(query.error);
+    if (status === 401) return null;
+    const forbidden = status === 403;
+    const notFound = status === 404 || !query.isError;
     return (
       <main className={classes.page}>
         <Link className={classes.back} to={from}>
-          ← Contacts
+          ← {c.title}
         </Link>
         <div className={classes.state}>
-          <h1>Contact introuvable</h1>
-          <p>Cette fiche n’est plus accessible.</p>
+          <h1>
+            {forbidden
+              ? copy.common.forbidden
+              : notFound
+                ? c.notFound
+                : c.error}
+          </h1>
+          <p>
+            {forbidden
+              ? copy.common.forbiddenDescription
+              : notFound
+                ? c.notFoundDescription
+                : c.emptyDescription}
+          </p>
+          {!forbidden && !notFound && (
+            <ActionButton onClick={() => void query.refetch()}>
+              {copy.common.retry}
+            </ActionButton>
+          )}
         </div>
       </main>
     );
+  }
 
   return (
     <main className={classes.page}>
@@ -120,35 +130,41 @@ export const ContactDetailsPage = () => {
       )}
       <DetailHeader
         backTo={from}
-        backLabel="Tous les contacts"
+        backLabel={c.back}
         backState={{ restoreScrollY: navigationState?.scrollY }}
-        eyebrow="Relation professionnelle"
+        eyebrow={c.eyebrow}
         title={`${data.first_name} ${data.last_name}`}
         subtitle={
           <>
-            {data.role || 'Fonction non renseignée'}
+            {data.role || c.noRole}
             {data.organization ? ` · ${data.organization.name}` : ''}
           </>
         }
         badges={
           <>
-            {data.is_recruiter && <span>Recruteur</span>}
+            {data.is_recruiter && <span>{copy.common.recruiter}</span>}
             {data.organization && (
-              <span>{data.organization.type.replaceAll('_', ' ')}</span>
+              <span>
+                {copy.types[
+                  normalizeRelationshipKey(
+                    data.organization.type,
+                  ) as keyof typeof copy.types
+                ] ?? data.organization.type}
+              </span>
             )}
           </>
         }
         actions={
           <>
             <ActionButton variant="primary" onClick={() => setEditing(true)}>
-              Modifier
+              {copy.common.edit}
             </ActionButton>
             {data.email && (
               <a
                 className={classes.contactAction}
                 href={`mailto:${data.email}`}
               >
-                Envoyer un email
+                {c.sendEmail}
               </a>
             )}
             {data.linkedin_url && (
@@ -160,10 +176,10 @@ export const ContactDetailsPage = () => {
         }
       />
       <DetailSummary
-        label="Synthèse du contact"
+        label={c.summary}
         items={[
           {
-            label: 'Entreprise liée',
+            label: c.linkedOrganization,
             value: data.organization ? (
               <EntityLink
                 to={`/app/etablissements/${data.organization.id}`}
@@ -172,57 +188,63 @@ export const ContactDetailsPage = () => {
                 {data.organization.name}
               </EntityLink>
             ) : (
-              'Aucune'
+              c.noOrganization
             ),
           },
-          { label: 'Candidatures liées', value: data.applications.length },
-          { label: 'Dernière mise à jour', value: date(data.updated_at) },
+          { label: c.linkedApplications, value: data.applications.length },
+          { label: c.updated, value: date(data.updated_at) },
         ]}
       />
       <Tabs
-        label="Contenu du contact"
+        label={c.content}
         value={tab}
         onChange={setTab}
         items={[
-          ['overview', 'Coordonnées'],
-          ['applications', `Candidatures · ${data.applications.length}`],
-          ['activity', `Activité · ${data.events.length}`],
+          ['overview', c.overview],
+          [
+            'applications',
+            `${copy.common.applications} · ${data.applications.length}`,
+          ],
+          ['activity', `${copy.common.activity} · ${data.events.length}`],
         ]}
       >
         <section className={classes.content}>
           {tab === 'overview' && (
             <div className={classes.details}>
               <article>
-                <span>Email</span>
+                <span>{c.email}</span>
                 {data.email ? (
                   <a href={`mailto:${data.email}`}>{data.email}</a>
                 ) : (
-                  <strong>Non renseigné</strong>
+                  <strong>{copy.common.missing}</strong>
                 )}
               </article>
               <article>
-                <span>Téléphone</span>
+                <span>{c.phone}</span>
                 {data.phone ? (
                   <a href={`tel:${data.phone}`}>{data.phone}</a>
                 ) : (
-                  <strong>Non renseigné</strong>
+                  <strong>{copy.common.missing}</strong>
                 )}
               </article>
               <article className={classes.notes}>
-                <span>Notes privées</span>
-                <p>{data.notes || 'Aucune note enregistrée.'}</p>
+                <span>{c.notes}</span>
+                <p>{data.notes || c.noNotes}</p>
               </article>
             </div>
           )}
           {tab === 'applications' &&
             (data.applications.length ? (
-              <RelatedRecords label="Candidatures liées">
+              <RelatedRecords label={c.linkedApplications}>
                 {data.applications.map((item) => (
                   <RelatedRecord
                     key={item.id}
                     title={item.title}
                     detail={`${item.company} · ${date(item.applied_at)}`}
-                    meta={STATUS[item.status] ?? item.status}
+                    meta={
+                      copy.status[item.status as keyof typeof copy.status] ??
+                      item.status
+                    }
                     onOpen={() =>
                       navigate(`/app/candidatures/${item.id}`, {
                         state: {
@@ -235,7 +257,7 @@ export const ContactDetailsPage = () => {
                 ))}
               </RelatedRecords>
             ) : (
-              <Empty text="Aucune candidature liée à ce contact." />
+              <Empty text={c.noApplications} />
             ))}
           {tab === 'activity' &&
             (data.events.length ? (
@@ -247,7 +269,8 @@ export const ContactDetailsPage = () => {
                       <time>{date(event.ts)}</time>
                       <div>
                         <strong>
-                          {EVENT_LABELS[kind] ?? kind.replaceAll('_', ' ')}
+                          {copy.events[kind as keyof typeof copy.events] ??
+                            kind.replaceAll('_', ' ')}
                         </strong>
                         {event.application && (
                           <EntityLink
@@ -263,7 +286,7 @@ export const ContactDetailsPage = () => {
                 })}
               </ol>
             ) : (
-              <Empty text="Aucune activité enregistrée." />
+              <Empty text={c.noActivity} />
             ))}
         </section>
       </Tabs>
@@ -273,4 +296,3 @@ export const ContactDetailsPage = () => {
 function Empty({ text }: { text: string }) {
   return <div className={classes.empty}>{text}</div>;
 }
-export default ContactDetailsPage;
