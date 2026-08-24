@@ -11,12 +11,14 @@ import { PageHeader } from '../components/molecules/PageHeader';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { PortfolioListing } from '../components/organisms/PortfolioListing';
 
-const STATUS_OPTIONS = [
+type FilterOption = readonly [value: string, label: string];
+
+const STATUS_OPTIONS: readonly FilterOption[] = [
   ['', 'Tous les statuts'], ['en_attente', 'À préparer'], ['envoyee', 'Envoyée'],
   ['entretien', 'Entretien'], ['offre_recue', 'Offre reçue'], ['refusee', 'Refusée'],
 ];
-const DUE_OPTIONS = [['', 'Toutes les échéances'], ['overdue', 'En retard'], ['today', "Aujourd’hui"], ['week', 'Cette semaine'], ['none', 'Sans prochaine action']];
-const SORT_OPTIONS = [['created_at', 'Ajoutées récemment'], ['priority', 'Priorité des actions'], ['applied_at', 'Date de candidature'], ['updated_at', 'Activité récente']];
+const DUE_OPTIONS: readonly FilterOption[] = [['', 'Toutes les échéances'], ['overdue', 'En retard'], ['today', "Aujourd’hui"], ['week', 'Cette semaine'], ['none', 'Sans prochaine action']];
+const SORT_OPTIONS: readonly FilterOption[] = [['created_at', 'Ajoutées récemment'], ['priority', 'Priorité des actions'], ['applied_at', 'Date de candidature'], ['updated_at', 'Activité récente']];
 
 function formatDate(value?: string | null) {
   if (!value) return '—';

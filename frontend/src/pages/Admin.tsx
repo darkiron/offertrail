@@ -24,19 +24,23 @@ import { IconDownload, IconSearch } from '@tabler/icons-react';
 import { axiosInstance } from '../services/api/client';
 import classes from './Admin.module.css';
 
-type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'light' | 'filled'; loading?: boolean; leftSection?: ReactNode };
-const Button = ({ variant, loading, leftSection, children, className, disabled, ...props }: AdminButtonProps) => <button {...props} className={`ot-button ${className ?? ''}`} data-variant={variant === 'light' ? 'secondary' : 'primary'} disabled={disabled || loading}>{loading ? '…' : <>{leftSection}{children}</>}</button>;
+type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'light' | 'filled'; loading?: boolean; leftSection?: ReactNode; size?: 'xs'; color?: string };
+const Button = ({ variant, loading, leftSection, children, className, disabled, size, color, ...props }: AdminButtonProps) => <button {...props} className={`ot-button ${className ?? ''}`} data-variant={variant === 'light' ? 'secondary' : 'primary'} data-size={size} data-color={color} disabled={disabled || loading}>{loading ? '…' : <>{leftSection}{children}</>}</button>;
 const Alert = ({ children }: { children?: ReactNode }) => <div className="ot-alert ot-alert-error" role="alert">{children}</div>;
-const Skeleton = ({ height = 14 }: { height?: number }) => <span className="ot-skeleton" style={{ height }} aria-hidden="true" />;
-const Title = ({ children }: { children?: ReactNode }) => <h2>{children}</h2>;
+const Skeleton = ({ height = 14, radius }: { height?: number; radius?: string }) => <span className="ot-skeleton" style={{ height, borderRadius: radius === 'md' ? 'var(--ot-radius-md)' : undefined }} aria-hidden="true" />;
+const Title = ({ children, order = 2 }: { children?: ReactNode; order?: 2 | 3 }) => order === 3 ? <h3>{children}</h3> : <h2>{children}</h2>;
 const notify = ({ title, message }: { title?: string; message: string }) => { console.info(title ? `${title}: ${message}` : message); };
+type AdminTableProps = TableHTMLAttributes<HTMLTableElement> & {
+  striped?: boolean;
+  highlightOnHover?: boolean;
+};
 const Table = Object.assign(
-  ({ children, ...props }: TableHTMLAttributes<HTMLTableElement>) => <table {...props} className="ot-table">{children}</table>,
+  ({ children, striped, highlightOnHover, ...props }: AdminTableProps) => <table {...props} className="ot-table" data-striped={striped || undefined} data-highlight={highlightOnHover || undefined}>{children}</table>,
   {
-    ScrollContainer: ({ children }: { children?: ReactNode }) => <div className="ot-table-scroll">{children}</div>,
+    ScrollContainer: ({ children, minWidth }: { children?: ReactNode; minWidth?: number }) => <div className="ot-table-scroll" style={{ minWidth }}>{children}</div>,
     Thead: ({ children }: { children?: ReactNode }) => <thead>{children}</thead>,
     Tbody: ({ children }: { children?: ReactNode }) => <tbody>{children}</tbody>,
-    Tr: ({ children, ...props }: HTMLAttributes<HTMLTableRowElement>) => <tr {...props}>{children}</tr>,
+    Tr: ({ children, opacity, style, ...props }: HTMLAttributes<HTMLTableRowElement> & { opacity?: number }) => <tr {...props} style={{ ...style, opacity }}>{children}</tr>,
     Th: ({ children }: { children?: ReactNode }) => <th>{children}</th>,
     Td: ({ children, ...props }: TdHTMLAttributes<HTMLTableCellElement>) => <td {...props}>{children}</td>,
   },
@@ -258,7 +262,7 @@ export function Admin() {
   if (accessDenied) {
     return (
       <Stack gap="lg" p="lg" className={classes.shell}>
-        <Alert color="red">Accès refusé. Redirection en cours.</Alert>
+        <Alert>Accès refusé. Redirection en cours.</Alert>
       </Stack>
     );
   }
