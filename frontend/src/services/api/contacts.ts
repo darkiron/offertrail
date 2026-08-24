@@ -5,13 +5,7 @@ import type {
   ContactDetailsApi,
   ContactPortfolioPage,
 } from './contracts';
-import {
-  ensureContactIdResolved,
-  resolveCandidatureId,
-  resolveContactId,
-  resolveOrganizationId,
-  toLegacyContactId,
-} from './identifiers';
+import { resolveCandidatureId, resolveOrganizationId } from './identifiers';
 import { mapContactApiToContact } from './mappers';
 
 export const contactService = {
@@ -37,10 +31,9 @@ export const contactService = {
     });
     return response.data.map(mapContactApiToContact);
   },
-  getById: async (id: number | string) => {
-    const resolvedId = await ensureContactIdResolved(id);
+  getById: async (id: string) => {
     const response = await axiosInstance.get<ContactDetailsApi>(
-      `/contacts/${resolvedId}`,
+      `/contacts/${id}`,
     );
     return {
       ...mapContactApiToContact(response.data),
@@ -70,11 +63,10 @@ export const contactService = {
         ? resolveOrganizationId(data.organization_id)
         : null,
     });
-    return { id: toLegacyContactId(response.data.id) };
+    return { id: response.data.id };
   },
-  update: async (id: number, data: Partial<Contact>) => {
-    const resolvedId = await ensureContactIdResolved(id);
-    const response = await axiosInstance.patch(`/contacts/${resolvedId}`, {
+  update: async (id: string, data: Partial<Contact>) => {
+    const response = await axiosInstance.patch(`/contacts/${id}`, {
       ...data,
       organization_id: data.organization_id
         ? resolveOrganizationId(data.organization_id)
@@ -82,16 +74,15 @@ export const contactService = {
     });
     return response.data;
   },
-  delete: async (id: number) => {
-    const resolvedId = await ensureContactIdResolved(id);
-    const response = await axiosInstance.delete(`/contacts/${resolvedId}`);
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete(`/contacts/${id}`);
     return response.data;
   },
-  linkToApplication: async (contactId: number, applicationId: number) => {
+  linkToApplication: async (contactId: string, applicationId: number) => {
     const response = await axiosInstance.post('/candidature-events', {
       candidature_id: resolveCandidatureId(applicationId),
       type: 'contact_ajout',
-      contenu: `Contact lie: ${resolveContactId(contactId)}`,
+      contenu: `Contact lie: ${contactId}`,
     });
     return response.data;
   },

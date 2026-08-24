@@ -1,9 +1,8 @@
 import { http as axiosInstance } from '@shared/api/http';
-import type { CandidatureApi, ContactApi, EtablissementApi } from './contracts';
+import type { CandidatureApi, EtablissementApi } from './contracts';
 
 const candidatureNumericToUuid = new Map<number, string>();
 const organizationNumericToUuid = new Map<number, string>();
-const contactNumericToUuid = new Map<number, string>();
 
 export function toLegacyId(uuid: string | number): number {
   if (typeof uuid === 'number') {
@@ -32,20 +31,6 @@ export function toLegacyOrganizationId(uuid: string | number): number {
   return normalized;
 }
 
-export function toLegacyContactId(uuid: string | number): number {
-  if (typeof uuid === 'number') {
-    return uuid;
-  }
-  let hash = 0;
-  const seed = `contact:${uuid}`;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = ((hash << 5) - hash + seed.charCodeAt(index)) | 0;
-  }
-  const normalized = Math.abs(hash) || 1;
-  contactNumericToUuid.set(normalized, uuid);
-  return normalized;
-}
-
 export function resolveCandidatureId(id: number | string): string {
   if (typeof id === 'string' && id.includes('-')) {
     return id;
@@ -60,14 +45,6 @@ export function resolveOrganizationId(id: number | string): string {
   }
   const numericId = typeof id === 'number' ? id : Number(id);
   return organizationNumericToUuid.get(numericId) ?? String(id);
-}
-
-export function resolveContactId(id: number | string): string {
-  if (typeof id === 'string' && id.includes('-')) {
-    return id;
-  }
-  const numericId = typeof id === 'number' ? id : Number(id);
-  return contactNumericToUuid.get(numericId) ?? String(id);
 }
 
 export async function ensureOrganizationIdResolved(
@@ -97,20 +74,4 @@ export async function ensureCandidatureIdResolved(
     toLegacyId(item.id);
   });
   return resolveCandidatureId(id);
-}
-
-export async function ensureContactIdResolved(
-  id: number | string,
-): Promise<string> {
-  const resolved = resolveContactId(id);
-  if (resolved.includes('-')) {
-    return resolved;
-  }
-  const response = await axiosInstance.get<ContactApi[]>('/contacts');
-  response.data.forEach((item) => {
-    if (typeof item.id === 'string') {
-      toLegacyContactId(item.id);
-    }
-  });
-  return resolveContactId(id);
 }

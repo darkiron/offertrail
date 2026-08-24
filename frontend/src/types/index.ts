@@ -37,8 +37,8 @@ export interface Organization extends OrganizationStats {
 }
 
 export interface Contact {
-  id: number;
-  organization_id: number | null;
+  id: string;
+  organization_id: string | null;
   first_name: string;
   last_name: string;
   email: string | null;
