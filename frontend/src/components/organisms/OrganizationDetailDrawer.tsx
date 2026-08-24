@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
 import { ProbityBadge } from '../atoms/ProbityBadge';
@@ -9,16 +9,17 @@ import { Dialog } from '../molecules/Dialog';
 import { Tabs } from '../molecules/Tabs';
 import OrganizationEditModal from './OrganizationEditModal';
 import classes from './DetailDialog.module.css';
+import type { Organization, OrganizationType } from '../../types';
 
 interface OrganizationDetailDrawerProps { organizationId: number | null; onClose: () => void; onUpdate: () => void; }
-type OrganizationData = { id: number; name: string; type: any; linkedin_url?: string; website?: string; metrics?: { probity_score?: number; probity_level?: string }; notes?: string; city?: string; created_at: string; applications?: { id: number; title: string; applied_at: string; status: string }[]; contacts?: { id: number; first_name: string; last_name: string; role: string; email?: string }[] };
+type OrganizationData = { id: number; name: string; type: OrganizationType; linkedin_url?: string; website?: string; metrics?: { probity_score?: number; probity_level?: string }; notes?: string; city?: string; created_at: string; applications?: { id: number; title: string; applied_at: string; status: string }[]; contacts?: { id: number; first_name: string; last_name: string; role: string; email?: string }[] };
 
 export function OrganizationDetailDrawer({ organizationId, onClose, onUpdate }: OrganizationDetailDrawerProps) {
   const [data, setData] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false); const [tab, setTab] = useState<'overview' | 'applications' | 'contacts'>('overview');
-  const loadData = async () => { if (!organizationId) return; setLoading(true); setError(null); try { setData(await api.getCompany(organizationId)); } catch { setError('Cet établissement est temporairement indisponible.'); } finally { setLoading(false); } };
-  useEffect(() => { setData(null); setTab('overview'); if (organizationId) void loadData(); }, [organizationId]);
+  const loadData = useCallback(async () => { if (!organizationId) return; setLoading(true); setError(null); try { setData(await api.getCompany(organizationId)); } catch { setError('Cet établissement est temporairement indisponible.'); } finally { setLoading(false); } }, [organizationId]);
+  useEffect(() => { if (organizationId) void loadData(); }, [organizationId, loadData]);
   if (!organizationId) return null;
   return <Dialog eyebrow="Portefeuille relationnel" title={data?.name || 'Établissement'} onClose={onClose}><div className={classes.content}>
     {loading && <LoadingStatus>Chargement de l’établissement…</LoadingStatus>}{error && <p className={classes.error} role="alert">{error}</p>}
@@ -28,5 +29,5 @@ export function OrganizationDetailDrawer({ organizationId, onClose, onUpdate }: 
       {tab === 'contacts' && <div className={classes.panel}><div className={classes.list}>{data.contacts?.length ? data.contacts.map((contact) => <div className={classes.card} key={contact.id}><p className={classes.value}>{contact.first_name} {contact.last_name}</p><p className={classes.muted}>{contact.role || 'Rôle non renseigné'}</p>{contact.email && <p className={classes.muted}>{contact.email}</p>}</div>) : <p className={classes.muted}>Aucun contact enregistré.</p>}</div></div>}
       <div className={classes.actions}><Button variant="primary" onClick={() => setEditing(true)}>Modifier l’établissement</Button></div></>}
     {!loading && !data && !error && <p className={classes.muted}>Établissement introuvable.</p>}
-  </div>{editing && data && <OrganizationEditModal organization={data as any} onClose={() => setEditing(false)} onSaved={async () => { setEditing(false); await loadData(); onUpdate(); }} />}</Dialog>;
+  </div>{editing && data && <OrganizationEditModal organization={data as Organization} onClose={() => setEditing(false)} onSaved={async () => { setEditing(false); await loadData(); onUpdate(); }} />}</Dialog>;
 }

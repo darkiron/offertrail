@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, TableHTMLAttributes, TdHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UiBadge as Badge, UiGroup as Group, UiPaper as Paper, UiGrid as SimpleGrid, UiStack as Stack, UiText as Text, UiTextInput as TextInput, UiLoader as Loader } from '../components/atoms/UiPrimitives';
+import { UiBadge as Badge, UiGroup as Group, UiPaper as Paper, UiGrid as SimpleGrid, UiStack as Stack, UiText as Text, UiTextInput as TextInput } from '../components/atoms/UiPrimitives';
 import {
   Area,
   AreaChart,
@@ -23,20 +24,21 @@ import { IconDownload, IconSearch } from '@tabler/icons-react';
 import { axiosInstance } from '../services/api';
 import classes from './Admin.module.css';
 
-const Button = (props: any) => <button {...props} className={`ot-button ${props.className ?? ''}`} data-variant={props.variant === 'light' ? 'secondary' : 'primary'} disabled={props.disabled || props.loading}>{props.loading ? '…' : <>{props.leftSection}{props.children}</>}</button>;
-const Alert = ({ children }: any) => <div className="ot-alert ot-alert-error" role="alert">{children}</div>;
+type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'light' | 'filled'; loading?: boolean; leftSection?: ReactNode };
+const Button = ({ variant, loading, leftSection, children, className, disabled, ...props }: AdminButtonProps) => <button {...props} className={`ot-button ${className ?? ''}`} data-variant={variant === 'light' ? 'secondary' : 'primary'} disabled={disabled || loading}>{loading ? '…' : <>{leftSection}{children}</>}</button>;
+const Alert = ({ children }: { children?: ReactNode }) => <div className="ot-alert ot-alert-error" role="alert">{children}</div>;
 const Skeleton = ({ height = 14 }: { height?: number }) => <span className="ot-skeleton" style={{ height }} aria-hidden="true" />;
-const Title = ({ children }: any) => <h2>{children}</h2>;
+const Title = ({ children }: { children?: ReactNode }) => <h2>{children}</h2>;
 const notify = ({ title, message }: { title?: string; message: string }) => { console.info(title ? `${title}: ${message}` : message); };
 const Table = Object.assign(
-  ({ children, ...props }: any) => <table {...props} className="ot-table">{children}</table>,
+  ({ children, ...props }: TableHTMLAttributes<HTMLTableElement>) => <table {...props} className="ot-table">{children}</table>,
   {
-    ScrollContainer: ({ children }: any) => <div className="ot-table-scroll">{children}</div>,
-    Thead: ({ children }: any) => <thead>{children}</thead>,
-    Tbody: ({ children }: any) => <tbody>{children}</tbody>,
-    Tr: ({ children, ...props }: any) => <tr {...props}>{children}</tr>,
-    Th: ({ children }: any) => <th>{children}</th>,
-    Td: ({ children, ...props }: any) => <td {...props}>{children}</td>,
+    ScrollContainer: ({ children }: { children?: ReactNode }) => <div className="ot-table-scroll">{children}</div>,
+    Thead: ({ children }: { children?: ReactNode }) => <thead>{children}</thead>,
+    Tbody: ({ children }: { children?: ReactNode }) => <tbody>{children}</tbody>,
+    Tr: ({ children, ...props }: HTMLAttributes<HTMLTableRowElement>) => <tr {...props}>{children}</tr>,
+    Th: ({ children }: { children?: ReactNode }) => <th>{children}</th>,
+    Td: ({ children, ...props }: TdHTMLAttributes<HTMLTableCellElement>) => <td {...props}>{children}</td>,
   },
 );
 
@@ -155,16 +157,16 @@ export function Admin() {
 
   useEffect(() => { document.title = 'Administration — OfferTrail'; }, []);
 
-  const handle403 = (err: unknown): boolean => {
+  const handle403 = useCallback((err: unknown): boolean => {
     if (axios.isAxiosError(err) && err.response?.status === 403) {
       setAccessDenied(true);
       window.setTimeout(() => navigate('/app', { replace: true }), 1500);
       return true;
     }
     return false;
-  };
+  }, [navigate]);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const [statsRes, usersRes, mrrRes, signupsRes, plansRes, candsRes, promosRes] = await Promise.all([
       axiosInstance.get<AdminStats>('/admin/stats'),
       axiosInstance.get<AdminUserRow[]>('/admin/users'),
@@ -181,7 +183,7 @@ export function Admin() {
     setPlans(plansRes.data);
     setCands(candsRes.data);
     setPromos(promosRes.data.promos);
-  };
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -196,7 +198,7 @@ export function Admin() {
       }
     };
     void load();
-  }, [navigate]);
+  }, [handle403, refresh]);
 
   const updateUserPlan = async (userId: string, plan: 'free' | 'pro' | 'ultimate') => {
     try {

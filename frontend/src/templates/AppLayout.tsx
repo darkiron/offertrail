@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { subscriptionService } from '../services/api';
 import { PlanLimitBanner } from '../components/PlanLimitBanner';
 import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
@@ -13,15 +13,15 @@ import classes from './AppLayout.module.css';
 
 function SlowApiNotice() {
   const fetching = useIsFetching();
-  const [visible, setVisible] = useState(false);
+  const [notice, setNotice] = useState({ visible: false, fetching: 0 });
+  const visible = notice.visible && fetching > 0 && notice.fetching > 0;
   const shown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
   useEffect(() => {
     if (shown.current) return;
-    const timer = window.setTimeout(() => { if (fetching > 0) { setVisible(true); shown.current = true; sessionStorage.setItem('ot_coldstart_shown', '1'); } }, 1500);
+    const timer = window.setTimeout(() => { if (fetching > 0) { setNotice({ visible: true, fetching }); shown.current = true; sessionStorage.setItem('ot_coldstart_shown', '1'); } }, 1500);
     return () => window.clearTimeout(timer);
   }, [fetching]);
-  useEffect(() => { if (fetching === 0) setVisible(false); }, [fetching]);
-  return visible ? <div className={classes.slow} role="status">Le service se réveille. Vos données vont apparaître dans quelques instants.<button onClick={() => setVisible(false)} aria-label="Masquer">×</button></div> : null;
+  return visible ? <div className={classes.slow} role="status">Le service se réveille. Vos données vont apparaître dans quelques instants.<button onClick={() => setNotice((current) => ({ ...current, visible: false }))} aria-label="Masquer">×</button></div> : null;
 }
 
 export function AppLayout() {

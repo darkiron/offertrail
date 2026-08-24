@@ -7,15 +7,17 @@ type ListingDefaults = Record<string, string>;
 export function useListingController(basePath: string, defaults: ListingDefaults = {}) {
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
-  const [search, setSearch] = useState(query);
+  const [draft, setDraft] = useState({ value: query, sourceQuery: query });
+  const search = draft.sourceQuery === query ? draft.value : query;
+  const setSearch = (value: string) => setDraft({ value, sourceQuery: query });
   const page = Math.max(1, Number(params.get('page')) || 1);
 
-  useEffect(() => setSearch(query), [query]);
   useEffect(() => {
     if (search.trim() === query) return;
     const timer = window.setTimeout(() => {
       const next = new URLSearchParams(params);
-      search.trim() ? next.set('q', search.trim()) : next.delete('q');
+      if (search.trim()) next.set('q', search.trim());
+      else next.delete('q');
       next.delete('page');
       setParams(next, { replace: true });
     }, 320);
@@ -36,7 +38,8 @@ export function useListingController(basePath: string, defaults: ListingDefaults
   };
   const pageHref = (nextPage: number) => {
     const next = new URLSearchParams(params);
-    nextPage > 1 ? next.set('page', String(nextPage)) : next.delete('page');
+    if (nextPage > 1) next.set('page', String(nextPage));
+    else next.delete('page');
     return `${basePath}${next.size ? `?${next.toString()}` : ''}`;
   };
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { useI18n } from '../i18n';
 import classes from './Auth.module.css';
 import { PublicShell } from '../components/PublicShell';
