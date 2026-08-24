@@ -827,8 +827,6 @@ export const en = {
   },
   landing: {
     aria: {
-      productPreviewCaption:
-        'Illustrative preview using example application data.',
       features: 'Core OfferTrail features',
     },
     nav: {
@@ -846,41 +844,10 @@ export const en = {
       legal: 'Legal',
       contact: 'Contact',
     },
-    hero: {
-      badge: 'A calmer way to manage your search',
-      titleLine1: 'Turn every application',
-      titleLine2: 'into a clear next step.',
-      sub: 'OfferTrail brings applications, recruiter contacts and follow-ups together so you always know what to do next.',
-      ctaPrimary: 'Start for free',
-      ctaSecondary: 'Explore the workflow',
+    meta: {
       pageTitle: 'OfferTrail — Job application tracking and follow-ups',
-    },
-    mock: {
-      trackedValue: 'Your data',
-      trackedLabel: 'Applications tracked',
-      followupsValue: 'To do',
-      followupsLabel: 'Follow-ups to plan',
-      historyValue: 'Clear',
-      historyLabel: 'History per application',
-      networkValue: 'Linked',
-      networkLabel: 'Contacts and companies',
-      activePipeline: 'Active pipeline',
-      keySignals: 'Key signals',
-      signal1: 'Follow-ups are visible at a glance',
-      signal2: 'Each application keeps its context',
-      signal3: 'Contacts stay linked to the right company',
-      item1title: 'Product Designer · FinTech Paris',
-      item1meta: 'Follow-up due tomorrow · recruiter contact attached',
-      item2title: 'UX Lead · Startup SaaS',
-      item2meta: 'Interview on Wednesday · centralised notes',
-      item3title: 'Senior Designer · ESN Lille',
-      item3meta: 'Pending · last contact 5 days ago',
-      followup: 'Follow-up',
-      interview: 'Interview',
-      pending: 'Pending',
-      frictionPoint: 'Your next move, in view',
-      frictionDesc:
-        'Keep the application, company, contact and next follow-up in the same place.',
+      description:
+        'A structured space for applications, recruiter contacts and upcoming follow-ups.',
     },
     features: {
       kicker: 'Features',
@@ -973,7 +940,7 @@ export const en = {
       redirecting: 'Redirecting to Stripe...',
       currentPlan: 'Your current plan',
       downgrade: 'Downgrade not available',
-      freeCta: 'Create a free account',
+      freeCta: 'Choose Free',
       freeName: 'Free',
       freeNote: '5 applications · 1 month history · 1 active follow-up',
       freeFeature1: 'Track your first applications cleanly',
@@ -1050,6 +1017,7 @@ export const en = {
       a5: 'OfferTrail is published and maintained by CraftCodes, an independent product studio.',
     },
     cta: {
+      kicker: 'A calmer way to manage your search',
       title: 'Take back control.',
       sub: 'A clean tool, a clear price, a better-managed search.',
       btn: 'Start for free',

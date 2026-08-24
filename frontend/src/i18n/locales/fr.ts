@@ -841,8 +841,6 @@ export const fr = {
   },
   landing: {
     aria: {
-      productPreviewCaption:
-        'Aperçu illustratif utilisant des données de candidature fictives.',
       features: 'Fonctionnalités principales d’OfferTrail',
     },
     nav: {
@@ -860,41 +858,10 @@ export const fr = {
       legal: 'Mentions légales',
       contact: 'Contact',
     },
-    hero: {
-      badge: 'Une recherche plus calme, mieux suivie',
-      titleLine1: 'Chaque candidature',
-      titleLine2: 'devient une prochaine étape.',
-      sub: 'OfferTrail rassemble candidatures, contacts recruteurs et relances pour savoir à tout moment quoi faire ensuite.',
-      ctaPrimary: 'Commencer gratuitement',
-      ctaSecondary: 'Découvrir le fonctionnement',
+    meta: {
       pageTitle: 'OfferTrail — Suivi de candidatures et relances',
-    },
-    mock: {
-      trackedValue: 'Tes données',
-      trackedLabel: 'Candidatures suivies',
-      followupsValue: 'À faire',
-      followupsLabel: 'Relances à planifier',
-      historyValue: 'Clair',
-      historyLabel: 'Historique par candidature',
-      networkValue: 'Liés',
-      networkLabel: 'Contacts et entreprises',
-      activePipeline: 'Pipeline actif',
-      keySignals: 'Signaux clefs',
-      signal1: 'Les relances à prévoir restent visibles',
-      signal2: 'Chaque candidature conserve son contexte',
-      signal3: 'Les contacts restent liés à la bonne entreprise',
-      item1title: 'Product Designer · FinTech Paris',
-      item1meta: 'Relance prévue demain · contact recruteur attaché',
-      item2title: 'UX Lead · Startup SaaS',
-      item2meta: 'Entretien prévu mercredi · notes centralisées',
-      item3title: 'Senior Designer · ESN Lille',
-      item3meta: 'En attente · dernier contact il y a 5 jours',
-      followup: 'Relance',
-      interview: 'Entretien',
-      pending: 'En attente',
-      frictionPoint: 'Ta prochaine action, visible',
-      frictionDesc:
-        'Candidature, entreprise, contact et prochaine relance restent au même endroit.',
+      description:
+        'Un espace structuré pour suivre candidatures, contacts recruteurs et prochaines relances.',
     },
     features: {
       kicker: 'Fonctionnalités',
@@ -988,7 +955,7 @@ export const fr = {
       redirecting: 'Redirection vers Stripe...',
       currentPlan: 'Ton plan actuel',
       downgrade: 'Downgrade impossible',
-      freeCta: 'Créer un compte gratuit',
+      freeCta: 'Choisir Free',
       freeName: 'Free',
       freeNote: '5 candidatures · historique 1 mois · 1 relance active',
       freeFeature1: 'Suivre tes premières candidatures sans tableur',
@@ -1068,6 +1035,7 @@ export const fr = {
       a5: 'OfferTrail est édité et maintenu par CraftCodes, un studio produit indépendant.',
     },
     cta: {
+      kicker: 'Une recherche plus calme, mieux suivie',
       title: 'Reprends le contrôle.',
       sub: 'Un outil propre, un prix clair, une recherche mieux pilotée.',
       btn: 'Commencer gratuitement',

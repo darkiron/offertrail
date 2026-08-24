@@ -3,8 +3,6 @@
   <circle cx="1040" cy="100" r="280" fill="#0f766e" opacity=".55"/>
   <circle cx="110" cy="610" r="260" fill="#f59e0b" opacity=".18"/>
   <text x="100" y="245" fill="#5eead4" font-family="sans-serif" font-size="34" font-weight="700" letter-spacing="6">OFFERTRAIL</text>
-  <text x="100" y="340" fill="#f8fafc" font-family="sans-serif" font-size="68" font-weight="800">Pilotez vos candidatures.</text>
-  <text x="100" y="410" fill="#cbd5e1" font-family="sans-serif" font-size="32">Suivi, relances et statistiques dans un espace clair.</text>
-  <rect x="100" y="475" width="350" height="70" rx="35" fill="#0f766e"/>
-  <text x="148" y="522" fill="#fff" font-family="sans-serif" font-size="28" font-weight="700">Commencer gratuitement</text>
+  <text x="100" y="340" fill="#f8fafc" font-family="sans-serif" font-size="68" font-weight="800">Un suivi clair.</text>
+  <text x="100" y="410" fill="#cbd5e1" font-family="sans-serif" font-size="32">Chaque prochaine action reste visible.</text>
 </svg>

@@ -25,7 +25,7 @@ export function LandingFaq() {
         </div>
       </section>
       <section className={classes.cta} aria-labelledby="landing-cta-title">
-        <p>{t('landing.hero.badge')}</p>
+        <p>{t('landing.cta.kicker')}</p>
         <h2 id="landing-cta-title">{t('landing.cta.title')}</h2>
         <span>{t('landing.cta.sub')}</span>
         <Link to="/register">

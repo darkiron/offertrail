@@ -25,7 +25,6 @@ test('landing navigation hashes target sections rendered by the landing page', a
   const [layout, ...landingParts] = await Promise.all([
     readSource('../src/templates/LandingLayout.tsx'),
     readSource('../src/pages/LandingPage.tsx'),
-    readSource('../src/components/landing/organisms/LandingHero.tsx'),
     readSource('../src/components/landing/organisms/LandingWorkflow.tsx'),
     readSource('../src/components/landing/organisms/LandingPricing.tsx'),
     readSource('../src/components/landing/organisms/LandingFaq.tsx'),

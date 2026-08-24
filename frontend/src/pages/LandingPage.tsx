@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LandingFaq } from '../components/landing/organisms/LandingFaq';
-import { LandingHero } from '../components/landing/organisms/LandingHero';
 import { LandingPricing } from '../components/landing/organisms/LandingPricing';
 import { LandingWorkflow } from '../components/landing/organisms/LandingWorkflow';
 import { useAuth } from '../context/auth-context';
@@ -14,11 +13,11 @@ export function LandingPage() {
   const { hash } = useLocation();
 
   useEffect(() => {
-    document.title = t('landing.hero.pageTitle');
+    document.title = t('landing.meta.pageTitle');
     const description = document.querySelector<HTMLMetaElement>(
       'meta[name="description"]',
     );
-    if (description) description.content = t('landing.hero.sub');
+    if (description) description.content = t('landing.meta.description');
   }, [t]);
 
   useEffect(() => {
@@ -33,7 +32,6 @@ export function LandingPage() {
 
   return (
     <div className={classes.page}>
-      <LandingHero />
       <LandingWorkflow />
       <LandingPricing />
       <LandingFaq />
