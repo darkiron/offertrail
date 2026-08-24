@@ -6,7 +6,6 @@ import type {
   OrganizationWorkspace,
   WorkflowOrganization,
 } from './contracts';
-import { ensureOrganizationIdResolved } from './identifiers';
 import { mapEtablissementToOrganization } from './mappers';
 
 export const organizationService = {
@@ -76,10 +75,9 @@ export const organizationService = {
     );
     return response.data.map(mapEtablissementToOrganization);
   },
-  getById: async (id: number | string) => {
-    const resolvedId = await ensureOrganizationIdResolved(id);
+  getById: async (id: string) => {
     const response = await axiosInstance.get<EtablissementApi>(
-      `/etablissements/${resolvedId}`,
+      `/etablissements/${id}`,
     );
     return mapEtablissementToOrganization(response.data);
   },
@@ -96,37 +94,27 @@ export const organizationService = {
     const mapped = mapEtablissementToOrganization(response.data);
     return { id: mapped.id };
   },
-  update: async (id: number | string, data: Partial<Organization>) => {
-    const resolvedId = await ensureOrganizationIdResolved(id);
-    const response = await axiosInstance.patch(
-      `/etablissements/${resolvedId}`,
-      {
-        nom: data.name,
-        type: data.type,
-        site_web: data.website ?? null,
-        description: data.notes ?? null,
-      },
-    );
+  update: async (id: string, data: Partial<Organization>) => {
+    const response = await axiosInstance.patch(`/etablissements/${id}`, {
+      nom: data.name,
+      type: data.type,
+      site_web: data.website ?? null,
+      description: data.notes ?? null,
+    });
     return mapEtablissementToOrganization(response.data);
   },
-  merge: async (id: number, targetOrganizationId: number) => {
-    const sourceId = await ensureOrganizationIdResolved(id);
-    const targetId = await ensureOrganizationIdResolved(targetOrganizationId);
-    const response = await axiosInstance.post(
-      `/etablissements/${sourceId}/merge`,
-      {
-        target_organization_id: targetId,
-      },
-    );
+  merge: async (id: string, targetOrganizationId: string) => {
+    const response = await axiosInstance.post(`/etablissements/${id}/merge`, {
+      target_organization_id: targetOrganizationId,
+    });
     return response.data;
   },
   split: async (
-    id: number,
+    id: string,
     data: Partial<Organization> & { move_contacts?: boolean },
   ) => {
-    const sourceId = await ensureOrganizationIdResolved(id);
-    const response = await axiosInstance.post<{ id: number }>(
-      `/etablissements/${sourceId}/split`,
+    const response = await axiosInstance.post<{ id: string }>(
+      `/etablissements/${id}/split`,
       {
         name: data.name,
         type: data.type,
@@ -137,11 +125,8 @@ export const organizationService = {
     );
     return response.data;
   },
-  delete: async (id: number) => {
-    const resolvedId = await ensureOrganizationIdResolved(id);
-    const response = await axiosInstance.delete(
-      `/etablissements/${resolvedId}`,
-    );
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete(`/etablissements/${id}`);
     return response.data;
   },
 };
