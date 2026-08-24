@@ -18,15 +18,19 @@ interface ApplicationDetailDrawerProps { appId: number | null; onClose: () => vo
 export function ApplicationDetailDrawer({ appId, onClose, onUpdate }: ApplicationDetailDrawerProps) {
   const navigate = useNavigate();
   const [data, setData] = useState<ApplicationDetailsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'overview' | 'timeline'>('overview');
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
-    if (!appId) { setData(null); setError(null); return; }
-    setLoading(true); setError(null); setTab('overview');
-    applicationService.getApplication(appId).then(setData).catch(() => setError('Cette candidature est temporairement indisponible.')).finally(() => setLoading(false));
+    if (!appId) return;
+    let active = true;
+    applicationService.getApplication(appId)
+      .then((result) => { if (active) { setData(result); setError(null); setTab('overview'); } })
+      .catch(() => { if (active) setError('Cette candidature est temporairement indisponible.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [appId]);
 
   if (!appId) return null;

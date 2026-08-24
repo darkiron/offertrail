@@ -8,19 +8,19 @@ export function UiModal({ opened, onClose, title, children }: { opened: boolean;
   return <Dialog title={title} onClose={onClose}>{children}</Dialog>;
 }
 
-export function UiText({ children, className = '', ...props }: any) {
+export function UiText({ children, className = '', ...props }: HTMLAttributes<HTMLSpanElement>) {
   return <span className={block(className)} {...props}>{children}</span>;
 }
 
-export function UiStack({ children, className = '', ...props }: any) {
+export function UiStack({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={block(`ot-stack ${className}`)} {...props}>{children}</div>;
 }
 
-export function UiGroup({ children, className = '', ...props }: any) {
+export function UiGroup({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={block(`ot-group ${className}`)} {...props}>{children}</div>;
 }
 
-export function UiGrid({ children, className = '', ...props }: any) {
+export function UiGrid({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={block(`ot-ui-grid ${className}`)} {...props}>{children}</div>;
 }
 

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useI18n } from '../i18n';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { supabase } from '../lib/supabase';
 import { authService, subscriptionService } from '../services/api';
 import { Button } from '../components/atoms/Button';

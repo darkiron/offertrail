@@ -1,31 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
+import React, { useEffect, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import axiosInstance, { setAxiosAuthToken } from '../services/api'
+import { AuthContext, type Profile } from './auth-context'
 
-interface Profile {
-  id: string
-  prenom: string | null
-  nom: string | null
-  subscription_status: string
-  role: string
-  plan_started_at: string | null
-  created_at: string | null
-}
-
-interface AuthContextType {
-  user: User | null
-  session: Session | null
-  profile: Profile | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  signUp: (email: string, password: string, meta?: { prenom?: string; nom?: string; plan?: string; period?: string }) => Promise<void>
-  signIn: (email: string, password: string) => Promise<void>
-  signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null)
@@ -125,10 +103,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextType {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }

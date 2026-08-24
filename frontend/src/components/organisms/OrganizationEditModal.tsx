@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
   UiModal as Modal, UiTextInput as TextInput, UiTextarea as Textarea,
@@ -70,7 +70,7 @@ export function OrganizationEditModal({
     });
   }, [organization, initialName, initialType]);
 
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     if (!organization) return;
     setContactsLoading(true);
     setContactError(null);
@@ -86,9 +86,9 @@ export function OrganizationEditModal({
     } finally {
       setContactsLoading(false);
     }
-  };
+  }, [organization]);
 
-  useEffect(() => { loadContacts(); }, [organization?.id]);
+  useEffect(() => { void loadContacts(); }, [loadContacts]);
 
   const filteredContacts = useMemo(() => {
     const needle = contactQuery.trim().toLowerCase();
