@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import classes from './FormField.module.css';
+import classes from './FormField.module.scss';
 
 type Option = readonly [value: string, label: string];
 

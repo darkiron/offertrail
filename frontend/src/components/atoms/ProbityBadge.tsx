@@ -1,5 +1,5 @@
 import type { ProbityLevel } from '../../types';
-import classes from './ProbityBadge.module.css';
+import classes from './ProbityBadge.module.scss';
 
 interface ProbityBadgeProps {
   score: number | null;

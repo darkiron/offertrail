@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import classes from './EntityList.module.css';
+import classes from './EntityList.module.scss';
 
 export function EntityList({ label, headings, children }: { label: string; headings: [string, string, string, string]; children: ReactNode }) {
   return <div className={classes.list} role="table" aria-label={label}><div className={classes.header} role="row">{headings.map((heading) => <span role="columnheader" key={heading}>{heading}</span>)}<span aria-hidden="true" /></div>{children}</div>;

@@ -1,5 +1,5 @@
 import type { OrganizationType } from '../../types';
-import classes from './OrganizationTypeBadge.module.css';
+import classes from './OrganizationTypeBadge.module.scss';
 
 interface OrganizationTypeBadgeProps {
   type: OrganizationType;

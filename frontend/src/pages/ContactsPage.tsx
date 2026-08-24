@@ -5,7 +5,7 @@ import { useListingController, usePaginatedListing } from '../hooks/useListingCo
 import ContactCreateModal from '../components/organisms/ContactCreateModal';
 import { ActionButton } from '../components/atoms/Action';
 import { SearchField, SelectField } from '../components/atoms/FormField';
-import { SaasPageHeader } from '../components/molecules/SaasPageHeader';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
 import { PortfolioListing } from '../components/organisms/PortfolioListing';
@@ -33,7 +33,7 @@ export const ContactsPage = () => {
 
   return <main className={classes.page}>
     {creating && <ContactCreateModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); void result.refetch(); }} />}
-    <SaasPageHeader eyebrow="Réseau professionnel" title="Contacts" description="Retrouvez les interlocuteurs liés à vos candidatures et le contexte de chaque relation." actions={<ActionButton variant="primary" onClick={() => setCreating(true)}>Ajouter un contact</ActionButton>} />
+    <PageHeader variant="saas" kicker="Réseau professionnel" title="Contacts" description="Retrouvez les interlocuteurs liés à vos candidatures et le contexte de chaque relation." actions={<ActionButton variant="primary" onClick={() => setCreating(true)}>Ajouter un contact</ActionButton>} />
     <FilterBar label="Filtres des contacts" columns="1fr 260px"><SearchField label="Rechercher" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Nom, rôle, entreprise…" /><SelectField label="Vue" value={view} onChange={(event) => listing.update('view',event.target.value)} options={VIEWS} /></FilterBar>
     <PortfolioListing
       label="Contacts" headings={['Contact','Entreprise','Coordonnées','Dernière activité']}

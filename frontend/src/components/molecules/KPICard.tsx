@@ -1,4 +1,4 @@
-import classes from './KPICard.module.css';
+import classes from './KPICard.module.scss';
 
 interface KPICardProps {
   label: string;

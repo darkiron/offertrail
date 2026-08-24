@@ -1,0 +1,120 @@
+.field {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label > span {
+  color: #69716c;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.control {
+  display: flex;
+  min-height: 46px;
+  border: 1px solid #c6c0b4;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.control:focus-within {
+  border-color: #a73e29;
+  box-shadow: 0 0 0 2px #a73e2920;
+}
+
+.control input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.control button {
+  width: 42px;
+  border: 0;
+  color: #68706b;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.field > small {
+  color: #737a76;
+  font-size: 0.7rem;
+}
+
+.results {
+  position: absolute;
+  z-index: 8;
+  top: 100%;
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  margin-top: 0.3rem;
+  border: 1px solid #c6c0b4;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 16px 34px #18201d24;
+}
+
+.results button {
+  display: grid;
+  width: 100%;
+  gap: 0.15rem;
+  padding: 0.72rem 0.8rem;
+  border: 0;
+  border-bottom: 1px solid #e4dfd6;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.results button:hover,
+.results button:focus-visible {
+  background: #f1ede4;
+  outline: none;
+}
+
+.results span {
+  color: #737a76;
+  font-size: 0.72rem;
+}
+
+.state {
+  display: block;
+  padding: 0.8rem;
+  color: #737a76;
+  font-size: 0.75rem;
+}
+
+.results .create {
+  border-top: 1px solid #c6c0b4;
+  border-bottom: 0;
+  background: #f7f2e8;
+  color: #a73e29;
+}
+
+.results .create:hover,
+.results .create:focus-visible {
+  background: #efe5d4;
+}
+
+.results .create:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error {
+  color: #a73e29 !important;
+}

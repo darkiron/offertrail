@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import classes from './Pagination.module.css';
+import classes from './Pagination.module.scss';
 
 interface PaginationProps {
   page: number;

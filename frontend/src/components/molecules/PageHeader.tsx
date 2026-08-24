@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import classes from './PageHeader.module.scss';
 
 interface PageHeaderProps {
   title: string;
@@ -6,25 +7,31 @@ interface PageHeaderProps {
   count?: number | null;
   actions?: ReactNode;
   description?: string;
-  variant?: 'compact' | 'editorial';
+  variant?: 'compact' | 'editorial' | 'saas';
 }
 
-export function PageHeader({ title, kicker, count, actions, description, variant = 'compact' }: PageHeaderProps) {
-  const Heading = variant === 'editorial' ? 'h1' : 'h2';
+export function PageHeader({
+  title,
+  kicker,
+  count,
+  actions,
+  description,
+  variant = 'compact',
+}: PageHeaderProps) {
+  const Heading = variant === 'compact' ? 'h2' : 'h1';
   return (
-    <header className="ot-page-header" data-variant={variant}>
-      <div className="ot-page-header__row">
-        <div className="ot-page-header__intro">
-          {kicker && (
-            <span className="ot-kicker">{kicker}</span>
-          )}
-          <div className="ot-page-header__title"><Heading>{title}</Heading>{count != null && <span className="ot-count">{count}</span>}</div>
+    <header className={classes.header} data-variant={variant}>
+      <div className={classes.row}>
+        <div className={classes.intro}>
+          {kicker && <span className={classes.kicker}>{kicker}</span>}
+          <div className={classes.title}>
+            <Heading>{title}</Heading>
+            {count != null && <span className={classes.count}>{count}</span>}
+          </div>
         </div>
-        {actions && <div className="ot-page-header__actions">{actions}</div>}
+        {actions && <div className={classes.actions}>{actions}</div>}
       </div>
-      {description && (
-        <p className="ot-subtitle">{description}</p>
-      )}
+      {description && <p className={classes.description}>{description}</p>}
     </header>
   );
 }

@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import classes from './RelatedRecords.module.css';
+import classes from './RelatedRecords.module.scss';
 
 export function RelatedRecords({ children, label }: { children: ReactNode; label: string }) { return <div className={classes.list} role="list" aria-label={label}>{children}</div>; }
 export function RelatedRecord({ title, detail, meta, onOpen }: { title: ReactNode; detail?: ReactNode; meta?: ReactNode; onOpen: () => void }) {

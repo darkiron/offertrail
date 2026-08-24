@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import classes from './EntitySearchField.module.css';
+import classes from './EntitySearchField.module.scss';
 
 export interface EntitySearchOption { id:number|string; label:string; detail?:string }
 

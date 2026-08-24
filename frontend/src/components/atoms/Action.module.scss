@@ -1,0 +1,81 @@
+@use '../../styles/abstracts' as *;
+
+.action {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ot-space-2);
+  padding: 0 var(--ot-space-4);
+  border: 1px solid var(--ot-ink);
+  border-radius: 999px;
+  font: 750 0.78rem/1 sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled,
+  &.disabled {
+    pointer-events: none;
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  &[data-size='small'] {
+    min-height: 36px;
+    padding-inline: var(--ot-space-3);
+    font-size: 0.74rem;
+  }
+
+  @include reduced-motion {
+    transition: none;
+  }
+}
+
+.primary {
+  color: var(--ot-paper-raised);
+  background: var(--ot-ink);
+
+  &:hover {
+    background: color-mix(in srgb, var(--ot-ink) 88%, white);
+    transform: translateY(-1px);
+  }
+}
+
+.secondary {
+  color: var(--ot-ink);
+  background: var(--ot-paper-raised);
+  border-color: var(--ot-line-strong);
+
+  &:hover {
+    border-color: var(--ot-ink);
+    background: var(--ot-paper);
+  }
+}
+
+.quiet {
+  min-height: auto;
+  padding: var(--ot-space-1);
+  border-color: transparent;
+  color: var(--ot-accent);
+  background: transparent;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.danger {
+  color: var(--ot-paper-raised);
+  background: var(--ot-danger);
+  border-color: var(--ot-danger);
+}
