@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import axiosInstance, { setAxiosAuthToken } from '../services/api'
 import { AuthContext, type Profile } from './auth-context'
