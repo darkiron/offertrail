@@ -7,7 +7,7 @@ import classes from './ApplicationsPage.module.css';
 import { SearchField, SelectField } from '../components/atoms/FormField';
 import { ActionButton } from '../components/atoms/Action';
 import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
-import { SaasPageHeader } from '../components/molecules/SaasPageHeader';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { PortfolioListing } from '../components/organisms/PortfolioListing';
 
@@ -66,7 +66,7 @@ export function ApplicationsPage() {
   return (
     <main className={classes.page} aria-busy={query.isFetching}>
       {showCreate && <NewApplicationModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void query.refetch(); }} />}
-      <SaasPageHeader eyebrow="Portefeuille actif" title="Candidatures" description="Retrouvez chaque opportunité et la prochaine décision à prendre." actions={<ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>} />
+    <PageHeader variant="saas" kicker="Portefeuille actif" title="Candidatures" description="Retrouvez chaque opportunité et la prochaine décision à prendre." actions={<ActionButton variant="primary" onClick={() => setShowCreate(true)}>Ajouter une candidature</ActionButton>} />
       <FilterBar label="Filtres des candidatures" columns="minmax(220px,1.5fr) repeat(3,minmax(140px,.65fr))">
         <SearchField className={classes.search} label="Rechercher" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Poste ou entreprise…" />
         <SelectField label="Statut" value={status} onChange={(event) => listing.update('status', event.target.value)} options={STATUS_OPTIONS} />

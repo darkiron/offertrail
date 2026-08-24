@@ -1,0 +1,105 @@
+@use '../../styles/abstracts' as *;
+
+.badge {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.clientFinal {
+  background: rgb(180 190 254 / 14%);
+  color: var(--ctp-mocha-lavender);
+  border-color: rgb(180 190 254 / 30%);
+}
+
+.esn {
+  background: rgb(137 180 250 / 14%);
+  color: var(--ctp-mocha-blue);
+  border-color: rgb(137 180 250 / 30%);
+}
+
+.cabinetRecrutement {
+  background: rgb(245 194 231 / 14%);
+  color: var(--ctp-mocha-pink);
+  border-color: rgb(245 194 231 / 30%);
+}
+
+.startup {
+  background: rgb(250 179 135 / 14%);
+  color: var(--ctp-mocha-peach);
+  border-color: rgb(250 179 135 / 30%);
+}
+
+.pme {
+  background: rgb(148 226 213 / 14%);
+  color: var(--ctp-mocha-teal);
+  border-color: rgb(148 226 213 / 30%);
+}
+
+.grandCompte {
+  background: rgb(137 220 235 / 14%);
+  color: var(--ctp-mocha-sky);
+  border-color: rgb(137 220 235 / 30%);
+}
+
+.portage {
+  background: rgb(235 160 172 / 14%);
+  color: var(--ctp-mocha-maroon);
+  border-color: rgb(235 160 172 / 30%);
+}
+
+.autre {
+  background: rgb(166 173 200 / 14%);
+  color: var(--ctp-mocha-subtext0);
+  border-color: rgb(166 173 200 / 30%);
+}
+
+/* ── Light mode overrides ── */
+[data-mantine-color-scheme='light'] .clientFinal {
+  background: rgb(114 135 253 / 10%);
+  color: var(--ctp-latte-lavender);
+  border-color: rgb(114 135 253 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .esn {
+  background: rgb(30 102 245 / 10%);
+  color: var(--ctp-latte-blue);
+  border-color: rgb(30 102 245 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .cabinetRecrutement {
+  background: rgb(234 118 203 / 10%);
+  color: var(--ctp-latte-pink);
+  border-color: rgb(234 118 203 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .startup {
+  background: rgb(254 100 11 / 10%);
+  color: var(--ctp-latte-peach);
+  border-color: rgb(254 100 11 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .pme {
+  background: rgb(23 146 135 / 10%);
+  color: var(--ctp-latte-teal);
+  border-color: rgb(23 146 135 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .grandCompte {
+  background: rgb(4 165 229 / 10%);
+  color: var(--ctp-latte-sky);
+  border-color: rgb(4 165 229 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .portage {
+  background: rgb(230 69 83 / 10%);
+  color: var(--ctp-latte-maroon);
+  border-color: rgb(230 69 83 / 22%);
+}
+
+[data-mantine-color-scheme='light'] .autre {
+  background: rgb(108 111 133 / 10%);
+  color: var(--ctp-latte-subtext0);
+  border-color: rgb(108 111 133 / 22%);
+}

@@ -1,6 +1,6 @@
 import { type Statut } from '../../constants/statuts';
 import { useI18n } from '../../i18n';
-import classes from './StatusBadge.module.css';
+import classes from './StatusBadge.module.scss';
 
 interface StatusBadgeProps {
   status: string;

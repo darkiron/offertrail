@@ -7,62 +7,66 @@
 
 /* Neutral — brouillon, abandonnee */
 .neutral {
-  background: rgba(166, 173, 200, 0.14);
+  background: rgb(166 173 200 / 14%);
   color: var(--ctp-mocha-subtext0);
-  border-color: rgba(166, 173, 200, 0.30);
+  border-color: rgb(166 173 200 / 30%);
 }
 
 /* Applied — envoyee, en_attente, relancee */
 .applied {
-  background: rgba(137, 180, 250, 0.14);
+  background: rgb(137 180 250 / 14%);
   color: var(--ctp-mocha-blue);
-  border-color: rgba(137, 180, 250, 0.30);
+  border-color: rgb(137 180 250 / 30%);
 }
 
 /* Interview — entretien, test_technique */
 .interview {
-  background: rgba(249, 226, 175, 0.14);
+  background: rgb(249 226 175 / 14%);
   color: var(--ctp-mocha-yellow);
-  border-color: rgba(249, 226, 175, 0.30);
+  border-color: rgb(249 226 175 / 30%);
 }
 
 /* Offer — offre_recue, acceptee */
 .offer {
-  background: rgba(166, 227, 161, 0.14);
+  background: rgb(166 227 161 / 14%);
   color: var(--ctp-mocha-green);
-  border-color: rgba(166, 227, 161, 0.30);
+  border-color: rgb(166 227 161 / 30%);
 }
 
 /* Rejected — refusee, ghosting */
 .rejected {
-  background: rgba(243, 139, 168, 0.14);
+  background: rgb(243 139 168 / 14%);
   color: var(--ctp-mocha-red);
-  border-color: rgba(243, 139, 168, 0.30);
+  border-color: rgb(243 139 168 / 30%);
 }
 
 /* ── Light mode overrides ── */
 [data-mantine-color-scheme='light'] .neutral {
-  background: rgba(108, 111, 133, 0.10);
+  background: rgb(108 111 133 / 10%);
   color: var(--ctp-latte-subtext0);
-  border-color: rgba(108, 111, 133, 0.22);
+  border-color: rgb(108 111 133 / 22%);
 }
+
 [data-mantine-color-scheme='light'] .applied {
-  background: rgba(30, 102, 245, 0.10);
+  background: rgb(30 102 245 / 10%);
   color: var(--ctp-latte-blue);
-  border-color: rgba(30, 102, 245, 0.22);
+  border-color: rgb(30 102 245 / 22%);
 }
+
 [data-mantine-color-scheme='light'] .interview {
-  background: rgba(223, 142, 29, 0.10);
+  background: rgb(223 142 29 / 10%);
   color: var(--ctp-latte-yellow);
-  border-color: rgba(223, 142, 29, 0.22);
+  border-color: rgb(223 142 29 / 22%);
 }
+
 [data-mantine-color-scheme='light'] .offer {
-  background: rgba(64, 160, 43, 0.10);
+  background: rgb(64 160 43 / 10%);
   color: var(--ctp-latte-green);
-  border-color: rgba(64, 160, 43, 0.22);
+  border-color: rgb(64 160 43 / 22%);
 }
+
 [data-mantine-color-scheme='light'] .rejected {
-  background: rgba(210, 15, 57, 0.10);
+  background: rgb(210 15 57 / 10%);
   color: var(--ctp-latte-red);
-  border-color: rgba(210, 15, 57, 0.22);
+  border-color: rgb(210 15 57 / 22%);
 }

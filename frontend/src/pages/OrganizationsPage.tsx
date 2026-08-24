@@ -6,7 +6,7 @@ import classes from './OrganizationsPage.module.css';
 import { SearchField, SelectField } from '../components/atoms/FormField';
 import { ActionButton, ActionLink } from '../components/atoms/Action';
 import { EntityIdentity, EntityValue } from '../components/molecules/EntityList';
-import { SaasPageHeader } from '../components/molecules/SaasPageHeader';
+import { PageHeader } from '../components/molecules/PageHeader';
 import { FilterBar } from '../components/molecules/FilterBar';
 import { PortfolioListing } from '../components/organisms/PortfolioListing';
 
@@ -32,7 +32,7 @@ export const OrganizationsPage = () => {
   useEffect(() => { const scrollY=(location.state as {restoreScrollY?:number}|null)?.restoreScrollY;if(typeof scrollY==='number')window.requestAnimationFrame(()=>window.scrollTo({top:scrollY})); }, [location.state]);
 
   return <main className={classes.page}>
-    <SaasPageHeader eyebrow="Portefeuille relationnel" title="Entreprises" description="Chaque fiche rassemble vos candidatures, contacts et échanges avec une même organisation." actions={<ActionLink to="/app/etablissements/maintenance">Nettoyer les doublons</ActionLink>} />
+    <PageHeader variant="saas" kicker="Portefeuille relationnel" title="Entreprises" description="Chaque fiche rassemble vos candidatures, contacts et échanges avec une même organisation." actions={<ActionLink to="/app/etablissements/maintenance">Nettoyer les doublons</ActionLink>} />
     <FilterBar label="Recherche et tri" columns="minmax(260px,1fr) 190px 220px">
       <SearchField className={classes.search} label="Rechercher une entreprise" value={listing.search} onChange={(event) => listing.setSearch(event.target.value)} placeholder="Nom de l’entreprise…" />
       <SelectField label="Rôle dans le suivi" value={role} onChange={(event) => listing.update('role', event.target.value)} options={[["", "Tous les rôles"], ["intermediary", "Recruteur / intermédiaire"], ["client_final", "Client final"]]} />

@@ -1,6 +1,6 @@
 import { useI18n } from '../../i18n';
 import type { Locale } from '../../i18n';
-import classes from './LanguageSwitcher.module.css';
+import classes from './LanguageSwitcher.module.scss';
 
 const LOCALES: { value: Locale; label: string }[] = [{ value: 'fr', label: 'Français' }, { value: 'en', label: 'English' }];
 

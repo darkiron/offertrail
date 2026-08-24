@@ -1,0 +1,15 @@
+.bar {
+  display: grid;
+  grid-template-columns: var(--filter-columns, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d9d3c7;
+  border-radius: 12px;
+  background: #f2eee5;
+}
+
+@media (width <= 720px) {
+  .bar {
+    grid-template-columns: 1fr !important;
+  }
+}
