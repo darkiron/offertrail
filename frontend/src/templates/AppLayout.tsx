@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import {
+  IconBriefcase,
+  IconBuilding,
+  IconHome,
+  IconPlus,
+  IconUpload,
+  IconUsers,
+} from '@tabler/icons-react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
 import { subscriptionService } from '../services/api/billing';
@@ -50,12 +58,13 @@ export function AppLayout() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const links = [
-    [t('nav.dashboard'), '/app'],
-    [t('nav.applications'), '/app/candidatures'],
-    [t('nav.organizations'), '/app/etablissements'],
-    [t('nav.contacts'), '/app/contacts'],
-    [t('nav.import'), '/app/import'],
+    [t('nav.dashboard'), '/app', IconHome],
+    [t('nav.applications'), '/app/candidatures', IconBriefcase],
+    [t('nav.organizations'), '/app/etablissements', IconBuilding],
+    [t('nav.contacts'), '/app/contacts', IconUsers],
+    [t('nav.import'), '/app/import', IconUpload],
   ] as const;
+  const mobileLinks = links.slice(0, 4);
   const initials = useMemo(
     () => (profile?.prenom?.[0] || user?.email?.[0] || 'O').toUpperCase(),
     [profile?.prenom, user?.email],
@@ -70,6 +79,9 @@ export function AppLayout() {
   if (!isAuthenticated) return <Outlet />;
   return (
     <div className={classes.shell}>
+      <a className={classes.skipLink} href="#app-content">
+        {t('common.skipToContent')}
+      </a>
       {showCreate && (
         <NewApplicationModal
           onClose={() => setShowCreate(false)}
@@ -136,7 +148,7 @@ export function AppLayout() {
         <PlanLimitBanner sub={sub} />
         <SlowApiNotice />
       </div>
-      <div className={classes.content}>
+      <div id="app-content" className={classes.content} tabIndex={-1}>
         <AppErrorBoundary>
           <Outlet
             context={{ openCreateApplication: () => setShowCreate(true) }}
@@ -144,9 +156,15 @@ export function AppLayout() {
         </AppErrorBoundary>
       </div>
       <nav className={classes.mobileNav} aria-label={t('nav.dashboard')}>
-        {links.map(([label, to]) => (
-          <NavLink key={to} end={to === '/app'} to={to}>
-            {label}
+        {mobileLinks.map(([label, to, Icon]) => (
+          <NavLink
+            key={to}
+            end={to === '/app'}
+            to={to}
+            className={({ isActive }) => (isActive ? classes.active : '')}
+          >
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
           </NavLink>
         ))}
         <button
@@ -154,7 +172,7 @@ export function AppLayout() {
           aria-label={t('dashboard.newApplication')}
           onClick={() => setShowCreate(true)}
         >
-          ＋
+          <IconPlus aria-hidden="true" />
         </button>
       </nav>
     </div>

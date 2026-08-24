@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
+    "test": "node --test tests/*.test.mjs",
     "stylelint": "stylelint \"src/**/*.{css,scss}\" --max-warnings=0",
     "stylelint:fix": "npm run stylelint -- --fix",
     "typecheck": "tsc --build --pretty false"

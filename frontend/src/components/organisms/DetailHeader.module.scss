@@ -1,0 +1,75 @@
+.back {
+  display: inline-flex;
+  margin-bottom: 2rem;
+  color: #68706b;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #bdb8ae;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: #a73e29;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  font:
+    500 clamp(2.7rem, 5vw, 4.5rem) / 0.96 Georgia,
+    serif;
+  letter-spacing: -0.05em;
+}
+
+.subtitle {
+  margin: 0.7rem 0;
+  color: #626a65;
+}
+
+.badges,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badges span {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #c4beb3;
+  border-radius: 999px;
+  color: #646c67;
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+@media (width <= 720px) {
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 4vw, 3.8rem);
+}

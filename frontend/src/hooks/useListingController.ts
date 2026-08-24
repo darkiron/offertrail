@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
-import { keepPreviousData, useQuery, type QueryKey } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQuery,
+  type QueryKey,
+} from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 
 type ListingDefaults = Record<string, string>;
 
-export function useListingController(basePath: string, defaults: ListingDefaults = {}) {
+export function useListingController(
+  basePath: string,
+  defaults: ListingDefaults = {},
+) {
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
   const [draft, setDraft] = useState({ value: query, sourceQuery: query });
@@ -43,9 +50,22 @@ export function useListingController(basePath: string, defaults: ListingDefaults
     return `${basePath}${next.size ? `?${next.toString()}` : ''}`;
   };
 
-  return { params, page, query, search, setSearch, value, update, clear, pageHref };
+  return {
+    params,
+    page,
+    query,
+    search,
+    setSearch,
+    value,
+    update,
+    clear,
+    pageHref,
+  };
 }
 
-export function usePaginatedListing<T>(queryKey: QueryKey, queryFn: () => Promise<T>) {
+export function usePaginatedListing<T>(
+  queryKey: QueryKey,
+  queryFn: () => Promise<T>,
+) {
   return useQuery({ queryKey, queryFn, placeholderData: keepPreviousData });
 }

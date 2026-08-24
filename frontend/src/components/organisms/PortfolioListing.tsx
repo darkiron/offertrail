@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
+import { useI18n } from '../../i18n';
 import { ActionButton } from '../atoms/Action';
 import { LoadingStatus } from '../atoms/LoadingStatus';
-import { EntityList, EntityListRow, ResultHeader } from '../molecules/EntityList';
+import {
+  EntityList,
+  EntityListRow,
+  ResultHeader,
+} from '../molecules/EntityList';
 import { Pagination } from '../molecules/Pagination';
 import { StatePanel } from '../molecules/StatePanel';
 
@@ -36,24 +41,71 @@ interface PortfolioListingProps<T> {
 }
 
 export function PortfolioListing<T>({
-  label, headings, data, loading, fetching, error, summary, summaryAction,
-  loadingLabel, errorTitle, emptyTitle, emptyDescription, emptyAction,
-  getKey, onOpen, renderCells, onRetry, getPageHref, onPageChange,
+  label,
+  headings,
+  data,
+  loading,
+  fetching,
+  error,
+  summary,
+  summaryAction,
+  loadingLabel,
+  errorTitle,
+  emptyTitle,
+  emptyDescription,
+  emptyAction,
+  getKey,
+  onOpen,
+  renderCells,
+  onRetry,
+  getPageHref,
+  onPageChange,
 }: PortfolioListingProps<T>) {
-  return <>
-    <ResultHeader action={summaryAction}>{summary}</ResultHeader>
-    {fetching && data && <LoadingStatus>{`Chargement de la page ${data.page}…`}</LoadingStatus>}
-    {loading ? (
-      <StatePanel><LoadingStatus>{loadingLabel}</LoadingStatus></StatePanel>
-    ) : error ? (
-      <StatePanel title={errorTitle}><ActionButton onClick={onRetry}>Réessayer</ActionButton></StatePanel>
-    ) : !data?.items.length ? (
-      <StatePanel title={emptyTitle} description={emptyDescription}>{emptyAction}</StatePanel>
-    ) : <>
-      <EntityList label={label} headings={headings}>
-        {data.items.map((item) => <EntityListRow key={getKey(item)} busy={fetching} onOpen={() => onOpen(item)}>{renderCells(item)}</EntityListRow>)}
-      </EntityList>
-      <Pagination page={data.page} pages={data.pages} total={data.total} perPage={data.per_page} loading={fetching} getHref={getPageHref} onPageChange={onPageChange} />
-    </>}
-  </>;
+  const { t } = useI18n();
+  return (
+    <>
+      <ResultHeader action={summaryAction}>{summary}</ResultHeader>
+      {fetching && data && (
+        <LoadingStatus>
+          {t('common.loadingPage').replace('{{page}}', String(data.page))}
+        </LoadingStatus>
+      )}
+      {loading ? (
+        <StatePanel>
+          <LoadingStatus>{loadingLabel}</LoadingStatus>
+        </StatePanel>
+      ) : error ? (
+        <StatePanel title={errorTitle}>
+          <ActionButton onClick={onRetry}>{t('common.retry')}</ActionButton>
+        </StatePanel>
+      ) : !data?.items.length ? (
+        <StatePanel title={emptyTitle} description={emptyDescription}>
+          {emptyAction}
+        </StatePanel>
+      ) : (
+        <>
+          <EntityList label={label} headings={headings}>
+            {data.items.map((item) => (
+              <EntityListRow
+                key={getKey(item)}
+                busy={fetching}
+                onOpen={() => onOpen(item)}
+              >
+                {renderCells(item)}
+              </EntityListRow>
+            ))}
+          </EntityList>
+          <Pagination
+            page={data.page}
+            pages={data.pages}
+            total={data.total}
+            perPage={data.per_page}
+            loading={fetching}
+            getHref={getPageHref}
+            onPageChange={onPageChange}
+          />
+        </>
+      )}
+    </>
+  );
 }

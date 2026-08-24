@@ -1,0 +1,159 @@
+.content {
+  display: grid;
+  min-height: 0;
+  gap: 1.25rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabs {
+  margin-top: 0;
+}
+
+.panel {
+  display: grid;
+  gap: 1.35rem;
+  padding-top: 1.25rem;
+}
+
+.section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.label {
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.value {
+  margin: 0;
+  color: var(--ot-ink);
+  font-size: 0.88rem;
+}
+
+.muted {
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 0.84rem;
+}
+
+.list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--ot-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-sm);
+  background: var(--ot-paper-raised);
+}
+
+.timeline {
+  display: grid;
+  gap: 1rem;
+}
+
+.event {
+  position: relative;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--ot-accent);
+}
+
+.event::before {
+  position: absolute;
+  top: 0.18rem;
+  left: -0.38rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 2px solid var(--ot-paper-raised);
+  border-radius: 50%;
+  background: var(--ot-accent);
+  content: '';
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ot-line);
+}
+
+.actions > * {
+  flex: 1 1 10rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.link {
+  color: var(--ot-ink);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: var(--ot-accent);
+  text-underline-offset: 3px;
+}
+
+.error {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 3px solid var(--ot-accent);
+  color: #8f2f20;
+  background: #f8e5df;
+  font-size: 0.82rem;
+}
+
+@media (width <= 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    position: sticky;
+    bottom: -1.6rem;
+    margin-inline: -1.2rem;
+    padding: 1rem 1.2rem;
+    background: color-mix(in srgb, var(--ot-paper) 94%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  .actions > * {
+    flex-basis: 100%;
+  }
+}
