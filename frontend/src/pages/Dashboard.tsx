@@ -6,10 +6,10 @@ import type { TodayAction } from '@entities/application/model';
 import { applicationKeys } from '@entities/application/queryKeys';
 import { useTodayQuery } from '@features/applications/dashboard/useTodayQuery';
 import classes from './Dashboard.module.scss';
-import { ActionButton } from '../components/atoms/Action';
-import { SelectField } from '../components/atoms/FormField';
-import { StatePanel } from '../components/molecules/StatePanel';
-import { Dialog } from '../components/molecules/Dialog';
+import { ActionButton } from '@shared/ui/Action';
+import { SelectField } from '@shared/ui/FormField';
+import { StatePanel } from '@shared/ui/StatePanel';
+import { Dialog } from '@shared/ui/Dialog';
 import { useI18n } from '../i18n';
 
 const errorStatus = (error: unknown) =>

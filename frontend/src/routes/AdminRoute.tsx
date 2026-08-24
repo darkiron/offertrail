@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/auth-context';
-import { LoadingStatus } from './atoms/LoadingStatus';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
 import { useI18n } from '../i18n';
 
 export function AdminRoute({ children }: PropsWithChildren) {

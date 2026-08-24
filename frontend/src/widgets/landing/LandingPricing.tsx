@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlanCard } from '../../PlanCard';
-import { useI18n } from '../../../i18n';
-import { usePricingPlans } from '../../../lib/pricingPlans';
-import type { BillingPeriod, PlanId } from '../../../lib/pricingPlans';
+import { PlanCard } from '../billing/PlanCard';
+import { useI18n } from '../../i18n';
+import { usePricingPlans } from '../../lib/pricingPlans';
+import type { BillingPeriod, PlanId } from '../../lib/pricingPlans';
 import classes from './LandingPricing.module.scss';
 
 export function LandingPricing() {

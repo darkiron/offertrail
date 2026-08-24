@@ -16,7 +16,7 @@ import {
   UiStack as Stack,
   UiText as Text,
   UiTextInput as TextInput,
-} from '../components/atoms/UiPrimitives';
+} from '@shared/ui/UiPrimitives';
 import {
   Area,
   AreaChart,

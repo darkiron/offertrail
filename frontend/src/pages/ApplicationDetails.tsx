@@ -3,19 +3,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { applicationService, dashboardService } from '../services/api';
 import classes from './ApplicationDetails.module.scss';
-import { ActionButton, ExternalAction } from '../components/atoms/Action';
-import {
-  SelectField,
-  TextAreaField,
-  TextField,
-} from '../components/atoms/FormField';
-import { LoadingStatus } from '../components/atoms/LoadingStatus';
-import { DetailSummary } from '../components/molecules/DetailSummary';
-import { DetailHeader } from '../components/organisms/DetailHeader';
-import { Dialog } from '../components/molecules/Dialog';
-import { WorkflowApplicationEditModal } from '../components/organisms/WorkflowApplicationEditModal';
-import { EntityLink } from '../components/atoms/EntityLink';
-import { StatePanel } from '../components/molecules/StatePanel';
+import { ActionButton, ExternalAction } from '@shared/ui/Action';
+import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
+import { DetailSummary } from '@shared/ui/DetailSummary';
+import { DetailHeader } from '@shared/ui/DetailHeader';
+import { Dialog } from '@shared/ui/Dialog';
+import { WorkflowApplicationEditModal } from '@widgets/applications/WorkflowApplicationEditModal';
+import { EntityLink } from '@shared/ui/EntityLink';
+import { StatePanel } from '@shared/ui/StatePanel';
 import { useI18n } from '../i18n';
 import { useApplicationWorkspaceQuery } from '@features/applications/detail/useApplicationWorkspaceQuery';
 import { applicationKeys } from '@entities/application/queryKeys';

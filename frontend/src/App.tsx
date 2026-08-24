@@ -10,14 +10,14 @@ import {
 } from 'react-router-dom';
 import { I18nProvider, useI18n } from './i18n';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
+import { ProtectedRoute } from './routes/ProtectedRoute';
+import { AdminRoute } from './routes/AdminRoute';
 import appClasses from './App.module.scss';
 
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout as PublicLayout } from './templates/LandingLayout';
-import { LoadingStatus } from './components/atoms/LoadingStatus';
-import { PublicBrand } from './components/atoms/PublicBrand';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
+import { PublicBrand } from '@shared/ui/PublicBrand';
 
 const named = <T extends Record<string, React.ComponentType>>(
   loader: () => Promise<T>,

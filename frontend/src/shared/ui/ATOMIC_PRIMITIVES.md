@@ -1,15 +1,16 @@
 # Atomic primitives
 
-The public contracts in `atoms/` own native controls and single-purpose visual
-elements. `molecules/` may compose those contracts but must not duplicate their
-domain mapping or interaction semantics.
+The public contracts in `shared/ui/` own native controls, single-purpose visual
+elements and domain-agnostic compositions (dialogs, tabs, pagination, entity
+lists). Components here take their data via props and must not fetch data or
+encode knowledge of a specific business entity — that belongs in `widgets/`.
 
 ## Canonical components
 
 - `Button` is the canonical native button. It owns loading, disabled, size and
   visual variants. `ActionButton` is a compatibility facade that delegates to
   it; `ActionLink` and `ExternalAction` remain the navigation equivalents.
-- `ProbityBadge` and `OrganizationTypeBadge` live only in `atoms/`. Their old
+- `ProbityBadge` and `OrganizationTypeBadge` live only in `shared/ui/`. Their old
   molecule implementations were unreferenced and duplicated labels, colors and
   behavior.
 - `PageHeader` owns compact, editorial and SaaS variants. The former

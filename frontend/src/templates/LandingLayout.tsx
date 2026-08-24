@@ -5,8 +5,8 @@ import type { TranslationKey } from '../i18n';
 import { LEGAL_CONFIG } from '../config/legal';
 import { CONFIG } from '../config';
 import { useI18n } from '../i18n';
-import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
-import { PublicBrand } from '../components/atoms/PublicBrand';
+import { LanguageSwitcher } from '@shared/ui/LanguageSwitcher';
+import { PublicBrand } from '@shared/ui/PublicBrand';
 import classes from './LandingLayout.module.scss';
 
 const publicNavigation = [

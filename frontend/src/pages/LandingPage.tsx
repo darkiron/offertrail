@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { LandingFaq } from '../components/landing/organisms/LandingFaq';
-import { LandingPricing } from '../components/landing/organisms/LandingPricing';
-import { LandingWorkflow } from '../components/landing/organisms/LandingWorkflow';
+import { LandingFaq } from '@widgets/landing/LandingFaq';
+import { LandingPricing } from '@widgets/landing/LandingPricing';
+import { LandingWorkflow } from '@widgets/landing/LandingWorkflow';
 import { useAuth } from '../context/auth-context';
 import { useI18n } from '../i18n';
 import classes from './LandingPage.module.scss';

@@ -4,8 +4,8 @@ import {
   applicationService,
   type ImportResponse,
 } from '../services/api/applications';
-import { Button } from '../components/atoms/Button';
-import { PageHeader } from '../components/molecules/PageHeader';
+import { Button } from '@shared/ui/Button';
+import { PageHeader } from '@shared/ui/PageHeader';
 import { useI18n } from '../i18n';
 import classes from './Import.module.scss';
 

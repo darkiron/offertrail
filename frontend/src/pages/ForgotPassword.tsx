@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
-import { PublicShell } from '../components/PublicShell';
+import { PublicShell } from '../templates/PublicShell';
 import { useI18n } from '../i18n';
 import { supabase } from '../lib/supabase';
 import classes from './Auth.module.scss';

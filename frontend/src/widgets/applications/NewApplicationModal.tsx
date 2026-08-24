@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
-import { Dialog } from '../molecules/Dialog';
+import { Dialog } from '@shared/ui/Dialog';
 import { applicationService } from '../../services/api/applications';
 import {
   organizationService,

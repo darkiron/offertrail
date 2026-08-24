@@ -9,15 +9,12 @@ import {
   usePaginatedListing,
 } from '../hooks/useListingController';
 import classes from './OrganizationsPage.module.scss';
-import { SearchField, SelectField } from '../components/atoms/FormField';
-import { ActionButton, ActionLink } from '../components/atoms/Action';
-import {
-  EntityIdentity,
-  EntityValue,
-} from '../components/molecules/EntityList';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { FilterBar } from '../components/molecules/FilterBar';
-import { PortfolioListing } from '../components/organisms/PortfolioListing';
+import { SearchField, SelectField } from '@shared/ui/FormField';
+import { ActionButton, ActionLink } from '@shared/ui/Action';
+import { EntityIdentity, EntityValue } from '@shared/ui/EntityList';
+import { PageHeader } from '@shared/ui/PageHeader';
+import { FilterBar } from '@shared/ui/FilterBar';
+import { PortfolioListing } from '@widgets/PortfolioListing';
 import { useI18n } from '../i18n';
 import {
   formatRelationshipDate,

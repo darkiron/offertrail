@@ -4,8 +4,8 @@ import {
   IconChartDots,
   IconUsers,
 } from '@tabler/icons-react';
-import { useI18n } from '../../../i18n';
-import { FeatureCard } from '../molecules/FeatureCard';
+import { useI18n } from '../../i18n';
+import { FeatureCard } from './FeatureCard';
 import classes from './LandingWorkflow.module.scss';
 
 export function LandingWorkflow() {

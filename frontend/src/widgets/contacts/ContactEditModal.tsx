@@ -2,14 +2,14 @@ import { useCallback, useState } from 'react';
 import axios from 'axios';
 import type { Contact } from '../../types';
 import { contactService, organizationService } from '../../services/api';
-import { Dialog } from '../molecules/Dialog';
-import { ActionButton } from '../atoms/Action';
-import { TextAreaField, TextField } from '../atoms/FormField';
+import { Dialog } from '@shared/ui/Dialog';
+import { ActionButton } from '@shared/ui/Action';
+import { TextAreaField, TextField } from '@shared/ui/FormField';
 import {
   EntitySearchField,
   type EntitySearchOption,
-} from '../molecules/EntitySearchField';
-import classes from './ContactFormModal.module.scss';
+} from '@shared/ui/EntitySearchField';
+import classes from '@shared/ui/ContactFormModal.module.scss';
 import { useI18n } from '../../i18n';
 import { relationshipCopy } from '../../features/relationships/locale';
 import { useRelationshipAuthRedirect } from '../../features/relationships/auth';

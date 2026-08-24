@@ -3,14 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { organizationService } from '../services/api/organizations';
 import type { Organization } from '../types';
 import classes from './OrganizationMaintenancePage.module.scss';
-import { ActionButton } from '../components/atoms/Action';
+import { ActionButton } from '@shared/ui/Action';
 import {
   SearchField,
   SelectField,
   TextAreaField,
   TextField,
-} from '../components/atoms/FormField';
-import { LoadingStatus } from '../components/atoms/LoadingStatus';
+} from '@shared/ui/FormField';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
 import { useI18n } from '../i18n';
 import {
   normalizeRelationshipKey,

@@ -4,10 +4,10 @@ import {
   organizationService,
   type OrganizationPortfolioItem,
 } from '../../services/api/organizations';
-import { ActionButton } from '../atoms/Action';
-import { SelectField, TextAreaField, TextField } from '../atoms/FormField';
-import { Dialog } from '../molecules/Dialog';
-import classes from './ContactFormModal.module.scss';
+import { ActionButton } from '@shared/ui/Action';
+import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
+import { Dialog } from '@shared/ui/Dialog';
+import classes from '@shared/ui/ContactFormModal.module.scss';
 import { useI18n } from '../../i18n';
 import {
   normalizeRelationshipKey,

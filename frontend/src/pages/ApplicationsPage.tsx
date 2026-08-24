@@ -2,18 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApplicationsQuery } from '@features/applications/list/useApplicationsQuery';
 import { useListingController } from '../hooks/useListingController';
-import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
+import { NewApplicationModal } from '@widgets/applications/NewApplicationModal';
 import classes from './ApplicationsPage.module.scss';
-import { SearchField, SelectField } from '../components/atoms/FormField';
-import { ActionButton } from '../components/atoms/Action';
-import {
-  EntityIdentity,
-  EntityValue,
-} from '../components/molecules/EntityList';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { FilterBar } from '../components/molecules/FilterBar';
-import { PortfolioListing } from '../components/organisms/PortfolioListing';
-import { StatePanel } from '../components/molecules/StatePanel';
+import { SearchField, SelectField } from '@shared/ui/FormField';
+import { ActionButton } from '@shared/ui/Action';
+import { EntityIdentity, EntityValue } from '@shared/ui/EntityList';
+import { PageHeader } from '@shared/ui/PageHeader';
+import { FilterBar } from '@shared/ui/FilterBar';
+import { PortfolioListing } from '@widgets/PortfolioListing';
+import { StatePanel } from '@shared/ui/StatePanel';
 import { useI18n } from '../i18n';
 
 type FilterOption = readonly [value: string, label: string];

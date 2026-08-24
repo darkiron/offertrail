@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 import classes from './AppErrorBoundary.module.scss';
 
 interface Props {

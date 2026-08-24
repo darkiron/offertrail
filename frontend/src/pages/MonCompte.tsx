@@ -6,10 +6,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
 import { supabase } from '../lib/supabase';
 import { authService, subscriptionService } from '../services/api';
-import { Button } from '../components/atoms/Button';
-import { Dialog } from '../components/molecules/Dialog';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { SubscriptionOverview } from '../components/organisms/SubscriptionOverview';
+import { Button } from '@shared/ui/Button';
+import { Dialog } from '@shared/ui/Dialog';
+import { PageHeader } from '@shared/ui/PageHeader';
+import { SubscriptionOverview } from '@widgets/billing/SubscriptionOverview';
 import classes from './MonCompte.module.scss';
 
 export function MonCompte() {

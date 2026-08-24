@@ -2,9 +2,9 @@
 
 ## AS-IS
 
-L'application React est une SPA Vite. Le socle de l'architecture en couches existe dans `src/app`, `routes`, `widgets`, `features`, `entities` et `shared`. L'ADR [0001](../adr/0001-frontend-architecture.md) en fixe le sens de dépendance. La migration n'est toutefois pas terminée : `src/App.tsx`, `pages`, `templates`, `components`, `services` et `i18n` contiennent encore l'application historique active.
+L'application React est une SPA Vite. Le socle de l'architecture en couches existe dans `src/app`, `routes`, `widgets`, `features`, `entities` et `shared`. L'ADR [0001](../adr/0001-frontend-architecture.md) en fixe le sens de dépendance. La migration n'est toutefois pas terminée : `src/App.tsx`, `pages`, `templates`, `services` et `i18n` contiennent encore l'application historique active.
 
-La taxonomie UI combine encore `components/atoms`, `molecules`, `organisms`, `ui`, des composants racine et les nouvelles couches. Les vues Jinja sous le `src/templates` backend et le dossier racine `landing` appartiennent à des générations antérieures.
+Le dossier technique `components/atoms`, `molecules`, `organisms` a été résorbé : les primitives et compositions génériques vivent désormais dans `shared/ui`, les compositions métier dans `widgets`, et les guards de route dans `routes`. Les vues Jinja sous le `src/templates` backend et le dossier racine `landing` appartiennent à des générations antérieures.
 
 Règle immédiate : tout code migré respecte les nouvelles frontières ; une vertical slice remplace ses imports et supprime son ancien chemin dans la même story. Aucun barrel de compatibilité supplémentaire.
 

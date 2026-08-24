@@ -5,17 +5,14 @@ import {
   toLegacyContactId,
   toLegacyOrganizationId,
 } from '../services/api/identifiers';
-import ContactEditModal from '../components/organisms/ContactEditModal';
-import { DetailHeader } from '../components/organisms/DetailHeader';
-import { ActionButton, ExternalAction } from '../components/atoms/Action';
-import { LoadingStatus } from '../components/atoms/LoadingStatus';
-import { DetailSummary } from '../components/molecules/DetailSummary';
-import {
-  RelatedRecord,
-  RelatedRecords,
-} from '../components/molecules/RelatedRecords';
-import { Tabs } from '../components/molecules/Tabs';
-import { EntityLink } from '../components/atoms/EntityLink';
+import ContactEditModal from '@widgets/contacts/ContactEditModal';
+import { DetailHeader } from '@shared/ui/DetailHeader';
+import { ActionButton, ExternalAction } from '@shared/ui/Action';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
+import { DetailSummary } from '@shared/ui/DetailSummary';
+import { RelatedRecord, RelatedRecords } from '@shared/ui/RelatedRecords';
+import { Tabs } from '@shared/ui/Tabs';
+import { EntityLink } from '@shared/ui/EntityLink';
 import classes from './ContactDetailsPage.module.scss';
 import { useI18n } from '../i18n';
 import {

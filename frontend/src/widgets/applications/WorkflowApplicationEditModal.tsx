@@ -4,14 +4,14 @@ import {
   organizationService,
   type ApplicationWorkspace,
 } from '../../services/api';
-import { ActionButton } from '../atoms/Action';
-import { SelectField, TextAreaField, TextField } from '../atoms/FormField';
-import { Dialog } from '../molecules/Dialog';
+import { ActionButton } from '@shared/ui/Action';
+import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
+import { Dialog } from '@shared/ui/Dialog';
 import {
   EntitySearchField,
   type EntitySearchOption,
-} from '../molecules/EntitySearchField';
-import classes from './ContactFormModal.module.scss';
+} from '@shared/ui/EntitySearchField';
+import classes from '@shared/ui/ContactFormModal.module.scss';
 import { useI18n } from '../../i18n';
 
 export function WorkflowApplicationEditModal({

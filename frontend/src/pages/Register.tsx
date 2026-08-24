@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useAuth } from '../context/auth-context';
 import { useI18n } from '../i18n';
 import classes from './Auth.module.scss';
-import { PublicShell } from '../components/PublicShell';
+import { PublicShell } from '../templates/PublicShell';
 
 type RegisterFormData = {
   email: string;

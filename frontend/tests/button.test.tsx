@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Button } from '../src/components/atoms/Button';
+import { Button } from '../src/shared/ui/Button';
 
 test('Button exposes its busy state and prevents duplicate actions', async () => {
   const user = userEvent.setup();

@@ -1,6 +1,6 @@
 import type { SubscriptionStatus } from '../../types';
 import { useI18n } from '../../i18n';
-import { Button } from '../atoms/Button';
+import { Button } from '@shared/ui/Button';
 import classes from './SubscriptionOverview.module.scss';
 
 interface SubscriptionOverviewProps {

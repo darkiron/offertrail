@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { LegalLayout } from '../components/LegalLayout';
+import { LegalLayout } from '@widgets/legal/LegalLayout';
 import { LEGAL_CONFIG } from '../config/legal';
 import { useI18n } from '../i18n';
 import classes from './ContactPage.module.scss';

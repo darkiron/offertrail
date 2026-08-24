@@ -8,16 +8,13 @@ import {
   useListingController,
   usePaginatedListing,
 } from '../hooks/useListingController';
-import ContactCreateModal from '../components/organisms/ContactCreateModal';
-import { ActionButton } from '../components/atoms/Action';
-import { SearchField, SelectField } from '../components/atoms/FormField';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { FilterBar } from '../components/molecules/FilterBar';
-import {
-  EntityIdentity,
-  EntityValue,
-} from '../components/molecules/EntityList';
-import { PortfolioListing } from '../components/organisms/PortfolioListing';
+import ContactCreateModal from '@widgets/contacts/ContactCreateModal';
+import { ActionButton } from '@shared/ui/Action';
+import { SearchField, SelectField } from '@shared/ui/FormField';
+import { PageHeader } from '@shared/ui/PageHeader';
+import { FilterBar } from '@shared/ui/FilterBar';
+import { EntityIdentity, EntityValue } from '@shared/ui/EntityList';
+import { PortfolioListing } from '@widgets/PortfolioListing';
 import classes from './ContactsPage.module.scss';
 import { useI18n } from '../i18n';
 import {

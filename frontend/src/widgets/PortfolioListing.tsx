@@ -1,14 +1,10 @@
 import type { ReactNode } from 'react';
-import { useI18n } from '../../i18n';
-import { ActionButton } from '../atoms/Action';
-import { LoadingStatus } from '../atoms/LoadingStatus';
-import {
-  EntityList,
-  EntityListRow,
-  ResultHeader,
-} from '../molecules/EntityList';
-import { Pagination } from '../molecules/Pagination';
-import { StatePanel } from '../molecules/StatePanel';
+import { useI18n } from '../i18n';
+import { ActionButton } from '@shared/ui/Action';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
+import { EntityList, EntityListRow, ResultHeader } from '@shared/ui/EntityList';
+import { Pagination } from '@shared/ui/Pagination';
+import { StatePanel } from '@shared/ui/StatePanel';
 
 interface PageData<T> {
   items: T[];

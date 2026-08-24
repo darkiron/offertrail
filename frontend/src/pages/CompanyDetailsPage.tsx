@@ -2,21 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useOrganizationWorkspace } from '../features/relationships/queries';
 import classes from './CompanyDetailsPage.module.scss';
-import {
-  ActionButton,
-  ActionLink,
-  ExternalAction,
-} from '../components/atoms/Action';
-import { LoadingStatus } from '../components/atoms/LoadingStatus';
-import { DetailSummary } from '../components/molecules/DetailSummary';
-import {
-  RelatedRecord,
-  RelatedRecords,
-} from '../components/molecules/RelatedRecords';
-import { Tabs } from '../components/molecules/Tabs';
-import { DetailHeader } from '../components/organisms/DetailHeader';
-import { WorkflowOrganizationEditModal } from '../components/organisms/WorkflowOrganizationEditModal';
-import { EntityLink } from '../components/atoms/EntityLink';
+import { ActionButton, ActionLink, ExternalAction } from '@shared/ui/Action';
+import { LoadingStatus } from '@shared/ui/LoadingStatus';
+import { DetailSummary } from '@shared/ui/DetailSummary';
+import { RelatedRecord, RelatedRecords } from '@shared/ui/RelatedRecords';
+import { Tabs } from '@shared/ui/Tabs';
+import { DetailHeader } from '@shared/ui/DetailHeader';
+import { WorkflowOrganizationEditModal } from '@widgets/organizations/WorkflowOrganizationEditModal';
+import { EntityLink } from '@shared/ui/EntityLink';
 import { useI18n } from '../i18n';
 import {
   formatRelationshipDate,

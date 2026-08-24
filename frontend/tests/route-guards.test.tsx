@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { AdminRoute } from '../src/components/AdminRoute';
-import { ProtectedRoute } from '../src/components/ProtectedRoute';
+import { AdminRoute } from '../src/routes/AdminRoute';
+import { ProtectedRoute } from '../src/routes/ProtectedRoute';
 import { AuthContext, type AuthContextType } from '../src/context/auth-context';
 import { I18nProvider } from '../src/i18n';
 

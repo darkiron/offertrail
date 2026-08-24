@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { LEGAL_CONFIG } from '../config/legal';
 import { CONFIG } from '../config';
 import { useI18n } from '../i18n';
-import { AuthLanguageSwitcher } from './atoms/AuthLanguageSwitcher';
-import { PublicBrand } from './atoms/PublicBrand';
+import { AuthLanguageSwitcher } from '@shared/ui/AuthLanguageSwitcher';
+import { PublicBrand } from '@shared/ui/PublicBrand';
 import classes from './PublicShell.module.scss';
 
 type PublicShellProps = { children: ReactNode };

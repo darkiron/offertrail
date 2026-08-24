@@ -11,11 +11,11 @@ import {
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
 import { subscriptionService } from '../services/api/billing';
-import { PlanLimitBanner } from '../components/PlanLimitBanner';
-import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
-import { AppErrorBoundary } from '../components/AppErrorBoundary';
+import { PlanLimitBanner } from '@widgets/billing/PlanLimitBanner';
+import { NewApplicationModal } from '@widgets/applications/NewApplicationModal';
+import { AppErrorBoundary } from '@shared/ui/AppErrorBoundary';
 import { useI18n } from '../i18n';
-import { PublicBrand } from '../components/atoms/PublicBrand';
+import { PublicBrand } from '@shared/ui/PublicBrand';
 import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.scss';
 
