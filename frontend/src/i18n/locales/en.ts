@@ -476,6 +476,10 @@ export const en = {
       securePayment: 'Secure payment via Stripe',
     },
     landing: {
+      aria: {
+        productPreviewCaption: 'Illustrative preview using example application data.',
+        features: 'Core OfferTrail features',
+      },
       nav: {
         features: 'Features',
         workflow: 'How it works',
@@ -496,7 +500,7 @@ export const en = {
         titleLine1: 'Turn every application',
         titleLine2: 'into a clear next step.',
         sub: 'OfferTrail brings applications, recruiter contacts and follow-ups together so you always know what to do next.',
-        ctaPrimary: 'Start for free →',
+        ctaPrimary: 'Start for free',
         ctaSecondary: 'Explore the workflow',
         pageTitle: 'OfferTrail — Job application tracking and follow-ups',
       },
@@ -532,7 +536,7 @@ export const en = {
         kpi_title: 'A focused dashboard',
         kpi_desc: 'See active applications, responses and follow-ups from the data you actually track.',
         followup_title: 'Follow-up queue',
-        followup_desc: "Never leave an application without a follow-up. OfferTrail reminds you when to follow up and who to contact.",
+        followup_desc: 'Keep due follow-ups visible and see which contact to reach next.',
         probity_title: 'Company signals',
         probity_desc: 'See the response signals available for companies in your own tracked history.',
         history_title: 'A useful application record',
@@ -617,6 +621,13 @@ export const en = {
         specApplications: 'Applications',
         specHistory: 'History',
         specFollowups: 'Active follow-ups',
+        priceSuffixMonth: '/month',
+        priceSuffixYear: '/year',
+        freeHistoryValue: '1 month',
+        freeFollowupsValue: '1 active',
+        proHistoryValue: '6 months',
+        proFollowupsValue: '10 active',
+        unlimitedValue: 'Unlimited',
         badgePopular: 'Popular',
         badgeBestValue: 'Best value',
         cgvLabel: 'I accept the ',
@@ -660,7 +671,7 @@ export const en = {
       cta: {
         title: 'Take back control.',
         sub: 'A clean tool, a clear price, a better-managed search.',
-        btn: 'Switch to OfferTrail →',
+        btn: 'Start for free',
       },
     },
   } as const;
