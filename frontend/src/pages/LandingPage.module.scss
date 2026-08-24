@@ -1,0 +1,23 @@
+.page {
+  overflow: clip;
+  color: var(--ot-ink);
+  background: var(--ot-paper);
+}
+
+.page :global(#workflow),
+.page :global(#features),
+.page :global(#tarifs),
+.page :global(#faq) {
+  scroll-margin-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}

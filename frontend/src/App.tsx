@@ -86,10 +86,10 @@ function CompanyAliasRedirect() {
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (!pathname.startsWith('/app')) window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!pathname.startsWith('/app') && !hash) window.scrollTo(0, 0);
+  }, [hash, pathname]);
   return null;
 }
 

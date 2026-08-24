@@ -47,16 +47,16 @@ export function usePricingPlans(): PricingPlan[] {
       ],
       specs: [
         { label: t('landing.pricing.specApplications'), value: '5' },
-        { label: t('landing.pricing.specHistory'), value: '1 mois' },
-        { label: t('landing.pricing.specFollowups'), value: '1 active' },
+        { label: t('landing.pricing.specHistory'), value: t('landing.pricing.freeHistoryValue') },
+        { label: t('landing.pricing.specFollowups'), value: t('landing.pricing.freeFollowupsValue') },
       ],
     },
     {
       id: 'pro',
       name: t('landing.pricing.proName'),
       prices: {
-        monthly: { amount: '9,99€', suffix: '/mois', note: t('landing.pricing.proMonthlyNote') },
-        yearly: { amount: '99€', suffix: '/an', note: t('landing.pricing.proYearlyNote') },
+        monthly: { amount: '9,99€', suffix: t('landing.pricing.priceSuffixMonth'), note: t('landing.pricing.proMonthlyNote') },
+        yearly: { amount: '99€', suffix: t('landing.pricing.priceSuffixYear'), note: t('landing.pricing.proYearlyNote') },
       },
       features: [
         t('landing.pricing.proFeature1'),
@@ -65,8 +65,8 @@ export function usePricingPlans(): PricingPlan[] {
       ],
       specs: [
         { label: t('landing.pricing.specApplications'), value: '100' },
-        { label: t('landing.pricing.specHistory'), value: '6 mois' },
-        { label: t('landing.pricing.specFollowups'), value: '10 actives' },
+        { label: t('landing.pricing.specHistory'), value: t('landing.pricing.proHistoryValue') },
+        { label: t('landing.pricing.specFollowups'), value: t('landing.pricing.proFollowupsValue') },
       ],
       badgeMonthly: { label: t('landing.pricing.badgePopular') },
     },
@@ -74,8 +74,8 @@ export function usePricingPlans(): PricingPlan[] {
       id: 'ultimate',
       name: t('landing.pricing.ultimateName'),
       prices: {
-        monthly: { amount: '14,99€', suffix: '/mois', note: t('landing.pricing.ultimateMonthlyNote') },
-        yearly: { amount: '149€', suffix: '/an', note: t('landing.pricing.ultimateYearlyNote') },
+        monthly: { amount: '14,99€', suffix: t('landing.pricing.priceSuffixMonth'), note: t('landing.pricing.ultimateMonthlyNote') },
+        yearly: { amount: '149€', suffix: t('landing.pricing.priceSuffixYear'), note: t('landing.pricing.ultimateYearlyNote') },
       },
       features: [
         t('landing.pricing.ultimateFeature1'),
@@ -83,9 +83,9 @@ export function usePricingPlans(): PricingPlan[] {
         t('landing.pricing.ultimateFeature3'),
       ],
       specs: [
-        { label: t('landing.pricing.specApplications'), value: 'Illimité' },
-        { label: t('landing.pricing.specHistory'), value: 'Illimité' },
-        { label: t('landing.pricing.specFollowups'), value: 'Illimitées' },
+        { label: t('landing.pricing.specApplications'), value: t('landing.pricing.unlimitedValue') },
+        { label: t('landing.pricing.specHistory'), value: t('landing.pricing.unlimitedValue') },
+        { label: t('landing.pricing.specFollowups'), value: t('landing.pricing.unlimitedValue') },
       ],
       badgeYearly: { label: t('landing.pricing.badgeBestValue'), violet: true },
     },

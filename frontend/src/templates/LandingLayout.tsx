@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { IconMenu2, IconMoon, IconSun, IconX } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
 import type { TranslationKey } from '../i18n';
 import { LEGAL_CONFIG } from '../config/legal';
@@ -17,8 +18,26 @@ const publicNavigation = [
 
 export function LandingLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(
+    () => localStorage.getItem('offertrail.color-scheme') === 'dark',
+  );
   const { t } = useI18n();
+  const toggleTheme = () => {
+    setDark((current) => {
+      const next = !current;
+      localStorage.setItem('offertrail.color-scheme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
   const renderNavigation = () =>
     publicNavigation.map((item) => (
       <a
@@ -41,10 +60,14 @@ export function LandingLayout() {
             <button
               className={classes.themeButton}
               type="button"
-              onClick={() => setDark((value) => !value)}
+              onClick={toggleTheme}
               aria-label={t('common.changeTheme')}
             >
-              {dark ? '☼' : '☾'}
+              {dark ? (
+                <IconSun aria-hidden="true" />
+              ) : (
+                <IconMoon aria-hidden="true" />
+              )}
             </button>
             <Link to="/login" className={classes.btnOutline}>
               {t('landing.nav.login')}
@@ -57,10 +80,14 @@ export function LandingLayout() {
             <button
               className={classes.themeButton}
               type="button"
-              onClick={() => setDark((value) => !value)}
+              onClick={toggleTheme}
               aria-label={t('common.changeTheme')}
             >
-              {dark ? '☼' : '☾'}
+              {dark ? (
+                <IconSun aria-hidden="true" />
+              ) : (
+                <IconMoon aria-hidden="true" />
+              )}
             </button>
             <button
               className={classes.menuButton}
@@ -72,13 +99,21 @@ export function LandingLayout() {
                 mobileMenuOpen ? 'common.closeMenu' : 'common.openMenu',
               )}
             >
-              {mobileMenuOpen ? '×' : '☰'}
+              {mobileMenuOpen ? (
+                <IconX aria-hidden="true" />
+              ) : (
+                <IconMenu2 aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
       </nav>
       {mobileMenuOpen ? (
-        <div id="public-mobile-menu" className={classes.mobileMenu}>
+        <nav
+          id="public-mobile-menu"
+          className={classes.mobileMenu}
+          aria-label={t('common.primaryNavigation')}
+        >
           {renderNavigation()}
           <Link
             to="/login"
@@ -95,7 +130,7 @@ export function LandingLayout() {
             {t('landing.nav.cta')}
           </Link>
           <LanguageSwitcher />
-        </div>
+        </nav>
       ) : null}
       <main className={classes.main}>
         <Outlet />
