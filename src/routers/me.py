@@ -1,14 +1,16 @@
 from datetime import date, datetime, time, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.auth import get_active_profile, get_active_user_id, own_candidature, get_visible_contacts
 from src.database import get_db
 from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
-from src.models import Candidature, CandidatureEvent, Etablissement, Profile, Relance
+from src.models import Candidature, Etablissement, Profile
+from src.repositories import candidatures as candidatures_repo
+from src.repositories import etablissements as etablissements_repo
+from src.repositories import me as me_repo
+from src.repositories import relances as relances_repo
 from src.schemas.me import (
     CandidatureCreate,
     CandidatureSchema,
@@ -32,16 +34,6 @@ from src.services.subscription import (
 )
 
 router = APIRouter()
-
-
-def _organization_candidatures_query(db: Session, user_id: str, organization_id: str):
-    return db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        or_(
-            Candidature.etablissement_id == organization_id,
-            Candidature.client_final_id == organization_id,
-        ),
-    )
 
 
 def _organization_summary(organization: Etablissement, candidatures: list[Candidature]) -> dict:
@@ -83,30 +75,16 @@ def get_today(
     user_id: str = Depends(get_active_user_id),
 ) -> TodayResponse:
     now = datetime.now()
-    relances = (
-        db.query(Relance)
-        .filter(Relance.user_id == user_id, Relance.statut == "a_faire")
-        .order_by(Relance.date_prevue.asc(), Relance.created_at.asc())
-        .all()
-    )
+    relances = me_repo.list_open_relances(db, user_id)
     due = [item for item in relances if _date_value(item.date_prevue) <= now.date()]
-    active = db.query(Candidature).filter(
-        Candidature.user_id == user_id, Candidature.statut.in_([status.value for status in STATUTS_ACTIFS])
-    ).count()
+    active = me_repo.count_candidatures_by_status(
+        db, user_id, [status.value for status in STATUTS_ACTIFS]
+    )
     period_start = now - timedelta(days=30)
-    responses_30d = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        Candidature.date_reponse.isnot(None),
-        Candidature.date_reponse >= period_start,
-    ).count()
-    interviews_30d = db.query(func.count(func.distinct(CandidatureEvent.candidature_id))).filter(
-        CandidatureEvent.user_id == user_id,
-        or_(
-            CandidatureEvent.type == "entretien_planifie",
-            CandidatureEvent.nouveau_statut == CandidatureStatut.ENTRETIEN.value,
-        ),
-        CandidatureEvent.created_at >= period_start,
-    ).scalar() or 0
+    responses_30d = me_repo.count_responses_since(db, user_id, period_start)
+    interviews_30d = me_repo.count_interview_events_since(
+        db, user_id, CandidatureStatut.ENTRETIEN.value, period_start
+    )
     actions = []
     for relance in due[:5]:
         candidature = relance.candidature
@@ -121,7 +99,7 @@ def get_today(
             "contact": None,
             "context": None,
         })
-    total = db.query(Candidature).filter(Candidature.user_id == user_id).count()
+    total = me_repo.count_candidatures(db, user_id)
     return TodayResponse(
         generated_at=datetime.now(timezone.utc), timezone="Europe/Paris",
         activation={"state": "active" if total > 0 else "onboarding", "first_application_created": total > 0, "first_next_action_scheduled": bool(relances)},
@@ -138,33 +116,16 @@ def complete_action(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ):
-    relance = db.query(Relance).filter(Relance.id == action_id, Relance.user_id == user_id).first()
+    relance = relances_repo.get_by_id_for_user(db, action_id, user_id)
     if relance is None:
         raise HTTPException(status_code=404, detail="Action introuvable")
     if relance.statut == "faite":
         raise HTTPException(status_code=409, detail="Action déjà réalisée")
-    relance.statut = "faite"
-    relance.date_effectuee = payload.completed_at or datetime.now()
-    event = CandidatureEvent(
-        candidature_id=relance.candidature_id, user_id=user_id,
-        type="relance_envoyee", contenu=payload.note or payload.outcome,
+    completed_at = payload.completed_at or datetime.now()
+    event, created_next = me_repo.complete_relance(
+        db, relance, completed_at, payload.note or payload.outcome, payload.next_action
     )
-    db.add(event)
-    created_next = None
-    if payload.next_action:
-        due_at = payload.next_action.get("due_at")
-        if due_at:
-            created_next = Relance(
-                candidature_id=relance.candidature_id, user_id=user_id,
-                date_prevue=datetime.fromisoformat(str(due_at).replace("Z", "+00:00")),
-                canal=payload.next_action.get("channel"), statut="a_faire",
-            )
-            db.add(created_next)
-    db.commit()
-    db.refresh(event)
-    if created_next:
-        db.refresh(created_next)
-    remaining = db.query(Relance).filter(Relance.user_id == user_id, Relance.statut == "a_faire", Relance.date_prevue <= datetime.combine(date.today(), time.max)).count()
+    remaining = me_repo.count_due_relances(db, user_id, datetime.combine(date.today(), time.max))
     return {"completed_action": {"id": relance.id, "status": "done"}, "created_event": {"id": event.id, "kind": "followup_completed"}, "next_action": ({"id": created_next.id, "due_at": created_next.date_prevue} if created_next else None), "today": {"remaining_due_count": remaining}}
 
 
@@ -178,24 +139,10 @@ def list_my_etablissements(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> PaginatedEtablissements:
-    linked_ids = db.query(Candidature.etablissement_id).filter(Candidature.user_id == user_id)
-    final_ids = db.query(Candidature.client_final_id).filter(
-        Candidature.user_id == user_id,
-        Candidature.client_final_id.isnot(None),
-    )
-    query = db.query(Etablissement).filter(
-        or_(Etablissement.id.in_(linked_ids), Etablissement.id.in_(final_ids))
-    )
-    if q and q.strip():
-        query = query.filter(Etablissement.nom.ilike(f"%{q.strip()}%"))
-    if relationship_role == "intermediary":
-        query = query.filter(Etablissement.id.in_(linked_ids))
-    elif relationship_role == "client_final":
-        query = query.filter(Etablissement.id.in_(final_ids))
-    organizations = query.all()
+    organizations = me_repo.search_my_etablissements(db, user_id, q, relationship_role)
     rows = []
     for organization in organizations:
-        candidatures = _organization_candidatures_query(db, user_id, organization.id).all()
+        candidatures = me_repo.list_candidatures_for_organization(db, user_id, organization.id)
         rows.append(_organization_summary(organization, candidatures))
     if sort == "name":
         rows.sort(key=lambda item: item["name"].casefold())
@@ -257,24 +204,17 @@ def get_my_etablissement_workspace(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ):
-    organization = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
+    organization = etablissements_repo.get_by_id(db, etablissement_id)
     if organization is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
-    candidatures = _organization_candidatures_query(db, user_id, etablissement_id).order_by(
-        Candidature.updated_at.desc()
-    ).all()
+    candidatures = me_repo.list_candidatures_for_organization(db, user_id, etablissement_id)
     if not candidatures and organization.created_by != user_id:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
     contacts = get_visible_contacts(db, user_id, etablissement_id=organization.id)
     events = (
-        db.query(CandidatureEvent)
-        .filter(
-            CandidatureEvent.user_id == user_id,
-            CandidatureEvent.candidature_id.in_([item.id for item in candidatures]),
+        me_repo.list_recent_events_for_candidatures(
+            db, user_id, [item.id for item in candidatures], limit=30
         )
-        .order_by(CandidatureEvent.created_at.desc())
-        .limit(30)
-        .all()
         if candidatures else []
     )
     summary = _organization_summary(organization, candidatures)
@@ -319,18 +259,16 @@ def list_my_candidatures(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> PaginatedCandidatures:
-    query = db.query(Candidature).filter(Candidature.user_id == user_id)
-    if not include_closed:
-        query = query.filter(Candidature.statut.notin_([item.value for item in STATUTS_CLOS]))
-    if status:
-        query = query.filter(Candidature.statut.in_([item.strip() for item in status.split(",") if item.strip()]))
-    if q and q.strip():
-        needle = f"%{q.strip()}%"
-        query = query.join(Etablissement, Candidature.etablissement_id == Etablissement.id).filter(
-            or_(Candidature.poste.ilike(needle), Etablissement.nom.ilike(needle))
-        )
-    candidates = query.all()
-    open_relances = db.query(Relance).filter(Relance.user_id == user_id, Relance.statut == "a_faire").order_by(Relance.date_prevue.asc()).all()
+    statuses = [item.strip() for item in status.split(",") if item.strip()] if status else None
+    candidates = me_repo.search_my_candidatures(
+        db,
+        user_id,
+        include_closed,
+        [item.value for item in STATUTS_CLOS],
+        statuses,
+        q,
+    )
+    open_relances = me_repo.list_open_relances(db, user_id)
     next_by_candidate = {}
     for relance in open_relances:
         next_by_candidate.setdefault(relance.candidature_id, relance)
@@ -384,9 +322,9 @@ def get_candidature_workspace(
 ):
     organization = candidature.etablissement
     final_customer = candidature.client_final
-    related = db.query(Candidature).filter(Candidature.user_id == user_id, Candidature.etablissement_id == organization.id).all()
+    related = me_repo.list_related_candidatures(db, user_id, organization.id)
     contacts = get_visible_contacts(db, user_id, etablissement_id=organization.id)
-    actions = db.query(Relance).filter(Relance.user_id == user_id, Relance.candidature_id == candidature.id, Relance.statut == "a_faire").order_by(Relance.date_prevue.asc()).all()
+    actions = me_repo.list_open_relances_for_candidature(db, user_id, candidature.id)
     timeline_enabled = has_plan_feature(profile, "timeline")
     cutoff = history_cutoff(profile)
     timeline_events = [
@@ -425,23 +363,11 @@ def update_candidature_status(
     candidature.statut = payload.status
     cancelled = 0
     if payload.status in {item.value for item in STATUTS_CLOS}:
-        open_actions = db.query(Relance).filter(
-            Relance.user_id == user_id,
-            Relance.candidature_id == candidature.id,
-            Relance.statut == "a_faire",
-        ).all()
-        for action in open_actions:
-            action.statut = "ignoree"
-        cancelled = len(open_actions)
-    db.add(CandidatureEvent(
-        candidature_id=candidature.id,
-        user_id=user_id,
-        type="statut_change",
-        ancien_statut=old_status,
-        nouveau_statut=payload.status,
-        contenu=f"Statut : {old_status} → {payload.status}",
-    ))
-    db.commit()
+        cancelled = me_repo.cancel_open_actions_for_candidature(db, user_id, candidature.id)
+    me_repo.record_status_change(
+        db, candidature.id, user_id, old_status, payload.status,
+        f"Statut : {old_status} → {payload.status}",
+    )
     return {"id": candidature.id, "status": candidature.statut, "cancelled_actions": cancelled}
 
 
@@ -455,23 +381,9 @@ def schedule_candidature_action(
     check_can_create_relance(db, profile)
     if candidature.statut in {item.value for item in STATUTS_CLOS}:
         raise HTTPException(status_code=409, detail="Une candidature refusée ne peut pas recevoir de nouvelle action")
-    action = Relance(
-        candidature_id=candidature.id,
-        user_id=profile.id,
-        date_prevue=payload.due_at,
-        canal=payload.channel,
-        contenu=payload.note,
-        statut="a_faire",
+    action = me_repo.schedule_action(
+        db, candidature.id, profile.id, payload.due_at, payload.channel, payload.note
     )
-    db.add(action)
-    db.add(CandidatureEvent(
-        candidature_id=candidature.id,
-        user_id=profile.id,
-        type="relance_planifiee",
-        contenu=payload.note or f"Relance planifiée le {payload.due_at.isoformat()}",
-    ))
-    db.commit()
-    db.refresh(action)
     return {"id": action.id, "due_at": action.date_prevue, "channel": action.canal, "status": action.statut}
 
 
@@ -484,33 +396,17 @@ def create_my_candidature(
     user_id = profile.id
     check_can_create_candidature(db, profile)
 
-    etablissement = db.query(Etablissement).filter(Etablissement.id == payload.etablissement_id).first()
+    etablissement = etablissements_repo.get_by_id(db, payload.etablissement_id)
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
     if payload.client_final_id:
-        client_final = db.query(Etablissement).filter(Etablissement.id == payload.client_final_id).first()
+        client_final = etablissements_repo.get_by_id(db, payload.client_final_id)
         if client_final is None:
             raise HTTPException(status_code=404, detail="Client final introuvable")
         if client_final.id == etablissement.id:
             raise HTTPException(status_code=422, detail="Le recruteur et le client final doivent être distincts")
 
-    candidature = Candidature(
-        **payload.model_dump(),
-        user_id=user_id,
-    )
-    db.add(candidature)
-    db.flush()
-    db.add(
-        CandidatureEvent(
-            candidature_id=candidature.id,
-            user_id=user_id,
-            type="creation",
-            nouveau_statut=candidature.statut,
-            contenu="Candidature creee",
-        )
-    )
-    db.commit()
-    db.refresh(candidature)
+    candidature = me_repo.create_candidature(db, payload.model_dump(), user_id)
     return CandidatureSchema.model_validate(candidature)
 
 
@@ -525,15 +421,8 @@ def get_my_candidature_history(
     db: Session = Depends(get_db),
     profile: Profile = Depends(get_active_profile),
 ) -> list[EventSchema]:
-    query = (
-        db.query(CandidatureEvent)
-        .filter(CandidatureEvent.candidature_id == candidature.id)
-        .order_by(CandidatureEvent.created_at.desc())
-    )
     cutoff = history_cutoff(profile)
-    if cutoff is not None:
-        query = query.filter(CandidatureEvent.created_at >= cutoff)
-    events = query.all()
+    events = me_repo.list_candidature_history(db, candidature.id, cutoff)
     return [EventSchema.model_validate(event) for event in events]
 
 
@@ -542,17 +431,9 @@ def get_my_stats(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> MeStatsResponse:
-    candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
+    candidatures = candidatures_repo.list_for_user(db, user_id)
     total = len(candidatures)
-    due_relances = (
-        db.query(Relance)
-        .filter(
-            Relance.user_id == user_id,
-            Relance.statut == "a_faire",
-            Relance.date_prevue <= datetime.combine(date.today(), time.max),
-        )
-        .count()
-    )
+    due_relances = me_repo.count_due_relances(db, user_id, datetime.combine(date.today(), time.max))
     if total == 0:
         return MeStatsResponse(
             total_candidatures=0,
@@ -597,16 +478,7 @@ def get_due_relances(
     user_id: str = Depends(get_active_user_id),
 ) -> list[RelanceSchema]:
     today_end = datetime.combine(date.today(), time.max)
-    relances = (
-        db.query(Relance)
-        .filter(
-            Relance.user_id == user_id,
-            Relance.statut == "a_faire",
-            Relance.date_prevue <= today_end,
-        )
-        .order_by(Relance.date_prevue.asc())
-        .all()
-    )
+    relances = me_repo.list_due_relances(db, user_id, today_end)
     return [RelanceSchema.model_validate(relance) for relance in relances]
 
 
@@ -615,10 +487,5 @@ def get_pipeline(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[PipelineBucket]:
-    rows = (
-        db.query(Candidature.statut, func.count(Candidature.id))
-        .filter(Candidature.user_id == user_id)
-        .group_by(Candidature.statut)
-        .all()
-    )
+    rows = me_repo.pipeline_counts(db, user_id)
     return [PipelineBucket(statut=statut, count=count) for statut, count in rows]
