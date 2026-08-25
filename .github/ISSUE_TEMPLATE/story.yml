@@ -1,0 +1,35 @@
+name: Story produit
+description: Définir un résultat utilisateur prêt pour refinement
+title: "feat: "
+labels: [story, refinement]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Résultat utilisateur
+      description: En tant que…, je veux…, afin de…
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: Scénarios Given / When / Then, cas nominal et erreurs.
+    validations: { required: true }
+  - type: textarea
+    id: access
+    attributes: { label: Routes, rôles, plans et permissions }
+    validations: { required: true }
+  - type: textarea
+    id: states
+    attributes: { label: États UI, accessibilité et responsive }
+  - type: textarea
+    id: contract
+    attributes: { label: Contrat API, données, analytics et migrations }
+  - type: textarea
+    id: testplan
+    attributes: { label: Plan de tests et risques }
+    validations: { required: true }
+  - type: input
+    id: owner
+    attributes: { label: Owner }
+    validations: { required: true }

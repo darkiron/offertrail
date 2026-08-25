@@ -1,200 +1,175 @@
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  AppShell,
-  Alert,
-  Burger,
-  Group,
-  NavLink,
-  Text,
-  UnstyledButton,
-  Menu,
-  ActionIcon,
-  useMantineColorScheme,
-} from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { useIsFetching } from '@tanstack/react-query';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  IconLayoutDashboard,
   IconBriefcase,
   IconBuilding,
+  IconHome,
+  IconPlus,
+  IconUpload,
   IconUsers,
-  IconFileImport,
-  IconUser,
-  IconCreditCard,
-  IconLogout,
-  IconSun,
-  IconMoon,
-  IconChevronDown,
-  IconShield,
 } from '@tabler/icons-react';
-import { useAuth } from '../context/AuthContext';
-import { subscriptionService } from '../services/api';
-import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
-import { PlanLimitBanner } from '../components/PlanLimitBanner';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../context/auth-context';
+import { useSubscriptionStatusQuery } from '@features/billing/useSubscriptionQueries';
+import { PlanLimitBanner } from '@widgets/billing/PlanLimitBanner';
+import { NewApplicationModal } from '@widgets/applications/NewApplicationModal';
+import { AppErrorBoundary } from '@shared/ui/AppErrorBoundary';
 import { useI18n } from '../i18n';
-import type { SubscriptionStatus } from '../types';
-import classes from './AppLayout.module.css';
+import { PublicBrand } from '@shared/ui/PublicBrand';
+import classes from './AppLayout.module.scss';
 
 function SlowApiNotice() {
   const { t } = useI18n();
-  const isFetching = useIsFetching();
-  const [visible, setVisible] = useState(false);
-  const alreadyShown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
-
+  const fetching = useIsFetching();
+  const [notice, setNotice] = useState({ visible: false, fetching: 0 });
+  const visible = notice.visible && fetching > 0 && notice.fetching > 0;
+  const shown = useRef(sessionStorage.getItem('ot_coldstart_shown') === '1');
   useEffect(() => {
-    if (alreadyShown.current) return;
-    const timer = setTimeout(() => {
-      if (isFetching > 0) {
-        setVisible(true);
-        alreadyShown.current = true;
+    if (shown.current) return;
+    const timer = window.setTimeout(() => {
+      if (fetching > 0) {
+        setNotice({ visible: true, fetching });
+        shown.current = true;
         sessionStorage.setItem('ot_coldstart_shown', '1');
       }
     }, 1500);
-    return () => clearTimeout(timer);
-  // Intentionally run only on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (isFetching === 0) setVisible(false);
-  }, [isFetching]);
-
-  if (!visible) return null;
-  return (
-    <Alert
-      variant="light"
-      color="yellow"
-      withCloseButton
-      mb="md"
-      onClose={() => setVisible(false)}
-      title={t('nav.slowApiTitle')}
-    >
+    return () => window.clearTimeout(timer);
+  }, [fetching]);
+  return visible ? (
+    <div className={classes.slow} role="status">
       {t('nav.slowApiBody')}
-    </Alert>
-  );
+      <button
+        onClick={() => setNotice((current) => ({ ...current, visible: false }))}
+        aria-label={t('common.close')}
+      >
+        ×
+      </button>
+    </div>
+  ) : null;
 }
 
 export function AppLayout() {
-  const [opened, { toggle, close }] = useDisclosure();
   const { isAuthenticated, signOut, user, profile } = useAuth();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const { t } = useI18n();
-
-  const NAV_LINKS = useMemo(() => [
-    { label: t('nav.dashboard'), to: '/app', icon: IconLayoutDashboard },
-    { label: t('nav.applications'), to: '/app/candidatures', icon: IconBriefcase },
-    { label: t('nav.organizations'), to: '/app/etablissements', icon: IconBuilding },
-    { label: t('nav.contacts'), to: '/app/contacts', icon: IconUsers },
-    { label: t('nav.import'), to: '/app/import', icon: IconFileImport },
-  ], [t]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      subscriptionService.getMe().then(setSub).catch(() => {});
-    }
-  }, [isAuthenticated]);
-
-  const isActive = (to: string) =>
-    to === '/app'
-      ? location.pathname === '/app'
-      : location.pathname.startsWith(to);
-
-  const handleLogout = () => {
-    void signOut().then(() => navigate('/login'));
-  };
-
+  const subscriptionQuery = useSubscriptionStatusQuery({
+    enabled: isAuthenticated,
+  });
+  const sub = subscriptionQuery.data ?? null;
+  const [menu, setMenu] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const links = [
+    [t('nav.dashboard'), '/app', IconHome],
+    [t('nav.applications'), '/app/candidatures', IconBriefcase],
+    [t('nav.organizations'), '/app/etablissements', IconBuilding],
+    [t('nav.contacts'), '/app/contacts', IconUsers],
+    [t('nav.import'), '/app/import', IconUpload],
+  ] as const;
+  const mobileLinks = links.slice(0, 4);
+  const initials = useMemo(
+    () => (profile?.prenom?.[0] || user?.email?.[0] || 'O').toUpperCase(),
+    [profile?.prenom, user?.email],
+  );
   if (!isAuthenticated) return <Outlet />;
-
   return (
-    <AppShell
-      header={{ height: 60 }}
-      navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !opened } }}
-      padding="md"
-      className={classes.shell}
-    >
-      {/* ── Header ── */}
-      <AppShell.Header className={classes.header}>
-        <Group h="100%" px="md" justify="space-between" className={classes.headerInner}>
-          <Group className={classes.headerBrandGroup}>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Link to="/app" className={classes.brand}>
-              <span className={classes.brandMark}>OT</span>
-              <Text fw={800} size="sm" style={{ letterSpacing: '-0.02em' }}>OfferTrail</Text>
-            </Link>
-          </Group>
-
-          <Group gap="xs" className={classes.headerActions}>
-            <LanguageSwitcher />
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => toggleColorScheme()}
-              radius="xl"
+    <div className={classes.shell}>
+      <a className={classes.skipLink} href="#app-content">
+        {t('common.skipToContent')}
+      </a>
+      {showCreate && (
+        <NewApplicationModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            void queryClient.invalidateQueries({ queryKey: ['today'] });
+            void queryClient.invalidateQueries({
+              queryKey: ['workflow-applications'],
+            });
+          }}
+        />
+      )}
+      <header className={classes.header}>
+        <PublicBrand to="/app" />
+        <nav className={classes.desktopNav} aria-label={t('nav.dashboard')}>
+          {links.map(([label, to]) => (
+            <NavLink
+              key={to}
+              end={to === '/app'}
+              to={to}
+              className={({ isActive }) => (isActive ? classes.active : '')}
             >
-              {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
-            </ActionIcon>
-
-            <Menu shadow="md" width={200} radius="md">
-              <Menu.Target>
-                <UnstyledButton className={classes.userBtn}>
-                  <Group gap="xs">
-                    <Text size="sm" fw={600} className={classes.userLabel}>
-                      {profile?.prenom || user?.email?.split('@')[0] || t('nav.monCompte')}
-                    </Text>
-                    <IconChevronDown size={14} />
-                  </Group>
-                </UnstyledButton>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>{user?.email}</Menu.Label>
-                <Menu.Divider />
-                <Menu.Item leftSection={<IconUser size={14} />} component={Link} to="/app/mon-compte">
-                  {t('nav.monCompte')}
-                </Menu.Item>
-                {profile?.role === 'admin' ? (
-                  <Menu.Item leftSection={<IconShield size={14} />} component={Link} to="/app/admin">
-                    {t('nav.admin')}
-                  </Menu.Item>
-                ) : null}
-                <Menu.Item leftSection={<IconCreditCard size={14} />} component={Link} to="/app/pricing">
-                  {t('nav.subscription')}
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item leftSection={<IconLogout size={14} />} color="red" onClick={handleLogout}>
-                  {t('nav.logout')}
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        </Group>
-      </AppShell.Header>
-
-      {/* ── Sidebar ── */}
-      <AppShell.Navbar p="sm" className={classes.navbar}>
-        {NAV_LINKS.map(({ label, to, icon: Icon }) => (
-          <NavLink
-            key={to}
-            label={label}
-            leftSection={<Icon size={18} stroke={1.6} />}
-            component={Link}
-            to={to}
-            active={isActive(to)}
-            className={classes.navLink}
-            onClick={close}
-          />
-        ))}
-      </AppShell.Navbar>
-
-      {/* ── Content ── */}
-      <AppShell.Main className={classes.main}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <button
+          className={classes.avatar}
+          onClick={() => setMenu((value) => !value)}
+          aria-expanded={menu}
+          aria-label={t('nav.monCompte')}
+        >
+          {initials}
+        </button>
+        {menu && (
+          <div className={classes.accountMenu} role="menu">
+            <div className={classes.accountIdentity}>
+              <span className={classes.accountAvatar}>{initials}</span>
+              <div>
+                <strong>{profile?.prenom || t('nav.monCompte')}</strong>
+                <small>{user?.email}</small>
+              </div>
+            </div>
+            <div className={classes.accountDivider} />
+            <Link
+              role="menuitem"
+              to="/app/mon-compte"
+              onClick={() => setMenu(false)}
+            >
+              {t('nav.monCompte')}
+              <small>{t('nav.subscription')}</small>
+            </Link>
+            <div className={classes.accountDivider} />
+            <button
+              role="menuitem"
+              onClick={() => void signOut().then(() => navigate('/login'))}
+            >
+              {t('nav.logout')}
+            </button>
+          </div>
+        )}
+      </header>
+      <div className={classes.notices}>
         <PlanLimitBanner sub={sub} />
         <SlowApiNotice />
-        <Outlet />
-      </AppShell.Main>
-    </AppShell>
+      </div>
+      <div id="app-content" className={classes.content} tabIndex={-1}>
+        <AppErrorBoundary>
+          <Outlet
+            context={{ openCreateApplication: () => setShowCreate(true) }}
+          />
+        </AppErrorBoundary>
+      </div>
+      <nav className={classes.mobileNav} aria-label={t('nav.dashboard')}>
+        {mobileLinks.map(([label, to, Icon]) => (
+          <NavLink
+            key={to}
+            end={to === '/app'}
+            to={to}
+            className={({ isActive }) => (isActive ? classes.active : '')}
+          >
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+        <button
+          type="button"
+          aria-label={t('dashboard.newApplication')}
+          onClick={() => setShowCreate(true)}
+        >
+          <IconPlus aria-hidden="true" />
+        </button>
+      </nav>
+    </div>
   );
 }

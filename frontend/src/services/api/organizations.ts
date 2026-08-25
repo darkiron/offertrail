@@ -1,0 +1,138 @@
+import type { Organization } from '../../types';
+import { http as axiosInstance } from '@shared/api/http';
+import type {
+  EtablissementApi,
+  OrganizationPortfolioPage,
+  OrganizationWorkspace,
+  WorkflowOrganization,
+} from './contracts';
+import { mapEtablissementToOrganization } from './mappers';
+
+export const organizationService = {
+  getPortfolio: async (params?: {
+    page?: number;
+    per_page?: number;
+    q?: string;
+    relationship_role?: string;
+    sort?: string;
+  }) => {
+    const response = await axiosInstance.get<OrganizationPortfolioPage>(
+      '/me/etablissements',
+      { params },
+    );
+    return response.data;
+  },
+  getWorkspace: async (id: string) => {
+    const response = await axiosInstance.get<OrganizationWorkspace>(
+      `/me/etablissements/${id}/workspace`,
+    );
+    return response.data;
+  },
+  getWorkflowAll: async () => {
+    const response =
+      await axiosInstance.get<WorkflowOrganization[]>('/etablissements');
+    return response.data;
+  },
+  searchWorkflow: async (query: string) => {
+    const response = await axiosInstance.get<WorkflowOrganization[]>(
+      '/etablissements',
+      { params: { q: query, limit: 10 } },
+    );
+    return response.data;
+  },
+  createWorkflow: async (payload: { nom: string; type: string }) => {
+    const response = await axiosInstance.post<WorkflowOrganization>(
+      '/etablissements',
+      payload,
+    );
+    return response.data;
+  },
+  updateWorkflow: async (
+    id: string,
+    payload: {
+      nom: string;
+      type: string;
+      site_web: string | null;
+      description: string | null;
+    },
+  ) => {
+    const response = await axiosInstance.patch<EtablissementApi>(
+      `/etablissements/${id}`,
+      payload,
+    );
+    return response.data;
+  },
+  getAll: async (params?: { type?: string; search?: string }) => {
+    const response = await axiosInstance.get<EtablissementApi[]>(
+      '/etablissements',
+      {
+        params: {
+          type: params?.type,
+          q: params?.search,
+          limit: params?.search ? 10 : undefined,
+        },
+      },
+    );
+    return response.data.map(mapEtablissementToOrganization);
+  },
+  getById: async (id: string) => {
+    const response = await axiosInstance.get<EtablissementApi>(
+      `/etablissements/${id}`,
+    );
+    return mapEtablissementToOrganization(response.data);
+  },
+  create: async (data: Partial<Organization>) => {
+    const response = await axiosInstance.post<EtablissementApi>(
+      '/etablissements',
+      {
+        nom: data.name,
+        type: data.type ?? 'AUTRE',
+        site_web: data.website ?? null,
+        description: data.notes ?? null,
+      },
+    );
+    const mapped = mapEtablissementToOrganization(response.data);
+    return { id: mapped.id };
+  },
+  update: async (id: string, data: Partial<Organization>) => {
+    const response = await axiosInstance.patch(`/etablissements/${id}`, {
+      nom: data.name,
+      type: data.type,
+      site_web: data.website ?? null,
+      description: data.notes ?? null,
+    });
+    return mapEtablissementToOrganization(response.data);
+  },
+  merge: async (id: string, targetOrganizationId: string) => {
+    const response = await axiosInstance.post(`/etablissements/${id}/merge`, {
+      target_organization_id: targetOrganizationId,
+    });
+    return response.data;
+  },
+  split: async (
+    id: string,
+    data: Partial<Organization> & { move_contacts?: boolean },
+  ) => {
+    const response = await axiosInstance.post<{ id: string }>(
+      `/etablissements/${id}/split`,
+      {
+        name: data.name,
+        type: data.type,
+        website: data.website ?? null,
+        notes: data.notes ?? null,
+        move_contacts: data.move_contacts,
+      },
+    );
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete(`/etablissements/${id}`);
+    return response.data;
+  },
+};
+export type {
+  OrganizationPortfolioItem,
+  OrganizationPortfolioPage,
+  OrganizationWorkspace,
+  WorkflowOrganization,
+} from './contracts';

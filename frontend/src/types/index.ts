@@ -1,9 +1,17 @@
-export type OrganizationType = 'CLIENT_FINAL' | 'ESN' | 'CABINET_RECRUTEMENT' | 'STARTUP' | 'PME' | 'GRAND_COMPTE' | 'PORTAGE' | 'AUTRE';
+export type OrganizationType =
+  | 'CLIENT_FINAL'
+  | 'ESN'
+  | 'CABINET_RECRUTEMENT'
+  | 'STARTUP'
+  | 'PME'
+  | 'GRAND_COMPTE'
+  | 'PORTAGE'
+  | 'AUTRE';
 
-export type ProbityLevel = 'fiable' | 'moyen' | 'méfiance' | 'insuffisant';
+type ProbityLevel = 'fiable' | 'moyen' | 'méfiance' | 'insuffisant';
 
-export interface OrganizationStats {
-  organization_id: number;
+interface OrganizationStats {
+  organization_id: string;
   total_applications: number;
   total_responses: number;
   response_rate: number;
@@ -16,7 +24,7 @@ export interface OrganizationStats {
 }
 
 export interface Organization extends OrganizationStats {
-  id: number;
+  id: string;
   name: string;
   type: OrganizationType;
   website: string | null;
@@ -25,11 +33,12 @@ export interface Organization extends OrganizationStats {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  metrics: Pick<OrganizationStats, 'probity_score' | 'probity_level'>;
 }
 
 export interface Contact {
-  id: number;
-  organization_id: number | null;
+  id: string;
+  organization_id: string | null;
   first_name: string;
   last_name: string;
   email: string | null;
@@ -43,19 +52,23 @@ export interface Contact {
 }
 
 export interface Application {
-  id: number;
-  organization_id: number | null;
-  final_customer_organization_id: number | null;
+  id: string;
+  organization_id: string | null;
+  final_customer_organization_id: string | null;
   final_customer_name?: string | null;
   company: string;
+  company_name: string;
+  organization: { id: string; name: string } | null;
   title: string;
   type: string;
   status: string;
   source: string | null;
+  channel: string | null;
   job_url: string | null;
   applied_at: string | null;
   response_date: string | null;
   salary: number | null;
+  daily_rate: number | null;
   notes: string | null;
   next_followup_at: string | null;
   created_at: string;
@@ -63,72 +76,41 @@ export interface Application {
   hidden: number;
 }
 
+export interface ApplicationEvent {
+  id: string | number;
+  type: string;
+  ts: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ContactApplicationSummary {
+  id: string;
+  title: string;
+  company: string;
+  applied_at: string | null;
+  status: string;
+}
+
+export interface ContactEvent {
+  id: string | number;
+  ts: string;
+  type: string;
+  event_type?: string;
+  payload?: Record<string, unknown>;
+  application?: { id: string; title: string; status: string };
+}
+
+export interface ContactDetails extends Contact {
+  organization: { id: string; name: string; type: string } | null;
+  applications: ContactApplicationSummary[];
+  events: ContactEvent[];
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
   limit: number;
-}
-
-export interface KPIs {
-  total_count: number;
-  active_count: number;
-  due_followups: number;
-  rejected_rate: number;
-  rejected_count: number;
-  response_rate: number;
-  responded_count: number;
-  avg_response_time: number | null;
-}
-
-export interface MonthlyKpis {
-  created: number;
-  responses: number;
-  rejected: number;
-  followups_due: number;
-}
-
-export interface DashboardData {
-  kpis: KPIs;
-  monthly_kpis: MonthlyKpis;
-  sources: string[];
-  followups: Application[];
-}
-
-export interface MonthlyStats {
-  month: string;
-  count: number;
-}
-
-export interface MonthlyInsights {
-  year: number;
-  months: MonthlyStats[];
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  prenom: string | null;
-  nom: string | null;
-  plan: string;
-  role: string;
-  created_at: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterPayload extends LoginCredentials {
-  prenom?: string;
-  nom?: string;
-}
-
-export interface AuthResponse {
-  access_token: string;
-  token_type: string;
-  user: AuthUser;
 }
 
 export interface SubscriptionStatus {

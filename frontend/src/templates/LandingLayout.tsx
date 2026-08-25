@@ -1,107 +1,195 @@
-import { useState } from 'react';
-import { Group, Text, ActionIcon, useMantineColorScheme, Drawer, Stack, Burger } from '@mantine/core';
-import { IconSun, IconMoon } from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
+import { IconMenu2, IconMoon, IconSun, IconX } from '@tabler/icons-react';
 import { Link, Outlet } from 'react-router-dom';
-import classes from './LandingLayout.module.css';
+import type { TranslationKey } from '../i18n';
 import { LEGAL_CONFIG } from '../config/legal';
 import { CONFIG } from '../config';
 import { useI18n } from '../i18n';
-import { LanguageSwitcher } from '../components/atoms/LanguageSwitcher';
+import { LanguageSwitcher } from '@shared/ui/LanguageSwitcher';
+import { PublicBrand } from '@shared/ui/PublicBrand';
+import classes from './LandingLayout.module.scss';
+
+const publicNavigation = [
+  { href: '/#features', label: 'landing.nav.features' },
+  { href: '/#workflow', label: 'landing.nav.workflow' },
+  { href: '/#tarifs', label: 'landing.nav.pricing' },
+  { href: '/#faq', label: 'landing.nav.faq' },
+] as const satisfies ReadonlyArray<{ href: string; label: TranslationKey }>;
 
 export function LandingLayout() {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dark, setDark] = useState(
+    () => localStorage.getItem('offertrail.color-scheme') === 'dark',
+  );
   const { t } = useI18n();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLElement>(null);
+  const toggleTheme = () => {
+    setDark((current) => {
+      const next = !current;
+      localStorage.setItem('offertrail.color-scheme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const menu = mobileMenuRef.current;
+    const focusable = menu?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.[0]?.focus();
+    const keepFocusInMenu = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab' || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', keepFocusInMenu);
+    return () => document.removeEventListener('keydown', keepFocusInMenu);
+  }, [mobileMenuOpen]);
+  const renderNavigation = () =>
+    publicNavigation.map((item) => (
+      <a
+        key={item.href}
+        href={item.href}
+        className={classes.navLink}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {t(item.label)}
+      </a>
+    ));
   return (
-    <div className={classes.root}>
-      {/* ── Nav ── */}
-      <nav className={classes.nav}>
+    <div className={classes.root} data-theme={dark ? 'dark' : 'light'}>
+      <a className={classes.skipLink} href="#public-content">
+        {t('common.skipToContent')}
+      </a>
+      <nav className={classes.nav} aria-label={t('common.primaryNavigation')}>
         <div className={classes.navInner}>
-          <Link to="/" className={classes.logo}>
-            <span className={classes.logoMark}>OT</span>
-            <Text fw={800} size="sm" style={{ letterSpacing: '-0.02em' }}>
-              {LEGAL_CONFIG.productName}
-            </Text>
-          </Link>
-
-          <div className={classes.navCenter}>
-            <a href="#fonctionnalites" className={classes.navLink}>{t('landing.nav.features')}</a>
-            <a href="#tarifs" className={classes.navLink}>{t('landing.nav.pricing')}</a>
-          </div>
-
-          <Group gap="xs" className={classes.navActions}>
+          <PublicBrand />
+          <div className={classes.navCenter}>{renderNavigation()}</div>
+          <div className={classes.navActions}>
             <LanguageSwitcher />
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => toggleColorScheme()}
-              radius="xl"
-              title="Changer le thème"
+            <button
+              className={classes.themeButton}
+              type="button"
+              onClick={toggleTheme}
+              aria-label={t('common.changeTheme')}
             >
-              {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
-            </ActionIcon>
-            <Link to="/login" className={classes.btnOutline}>{t('landing.nav.login')}</Link>
-            <Link to="/register" className={classes.btnPrimary}>{t('landing.nav.cta')}</Link>
-          </Group>
-
+              {dark ? (
+                <IconSun aria-hidden="true" />
+              ) : (
+                <IconMoon aria-hidden="true" />
+              )}
+            </button>
+            <Link to="/login" className={classes.btnOutline}>
+              {t('landing.nav.login')}
+            </Link>
+            <Link to="/register" className={classes.btnPrimary}>
+              {t('landing.nav.cta')}
+            </Link>
+          </div>
           <div className={classes.navBurger}>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => toggleColorScheme()}
-              radius="xl"
-              title="Changer le thème"
+            <button
+              className={classes.themeButton}
+              type="button"
+              onClick={toggleTheme}
+              aria-label={t('common.changeTheme')}
             >
-              {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
-            </ActionIcon>
-            <Burger opened={mobileMenuOpen} onClick={() => setMobileMenuOpen((o) => !o)} size="sm" />
+              {dark ? (
+                <IconSun aria-hidden="true" />
+              ) : (
+                <IconMoon aria-hidden="true" />
+              )}
+            </button>
+            <button
+              ref={menuButtonRef}
+              className={classes.menuButton}
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="public-mobile-menu"
+              aria-label={t(
+                mobileMenuOpen ? 'common.closeMenu' : 'common.openMenu',
+              )}
+            >
+              {mobileMenuOpen ? (
+                <IconX aria-hidden="true" />
+              ) : (
+                <IconMenu2 aria-hidden="true" />
+              )}
+            </button>
           </div>
         </div>
       </nav>
-
-      <Drawer
-        opened={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        title={LEGAL_CONFIG.productName}
-        position="right"
-        size="xs"
-      >
-        <Stack gap="md" pt="md">
-          <a href="#fonctionnalites" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.features')}</a>
-          <a href="#tarifs" className={classes.navLink} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.pricing')}</a>
-          <Link to="/login" className={classes.btnOutline} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.login')}</Link>
-          <Link to="/register" className={classes.btnPrimary} onClick={() => setMobileMenuOpen(false)}>{t('landing.nav.cta')}</Link>
+      {mobileMenuOpen ? (
+        <nav
+          ref={mobileMenuRef}
+          id="public-mobile-menu"
+          className={classes.mobileMenu}
+          aria-label={t('common.primaryNavigation')}
+        >
+          {renderNavigation()}
+          <Link
+            to="/login"
+            className={classes.btnOutline}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {t('landing.nav.login')}
+          </Link>
+          <Link
+            to="/register"
+            className={classes.btnPrimary}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {t('landing.nav.cta')}
+          </Link>
           <LanguageSwitcher />
-        </Stack>
-      </Drawer>
-
-      {/* ── Content ── */}
-      <main className={classes.main}>
+        </nav>
+      ) : null}
+      <main id="public-content" className={classes.main} tabIndex={-1}>
         <Outlet />
       </main>
-
-      {/* ── Footer ── */}
       <footer className={classes.footer}>
         <div className={classes.footerInner}>
-          <Text size="xs" c="dimmed">
+          <span className={classes.footerCopy}>
             © {new Date().getFullYear()} {LEGAL_CONFIG.productName} —{' '}
             <a
               href={CONFIG.CRAFTCODES_URL}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px' }}
             >
               {LEGAL_CONFIG.company.name}
             </a>
-          </Text>
-          <Group gap="lg">
-            <a href="#tarifs" className={classes.footerLink}>{t('landing.footer.pricing')}</a>
-            <Link to="/app/legal/cgu" className={classes.footerLink}>{t('landing.footer.terms')}</Link>
-            <Link to="/app/legal/confidentialite" className={classes.footerLink}>{t('landing.footer.privacy')}</Link>
-            <Link to="/mentions-legales" className={classes.footerLink}>{t('landing.footer.legal')}</Link>
-            <Link to="/contact" className={classes.footerLink}>{t('landing.footer.contact')}</Link>
-          </Group>
+          </span>
+          <div className={classes.footerLinks}>
+            <a href="/#tarifs" className={classes.footerLink}>
+              {t('landing.footer.pricing')}
+            </a>
+            <Link to="/cgu" className={classes.footerLink}>
+              {t('landing.footer.terms')}
+            </Link>
+            <Link to="/rgpd" className={classes.footerLink}>
+              {t('landing.footer.privacy')}
+            </Link>
+            <Link to="/mentions-legales" className={classes.footerLink}>
+              {t('landing.footer.legal')}
+            </Link>
+            <Link to="/contact" className={classes.footerLink}>
+              {t('landing.footer.contact')}
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

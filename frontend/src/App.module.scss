@@ -1,0 +1,23 @@
+.notFound {
+  max-width: 45rem;
+  margin: 0 auto;
+  padding: 6rem 1.5rem;
+  text-align: center;
+}
+
+.notFoundEyebrow {
+  color: var(--ot-accent);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.routeLoading {
+  display: grid;
+  min-height: 100dvh;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  color: var(--ot-muted);
+  background: var(--ot-paper);
+  font-weight: 700;
+}

@@ -8,6 +8,8 @@ La clé publique est récupérée depuis le endpoint JWKS de Supabase au démarr
 """
 import logging
 import os
+import threading
+import time
 from typing import List, Optional
 
 import httpx
@@ -23,6 +25,16 @@ from src.models import Candidature, Contact, Etablissement, Profile
 logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_JWT_ISSUER = os.getenv(
+    "SUPABASE_JWT_ISSUER",
+    f"{SUPABASE_URL.rstrip('/')}/auth/v1" if SUPABASE_URL else "",
+)
+SUPABASE_JWT_AUDIENCE = os.getenv(
+    "SUPABASE_JWT_AUDIENCE",
+    "authenticated" if SUPABASE_URL else "",
+)
+_JWKS_CACHE_TTL_SECONDS = 600
+_JWKS_REFRESH_COOLDOWN_SECONDS = 30
 
 
 def _load_supabase_jwks() -> list[dict]:
@@ -48,9 +60,72 @@ def _load_supabase_jwks() -> list[dict]:
 # Clés publiques Supabase chargées une fois au démarrage.
 # Fallback : vérification HS256 si SUPABASE_JWT_SECRET est défini (projets legacy).
 _SUPABASE_JWKS: list[dict] = _load_supabase_jwks()
+_SUPABASE_JWKS_LOADED_AT = time.monotonic() if _SUPABASE_JWKS else 0.0
+_SUPABASE_JWKS_REFRESHED_AT = _SUPABASE_JWKS_LOADED_AT
+_SUPABASE_JWKS_LOCK = threading.Lock()
 _SUPABASE_HS256_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _get_supabase_jwks(*, force_refresh: bool = False) -> list[dict]:
+    """Return cached signing keys, refreshing stale or explicitly invalid caches."""
+    global _SUPABASE_JWKS, _SUPABASE_JWKS_LOADED_AT, _SUPABASE_JWKS_REFRESHED_AT
+
+    is_fresh = (
+        _SUPABASE_JWKS
+        and time.monotonic() - _SUPABASE_JWKS_LOADED_AT < _JWKS_CACHE_TTL_SECONDS
+    )
+    if is_fresh and not force_refresh:
+        return _SUPABASE_JWKS
+
+    with _SUPABASE_JWKS_LOCK:
+        if (
+            force_refresh
+            and _SUPABASE_JWKS_REFRESHED_AT
+            and time.monotonic() - _SUPABASE_JWKS_REFRESHED_AT < _JWKS_REFRESH_COOLDOWN_SECONDS
+        ):
+            return _SUPABASE_JWKS
+        is_fresh = (
+            _SUPABASE_JWKS
+            and time.monotonic() - _SUPABASE_JWKS_LOADED_AT < _JWKS_CACHE_TTL_SECONDS
+        )
+        if is_fresh and not force_refresh:
+            return _SUPABASE_JWKS
+        _SUPABASE_JWKS_REFRESHED_AT = time.monotonic()
+        keys = _load_supabase_jwks()
+        if keys:
+            _SUPABASE_JWKS = keys
+            _SUPABASE_JWKS_LOADED_AT = time.monotonic()
+        return _SUPABASE_JWKS
+
+
+def _decode_verified_token(token: str, key: object, algorithm: str) -> dict:
+    """Verify signature and configured Supabase identity claims."""
+    options = {
+        "verify_aud": bool(SUPABASE_JWT_AUDIENCE),
+        "verify_iss": bool(SUPABASE_JWT_ISSUER),
+    }
+    kwargs = {
+        "algorithms": [algorithm],
+        "options": options,
+    }
+    if SUPABASE_JWT_AUDIENCE:
+        kwargs["audience"] = SUPABASE_JWT_AUDIENCE
+    if SUPABASE_JWT_ISSUER:
+        kwargs["issuer"] = SUPABASE_JWT_ISSUER
+    return jwt.decode(token, key, **kwargs)
+
+
+def _matching_jwks(token: str, keys: list[dict]) -> list[dict]:
+    """Prefer the key named by ``kid``; legacy tokens may omit it."""
+    try:
+        kid = jwt.get_unverified_header(token).get("kid")
+    except JWTError:
+        return []
+    if not kid:
+        return keys
+    return [key for key in keys if key.get("kid") == kid]
 
 
 def _extract_profile_names(payload: dict) -> tuple[Optional[str], Optional[str]]:
@@ -85,20 +160,23 @@ def get_jwt_payload(
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = credentials.credentials
-    decode_opts = {"verify_aud": False}
-
     # Priorité 1 : JWKS (ES256 / RS256 — projets Supabase récents, clé asymétrique)
-    for jwk in _SUPABASE_JWKS:
-        alg = jwk.get("alg", "ES256")
-        try:
-            return jwt.decode(token, jwk, algorithms=[alg], options=decode_opts)
-        except JWTError:
-            continue
+    keys = _get_supabase_jwks()
+    matching_keys = _matching_jwks(token, keys)
+    for attempt in range(2):
+        for jwk in matching_keys:
+            alg = jwk.get("alg", "ES256")
+            try:
+                return _decode_verified_token(token, jwk, alg)
+            except JWTError:
+                continue
+        if attempt == 0 and SUPABASE_URL:
+            matching_keys = _matching_jwks(token, _get_supabase_jwks(force_refresh=True))
 
     # Priorité 2 : HS256 via le secret partagé (projets Supabase legacy)
     if _SUPABASE_HS256_SECRET:
         try:
-            return jwt.decode(token, _SUPABASE_HS256_SECRET, algorithms=["HS256"], options=decode_opts)
+            return _decode_verified_token(token, _SUPABASE_HS256_SECRET, "HS256")
         except JWTError:
             pass
 

@@ -1,0 +1,130 @@
+.shell {
+  display: grid;
+  gap: var(--ot-space-6);
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: var(--ot-space-6);
+  align-items: start;
+}
+
+.side,
+.form,
+.resultErrors {
+  display: grid;
+  gap: var(--ot-space-4);
+}
+
+.panel,
+.empty {
+  padding: var(--ot-space-6);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-lg);
+  background: var(--ot-paper);
+  box-shadow: var(--ot-shadow-sm);
+}
+
+.empty {
+  color: var(--ot-muted);
+  background: color-mix(in srgb, var(--ot-paper) 80%, var(--ot-bg));
+}
+
+.empty p {
+  margin: 0.4rem 0 0;
+}
+
+.kicker {
+  color: var(--ot-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.subtitle,
+.columns {
+  color: var(--ot-muted);
+  line-height: 1.65;
+}
+
+.label {
+  font-weight: 750;
+}
+
+.tsvArea {
+  width: 100%;
+  min-height: 300px;
+  resize: vertical;
+  padding: var(--ot-space-4);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-surface);
+  color: var(--ot-ink);
+  font:
+    0.78rem/1.6 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+}
+
+.tsvArea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ot-accent) 25%, transparent);
+  border-color: var(--ot-accent);
+}
+
+.notice {
+  padding: var(--ot-space-4);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-paper);
+}
+
+.notice[data-tone='success'] {
+  border-color: var(--ot-success);
+}
+
+.notice[data-tone='error'] {
+  border-color: var(--ot-danger);
+}
+
+.metrics {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: var(--ot-space-4);
+}
+
+.metrics span {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ot-muted);
+}
+
+.metrics b {
+  color: var(--ot-ink);
+}
+
+.errors {
+  max-height: 200px;
+  overflow: auto;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.columns {
+  padding-left: 1.2rem;
+}
+
+@media (width <= 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .empty {
+    padding: var(--ot-space-4);
+  }
+}

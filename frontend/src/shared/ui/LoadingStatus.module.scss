@@ -1,0 +1,31 @@
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 0;
+  color: #8d3825;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.status::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid #c8a79f;
+  border-top-color: #8d3825;
+  border-radius: 50%;
+  content: '';
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status::before {
+    animation: none;
+  }
+}

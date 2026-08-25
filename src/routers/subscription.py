@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 import stripe
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from src.auth import get_current_profile, get_jwt_payload
 from src.database import get_db
 from src.models import Profile
-from src.services.subscription import _set_cancelled, get_usage
+from src.services.subscription import _set_cancelled, get_usage, is_paid_subscription_status
 from src.services.stripe_service import (
     APP_BASE_URL,
     create_checkout_session,
@@ -21,6 +21,12 @@ from src.services.stripe_service import (
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 logger = logging.getLogger(__name__)
 verify_webhook_signature = verify_webhook
+
+
+def _stripe_datetime(timestamp: int | None) -> datetime | None:
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
 
 
 class CheckoutRequest(BaseModel):
@@ -51,33 +57,31 @@ def create_checkout(
     if body.period not in ("monthly", "yearly"):
         raise HTTPException(400, "Periode invalide")
 
+    # Never create a second subscription for an already active plan. Downgrades
+    # are handled from the Stripe billing portal; only an explicit upgrade may
+    # start a new checkout session.
+    if is_paid_subscription_status(profile.subscription_status):
+        raise HTTPException(409, "Abonnement deja actif. Modifiez votre offre depuis le portail de facturation.")
+
     if not is_configured():
-        profile.plan = body.plan
-        profile.billing_period = body.period
-        profile.subscription_status = "active"
-        profile.plan_started_at = datetime.utcnow()
-        db.commit()
-        return {"mode": "simulated", "checkout_url": None}
+        raise HTTPException(
+            status_code=503,
+            detail="Stripe n'est pas configure. Aucun abonnement n'a ete cree.",
+        )
 
     user_email = payload.get("email", "")
     if not user_email:
         raise HTTPException(status_code=400, detail="Email utilisateur introuvable")
 
     try:
-        try:
-            checkout_url = create_checkout_session(
-                profile.id,
-                user_email,
-                body.plan,
-                body.period,
-                body.coupon,
-            )
-        except TypeError:
-            checkout_url = create_checkout_session(
-                profile.id,
-                user_email,
-                stripe_customer_id=profile.stripe_customer_id,
-            )
+        checkout_url = create_checkout_session(
+            profile.id,
+            user_email,
+            body.plan,
+            body.period,
+            body.coupon,
+            profile.stripe_customer_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except stripe.StripeError:
@@ -102,7 +106,7 @@ def create_billing_portal(
             customer=profile.stripe_customer_id,
             return_url=f"{APP_BASE_URL}/app/mon-compte",
         )
-    except stripe.error.StripeError as exc:
+    except stripe.StripeError as exc:
         logger.exception(
             "Stripe billing portal session creation failed for profile %s: %s",
             profile.id,
@@ -138,10 +142,29 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 profile.plan = plan
                 profile.billing_period = period
                 profile.subscription_status = "active"
-                profile.plan_started_at = datetime.utcnow()
+                profile.plan_started_at = datetime.now(UTC).replace(tzinfo=None)
                 profile.stripe_customer_id = session.get("customer")
                 profile.stripe_subscription_id = session.get("subscription")
                 db.commit()
+
+    elif event["type"] in ("customer.subscription.created", "customer.subscription.updated"):
+        subscription = event["data"]["object"]
+        meta = subscription.get("metadata", {})
+        customer_id = subscription.get("customer")
+        user_id = meta.get("user_id")
+        profile = None
+        if user_id:
+            profile = db.query(Profile).filter(Profile.id == user_id).first()
+        if profile is None and customer_id:
+            profile = db.query(Profile).filter(Profile.stripe_customer_id == customer_id).first()
+        if profile:
+            profile.plan = meta.get("plan", profile.plan or "pro")
+            profile.billing_period = meta.get("period", profile.billing_period or "monthly")
+            profile.subscription_status = subscription.get("status", "active")
+            profile.plan_started_at = _stripe_datetime(subscription.get("start_date"))
+            profile.stripe_customer_id = customer_id
+            profile.stripe_subscription_id = subscription.get("id")
+            db.commit()
 
     elif event["type"] == "customer.subscription.deleted":
         subscription = event["data"]["object"]

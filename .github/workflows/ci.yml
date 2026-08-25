@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install -r requirements.txt pytest pytest-asyncio httpx pytest-cov
@@ -28,18 +28,46 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: "frontend/.nvmrc"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: cd frontend && npm ci
 
-      - name: Build
-        run: cd frontend && npm run build
+      - name: Static quality gates
+        working-directory: frontend
+        run: npm run check
+
+      - name: Component and router tests
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Production dependency audit
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build and enforce bundle budgets
+        working-directory: frontend
+        run: npm run build
         env:
-          VITE_API_URL: http://localhost:8000
+          VITE_API_URL: ""
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: test-anon-key
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Public smoke tests
+        working-directory: frontend
+        run: npm run test:e2e

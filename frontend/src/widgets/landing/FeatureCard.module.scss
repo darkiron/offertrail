@@ -1,0 +1,32 @@
+@use '../../styles/abstracts' as *;
+
+.card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--ot-space-3) var(--ot-space-4);
+  padding: var(--ot-space-6) 0;
+  border-top: 1px solid var(--ot-line-strong);
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    align-self: center;
+    font: 600 1.08rem/1.2 var(--font-display, Georgia, serif);
+  }
+
+  p {
+    grid-column: 2;
+    color: var(--ot-muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+}
+
+.icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--ot-accent);
+}

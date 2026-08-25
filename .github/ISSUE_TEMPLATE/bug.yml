@@ -1,0 +1,31 @@
+name: Bug
+description: Signaler une régression reproductible
+title: "fix: "
+labels: [bug, triage]
+body:
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact utilisateur
+      description: Qui est bloqué, sur quel parcours et avec quelle sévérité ?
+    validations: { required: true }
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Compte de test, route, préconditions et étapes exactes, sans secret ni donnée personnelle.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: Attendu et observé }
+    validations: { required: true }
+  - type: input
+    id: environment
+    attributes: { label: Environnement et version }
+    validations: { required: true }
+  - type: textarea
+    id: evidence
+    attributes: { label: Logs et captures expurgés }
+  - type: textarea
+    id: regression
+    attributes: { label: Régression connue et test à ajouter }

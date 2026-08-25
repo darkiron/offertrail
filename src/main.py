@@ -13,10 +13,10 @@ from slowapi.util import get_remote_address
 from . import legacy_database as database
 from sqlalchemy.orm import Session
 
-from .auth import _user_can_see_contact, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
+from .auth import _user_can_see_contact, get_active_profile, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
 from .database import get_db as get_saas_db, init_db as init_saas_db
 from .enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
-from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Relance
+from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Profile, Relance
 from .routers import auth as auth_router
 from .routers import admin as admin_router
 from .routers import candidatures as candidatures_router
@@ -26,6 +26,7 @@ from .routers import etablissements as etablissements_router
 from .routers import me as me_router
 from .routers import relances as relances_router
 from .routers import subscription as subscription_router
+from .services.subscription import require_plan_feature
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -34,6 +35,8 @@ APP_VERSION = "0.1.0"
 logger = logging.getLogger(__name__)
 DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://offertrail.local",
 ]
 DEFAULT_ALLOWED_ORIGIN_REGEX = r"^https://(([a-z0-9-]+\.)?offertrail\.fr|offertrail\.craftcodes\.fr)$"
 
@@ -295,7 +298,7 @@ def _map_candidature_to_legacy(
         "final_customer_name": candidature.client_final.nom if candidature.client_final else None,
         "company": etablissement.nom if etablissement else "Etablissement",
         "title": candidature.poste,
-        "type": candidature.description or "CDI",
+        "type": candidature.type_contrat or "autre",
         "status": SAAS_TO_LEGACY_STATUS.get(candidature.statut, "APPLIED"),
         "source": candidature.source,
         "job_url": candidature.url_offre,
@@ -337,7 +340,6 @@ def _map_event_to_legacy(event: CandidatureEvent, candidature: Candidature | Non
     }
 
 
-@app.get("/api/dashboard")
 async def api_dashboard(
     status: str = None,
     type: str = None,
@@ -362,7 +364,6 @@ async def api_dashboard(
         "followups": followups
     }
 
-@app.get("/api/insights/monthly-applications")
 async def api_monthly_applications(year: int = None):
     if year is None:
         year = datetime.now().year
@@ -373,7 +374,6 @@ async def api_monthly_applications(year: int = None):
         "months": stats
     }
 
-@app.get("/api/applications")
 async def api_applications(
     status: str = None,
     type: str = None,
@@ -432,7 +432,6 @@ async def api_applications(
     }
 
 
-@app.get("/api/organizations")
 async def api_list_organizations(
     type: str = None,
     search: str = None,
@@ -455,7 +454,6 @@ async def api_list_organizations(
         results.append(mapped)
     return results
 
-@app.get("/api/organizations/{org_id}")
 async def api_get_organization(
     org_id: str,
     db: Session = Depends(get_saas_db),
@@ -473,7 +471,6 @@ async def api_get_organization(
     ).all()
     return _map_etablissement_to_legacy(org, candidatures)
 
-@app.post("/api/organizations", status_code=201)
 async def api_create_organization(
     data: dict,
     db: Session = Depends(get_saas_db),
@@ -491,7 +488,6 @@ async def api_create_organization(
     db.refresh(etablissement)
     return {"id": _legacy_hash(etablissement.id, prefix="org:")}
 
-@app.patch("/api/organizations/{org_id}")
 async def api_update_organization(
     org_id: str,
     data: dict,
@@ -518,7 +514,6 @@ async def api_update_organization(
     ).all()
     return _map_etablissement_to_legacy(organization, candidatures)
 
-@app.delete("/api/organizations/{org_id}")
 async def api_delete_organization(
     org_id: str,
     db: Session = Depends(get_saas_db),
@@ -535,7 +530,6 @@ async def api_delete_organization(
     db.commit()
     return {"success": True}
 
-@app.post("/api/organizations/{org_id}/merge")
 async def api_merge_organization(
     org_id: str,
     data: dict,
@@ -548,19 +542,32 @@ async def api_merge_organization(
     target = db.query(Etablissement).filter(Etablissement.id == target_id).first()
     if not source or not target or source.id == target.id:
         raise HTTPException(status_code=400, detail="Merge failed")
-    db.query(Candidature).filter(Candidature.etablissement_id == source.id).update(
+    if source.created_by != user_id:
+        raise HTTPException(status_code=403, detail="Merge not authorized")
+    db.query(Candidature).filter(
+        Candidature.etablissement_id == source.id,
+        Candidature.user_id == user_id,
+    ).update(
         {Candidature.etablissement_id: target.id},
         synchronize_session=False,
     )
-    db.query(Contact).filter(Contact.etablissement_id == source.id).update(
+    db.query(Contact).filter(
+        Contact.etablissement_id == source.id,
+        Contact.created_by == user_id,
+    ).update(
         {Contact.etablissement_id: target.id},
         synchronize_session=False,
     )
+    foreign_candidature = db.query(Candidature).filter(
+        Candidature.etablissement_id == source.id,
+        Candidature.user_id != user_id,
+    ).first()
+    if foreign_candidature:
+        raise HTTPException(status_code=409, detail="Organization is shared and cannot be merged")
     db.delete(source)
     db.commit()
     return {"success": True}
 
-@app.post("/api/organizations/{org_id}/split")
 async def api_split_organization(
     org_id: str,
     data: dict,
@@ -572,6 +579,8 @@ async def api_split_organization(
     new_name = (data.get("name") or "").strip()
     if not source or not new_name:
         raise HTTPException(status_code=400, detail="Split failed")
+    if source.created_by != user_id:
+        raise HTTPException(status_code=403, detail="Split not authorized")
     new_organization = Etablissement(
         nom=new_name,
         type=str(data.get("type") or "AUTRE").lower(),
@@ -581,19 +590,24 @@ async def api_split_organization(
     )
     db.add(new_organization)
     db.flush()
-    db.query(Candidature).filter(Candidature.etablissement_id == source.id).update(
+    db.query(Candidature).filter(
+        Candidature.etablissement_id == source.id,
+        Candidature.user_id == user_id,
+    ).update(
         {Candidature.etablissement_id: new_organization.id},
         synchronize_session=False,
     )
     if data.get("move_contacts", True):
-        db.query(Contact).filter(Contact.etablissement_id == source.id).update(
+        db.query(Contact).filter(
+            Contact.etablissement_id == source.id,
+            Contact.created_by == user_id,
+        ).update(
             {Contact.etablissement_id: new_organization.id},
             synchronize_session=False,
         )
     db.commit()
     return {"id": _legacy_hash(new_organization.id, prefix="org:")}
 
-@app.get("/api/contacts")
 async def api_list_contacts(
     organization_id: str = None,
     db: Session = Depends(get_saas_db),
@@ -607,7 +621,6 @@ async def api_list_contacts(
     }
     return [_map_contact_to_legacy(contact, interactions.get(contact.id)) for contact in contacts]
 
-@app.get("/api/contacts/{contact_id}")
 async def api_get_contact(
     contact_id: str,
     db: Session = Depends(get_saas_db),
@@ -651,7 +664,7 @@ async def api_get_contact(
         for event in application.events:
             mapped = _map_event_to_legacy(event, application)
             mapped["application"] = {
-                "id": _legacy_hash(application.id),
+                "id": application.id,
                 "title": application.poste,
                 "status": SAAS_TO_LEGACY_STATUS.get(application.statut, "APPLIED"),
             }
@@ -664,18 +677,21 @@ async def api_get_contact(
             Candidature.etablissement_id == contact.etablissement.id,
         ).all()
         organization = _map_etablissement_to_legacy(contact.etablissement, org_candidatures)
+        organization["id"] = contact.etablissement.id
 
     return {
         **_map_contact_to_legacy(contact, interaction),
         "organization": organization,
         "applications": [
-            _map_candidature_to_legacy(item, item.etablissement, relances_by_candidature.get(item.id))
+            {
+                **_map_candidature_to_legacy(item, item.etablissement, relances_by_candidature.get(item.id)),
+                "id": item.id,
+            }
             for item in applications
         ],
         "events": events,
     }
 
-@app.post("/api/contacts", status_code=201)
 async def api_create_contact_standalone(
     data: dict,
     db: Session = Depends(get_saas_db),
@@ -707,7 +723,6 @@ async def api_create_contact_standalone(
     db.commit()
     return {"id": contact.id}
 
-@app.patch("/api/contacts/{contact_id}")
 async def api_update_contact(
     contact_id: str,
     data: dict,
@@ -746,7 +761,6 @@ async def api_update_contact(
     db.commit()
     return {"success": True}
 
-@app.delete("/api/contacts/{contact_id}")
 async def api_delete_contact(
     contact_id: str,
     db: Session = Depends(get_saas_db),
@@ -756,16 +770,16 @@ async def api_delete_contact(
     contact = db.query(Contact).filter(Contact.id == resolved_contact_id).first()
     if not contact or not _user_can_see_contact(db, user_id, contact):
         raise HTTPException(status_code=404, detail="Contact not found")
+    if contact.created_by != user_id:
+        raise HTTPException(status_code=403, detail="Contact deletion not authorized")
     db.delete(contact)
     db.commit()
     return {"success": True}
 
-@app.get("/api/companies")
 async def api_list_companies(type: str = None, search: str = None):
     # Compatibility route
     return api_list_organizations(type, search)
 
-@app.get("/api/companies/{company_id}")
 async def api_get_company(
     company_id: str,
     db: Session = Depends(get_saas_db),
@@ -817,7 +831,6 @@ async def api_get_company(
     )
     return detail
 
-@app.get("/api/applications/{app_id}")
 async def api_application_details(
     app_id: str,
     db: Session = Depends(get_saas_db),
@@ -861,7 +874,6 @@ async def api_application_details(
         "all_contacts": contacts,
     }
 
-@app.post("/api/applications", status_code=201)
 async def api_create_application(data: dict):
     app_id = database.create_application(
         company_name=data.get("company"),
@@ -878,7 +890,6 @@ async def api_create_application(data: dict):
     )
     return {"id": app_id}
 
-@app.patch("/api/applications/{app_id}")
 async def api_update_application(app_id: int, data: dict):
     if set(data.keys()) == {"status"}:
         success = database.update_application_status(app_id, data["status"])
@@ -888,29 +899,24 @@ async def api_update_application(app_id: int, data: dict):
         raise HTTPException(status_code=400, detail="Update failed")
     return {"success": True}
 
-@app.post("/api/applications/{app_id}/notes")
 async def api_add_note(app_id: int, data: dict):
     database.add_note(app_id, data.get("text", ""))
     return {"success": True}
 
-@app.post("/api/applications/{app_id}/followup")
 async def api_mark_followup(app_id: int):
     database.mark_as_followed_up(app_id)
     return {"success": True}
 
-@app.post("/api/applications/{app_id}/events")
 async def api_create_app_event(app_id: int, data: dict):
     with database.get_db() as conn:
         database.log_event(conn, "application", app_id, data.get("event_type"), {"source": "api"})
         conn.commit()
     return {"success": True}
 
-@app.post("/api/applications/{app_id}/link-contact")
 async def api_link_contact(app_id: int, data: dict):
     database.link_contact_to_application(app_id, data.get("contact_id"))
     return {"success": True}
 
-@app.post("/api/applications/{app_id}/create-contact")
 async def api_create_contact(app_id: int, data: dict):
     contact_id = database.create_contact(
         first_name=data.get("first_name"),
@@ -945,7 +951,7 @@ async def health_check():
 async def list_contacts_alias(
     organization_id: str = None,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_list_contacts(organization_id=organization_id, db=db, user_id=user_id)
 
@@ -954,7 +960,7 @@ async def list_contacts_alias(
 async def get_contact_alias(
     contact_id: str,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_get_contact(contact_id=contact_id, db=db, user_id=user_id)
 
@@ -963,7 +969,7 @@ async def get_contact_alias(
 async def create_contact_alias(
     data: dict,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_create_contact_standalone(data=data, db=db, user_id=user_id)
 
@@ -973,7 +979,7 @@ async def update_contact_alias(
     contact_id: str,
     data: dict,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_update_contact(contact_id=contact_id, data=data, db=db, user_id=user_id)
 
@@ -982,7 +988,7 @@ async def update_contact_alias(
 async def delete_contact_alias(
     contact_id: str,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_delete_contact(contact_id=contact_id, db=db, user_id=user_id)
 
@@ -994,7 +1000,7 @@ async def merge_etablissement_alias(
     org_id: str,
     data: dict,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_merge_organization(org_id=org_id, data=data, db=db, user_id=user_id)
 
@@ -1004,7 +1010,7 @@ async def split_etablissement_alias(
     org_id: str,
     data: dict,
     db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_active_user_id),
 ):
     return await api_split_organization(org_id=org_id, data=data, db=db, user_id=user_id)
 
@@ -1023,7 +1029,9 @@ def api_process_import(
     data: dict,
     db: Session = Depends(get_saas_db),
     user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ):
+    require_plan_feature(profile, "import_csv")
     tsv_data = data.get("tsv", "")
     lines = tsv_data.strip().split("\n")
     if not lines:
@@ -1124,4 +1132,3 @@ def api_process_import(
 
     db.commit()
     return results
-

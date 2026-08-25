@@ -1,0 +1,229 @@
+.page {
+  composes: shell-narrow from '../styles/appShell.module.scss';
+}
+
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.kicker,
+.controlsLabel {
+  margin: 0;
+  color: var(--ot-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.title {
+  max-width: 42rem;
+  margin: 0.55rem 0 0.75rem;
+  font:
+    500 clamp(2.3rem, 5vw, 4.5rem) / 0.95 Georgia,
+    serif;
+  letter-spacing: -0.055em;
+}
+
+.subtitle {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--ot-muted);
+  line-height: 1.65;
+}
+
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: end;
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-paper-raised);
+}
+
+.periodControl,
+.promoWrap {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.periodControl {
+  grid-template-columns: auto auto auto;
+  align-items: center;
+}
+
+.promoWrap {
+  min-width: min(18rem, 100%);
+  margin-left: auto;
+}
+
+.promoWrap small {
+  color: var(--ot-muted);
+  font-size: 0.7rem;
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--ot-line-strong);
+  border-radius: 999px;
+  background: var(--ot-paper);
+}
+
+.segmented button {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 0;
+  color: var(--ot-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.segmented button:hover,
+.segmented button:focus-visible,
+.segmented .activePeriod {
+  color: var(--ot-ink);
+  background: color-mix(in srgb, var(--ot-accent) 10%, var(--ot-paper));
+}
+
+.savingsBadge {
+  width: fit-content;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--ot-success) 28%, transparent);
+  border-radius: 999px;
+  color: var(--ot-success);
+  background: color-mix(in srgb, var(--ot-success) 12%, transparent);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.15rem;
+  margin: 1.5rem 0;
+}
+
+.checkoutPanel {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-paper-raised);
+}
+
+.checkoutPanel p {
+  margin: 0 0 0 2rem;
+  color: var(--ot-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.checkbox {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  color: var(--ot-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.checkbox input {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  margin-top: 0.1rem;
+  accent-color: var(--ot-accent);
+}
+
+.checkbox a {
+  color: var(--ot-accent);
+  font-weight: 800;
+}
+
+.transparency {
+  margin-top: 2rem;
+  padding: clamp(1.3rem, 4vw, 2rem);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-lg);
+  background: var(--ot-paper-raised);
+}
+
+.transparencyTitle {
+  margin: 0.55rem 0 1.5rem;
+  font:
+    500 clamp(1.7rem, 3vw, 2.5rem) / 1 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+}
+
+.transparencyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.transparencyItem h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+}
+
+.transparencyItem p {
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+@media (width <= 56.25rem) {
+  .header,
+  .grid,
+  .transparencyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .periodControl {
+    grid-template-columns: auto auto;
+  }
+
+  .savingsBadge {
+    grid-column: 1/-1;
+  }
+}
+
+@media (width <= 35rem) {
+  .controlsRow,
+  .periodControl {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .promoWrap {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .segmented {
+    width: 100%;
+  }
+
+  .segmented button {
+    flex: 1;
+  }
+
+  .checkoutPanel p {
+    margin-left: 0;
+  }
+}

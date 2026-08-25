@@ -6,6 +6,8 @@ Versionnage : [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+> Cette section doit être complétée dans chaque PR de release. Les commits postérieurs à 0.2.0 ne sont pas encore regroupés en version publiée ; voir `docs/engineering/release-process.md`.
+
 ## [0.2.0] — 2026-04-07
 
 ### Added

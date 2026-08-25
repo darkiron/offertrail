@@ -1,0 +1,125 @@
+.shell {
+  display: grid;
+  gap: var(--ot-space-6);
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: var(--ot-space-6);
+  align-items: start;
+}
+
+.panel,
+.state {
+  padding: var(--ot-space-6);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-lg);
+  background: var(--ot-paper);
+  box-shadow: var(--ot-shadow-sm);
+}
+
+.stack {
+  display: grid;
+  gap: var(--ot-space-4);
+}
+
+.sectionHead {
+  margin-bottom: var(--ot-space-4);
+}
+
+.sectionHead h2 {
+  margin: 0.4rem 0 0;
+}
+
+.kicker {
+  color: var(--ot-accent);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.subtitle,
+.state p {
+  color: var(--ot-muted);
+  line-height: 1.65;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ot-space-4);
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 750;
+}
+
+.control {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-surface);
+  color: var(--ot-ink);
+  font: inherit;
+}
+
+.control:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ot-accent) 24%, transparent);
+  border-color: var(--ot-accent);
+}
+
+.control:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notice {
+  padding: var(--ot-space-4);
+  border: 1px solid var(--ot-line);
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-paper);
+}
+
+.notice[data-tone='success'] {
+  border-color: var(--ot-success);
+}
+
+.notice[data-tone='error'] {
+  border-color: var(--ot-danger);
+}
+
+.textButton {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ot-accent);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (width <= 760px) {
+  .layout,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .state {
+    padding: var(--ot-space-4);
+  }
+}

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -47,17 +47,62 @@ PLANS = {
     },
 }
 
+PAID_SUBSCRIPTION_STATUSES = frozenset({"active", "trialing"})
+
+
+def is_paid_subscription_status(subscription_status: str | None) -> bool:
+    """Return whether Stripe currently grants paid access for this status."""
+    return subscription_status in PAID_SUBSCRIPTION_STATUSES
+
 
 def get_plan_config(plan: str) -> dict:
     return PLANS.get(plan, PLANS["free"])
 
 
 def get_effective_plan(profile: Profile) -> str:
-    if profile.plan in ("pro", "ultimate"):
+    if (
+        profile.plan in ("pro", "ultimate")
+        and is_paid_subscription_status(profile.subscription_status)
+    ):
         return profile.plan
-    if profile.subscription_status == "active":
+    if is_paid_subscription_status(profile.subscription_status):
         return "pro"
     return "free"
+
+
+def require_plan_feature(profile: Profile, feature: str) -> dict:
+    """Require a capability declared by the effective subscription plan.
+
+    Feature checks live in one place so a route cannot accidentally expose a
+    capability that is advertised as plan-specific.  A 402 response gives the
+    frontend enough context to present the upgrade path without leaking data.
+    """
+    plan = get_effective_plan(profile)
+    config = get_plan_config(plan)
+    if not config.get(feature, False):
+        raise HTTPException(status_code=402, detail={
+            "code": "FEATURE_NOT_INCLUDED",
+            "feature": feature,
+            "plan": plan,
+            "upgrade_to": "pro" if plan == "free" else "ultimate",
+        })
+    return config
+
+
+def has_plan_feature(profile: Profile, feature: str) -> bool:
+    return bool(get_plan_config(get_effective_plan(profile)).get(feature, False))
+
+
+def history_cutoff(profile: Profile) -> datetime | None:
+    """Return the oldest accessible event date for the current plan.
+
+    ``0`` means unlimited history for Ultimate; other values are expressed in
+    months in the public plan catalogue.
+    """
+    months = get_plan_config(get_effective_plan(profile)).get("historique_mois", 0)
+    if not months:
+        return None
+    return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30 * months)
 
 
 def check_can_create_candidature(db, profile):
