@@ -5,12 +5,12 @@ from datetime import datetime, timedelta, timezone
 import stripe
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from src.auth import get_admin_profile
 from src.database import get_db
-from src.models import Candidature, Etablissement, Profile, Relance
+from src.models import Profile
+from src.repositories import admin as admin_repo
 from src.services.stripe_service import is_configured
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -39,7 +39,7 @@ def global_stats(
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
-    profiles = db.query(Profile).all()
+    profiles = admin_repo.list_all_profiles(db)
     total_users = len(profiles)
     free_users = sum(1 for p in profiles if (p.plan or "free") == "free")
     pro_users = sum(1 for p in profiles if p.plan == "pro")
@@ -49,18 +49,16 @@ def global_stats(
     mrr = round(sum(_profile_mrr(p) for p in profiles), 2)
     arr = round(mrr * 12, 2)
 
-    new_users_7d  = db.query(Profile).filter(Profile.created_at >= week_ago).count()
-    new_users_30d = db.query(Profile).filter(Profile.created_at >= month_ago).count()
+    new_users_7d  = admin_repo.count_profiles_created_since(db, week_ago)
+    new_users_30d = admin_repo.count_profiles_created_since(db, month_ago)
     conversion_rate = round((active_users / total_users * 100), 1) if total_users > 0 else 0
 
-    total_cands         = db.query(func.count(Candidature.id)).scalar()
+    total_cands         = admin_repo.count_candidatures(db)
     avg_cands_per_user  = round(total_cands / total_users, 1) if total_users > 0 else 0
-    total_relances      = db.query(func.count(Relance.id)).scalar()
-    total_etablissements = db.query(func.count(Etablissement.id)).scalar()
+    total_relances      = admin_repo.count_relances(db)
+    total_etablissements = admin_repo.count_etablissements(db)
 
-    active_users_7d = db.query(func.count(func.distinct(Candidature.user_id))).filter(
-        Candidature.created_at >= week_ago,
-    ).scalar()
+    active_users_7d = admin_repo.count_active_users_since(db, week_ago)
 
     return {
         "mrr": mrr,
@@ -86,12 +84,10 @@ def list_users(
     db: Session = Depends(get_db),
     _: Profile = Depends(get_admin_profile),
 ):
-    profiles = db.query(Profile).order_by(Profile.created_at.desc()).all()
+    profiles = admin_repo.list_profiles_ordered_by_created_at(db)
     result = []
     for profile in profiles:
-        nb_cands = db.query(func.count(Candidature.id)).filter(
-            Candidature.user_id == profile.id
-        ).scalar()
+        nb_cands = admin_repo.count_candidatures_for_user(db, profile.id)
         result.append({
             "id":                  profile.id,
             "email":               getattr(profile, "email", ""),
@@ -116,7 +112,7 @@ def update_user_status(
     db: Session = Depends(get_db),
     _: Profile = Depends(get_admin_profile),
 ):
-    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    profile = admin_repo.get_profile_by_id(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
 
@@ -137,8 +133,7 @@ def update_user_status(
     elif new_status == "cancelled":
         _set_cancelled(db, profile)
     elif new_status == "pending":
-        profile.subscription_status = "pending"
-        db.commit()
+        admin_repo.set_pending(db, profile)
     else:
         raise HTTPException(status_code=400, detail="Statut invalide")
 
@@ -159,12 +154,11 @@ def toggle_user_active(
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Tu ne peux pas te modifier toi-même")
-    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    profile = admin_repo.get_profile_by_id(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
-    profile.is_active = not profile.is_active
-    db.commit()
-    return {"id": profile.id, "is_active": profile.is_active}
+    is_active = admin_repo.toggle_active(db, profile)
+    return {"id": profile.id, "is_active": is_active}
 
 
 @router.delete("/users/{user_id}")
@@ -175,11 +169,10 @@ def deactivate_user(
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Tu ne peux pas te désactiver toi-même")
-    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    profile = admin_repo.get_profile_by_id(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
-    profile.is_active = False
-    db.commit()
+    admin_repo.deactivate(db, profile)
     return {"message": "User désactivé"}
 
 
@@ -188,14 +181,8 @@ def recent_activity(
     db: Session = Depends(get_db),
     _: Profile = Depends(get_admin_profile),
 ):
-    new_users = db.query(Profile).order_by(Profile.created_at.desc()).limit(5).all()
-    new_active = (
-        db.query(Profile)
-        .filter(Profile.subscription_status == "active", Profile.plan_started_at.isnot(None))
-        .order_by(Profile.plan_started_at.desc())
-        .limit(5)
-        .all()
-    )
+    new_users = admin_repo.list_recent_signups(db, limit=5)
+    new_active = admin_repo.list_recent_activations(db, limit=5)
     return {
         "new_users": [
             {
@@ -235,7 +222,7 @@ def export_users(
     db: Session = Depends(get_db),
     _: Profile = Depends(get_admin_profile),
 ):
-    profiles = db.query(Profile).all()
+    profiles = admin_repo.list_all_profiles(db)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["id", "email", "plan", "billing_period", "subscription_status", "role", "is_active", "created_at", "plan_started_at"])
@@ -278,10 +265,7 @@ def mrr_history(
     for i in range(11, -1, -1):
         month_start = (today.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
         month_end   = (month_start + timedelta(days=32)).replace(day=1)
-        active_profiles = db.query(Profile).filter(
-            Profile.plan.in_(("pro", "ultimate")),
-            Profile.plan_started_at < month_end,
-        ).all()
+        active_profiles = admin_repo.list_active_plan_profiles_before(db, month_end)
         result.append({
             "month":        month_start.strftime("%Y-%m"),
             "mrr":          round(sum(_profile_mrr(p) for p in active_profiles), 2),
@@ -302,14 +286,8 @@ def signups_history(
         day       = today - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end   = day_start + timedelta(days=1)
-        count = db.query(Profile).filter(
-            and_(Profile.created_at >= day_start, Profile.created_at < day_end)
-        ).count()
-        upgrades = db.query(Profile).filter(
-            Profile.plan.in_(("pro", "ultimate")),
-            Profile.plan_started_at >= day_start,
-            Profile.plan_started_at < day_end,
-        ).count()
+        count = admin_repo.count_profiles_created_between(db, day_start, day_end)
+        upgrades = admin_repo.count_plan_upgrades_between(db, day_start, day_end)
         result.append({"date": day.strftime("%d/%m"), "signups": count, "upgrades": upgrades})
     return result
 
@@ -320,9 +298,9 @@ def plan_distribution(
     _: Profile = Depends(get_admin_profile),
 ):
     return [
-        {"name": "Free", "plan": "free", "value": db.query(Profile).filter(Profile.plan == "free").count()},
-        {"name": "Pro", "plan": "pro", "value": db.query(Profile).filter(Profile.plan == "pro").count()},
-        {"name": "Ultimate", "plan": "ultimate", "value": db.query(Profile).filter(Profile.plan == "ultimate").count()},
+        {"name": "Free", "plan": "free", "value": admin_repo.count_profiles_by_plan(db, "free")},
+        {"name": "Pro", "plan": "pro", "value": admin_repo.count_profiles_by_plan(db, "pro")},
+        {"name": "Ultimate", "plan": "ultimate", "value": admin_repo.count_profiles_by_plan(db, "ultimate")},
     ]
 
 
@@ -332,10 +310,10 @@ def funnel(
     _: Profile = Depends(get_admin_profile),
 ):
     """Entonnoir d'acquisition."""
-    total     = db.query(Profile).count()
-    pending   = db.query(Profile).filter(Profile.subscription_status == "pending").count()
-    active    = db.query(Profile).filter(Profile.subscription_status == "active").count()
-    cancelled = db.query(Profile).filter(Profile.subscription_status == "cancelled").count()
+    total     = admin_repo.count_all_profiles(db)
+    pending   = admin_repo.count_profiles_by_subscription_status(db, "pending")
+    active    = admin_repo.count_profiles_by_subscription_status(db, "active")
+    cancelled = admin_repo.count_profiles_by_subscription_status(db, "cancelled")
     churn_rate = round((cancelled / (cancelled + active) * 100), 1) if (cancelled + active) > 0 else 0
     return {
         "total":           total,
@@ -359,9 +337,7 @@ def candidatures_evolution(
         day       = today - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end   = day_start + timedelta(days=1)
-        count = db.query(Candidature).filter(
-            and_(Candidature.created_at >= day_start, Candidature.created_at < day_end)
-        ).count()
+        count = admin_repo.count_candidatures_created_between(db, day_start, day_end)
         result.append({"date": day.strftime("%d/%m"), "count": count})
     return result
 
