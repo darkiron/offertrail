@@ -1,56 +1,19 @@
 """
-OfferTrail — Auth via Supabase JWT
-FastAPI vérifie le token émis par Supabase Auth.
-Plus de gestion de passwords ni de register côté backend.
+OfferTrail — Dépendances FastAPI d'authentification et d'autorisation.
 
-Supabase émet des JWTs signés en ES256 (clé EC asymétrique).
-La clé publique est récupérée depuis le endpoint JWKS de Supabase au démarrage.
+Ce module consomme le payload JWT vérifié par ``src.auth.jwks`` et l'expose
+sous forme de dépendances FastAPI (``get_current_profile``, etc.), ainsi que
+les équivalents RLS Supabase (visibilité des contacts, ownership des
+candidatures) utilisés côté routers.
 """
-import logging
 from typing import List, Optional
 
-import httpx
-from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.config import settings
-from src.database import get_db, SessionLocal
+from src.auth.jwks import get_jwt_payload
+from src.database import get_db
 from src.models import Candidature, Contact, Etablissement, Profile
-
-logger = logging.getLogger(__name__)
-
-SUPABASE_URL = settings.SUPABASE_URL
-
-
-def _load_supabase_jwks() -> list[dict]:
-    """
-    Récupère les clés publiques depuis le endpoint JWKS de Supabase (public, sans auth).
-    Retourne la liste de JWK, ou [] si indisponible.
-    """
-    if not SUPABASE_URL:
-        return []
-    try:
-        r = httpx.get(f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json", timeout=10)
-        r.raise_for_status()
-        keys = r.json().get("keys", [])
-        if keys:
-            algos = [k.get("alg") for k in keys]
-            logger.info("Clés publiques Supabase (JWKS) chargées — algos=%s", algos)
-        return keys
-    except Exception as exc:
-        logger.warning("Impossible de charger le JWKS Supabase : %s", exc)
-        return []
-
-
-# Clés publiques Supabase chargées une fois au démarrage.
-# Fallback : vérification HS256 si SUPABASE_JWT_SECRET est défini (projets legacy).
-_SUPABASE_JWKS: list[dict] = _load_supabase_jwks()
-_SUPABASE_HS256_SECRET: str = settings.SUPABASE_JWT_SECRET
-
-bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def _extract_profile_names(payload: dict) -> tuple[Optional[str], Optional[str]]:
@@ -69,44 +32,6 @@ def _extract_profile_names(payload: dict) -> tuple[Optional[str], Optional[str]]
         or user_metadata.get("last_name")
     )
     return prenom, nom
-
-
-def get_jwt_payload(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-) -> dict:
-    """
-    Décode et retourne le payload complet du JWT Supabase.
-    Supporte ES256 (JWKS, projets Supabase récents) et HS256 (legacy).
-    """
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Non authentifié",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    token = credentials.credentials
-    decode_opts = {"verify_aud": False}
-
-    # Priorité 1 : JWKS (ES256 / RS256 — projets Supabase récents, clé asymétrique)
-    for jwk in _SUPABASE_JWKS:
-        alg = jwk.get("alg", "ES256")
-        try:
-            return jwt.decode(token, jwk, algorithms=[alg], options=decode_opts)
-        except JWTError:
-            continue
-
-    # Priorité 2 : HS256 via le secret partagé (projets Supabase legacy)
-    if _SUPABASE_HS256_SECRET:
-        try:
-            return jwt.decode(token, _SUPABASE_HS256_SECRET, algorithms=["HS256"], options=decode_opts)
-        except JWTError:
-            pass
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token invalide ou expiré",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
 
 
 def get_current_user_id(
@@ -311,30 +236,3 @@ def get_visible_contacts(
         query = query.filter(Contact.succursale_id == succursale_id)
 
     return query.all()
-
-
-# ── Scheduler APScheduler (probité) ─────────────────────────────────────────
-
-scheduler = BackgroundScheduler()
-
-
-def start_scheduler() -> None:
-    if scheduler.running:
-        return
-    scheduler.add_job(
-        func=_run_probite_recompute,
-        trigger="interval",
-        hours=1,
-        id="recompute_probite",
-        replace_existing=True,
-    )
-    scheduler.start()
-
-
-def _run_probite_recompute() -> None:
-    db = SessionLocal()
-    try:
-        from src.services.probite import recompute_probite_scores
-        recompute_probite_scores(db)
-    finally:
-        db.close()

@@ -1,13 +1,20 @@
-"""Tests pour src/auth.py — couverture des branches manquantes."""
+"""Tests pour src/auth/ — couverture des branches manquantes."""
+import base64
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt as jose_jwt
 
 from src.auth import (
     _extract_profile_names,
     _load_supabase_jwks,
     _user_can_see_contact,
+    get_jwt_payload,
     get_visible_contacts,
     start_scheduler,
     _run_probite_recompute,
@@ -20,7 +27,7 @@ from tests.conftest import make_token
 # ── _load_supabase_jwks ──────────────────────────────────────────────────────
 
 def test_load_supabase_jwks_no_url(monkeypatch):
-    import src.auth as auth_mod
+    import src.auth.jwks as auth_mod
     original = auth_mod.SUPABASE_URL
     auth_mod.SUPABASE_URL = ""
     try:
@@ -31,13 +38,13 @@ def test_load_supabase_jwks_no_url(monkeypatch):
 
 
 def test_load_supabase_jwks_with_url_success(monkeypatch):
-    import src.auth as auth_mod
+    import src.auth.jwks as auth_mod
     original = auth_mod.SUPABASE_URL
     auth_mod.SUPABASE_URL = "https://example.supabase.co"
     try:
         mock_response = MagicMock()
         mock_response.json.return_value = {"keys": [{"alg": "ES256", "kid": "key1"}]}
-        with patch("src.auth.httpx.get", return_value=mock_response):
+        with patch("src.auth.jwks.httpx.get", return_value=mock_response):
             result = _load_supabase_jwks()
         assert len(result) == 1
         assert result[0]["alg"] == "ES256"
@@ -46,11 +53,11 @@ def test_load_supabase_jwks_with_url_success(monkeypatch):
 
 
 def test_load_supabase_jwks_with_url_error(monkeypatch):
-    import src.auth as auth_mod
+    import src.auth.jwks as auth_mod
     original = auth_mod.SUPABASE_URL
     auth_mod.SUPABASE_URL = "https://example.supabase.co"
     try:
-        with patch("src.auth.httpx.get", side_effect=Exception("connection error")):
+        with patch("src.auth.jwks.httpx.get", side_effect=Exception("connection error")):
             result = _load_supabase_jwks()
         assert result == []
     finally:
@@ -58,17 +65,146 @@ def test_load_supabase_jwks_with_url_error(monkeypatch):
 
 
 def test_load_supabase_jwks_empty_keys(monkeypatch):
-    import src.auth as auth_mod
+    import src.auth.jwks as auth_mod
     original = auth_mod.SUPABASE_URL
     auth_mod.SUPABASE_URL = "https://example.supabase.co"
     try:
         mock_response = MagicMock()
         mock_response.json.return_value = {"keys": []}
-        with patch("src.auth.httpx.get", return_value=mock_response):
+        with patch("src.auth.jwks.httpx.get", return_value=mock_response):
             result = _load_supabase_jwks()
         assert result == []
     finally:
         auth_mod.SUPABASE_URL = original
+
+
+# ── get_jwt_payload — cache JWKS et fallback HS256 ──────────────────────────
+# Le cache JWKS (_SUPABASE_JWKS) est chargé une fois au démarrage puis relu à
+# chaque décodage de token : ces tests couvrent l'itération sur plusieurs
+# clés en cache, le fallback HS256 quand aucune clé JWKS ne correspond, et le
+# rejet final quand aucune vérification n'aboutit.
+
+def _make_ec_jwk(kid: str = "test-kid") -> tuple[dict, ec.EllipticCurvePrivateKey]:
+    """Génère une paire de clés EC P-256 et le JWK public correspondant,
+    au format renvoyé par l'endpoint JWKS de Supabase."""
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    numbers = private_key.public_key().public_numbers()
+
+    def _b64(n: int) -> str:
+        return base64.urlsafe_b64encode(n.to_bytes(32, "big")).rstrip(b"=").decode()
+
+    jwk = {
+        "kty": "EC",
+        "crv": "P-256",
+        "alg": "ES256",
+        "use": "sig",
+        "kid": kid,
+        "x": _b64(numbers.x),
+        "y": _b64(numbers.y),
+    }
+    return jwk, private_key
+
+
+def test_get_jwt_payload_no_credentials_raises_401():
+    with pytest.raises(HTTPException) as exc_info:
+        get_jwt_payload(credentials=None)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_jwt_payload_verifies_via_cached_jwks_key():
+    """Cas nominal : un token signé ES256 dont la clé publique est dans le
+    cache JWKS doit être vérifié sans recours au fallback HS256."""
+    import src.auth.jwks as jwks_mod
+
+    jwk, private_key = _make_ec_jwk()
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    token = jose_jwt.encode({"sub": "user-jwks"}, pem, algorithm="ES256", headers={"kid": jwk["kid"]})
+
+    original_jwks = jwks_mod._SUPABASE_JWKS
+    original_secret = jwks_mod._SUPABASE_HS256_SECRET
+    jwks_mod._SUPABASE_JWKS = [jwk]
+    jwks_mod._SUPABASE_HS256_SECRET = ""  # pas de fallback dispo : la clé JWKS doit suffire
+    try:
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        payload = get_jwt_payload(credentials)
+        assert payload["sub"] == "user-jwks"
+    finally:
+        jwks_mod._SUPABASE_JWKS = original_jwks
+        jwks_mod._SUPABASE_HS256_SECRET = original_secret
+
+
+def test_get_jwt_payload_skips_non_matching_cached_keys_then_uses_next():
+    """Le cache JWKS peut contenir plusieurs clés (rotation) : celles qui ne
+    correspondent pas au token doivent être ignorées (JWTError -> continue)
+    jusqu'à trouver la bonne, sans jamais lever d'exception intermédiaire."""
+    import src.auth.jwks as jwks_mod
+
+    wrong_jwk_1, _ = _make_ec_jwk(kid="wrong-1")
+    wrong_jwk_2, _ = _make_ec_jwk(kid="wrong-2")
+    right_jwk, right_key = _make_ec_jwk(kid="right")
+    pem = right_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    token = jose_jwt.encode({"sub": "user-rotated"}, pem, algorithm="ES256", headers={"kid": "right"})
+
+    original_jwks = jwks_mod._SUPABASE_JWKS
+    original_secret = jwks_mod._SUPABASE_HS256_SECRET
+    # La clé correcte n'est pas en tête de cache : force l'itération complète.
+    jwks_mod._SUPABASE_JWKS = [wrong_jwk_1, wrong_jwk_2, right_jwk]
+    jwks_mod._SUPABASE_HS256_SECRET = ""
+    try:
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        payload = get_jwt_payload(credentials)
+        assert payload["sub"] == "user-rotated"
+    finally:
+        jwks_mod._SUPABASE_JWKS = original_jwks
+        jwks_mod._SUPABASE_HS256_SECRET = original_secret
+
+
+def test_get_jwt_payload_falls_back_to_hs256_when_no_jwks_key_matches():
+    """Projets Supabase legacy : si aucune clé JWKS ne correspond (ou que le
+    cache est vide), le token doit quand même être accepté via le secret
+    HS256 partagé."""
+    import src.auth.jwks as jwks_mod
+
+    wrong_jwk, _ = _make_ec_jwk()
+    token = jose_jwt.encode({"sub": "user-legacy"}, "shared-secret", algorithm="HS256")
+
+    original_jwks = jwks_mod._SUPABASE_JWKS
+    original_secret = jwks_mod._SUPABASE_HS256_SECRET
+    jwks_mod._SUPABASE_JWKS = [wrong_jwk]
+    jwks_mod._SUPABASE_HS256_SECRET = "shared-secret"
+    try:
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        payload = get_jwt_payload(credentials)
+        assert payload["sub"] == "user-legacy"
+    finally:
+        jwks_mod._SUPABASE_JWKS = original_jwks
+        jwks_mod._SUPABASE_HS256_SECRET = original_secret
+
+
+def test_get_jwt_payload_raises_401_when_nothing_matches():
+    """Ni le cache JWKS ni le secret HS256 ne vérifient le token -> 401."""
+    import src.auth.jwks as jwks_mod
+
+    original_jwks = jwks_mod._SUPABASE_JWKS
+    original_secret = jwks_mod._SUPABASE_HS256_SECRET
+    jwks_mod._SUPABASE_JWKS = []
+    jwks_mod._SUPABASE_HS256_SECRET = ""
+    try:
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="not-a-valid-jwt")
+        with pytest.raises(HTTPException) as exc_info:
+            get_jwt_payload(credentials)
+        assert exc_info.value.status_code == 401
+    finally:
+        jwks_mod._SUPABASE_JWKS = original_jwks
+        jwks_mod._SUPABASE_HS256_SECRET = original_secret
 
 
 # ── _extract_profile_names ───────────────────────────────────────────────────
@@ -301,11 +437,11 @@ def test_user_can_see_contact_via_siege():
 # ── start_scheduler / _run_probite_recompute ────────────────────────────────
 
 def test_start_scheduler_already_running():
-    import src.auth as auth_mod
-    with patch("src.auth.scheduler") as mock_sched:
+    import src.auth.probite_scheduler as auth_mod
+    with patch("src.auth.probite_scheduler.scheduler") as mock_sched:
         mock_sched.running = True
         start_scheduler.__wrapped__ = None
-        import src.auth as a
+        import src.auth.probite_scheduler as a
         orig_sched = a.scheduler
         a.scheduler = mock_sched
         try:
@@ -315,8 +451,8 @@ def test_start_scheduler_already_running():
 
 
 def test_start_scheduler_not_running():
-    import src.auth as a
-    with patch("src.auth.scheduler") as mock_sched:
+    import src.auth.probite_scheduler as a
+    with patch("src.auth.probite_scheduler.scheduler") as mock_sched:
         mock_sched.running = False
         orig_sched = a.scheduler
         a.scheduler = mock_sched
@@ -329,7 +465,7 @@ def test_start_scheduler_not_running():
 
 
 def test_run_probite_recompute():
-    with patch("src.auth.SessionLocal") as mock_session, \
+    with patch("src.auth.probite_scheduler.SessionLocal") as mock_session, \
          patch("src.services.probite.recompute_probite_scores") as mock_recompute:
         mock_db = MagicMock()
         mock_session.return_value = mock_db

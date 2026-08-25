@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from src.auth import get_current_profile, get_db
+from src.auth import get_current_profile
+from src.database import get_db
 from src.models import Profile
 
 router = APIRouter()
