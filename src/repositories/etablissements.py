@@ -24,6 +24,19 @@ def get_by_id(db: Session, etablissement_id: str) -> Etablissement | None:
     return db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
 
 
+def get_by_nom(db: Session, nom: str) -> Etablissement | None:
+    return db.query(Etablissement).filter(Etablissement.nom == nom).first()
+
+
+def create_minimal(db: Session, *, nom: str, created_by: str) -> Etablissement:
+    """Crée un établissement avec seulement nom/created_by (``type`` par défaut),
+    sans commit — utilisé par l'import en lot qui gère sa propre transaction."""
+    etablissement = Etablissement(nom=nom, created_by=created_by)
+    db.add(etablissement)
+    db.flush()
+    return etablissement
+
+
 def list_candidatures_for_user(db: Session, user_id: str) -> list[Candidature]:
     return db.query(Candidature).filter(Candidature.user_id == user_id).all()
 

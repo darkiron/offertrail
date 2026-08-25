@@ -3,9 +3,7 @@ OfferTrail — Modèles SQLAlchemy
 Auth gérée par Supabase — table profiles liée à auth.users.
 """
 import uuid
-import datetime as dt
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey,

@@ -47,6 +47,25 @@ def create(db: Session, data: dict, user_id: str) -> Candidature:
     return get_by_id_for_user(db, cand.id, user_id)
 
 
+def create_from_import(db: Session, data: dict, user_id: str) -> Candidature:
+    """Crée une candidature + son événement de création sans commit — utilisé
+    par l'import en lot (src/services/import_csv.py) qui gère sa propre
+    transaction et commit une seule fois pour tout le lot."""
+    cand = Candidature(**data, user_id=user_id)
+    db.add(cand)
+    db.flush()
+    db.add(
+        CandidatureEvent(
+            candidature_id=cand.id,
+            user_id=user_id,
+            type="creation",
+            nouveau_statut=cand.statut,
+            contenu="Importée",
+        )
+    )
+    return cand
+
+
 def update(db: Session, candidature_id: str, user_id: str, updates: dict, old_status: str | None) -> Candidature | None:
     if updates:
         db.query(Candidature).filter(

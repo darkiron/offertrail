@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 
-from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE
+from src.enums import CandidatureStatut
 from src.models import Candidature, ProbiteScore
 
 

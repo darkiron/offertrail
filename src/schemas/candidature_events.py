@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas._types import UuidStr, OptUuidStr
+from src.schemas._types import UuidStr
 
 
 class CandidatureEventCreate(BaseModel):

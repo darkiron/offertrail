@@ -22,7 +22,6 @@ from src.auth.jwks import (
     _load_supabase_jwks,
     bearer_scheme,
     get_jwt_payload,
-    logger,
 )
 from src.auth.dependencies import (
     _extract_profile_names,
