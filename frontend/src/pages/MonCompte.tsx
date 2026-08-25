@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '../i18n';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
-import { supabase } from '../lib/supabase';
-import { authService, subscriptionService } from '../services/api';
+import { ApiError } from '@shared/api/ApiError';
+import { planKeys } from '@entities/plan/queryKeys';
+import { useSubscriptionStatusQuery } from '@features/billing/useSubscriptionQueries';
+import { usePortalMutation } from '@features/billing/useBillingMutations';
+import {
+  useChangePasswordMutation,
+  useUpdateProfileMutation,
+} from '@features/account/useAccountMutations';
 import { Button } from '@shared/ui/Button';
 import { Dialog } from '@shared/ui/Dialog';
 import { PageHeader } from '@shared/ui/PageHeader';
 import { SubscriptionOverview } from '@widgets/billing/SubscriptionOverview';
 import classes from './MonCompte.module.scss';
+
+type Notice = { tone: 'success' | 'error'; text: string };
 
 export function MonCompte() {
   const { t } = useI18n();
@@ -23,39 +30,38 @@ export function MonCompte() {
     isLoading: subscriptionLoading,
     isError: subscriptionError,
     refetch: retrySubscription,
-  } = useQuery({
-    queryKey: ['subscription'],
-    queryFn: () => subscriptionService.getMe(),
-    staleTime: 60000,
-  });
+  } = useSubscriptionStatusQuery();
+  const updateProfileMutation = useUpdateProfileMutation();
+  const changePasswordMutation = useChangePasswordMutation();
+  const portalMutation = usePortalMutation();
   const [form, setForm] = useState({
     prenom: profile?.prenom || '',
     nom: profile?.nom || '',
   });
-  const [saving, setSaving] = useState(false);
+  const [syncedProfileId, setSyncedProfileId] = useState<string | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [password, setPassword] = useState('');
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [notice, setNotice] = useState<{
-    tone: 'success' | 'error';
-    text: string;
-  } | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [paymentParamsHandled, setPaymentParamsHandled] = useState(false);
+  const saving = updateProfileMutation.isPending;
+  const passwordSaving = changePasswordMutation.isPending;
+  const portalLoading = portalMutation.isPending;
   const hasPaidSubscription =
     sub?.subscription_status === 'active' ||
     sub?.subscription_status === 'trialing';
+  const payment = searchParams.get('payment');
+  const reason = searchParams.get('reason');
 
-  useEffect(() => {
-    document.title = t('monCompte.pageTitle');
-  }, [t]);
-  useEffect(() => {
-    if (profile)
-      setForm({ prenom: profile.prenom || '', nom: profile.nom || '' });
-  }, [profile]);
-  useEffect(() => {
-    const payment = searchParams.get('payment');
-    const reason = searchParams.get('reason');
-    if (!payment && !reason) return;
+  // Keep the form in sync with the loaded profile without re-running on
+  // every render (adjusting state while rendering, per React's guidance).
+  if (profile && profile.id !== syncedProfileId) {
+    setSyncedProfileId(profile.id);
+    setForm({ prenom: profile.prenom || '', nom: profile.nom || '' });
+  }
+  // Surface the payment/reason redirect notice once, without leaving it in
+  // an effect body (adjusting state while rendering, per React's guidance).
+  if ((payment || reason) && !paymentParamsHandled) {
+    setPaymentParamsHandled(true);
     setNotice({
       tone:
         payment === 'success'
@@ -70,64 +76,67 @@ export function MonCompte() {
             ? t('monCompte.paymentCancelled')
             : t('monCompte.upgradeFromPricing'),
     });
-    void queryClient.invalidateQueries({ queryKey: ['subscription'] });
+  }
+
+  useEffect(() => {
+    document.title = t('monCompte.pageTitle');
+  }, [t]);
+  useEffect(() => {
+    if (!paymentParamsHandled) return;
+    void queryClient.invalidateQueries({
+      queryKey: planKeys.subscriptionStatus(),
+    });
     const next = new URLSearchParams(searchParams);
     next.delete('payment');
     next.delete('reason');
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, queryClient, t]);
+    // Runs once the redirect params have been captured into notice state;
+    // searchParams/setSearchParams intentionally excluded to avoid re-firing
+    // after this effect rewrites the URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentParamsHandled, queryClient]);
 
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSaving(true);
     setNotice(null);
     try {
-      await authService.updateMe(form);
+      await updateProfileMutation.mutateAsync(form);
       await refreshProfile();
       setNotice({ tone: 'success', text: t('monCompte.profileSaved') });
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
+      if (error instanceof ApiError && error.status === 401) {
         navigate('/login');
         return;
       }
       setNotice({ tone: 'error', text: t('monCompte.profileError') });
-    } finally {
-      setSaving(false);
     }
   };
   const changePassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setPasswordSaving(true);
     setNotice(null);
     try {
-      const result = await supabase.auth.updateUser({ password });
-      if (result.error) throw result.error;
+      await changePasswordMutation.mutateAsync(password);
       setPassword('');
       setPasswordOpen(false);
       setNotice({ tone: 'success', text: t('monCompte.passwordUpdated') });
     } catch {
       setNotice({ tone: 'error', text: t('monCompte.passwordError') });
-    } finally {
-      setPasswordSaving(false);
     }
   };
-  const openPortal = async () => {
-    setPortalLoading(true);
+  const openPortal = () => {
     setNotice(null);
-    try {
-      const result = await subscriptionService.portal();
-      window.location.assign(result.portal_url);
-    } catch (error) {
-      const detail =
-        axios.isAxiosError(error) &&
-        error.response?.status &&
-        error.response.status < 500 &&
-        typeof error.response?.data?.detail === 'string'
-          ? error.response.data.detail
-          : t('monCompte.portalError');
-      setNotice({ tone: 'error', text: detail });
-      setPortalLoading(false);
-    }
+    portalMutation.mutate(undefined, {
+      onSuccess: ({ portal_url }) => window.location.assign(portal_url),
+      onError: (error) => {
+        const detail =
+          error instanceof ApiError &&
+          error.status !== undefined &&
+          error.status < 500
+            ? error.message
+            : t('monCompte.portalError');
+        setNotice({ tone: 'error', text: detail });
+      },
+    });
   };
 
   return (
@@ -163,9 +172,9 @@ export function MonCompte() {
         <SubscriptionOverview
           subscription={sub}
           loading={portalLoading}
-          onManage={() => void openPortal()}
+          onManage={openPortal}
           onUpgrade={() => navigate('/app/checkout?plan=pro&period=monthly')}
-          onUpgradeUltimate={() => void openPortal()}
+          onUpgradeUltimate={openPortal}
         />
       )}
       <div className={classes.layout}>
@@ -255,7 +264,7 @@ export function MonCompte() {
               <Button
                 variant="ghost"
                 size="small"
-                onClick={() => void openPortal()}
+                onClick={openPortal}
                 disabled={portalLoading}
               >
                 {t('monCompte.viewInvoices')}

@@ -10,13 +10,12 @@ import {
 } from '@tabler/icons-react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/auth-context';
-import { subscriptionService } from '../services/api/billing';
+import { useSubscriptionStatusQuery } from '@features/billing/useSubscriptionQueries';
 import { PlanLimitBanner } from '@widgets/billing/PlanLimitBanner';
 import { NewApplicationModal } from '@widgets/applications/NewApplicationModal';
 import { AppErrorBoundary } from '@shared/ui/AppErrorBoundary';
 import { useI18n } from '../i18n';
 import { PublicBrand } from '@shared/ui/PublicBrand';
-import type { SubscriptionStatus } from '../types';
 import classes from './AppLayout.module.scss';
 
 function SlowApiNotice() {
@@ -52,7 +51,10 @@ function SlowApiNotice() {
 export function AppLayout() {
   const { isAuthenticated, signOut, user, profile } = useAuth();
   const { t } = useI18n();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
+  const subscriptionQuery = useSubscriptionStatusQuery({
+    enabled: isAuthenticated,
+  });
+  const sub = subscriptionQuery.data ?? null;
   const [menu, setMenu] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const queryClient = useQueryClient();
@@ -69,13 +71,6 @@ export function AppLayout() {
     () => (profile?.prenom?.[0] || user?.email?.[0] || 'O').toUpperCase(),
     [profile?.prenom, user?.email],
   );
-  useEffect(() => {
-    if (isAuthenticated)
-      subscriptionService
-        .getMe()
-        .then(setSub)
-        .catch(() => undefined);
-  }, [isAuthenticated]);
   if (!isAuthenticated) return <Outlet />;
   return (
     <div className={classes.shell}>

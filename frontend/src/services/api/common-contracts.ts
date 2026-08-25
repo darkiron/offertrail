@@ -1,9 +1,3 @@
-export interface CheckoutPayload {
-  plan: 'pro' | 'ultimate';
-  period: 'monthly' | 'yearly';
-  coupon?: string;
-}
-
 export interface RelanceApi {
   id: string;
   candidature_id: string;
