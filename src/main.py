@@ -13,6 +13,7 @@ from slowapi.util import get_remote_address
 from .auth import start_scheduler
 from .config import settings
 from .database import init_db as init_saas_db
+from .services.monitoring import init_sentry
 from .routers import auth as auth_router
 from .routers import admin as admin_router
 from .routers import candidatures as candidatures_router
@@ -63,6 +64,9 @@ async def lifespan(app: FastAPI):
     init_saas_db()
     start_scheduler()
     yield
+
+# No-op tant que SENTRY_DSN est vide (défaut) — voir src/services/monitoring.py.
+init_sentry()
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
 origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)

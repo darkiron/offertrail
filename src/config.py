@@ -47,6 +47,15 @@ class Settings(BaseModel):
     # Email transactionnel (src/services/email.py)
     RESEND_API_KEY: str = ""
 
+    # Monitoring d'erreurs Sentry (src/services/monitoring.py) — désactivé par
+    # défaut (no-op complet) tant que SENTRY_DSN n'est pas défini. Ne pas
+    # définir en production sans politique de rétention/échantillonnage,
+    # propriétaire d'alerte et revue de confidentialité validés au préalable.
+    SENTRY_DSN: str = ""
+    # SHA du commit déployé, exposé par Render (voir docs/render-deployment.md) —
+    # utilisé pour taguer la release Sentry. Vide en local/dev.
+    RENDER_GIT_COMMIT: str = ""
+
 
 def _load_settings() -> Settings:
     """Lit `os.environ` une fois — mêmes noms de variables et mêmes valeurs
@@ -66,6 +75,8 @@ def _load_settings() -> Settings:
         STRIPE_PRICE_ULTIMATE_MONTHLY=os.getenv("STRIPE_PRICE_ULTIMATE_MONTHLY", ""),
         STRIPE_PRICE_ULTIMATE_YEARLY=os.getenv("STRIPE_PRICE_ULTIMATE_YEARLY", ""),
         RESEND_API_KEY=os.getenv("RESEND_API_KEY", ""),
+        SENTRY_DSN=os.getenv("SENTRY_DSN", ""),
+        RENDER_GIT_COMMIT=os.getenv("RENDER_GIT_COMMIT", ""),
     )
 
 
