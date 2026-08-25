@@ -4,25 +4,25 @@
   flex-direction: column;
   padding: 28px 26px 26px;
   border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 75%, transparent);
-  background: var(--mantine-color-body);
+  border: 1px solid color-mix(in srgb, var(--ot-line) 75%, transparent);
+  background: var(--ot-paper-raised);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--mantine-color-blue-5) 35%, transparent);
+  border-color: color-mix(in srgb, var(--ot-accent) 35%, transparent);
 }
 
 .card.selected {
-  border-color: var(--mantine-color-blue-5);
+  border-color: var(--ot-accent);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   transform: scale(1.02);
 }
 
 .card.current {
-  border-color: var(--mantine-color-green-5);
+  border-color: var(--ot-success);
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
 }
 
@@ -36,13 +36,13 @@
   text-transform: uppercase;
   padding: 6px 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  background: linear-gradient(135deg, var(--ot-accent), var(--ot-ink));
   color: white;
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
 }
 
 .badge.violet {
-  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  background: linear-gradient(135deg, var(--ot-success), var(--ot-ink));
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
 }
 
@@ -51,7 +51,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: var(--mantine-color-dimmed);
+  color: var(--ot-muted);
   margin: 0 0 10px;
 }
 
@@ -72,13 +72,13 @@
 
 .suffix {
   font-size: 14px;
-  color: var(--mantine-color-dimmed);
+  color: var(--ot-muted);
   font-weight: 500;
 }
 
 .note {
   font-size: 12px;
-  color: var(--mantine-color-dimmed);
+  color: var(--ot-muted);
   margin-bottom: 18px;
   min-height: 18px;
 }
@@ -120,7 +120,7 @@
   align-items: start;
   font-size: 13.5px;
   line-height: 1.45;
-  color: var(--mantine-color-text);
+  color: var(--ot-ink);
 }
 
 .featureCheck {
@@ -130,9 +130,9 @@
   display: grid;
   place-items: center;
   margin-top: 1px;
-  background: color-mix(in srgb, var(--mantine-color-blue-5) 13%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mantine-color-blue-5) 28%, transparent);
-  color: var(--mantine-color-blue-5);
+  background: color-mix(in srgb, var(--ot-accent) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 28%, transparent);
+  color: var(--ot-accent);
   font-size: 10px;
   font-weight: 900;
 }
@@ -148,16 +148,16 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 58%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ot-line) 58%, transparent);
   font-size: 13px;
 }
 
 .specItem span {
-  color: var(--mantine-color-dimmed);
+  color: var(--ot-muted);
 }
 
 .specItem strong {
-  color: var(--mantine-color-text);
+  color: var(--ot-ink);
   font-weight: 800;
   text-align: right;
 }

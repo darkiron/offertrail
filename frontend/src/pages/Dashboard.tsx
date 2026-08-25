@@ -1,264 +1,60 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Stack, SimpleGrid, Group, Paper, Table, TextInput, Select,
-  Checkbox, Tabs, Center, Loader, Text,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { useDashboard } from '../hooks/useDashboard';
-import { KPICard } from '../components/molecules/KPICard';
-import { PageHeader } from '../components/molecules/PageHeader';
-import { NewApplicationModal } from '../components/organisms/NewApplicationModal';
-import { MonthlyApplicationsChart } from '../components/organisms/MonthlyApplicationsChart';
-import { ProbityBadge } from '../components/atoms/ProbityBadge';
-import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge';
-import { StatusBadge } from '../components/atoms/StatusBadge';
-import { Button } from '../components/atoms/Button';
-import { EmptyState } from '../components/atoms/EmptyState';
-import { useI18n } from '../i18n';
-import { useAuth } from '../context/AuthContext';
-import { useStatusOptions } from '../hooks/useStatusOptions';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { dashboardService } from '../services/api';
+import type { TodayAction } from '../types';
 import classes from './Dashboard.module.css';
+import { ActionButton } from '../components/atoms/Action';
+import { SelectField } from '../components/atoms/FormField';
+
+const dateLabel = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+function ActionDialog({ action, onClose }: { action: TodayAction; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [outcome, setOutcome] = useState('no_response');
+  const [note, setNote] = useState('');
+  const [next, setNext] = useState('3');
+  const mutation = useMutation({
+    mutationFn: () => dashboardService.completeAction(action.id, {
+      outcome,
+      note: note.trim() || undefined,
+      next_action: next === 'none' ? null : { due_at: new Date(Date.now() + Number(next) * 86400000).toISOString() },
+    }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['today'] });
+      onClose();
+    },
+  });
+  return <div className={classes.backdrop} role="presentation" onMouseDown={onClose}>
+    <section className={classes.dialog} role="dialog" aria-modal="true" aria-labelledby="result-title" onMouseDown={(event) => event.stopPropagation()}>
+      <header><div><span className={classes.eyebrow}>Relance</span><h2 id="result-title">Enregistrer le résultat</h2></div><button onClick={onClose} aria-label="Fermer">×</button></header>
+      <fieldset><legend>Quel a été le résultat ?</legend>{[['no_response','Pas encore de réponse'],['response_received','Réponse reçue'],['conversation_held','Échange réalisé'],['other','Autre résultat']].map(([value,label]) => <label key={value} className={outcome === value ? classes.selected : ''}><input type="radio" name="outcome" value={value} checked={outcome === value} onChange={() => setOutcome(value)} />{label}</label>)}</fieldset>
+      <label className={classes.field}>Note facultative<textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. Message envoyé sur LinkedIn" /></label>
+      <SelectField className={classes.field} label="Prochaine étape" value={next} onChange={(e) => setNext(e.target.value)} options={[["3", "Relancer dans 3 jours"], ["7", "Relancer dans une semaine"], ["none", "Aucune pour le moment"]]} />
+      {mutation.isError ? <p className={classes.error}>Impossible d'enregistrer. Vos informations sont conservées.</p> : null}
+      <footer><ActionButton onClick={onClose}>Annuler</ActionButton><ActionButton variant="primary" disabled={mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? 'Enregistrement…' : 'Enregistrer'}</ActionButton></footer>
+    </section>
+  </div>;
+}
 
 export function Dashboard() {
-  const { t } = useI18n();
-  const STATUS_OPTIONS = useStatusOptions();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [showHidden, setShowHidden] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<string | null>('apps');
-
-  const {
-    kpis, followups, apps, total, orgMap, insights,
-    loading, loadingInsights, error, refetch, markFollowup, loadInsights,
-  } = useDashboard({ search: searchTerm, status: statusFilter, page, limit, showHidden });
-
-  useEffect(() => { document.title = `${t('dashboard.title')} — OfferTrail`; }, [t]);
-  useEffect(() => {
-    if (activeTab === 'insights' && !insights) loadInsights();
-  }, [activeTab, insights, loadInsights]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setPage(1);
-  };
-
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
-  };
-
-  const handleShowHiddenChange = (checked: boolean) => {
-    setShowHidden(checked);
-    setPage(1);
-  };
-
-  if (error && (error as { response?: { status?: number } }).response?.status === 401) {
-    void signOut().finally(() => navigate('/login', { replace: true }));
-    return null;
-  }
-
-  const handleMarkFollowup = async (id: number) => {
-    try {
-      await markFollowup(id);
-      notifications.show({ message: t('dashboard.followupUpdated'), color: 'green' });
-    } catch {
-      notifications.show({ message: t('dashboard.followupError'), color: 'red' });
-    }
-  };
-
-  return (
-    <Stack gap="lg" className={classes.shell}>
-      {showModal && (
-        <NewApplicationModal
-          onClose={() => setShowModal(false)}
-          onCreated={() => {
-            notifications.show({ message: t('application.added'), color: 'green' });
-            refetch();
-          }}
-        />
-      )}
-
-      <PageHeader
-        title={t('dashboard.title')}
-        count={loading ? null : kpis.total_count}
-        actions={
-          <>
-            <Link to="/app/import"><Button variant="ghost">{t('dashboard.import')}</Button></Link>
-            <Button variant="primary" onClick={() => setShowModal(true)}>{t('dashboard.newApplication')}</Button>
-          </>
-        }
-      />
-
-      {/* KPIs */}
-      <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, lg: 6 }} spacing="md">
-        <KPICard label={t('dashboard.totalApplications')} value={kpis.total_count} />
-        <KPICard label={t('dashboard.activePipeline')} value={kpis.active_count} subValue={t('dashboard.ongoingProcesses')} />
-        <KPICard label={t('dashboard.dueFollowups')} value={kpis.due_followups} subValue={t('dashboard.attentionRequired')} />
-        <KPICard label={t('dashboard.rejectedRate')} value={`${kpis.rejected_rate}%`} subValue={`${kpis.rejected_count} ${t('dashboard.refusals')}`} />
-        <KPICard label={t('dashboard.responseRate')} value={`${kpis.response_rate}%`} subValue={`${kpis.responded_count} ${t('dashboard.responsesCount')}`} />
-        <KPICard label={t('dashboard.avgResponseTime')} value={kpis.avg_response_time ?? '-'} subValue={t('dashboard.days')} />
-      </SimpleGrid>
-
-      {/* Main panel */}
-      <Paper p="lg" radius="lg" withBorder className={classes.panel}>
-        <Tabs value={activeTab} onChange={setActiveTab}>
-          <Tabs.List mb="md">
-            <Tabs.Tab value="apps">{t('dashboard.tabApplications')}</Tabs.Tab>
-            <Tabs.Tab value="queue">{t('dashboard.tabFollowups')}</Tabs.Tab>
-            <Tabs.Tab value="insights">{t('dashboard.tabInsights')}</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="apps">
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" mb="md">
-              <TextInput
-                placeholder={t('dashboard.searchPlaceholder')}
-                label={t('dashboard.search')}
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-              <Select
-                label={t('dashboard.status')}
-                data={STATUS_OPTIONS}
-                value={statusFilter}
-                onChange={(v) => handleStatusChange(v ?? '')}
-              />
-              <Checkbox
-                mt="xl"
-                label={t('dashboard.showHidden')}
-                checked={showHidden}
-                onChange={(e) => handleShowHiddenChange(e.target.checked)}
-              />
-            </SimpleGrid>
-
-            {loading ? (
-              <Center h={120}><Loader /></Center>
-            ) : apps.length === 0 ? (
-              <EmptyState
-                title={t('application.emptyTitle')}
-                description={t('application.emptyDesc')}
-                action={{ label: t('dashboard.newApplication'), onClick: () => setShowModal(true) }}
-              />
-            ) : (
-              <Table.ScrollContainer minWidth={760}>
-                <Table striped highlightOnHover verticalSpacing="sm" className={classes.table}>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th className={classes.companyCell}>{t('dashboard.company')}</Table.Th>
-                      <Table.Th className={classes.positionCell}>{t('dashboard.position')}</Table.Th>
-                      <Table.Th className={classes.statusCell}>{t('dashboard.status')}</Table.Th>
-                      <Table.Th className={classes.dateCell}>{t('dashboard.applied')}</Table.Th>
-                      <Table.Th className={classes.actionCell}>{t('dashboard.action')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {apps.map((app) => {
-                      const org = orgMap.get(app.organization_id || -1);
-                      return (
-                        <Table.Tr key={app.id}>
-                          <Table.Td className={classes.companyCell}>
-                            <Stack gap={4}>
-                              <Group gap="xs" wrap="wrap">
-                                <Text fw={700} className={classes.primaryText}>{app.company}</Text>
-                                {org && <OrganizationTypeBadge type={org.type} size="xs" />}
-                                {org && <ProbityBadge score={org.probity_score} level={org.probity_level} showScore={false} />}
-                              </Group>
-                              <Text size="xs" c="dimmed" className={classes.secondaryText}>{app.source || t('dashboard.sourceDirect')} • {app.type}</Text>
-                              {app.final_customer_organization_id && (
-                                <Text size="xs" c="dimmed" className={classes.secondaryText}>
-                                  {t('application.finalClient')}: {orgMap.get(app.final_customer_organization_id)?.name || app.final_customer_name || '-'}
-                                </Text>
-                              )}
-                            </Stack>
-                          </Table.Td>
-                          <Table.Td className={classes.positionCell}><Text className={classes.primaryText}>{app.title}</Text></Table.Td>
-                          <Table.Td className={classes.statusCell}><StatusBadge status={app.status} /></Table.Td>
-                          <Table.Td className={classes.dateCell}>{app.applied_at || '-'}</Table.Td>
-                          <Table.Td className={classes.actionCell}>
-                            <Link to={`/app/candidatures/${app.id}`}>
-                              <Button variant="ghost" size="small">{t('common.details')}</Button>
-                            </Link>
-                          </Table.Td>
-                        </Table.Tr>
-                      );
-                    })}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            )}
-
-            {total > limit && (
-              <Group justify="center" mt="md">
-                <Button variant="ghost" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                  {t('dashboard.previous')}
-                </Button>
-                <Text size="sm" c="dimmed">
-                  {t('dashboard.page')} {page} / {Math.ceil(total / limit)}
-                </Text>
-                <Button variant="ghost" disabled={page >= Math.ceil(total / limit)} onClick={() => setPage((p) => p + 1)}>
-                  {t('dashboard.next')}
-                </Button>
-              </Group>
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="queue">
-            {followups.length > 0 ? (
-              <Stack gap="sm">
-                {followups.map((app) => (
-                  <Paper
-                    key={app.id}
-                    p="md"
-                    radius="md"
-                    withBorder
-                    className={classes.followupCard}
-                    onClick={() => navigate(`/app/candidatures/${app.id}`)}
-                  >
-                    <Group justify="space-between">
-                      <div>
-                        <Group gap="xs">
-                          <Text fw={700}>{app.company}</Text>
-                          <StatusBadge status={app.status} />
-                        </Group>
-                        <Text size="sm" c="dimmed">{app.title}</Text>
-                        <Text size="xs" c="dimmed">{t('dashboard.nextFollowup')}: {app.next_followup_at || '-'}</Text>
-                      </div>
-                      <Button
-                        variant="primary"
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); handleMarkFollowup(app.id); }}
-                      >
-                        {t('dashboard.markDone')}
-                      </Button>
-                    </Group>
-                  </Paper>
-                ))}
-              </Stack>
-            ) : (
-              <EmptyState title={t('dashboard.noFollowups')} />
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="insights">
-            {loadingInsights ? (
-              <Center h={200}><Loader /></Center>
-            ) : insights ? (
-              <MonthlyApplicationsChart data={insights.months} year={insights.year} />
-            ) : (
-              <EmptyState
-                title={t('dashboard.failedInsights')}
-                action={{ label: t('common.retry'), onClick: loadInsights }}
-              />
-            )}
-          </Tabs.Panel>
-        </Tabs>
-      </Paper>
-    </Stack>
-  );
+  const { openCreateApplication } = useOutletContext<{ openCreateApplication: () => void }>();
+  const [selected, setSelected] = useState<TodayAction | null>(null);
+  const query = useQuery({ queryKey: ['today'], queryFn: dashboardService.getToday });
+  useEffect(() => { document.title = "Aujourd'hui — OfferTrail"; }, []);
+  if (query.isLoading) return <main className={classes.page}><div className={classes.skeleton} /><div className={classes.skeletonCard} /></main>;
+  if (query.isError || !query.data) return <main className={classes.page}><h1>Impossible de charger votre journée.</h1><ActionButton variant="primary" onClick={() => query.refetch()}>Réessayer</ActionButton></main>;
+  const data = query.data;
+  if (data.activation.state === 'onboarding') return <main className={classes.page}><p className={classes.eyebrow}>Bienvenue</p><h1>Construisons un suivi utile.</h1><p className={classes.lede}>Ajoutez une candidature puis planifiez sa prochaine étape.</p><div className={classes.onboarding}><ActionButton variant="primary" onClick={openCreateApplication}>Ajouter une candidature</ActionButton><ActionButton onClick={() => navigate('/app/import')}>Importer un fichier</ActionButton></div></main>;
+  const [priority, ...following] = data.actions.items;
+  return <main className={classes.page}>
+    <header className={classes.pageHead}><div><p className={classes.eyebrow}>{dateLabel.format(new Date())}</p><h1>{data.actions.due_count ? `${data.actions.due_count} action${data.actions.due_count > 1 ? 's' : ''} mérite${data.actions.due_count > 1 ? 'nt' : ''} votre attention.` : 'Tout est à jour.'}</h1><p className={classes.lede}>{data.actions.due_count ? 'Commencez par la plus urgente, le reste peut attendre.' : 'Votre prochaine échéance reste visible dans vos candidatures.'}</p></div><ActionButton variant="primary" onClick={openCreateApplication}>＋ Une candidature</ActionButton></header>
+    <div className={classes.grid}><section><div className={classes.sectionTitle}><h2>À faire maintenant</h2><span>{data.actions.due_count ? `1 sur ${data.actions.due_count}` : 'Aucune action due'}</span></div>
+      {priority ? <><article className={classes.priority}><div className={classes.priorityMeta}><span>{priority.urgency === 'overdue' ? 'Relance en retard' : 'Relance prévue'}</span><span>{priority.application.status}</span></div><h2>{priority.application.title}</h2><p className={classes.company}>{priority.organization.name}</p><p>Retrouvez le contexte avant d'agir, puis enregistrez le résultat.</p><div className={classes.actions}><button onClick={() => navigate(`/app/candidatures/${priority.application.id}`)}>Ouvrir le dossier →</button><button onClick={() => setSelected(priority)}>Marquer comme réalisée</button></div></article>{following.map((action) => <button className={classes.queue} key={action.id} onClick={() => navigate(`/app/candidatures/${action.application.id}`)}><span><strong>{action.application.title}</strong><small>{action.organization.name}</small></span><time>{new Date(action.due_at).toLocaleDateString('fr-FR')}</time></button>)}</> : <div className={classes.empty}>Aucune relance en attente. Vous pouvez préparer la prochaine candidature.</div>}
+    </section><aside><h2>Votre recherche</h2><dl><div><dt>{data.summary.active_applications}</dt><dd>candidatures actives</dd></div><div><dt>{data.summary.responses_30d}</dt><dd>réponses sur 30 jours</dd></div><div><dt>{data.summary.interviews_30d}</dt><dd>entretiens sur 30 jours</dd></div></dl></aside></div>
+    {selected ? <ActionDialog action={selected} onClose={() => setSelected(null)} /> : null}
+  </main>;
 }
+
+export default Dashboard;

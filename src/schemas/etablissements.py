@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas._types import UuidStr, OptUuidStr
+from src.schemas._types import UuidStr
 
 
 class EtablissementCreate(BaseModel):

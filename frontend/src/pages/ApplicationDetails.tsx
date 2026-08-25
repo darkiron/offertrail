@@ -1,410 +1,94 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  Stack, Paper, SimpleGrid, Group, Text, Title, Select, Autocomplete,
-  Textarea, Modal, Tabs, Center, Loader, Timeline, Anchor, ActionIcon, Tooltip,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { IconPencil } from '@tabler/icons-react';
-import { useApplicationDetail } from '../hooks/useApplicationDetail';
-import { ProbityBadge } from '../components/atoms/ProbityBadge';
-import { OrganizationTypeBadge } from '../components/atoms/OrganizationTypeBadge';
-import { StatusBadge } from '../components/atoms/StatusBadge';
-import { EmptyState } from '../components/atoms/EmptyState';
-import { Button } from '../components/atoms/Button';
-import { ApplicationEditModal } from '../components/organisms/ApplicationEditModal';
-import { EventEditModal } from '../components/organisms/EventEditModal';
-import type { Contact } from '../types';
-import type { ApplicationDetailsResponse } from '../services/api';
-import { statusLabelMap } from '../utils/statut';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { applicationService, dashboardService } from '../services/api';
 import classes from './ApplicationDetails.module.css';
+import { ActionButton, ExternalAction } from '../components/atoms/Action';
+import { SelectField, TextAreaField, TextField } from '../components/atoms/FormField';
+import { LoadingStatus } from '../components/atoms/LoadingStatus';
+import { DetailSummary } from '../components/molecules/DetailSummary';
+import { DetailHeader } from '../components/organisms/DetailHeader';
+import { Dialog } from '../components/molecules/Dialog';
+import { WorkflowApplicationEditModal } from '../components/organisms/WorkflowApplicationEditModal';
+import { EntityLink } from '../components/atoms/EntityLink';
 
-const STATUS_OPTIONS = Object.entries(statusLabelMap).map(([value, label]) => ({ value, label }));
+const STATUS_LABELS: Record<string, string> = { en_attente: 'À préparer', envoyee: 'Envoyée', entretien: 'Entretien', offre_recue: 'Offre reçue', refusee: 'Refusée' };
+const EVENT_LABELS: Record<string, string> = { creation: 'Candidature créée', modification: 'Dossier mis à jour', changement_statut: 'Statut modifié', note: 'Note ajoutée', relance: 'Relance', followup_completed: 'Relance réalisée' };
+const CONTRACT_LABELS: Record<string,string> = {cdi:'CDI',cdd:'CDD',freelance:'Freelance',stage:'Stage',alternance:'Alternance',autre:'Autre'};
 
-const EVENT_TYPE_MAP: Record<string, string> = {
-  CREATED: 'Création', UPDATED: 'Mise à jour', STATUS_CHANGED: 'Statut',
-  NOTE_ADDED: 'Note', CONTACT_CREATED: 'Contact créé', CONTACT_LINKED: 'Contact lié',
-  FOLLOWUP_SENT: 'Relance', RESPONSE_RECEIVED: 'Réponse', INTERVIEW_SCHEDULED: 'Entretien',
-  OFFER_RECEIVED: 'Offre', APPLICATION_CREATED: 'Création', FOLLOWED_UP: 'Relance',
-};
-
-function formatEventType(type: string) {
-  return EVENT_TYPE_MAP[type] || type.replace(/_/g, ' ');
-}
-
-function renderEventPayload(event: ApplicationDetailsResponse['events'][number]) {
-  const type = event.type || event.event_type;
-  switch (type) {
-    case 'STATUS_CHANGED':
-      return event.payload?.old_status
-        ? `${statusLabelMap[event.payload.old_status] || event.payload.old_status} → ${statusLabelMap[event.payload.new_status] || event.payload.new_status}`
-        : (event.payload?.new_status ? statusLabelMap[event.payload.new_status] || event.payload.new_status : null);
-    case 'NOTE_ADDED': return event.payload?.text || null;
-    case 'CONTACT_CREATED': return event.payload?.name ? `Contact: ${event.payload.name}` : null;
-    case 'CONTACT_LINKED': return event.payload?.contact_name ? `Contact lié: ${event.payload.contact_name}` : null;
-    case 'CREATED': case 'APPLICATION_CREATED':
-      return event.payload?.company ? `${event.payload.company} · ${event.payload.title}` : null;
-    default: return event.payload?.text || null;
-  }
+function formatDate(value?: string | null, withTime = false) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('fr-FR', withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }).format(new Date(value));
 }
 
 export function ApplicationDetails() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
-  const numId = id ? parseInt(id, 10) : undefined;
-
-  const {
-    data, organizations, loading, error, refetch,
-    isUpdatingStatus, updateStatus, updateApplication, addNote, markFollowup, addEvent,
-    linkContact, createContact, setFinalCustomer, updateEvent, deleteEvent,
-  } = useApplicationDetail(numId);
-
+  const queryClient = useQueryClient();
+  const [showComplete, setShowComplete] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [outcome, setOutcome] = useState('no_response');
+  const [note, setNote] = useState('');
+  const [dueAt, setDueAt] = useState('');
+  const [channel, setChannel] = useState('email');
+  const [editing, setEditing] = useState(false);
+  const [showNote, setShowNote] = useState(false);
   const [newNote, setNewNote] = useState('');
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<ApplicationDetailsResponse['events'][number] | null>(null);
-  const [isLinking, setIsLinking] = useState(false);
-  const [finalCustomerSearch, setFinalCustomerSearch] = useState('');
-  const [contactForm, setContactForm] = useState({
-    first_name: '', last_name: '', email: '', phone: '', role: '', is_recruiter: 0,
+  const navigationState = location.state as { from?: string; scrollY?: number } | null;
+  const from = navigationState?.from ?? '/app/candidatures';
+  const query = useQuery({ queryKey: ['application-workspace', id], queryFn: () => applicationService.getWorkspace(id!), enabled: Boolean(id) });
+  const complete = useMutation({
+    mutationFn: () => dashboardService.completeAction(query.data!.next_action!.id, { outcome, note: note.trim() || undefined }),
+    onSuccess: async () => {
+      setShowComplete(false); setNote('');
+      await Promise.all([query.refetch(), queryClient.invalidateQueries({ queryKey: ['today'] }), queryClient.invalidateQueries({ queryKey: ['workflow-applications'] })]);
+    },
   });
+  const schedule = useMutation({
+    mutationFn: () => applicationService.scheduleWorkflowAction(id!, { due_at: new Date(`${dueAt}T12:00:00`).toISOString(), channel }),
+    onSuccess: async () => {
+      setShowSchedule(false); setDueAt('');
+      await Promise.all([query.refetch(), queryClient.invalidateQueries({ queryKey: ['today'] }), queryClient.invalidateQueries({ queryKey: ['workflow-applications'] })]);
+    },
+  });
+  const addNote = useMutation({ mutationFn:()=>applicationService.addWorkflowNote(id!,newNote.trim()), onSuccess:async()=>{setShowNote(false);setNewNote('');await query.refetch();} });
 
-  useEffect(() => { document.title = 'Candidature — OfferTrail'; }, []);
-  useEffect(() => {
-    if (data) setFinalCustomerSearch(data.final_customer_organization?.name || '');
-  }, [data]);
-
-  const finalCustomerCandidates = useMemo(
-    () => organizations
-      .filter((o) => !['ESN', 'CABINET_RECRUTEMENT', 'PORTAGE'].includes(o.type))
-      .filter((o) => o.name.toLowerCase().includes(finalCustomerSearch.toLowerCase()))
-      .slice(0, 6),
-    [organizations, finalCustomerSearch],
-  );
-
-  if (error && (error as { response?: { status?: number } }).response?.status === 401) {
-    navigate('/login');
-    return null;
+  if (query.error && (query.error as { response?: { status?: number } }).response?.status === 401) {
+    navigate(`/login?next=${encodeURIComponent(location.pathname)}`); return null;
   }
+  if (query.isLoading) return <main className={classes.page}><div className={classes.loading}><LoadingStatus>Ouverture du dossier…</LoadingStatus></div></main>;
+  if (!query.data) return <main className={classes.page}><div className={classes.empty}><h1>Dossier introuvable</h1><Link to={from}>Retour aux candidatures</Link></div></main>;
 
-  if (loading && !data) {
-    return <Center h={300}><Loader /></Center>;
-  }
-
-  if (!data && !loading) {
-    return (
-      <Center h={300}>
-        <EmptyState
-          title={String(error) || 'Candidature introuvable.'}
-          action={{ label: 'Retour', onClick: () => navigate('/app') }}
-        />
-      </Center>
-    );
-  }
-
-  const { application: app, organization, final_customer_organization, events, contacts, all_contacts } = data!;
-
-  const shouldShowFinalCustomer = organization?.type === 'ESN' || organization?.type === 'CABINET_RECRUTEMENT' || !!final_customer_organization;
-
-  const handleUpdateStatus = async (status: string) => {
-    try { await updateStatus(status); notifications.show({ message: 'Statut mis à jour', color: 'green' }); }
-    catch { notifications.show({ message: 'Impossible de mettre à jour le statut.', color: 'red' }); }
-  };
-
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
-    try { await addNote(newNote); setNewNote(''); }
-    catch { notifications.show({ message: "Impossible d'ajouter la note.", color: 'red' }); }
-  };
-
-  const handleMarkFollowup = async () => {
-    try { await markFollowup(); notifications.show({ message: 'Relance mise à jour', color: 'green' }); }
-    catch { notifications.show({ message: 'Impossible de mettre à jour la relance.', color: 'red' }); }
-  };
-
-  const handleCreateContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactForm.first_name || !contactForm.last_name) return;
-    try {
-      await createContact({ ...contactForm, organization_id: organization?.id });
-      setContactForm({ first_name: '', last_name: '', email: '', phone: '', role: '', is_recruiter: 0 });
-      setShowContactModal(false);
-    } catch { notifications.show({ message: 'Impossible de créer le contact.', color: 'red' }); }
-  };
-
+  const { application, organization, final_customer: finalCustomer, contacts, next_action: nextAction, timeline } = query.data;
+  const primaryContact = contacts[0];
+  const currentDetailPath = `${location.pathname}${location.search}`;
   return (
-    <Stack gap="lg" p="lg" className={classes.shell}>
-      <Link to="/app/candidatures" className={classes.back}>← Retour aux candidatures</Link>
+    <main className={classes.page}>
+      {editing&&<WorkflowApplicationEditModal workspace={query.data} onClose={()=>setEditing(false)} onSaved={()=>{setEditing(false);void Promise.all([query.refetch(),queryClient.invalidateQueries({queryKey:['today']}),queryClient.invalidateQueries({queryKey:['workflow-applications']})]);}}/>}
+      <DetailHeader backTo={from} backLabel="Toutes les candidatures" backState={{restoreScrollY:navigationState?.scrollY}} eyebrow="Dossier de candidature" title={application.poste} subtitle={organization.name} badges={<span>{STATUS_LABELS[application.statut]??application.statut}</span>} actions={<><ActionButton variant="primary" onClick={()=>setEditing(true)}>Modifier le dossier</ActionButton>{application.url_offre&&<ExternalAction href={application.url_offre}>Voir l’offre ↗</ExternalAction>}</>}/>
+      <DetailSummary label="Synthèse de la candidature" items={[{label:'Contrat',value:application.type_contrat?CONTRACT_LABELS[application.type_contrat]??application.type_contrat:'Non renseigné'},{label:application.type_contrat==='freelance'?'TJM visé':'Salaire brut annuel',value:application.type_contrat==='freelance'?(application.tjm_vise?`${application.tjm_vise.toLocaleString('fr-FR')} € / jour`:'Non renseigné'):(application.salaire_vise?`${application.salaire_vise.toLocaleString('fr-FR')} €`:'Non renseigné')},{label:'Candidaté le',value:formatDate(application.date_candidature)},{label:'Entreprise',value:<EntityLink to={`/app/etablissements/${organization.id}`} from={currentDetailPath}>{organization.name}</EntityLink>},{label:'Client final',value:finalCustomer?<EntityLink to={`/app/etablissements/${finalCustomer.id}`} from={currentDetailPath}>{finalCustomer.name}</EntityLink>:'Non renseigné'}]}/>
 
-      {/* Hero */}
-      <Paper className={classes.hero} p="xl" radius="lg" withBorder>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" className={classes.heroGrid}>
-          <Stack gap="sm">
-            <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Application record</Text>
-            <Title order={1}>{app.company}</Title>
-            <Text size="lg" c="dimmed">{app.title}</Text>
-            <Group mt="xs" gap="xs">
-              <StatusBadge status={app.status} />
-              {organization && <OrganizationTypeBadge type={organization.type} />}
-              {organization && <ProbityBadge score={organization.probity_score} level={organization.probity_level} />}
-            </Group>
-            <Group mt="sm" gap="sm">
-              <Select
-                data={STATUS_OPTIONS}
-                value={app.status}
-                onChange={(v) => v && handleUpdateStatus(v)}
-                size="xs"
-                className={classes.statusSelect}
-                disabled={isUpdatingStatus}
-                rightSection={isUpdatingStatus ? <Loader size={12} /> : undefined}
-              />
-              <Button variant="ghost" size="small" onClick={() => addEvent('RESPONSE_RECEIVED')}>Réponse reçue</Button>
-              <Button variant="primary" size="small" onClick={handleMarkFollowup}>Relance faite</Button>
-              <Button variant="ghost" size="small" onClick={() => setShowEditModal(true)}>Modifier</Button>
-            </Group>
-          </Stack>
+      <section className={nextAction ? classes.nextAction : classes.noAction} aria-labelledby="next-action-title">
+        <p>Prochaine action</p>
+        {nextAction ? <><h2 id="next-action-title">Relancer {primaryContact ? `${primaryContact.first_name} ${primaryContact.last_name}` : organization.name}</h2><div className={classes.due}>{formatDate(nextAction.due_at)}{nextAction.channel ? ` · ${nextAction.channel}` : ''}</div><ActionButton variant="primary" onClick={() => setShowComplete(true)}>Marquer comme réalisée</ActionButton></> : <><h2 id="next-action-title">Aucune prochaine action</h2><div>Cette candidature reste dans votre suivi, mais rien n’est planifié.</div>{application.statut !== 'refusee' && <ActionButton variant="primary" onClick={() => setShowSchedule(true)}>Planifier une relance</ActionButton>}</>}
+      </section>
 
-          <Stack gap="md">
-            <Paper p="sm" radius="md" withBorder>
-              <Text size="xs" tt="uppercase" fw={700} c="dimmed">Candidaté le</Text>
-              <Text size="xl" fw={700}>{app.applied_at || '-'}</Text>
-              <Text size="xs" c="dimmed">source: {app.source || 'Direct'}</Text>
-            </Paper>
-            <Paper p="sm" radius="md" withBorder>
-              <Text size="xs" tt="uppercase" fw={700} c="dimmed">Follow-up</Text>
-              <Text size="xl" fw={700}>{app.next_followup_at || '-'}</Text>
-            </Paper>
-            {organization && (
-              <Text size="sm">
-                <Text span c="dimmed">Organisation: </Text>
-                <Anchor component={Link} to={`/organizations/${organization.id}`}>{organization.name}</Anchor>
-              </Text>
-            )}
-            {shouldShowFinalCustomer && (
-              <Text size="sm">
-                <Text span c="dimmed">Client final: </Text>
-                {final_customer_organization
-                  ? <Anchor component={Link} to={`/organizations/${final_customer_organization.id}`}>{final_customer_organization.name}</Anchor>
-                  : 'Non lié'}
-              </Text>
-            )}
-          </Stack>
-        </SimpleGrid>
-      </Paper>
+      <div className={classes.content}>
+        <div className={classes.context}>
+          <section><h2>Contact</h2>{primaryContact ? <address><EntityLink to={`/app/contacts/${primaryContact.id}`} from={currentDetailPath}>{primaryContact.first_name} {primaryContact.last_name}</EntityLink>{primaryContact.role && <span>{primaryContact.role}</span>}{primaryContact.email && <a href={`mailto:${primaryContact.email}`}>{primaryContact.email}</a>}{primaryContact.linkedin_url && <a href={primaryContact.linkedin_url} target="_blank" rel="noreferrer">LinkedIn ↗</a>}</address> : <p>Aucun contact associé.</p>}</section>
+          {application.description&&<section><h2>Description de l’offre</h2><p className={classes.notes}>{application.description}</p></section>}
+          {application.notes&&<section><h2>Notes privées</h2><p className={classes.notes}>{application.notes}</p></section>}
+          <section><h2>Entreprise</h2><p><EntityLink to={`/app/etablissements/${organization.id}`} from={currentDetailPath}>{organization.name}</EntityLink><br />{organization.relationship_summary.applications} candidature{organization.relationship_summary.applications > 1 ? 's' : ''} · {organization.relationship_summary.responses} réponse{organization.relationship_summary.responses > 1 ? 's' : ''}</p>{organization.website && <a href={organization.website} target="_blank" rel="noreferrer">Site web ↗</a>}</section>
+        </div>
+        <section className={classes.timeline}><div className={classes.timelineHeading}><h2>Historique</h2><ActionButton variant="quiet" onClick={()=>setShowNote(true)}>Ajouter une note</ActionButton></div>{timeline.items.length ? <ol>{timeline.items.map((event) => <li key={event.id}><time>{formatDate(event.created_at)}</time><strong>{EVENT_LABELS[event.type] ?? event.type.replaceAll('_', ' ')}</strong>{event.contenu && <p>{event.contenu}</p>}</li>)}</ol> : <p>Aucun événement enregistré.</p>}</section>
+      </div>
 
-      {/* Main layout */}
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" className={classes.contentGrid}>
-        {/* Timeline + notes */}
-        <Paper p="lg" radius="lg" withBorder>
-          <Title order={3} mb="md">Timeline</Title>
-          {events.length > 0 ? (
-            <Timeline active={events.length - 1} bulletSize={12} lineWidth={2}>
-              {events.map((event: ApplicationDetailsResponse['events'][number], index: number) => (
-                <Timeline.Item
-                  key={`${event.id || index}-${event.ts}`}
-                  title={
-                    <Group gap={4} align="center">
-                      <Text size="sm" fw={500}>{formatEventType(event.type || event.event_type)}</Text>
-                      {event.id && (
-                        <Tooltip label="Modifier cet événement" withArrow>
-                          <ActionIcon
-                            size="xs"
-                            variant="subtle"
-                            color="dimmed"
-                            onClick={() => setEditingEvent(event)}
-                            aria-label="Modifier l'événement"
-                          >
-                            <IconPencil size={12} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                    </Group>
-                  }
-                >
-                  <Text size="xs" c="dimmed">{new Date(event.ts).toLocaleString()}</Text>
-                  {renderEventPayload(event) && (
-                    <Text size="xs" c="dimmed" mt={2}>{renderEventPayload(event)}</Text>
-                  )}
-                </Timeline.Item>
-              ))}
-            </Timeline>
-          ) : (
-            <Text size="sm" c="dimmed" fs="italic">Aucun événement enregistré.</Text>
-          )}
-
-          <form onSubmit={handleAddNote} className={classes.noteForm}>
-            <Stack gap="sm">
-              <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Note rapide</Text>
-              <Textarea
-                placeholder="Saisir une note..."
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                minRows={3}
-              />
-              <Button type="submit" variant="primary">Ajouter</Button>
-            </Stack>
-          </form>
-        </Paper>
-
-        {/* Details + contacts */}
-        <Stack gap="md">
-          <Paper p="lg" radius="lg" withBorder>
-            <Title order={3} mb="md">Détails</Title>
-            <SimpleGrid cols={2} spacing="sm">
-              <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Statut</Text>
-                <StatusBadge status={app.status} />
-              </div>
-              <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Type</Text>
-                <Text size="sm" c="dimmed">{app.type}</Text>
-              </div>
-              <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Source</Text>
-                <Text size="sm" c="dimmed">{app.source || 'Direct'}</Text>
-              </div>
-              <div>
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Applied at</Text>
-                <Text size="sm" c="dimmed">{app.applied_at || '-'}</Text>
-              </div>
-            </SimpleGrid>
-
-            {shouldShowFinalCustomer && (
-              <Stack gap="xs" mt="md">
-                <Text size="xs" fw={700} tt="uppercase" ls="0.08em" c="dimmed">Lier un client final</Text>
-                <Autocomplete
-                  placeholder="Rechercher un client final"
-                  value={finalCustomerSearch}
-                  onChange={setFinalCustomerSearch}
-                  data={finalCustomerCandidates.map((c) => c.name)}
-                  onOptionSubmit={(val) => {
-                    const found = finalCustomerCandidates.find((c) => c.name === val);
-                    if (found) setFinalCustomer(found.id);
-                  }}
-                />
-                {final_customer_organization && (
-                  <Button variant="ghost" size="small" onClick={() => setFinalCustomer(null)}>
-                    Retirer le client final
-                  </Button>
-                )}
-              </Stack>
-            )}
-
-            {app.job_url && (
-              <Anchor href={app.job_url} target="_blank" mt="md" display="block" size="sm">
-                Voir l'offre d'emploi →
-              </Anchor>
-            )}
-          </Paper>
-
-          <Paper p="lg" radius="lg" withBorder>
-            <Group justify="space-between" mb="md">
-              <Title order={3}>Contacts</Title>
-              <Button variant="ghost" size="small" onClick={() => setShowContactModal(true)}>+ Ajouter</Button>
-            </Group>
-            {contacts.length > 0 ? (
-              <Stack gap="sm">
-                {contacts.map((c: Contact) => (
-                  <Paper key={c.id} p="sm" radius="md" withBorder>
-                    <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
-                    <Group gap="xs">
-                      {c.is_recruiter === 1 && <Text size="xs" c="dimmed">Recruteur</Text>}
-                      <Text size="xs" c="dimmed">{c.role || 'Contact'}</Text>
-                    </Group>
-                    {(c.email || c.phone) && (
-                      <Text size="xs" c="dimmed" mt={2}>{[c.email, c.phone].filter(Boolean).join(' · ')}</Text>
-                    )}
-                  </Paper>
-                ))}
-              </Stack>
-            ) : (
-              <Text size="sm" c="dimmed" fs="italic">Aucun contact lié pour l'instant.</Text>
-            )}
-          </Paper>
-        </Stack>
-      </SimpleGrid>
-
-      {/* Contact modal */}
-      <Modal opened={showContactModal} onClose={() => setShowContactModal(false)} title="Ajouter un contact">
-        <Tabs defaultValue="create">
-          <Tabs.List mb="md">
-            <Tabs.Tab value="create">Créer</Tabs.Tab>
-            <Tabs.Tab value="link" onClick={() => setIsLinking(true)}>Lier existant</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="create">
-            <form onSubmit={handleCreateContact}>
-              <Stack gap="sm">
-                <SimpleGrid cols={2} spacing="sm">
-                  <input className="mantine-Input-input" placeholder="Prénom" required value={contactForm.first_name} onChange={(e) => setContactForm((f) => ({ ...f, first_name: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Nom" required value={contactForm.last_name} onChange={(e) => setContactForm((f) => ({ ...f, last_name: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Email" type="email" value={contactForm.email} onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Téléphone" value={contactForm.phone} onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))} />
-                  <input className="mantine-Input-input" placeholder="Rôle" value={contactForm.role} onChange={(e) => setContactForm((f) => ({ ...f, role: e.target.value }))} />
-                  <label className={classes.checkboxLabel}>
-                    <input type="checkbox" checked={contactForm.is_recruiter === 1} onChange={(e) => setContactForm((f) => ({ ...f, is_recruiter: e.target.checked ? 1 : 0 }))} />
-                    Est recruteur
-                  </label>
-                </SimpleGrid>
-                <Button type="submit" variant="primary">Créer et lier</Button>
-              </Stack>
-            </form>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="link">
-            <Stack gap="sm" className={classes.linkList}>
-              {all_contacts
-                ?.filter((c: Contact) => !contacts.some((r: Contact) => r.id === c.id))
-                .map((c: Contact) => (
-                  <Group
-                    key={c.id}
-                    justify="space-between"
-                    p="sm"
-                    className={classes.linkItem}
-                  >
-                    <div>
-                      <Text size="sm" fw={700}>{c.first_name} {c.last_name}</Text>
-                      <Text size="xs" c="dimmed">{c.role || 'Contact'}</Text>
-                    </div>
-                    <Button variant="ghost" size="small" onClick={() => { linkContact(c.id); setShowContactModal(false); }}>
-                      Lier
-                    </Button>
-                  </Group>
-                ))}
-              {(!all_contacts || all_contacts.length === 0) && (
-                <Text size="sm" c="dimmed" fs="italic">Aucun contact existant.</Text>
-              )}
-            </Stack>
-          </Tabs.Panel>
-        </Tabs>
-      </Modal>
-
-      {showEditModal && (
-        <ApplicationEditModal
-          application={app}
-          onClose={() => setShowEditModal(false)}
-          onSaved={async (payload) => {
-            await updateApplication(payload);
-            notifications.show({ message: 'Candidature mise à jour', color: 'green' });
-          }}
-        />
-      )}
-
-      {editingEvent && (
-        <EventEditModal
-          event={editingEvent as { id: string; type: string; ts: string; payload?: { text?: string | null; old_status?: string | null; new_status?: string | null } }}
-          onClose={() => setEditingEvent(null)}
-          onSaved={async (eventId, data) => {
-            await updateEvent({ eventId, data });
-            notifications.show({ message: 'Événement mis à jour', color: 'green' });
-          }}
-          onDeleted={async (eventId) => {
-            await deleteEvent(eventId);
-            notifications.show({ message: 'Événement supprimé', color: 'green' });
-          }}
-        />
-      )}
-    </Stack>
+      {showComplete && nextAction && <div className={classes.backdrop} role="presentation"><form className={classes.dialog} onSubmit={(event) => { event.preventDefault(); complete.mutate(); }}><header><div><p>Action réalisée</p><h2>Quel a été le résultat ?</h2></div><ActionButton variant="quiet" aria-label="Fermer" onClick={() => setShowComplete(false)}>×</ActionButton></header><SelectField label="Résultat" value={outcome} onChange={(event) => setOutcome(event.target.value)} options={[["no_response", "Pas encore de réponse"], ["response_received", "Réponse reçue"], ["exchange_completed", "Échange réalisé"], ["other", "Autre"]]} /><TextAreaField label="Note facultative" rows={4} value={note} onChange={(event) => setNote(event.target.value)} />{complete.isError && <p className={classes.error}>Impossible d’enregistrer. Tes informations sont conservées.</p>}<footer><ActionButton onClick={() => setShowComplete(false)}>Annuler</ActionButton><ActionButton variant="primary" type="submit" disabled={complete.isPending}>{complete.isPending ? 'Enregistrement…' : 'Enregistrer'}</ActionButton></footer></form></div>}
+      {showSchedule && <div className={classes.backdrop} role="presentation"><form className={classes.dialog} onSubmit={(event) => { event.preventDefault(); if (dueAt) schedule.mutate(); }}><header><div><p>Prochaine action</p><h2>Planifier une relance</h2></div><ActionButton variant="quiet" aria-label="Fermer" onClick={() => setShowSchedule(false)}>×</ActionButton></header><TextField label="Date" type="date" required value={dueAt} onChange={(event) => setDueAt(event.target.value)} /><SelectField label="Canal" value={channel} onChange={(event) => setChannel(event.target.value)} options={[["email", "Email"], ["linkedin", "LinkedIn"], ["telephone", "Téléphone"], ["autre", "Autre"]]} />{schedule.isError && <p className={classes.error}>Impossible de planifier cette relance.</p>}<footer><ActionButton onClick={() => setShowSchedule(false)}>Annuler</ActionButton><ActionButton variant="primary" type="submit" disabled={schedule.isPending}>{schedule.isPending ? 'Planification…' : 'Planifier'}</ActionButton></footer></form></div>}
+      {showNote&&<Dialog eyebrow="Historique du dossier" title="Ajouter une note" onClose={()=>setShowNote(false)}><form onSubmit={event=>{event.preventDefault();if(newNote.trim())addNote.mutate();}}><TextAreaField autoFocus label="Note" rows={6} required value={newNote} onChange={event=>setNewNote(event.target.value)}/>{addNote.isError&&<p className={classes.error}>Impossible d’ajouter la note.</p>}<footer className={classes.dialogFooter}><ActionButton onClick={()=>setShowNote(false)}>Annuler</ActionButton><ActionButton variant="primary" type="submit" disabled={!newNote.trim()||addNote.isPending}>{addNote.isPending?'Ajout…':'Ajouter la note'}</ActionButton></footer></form></Dialog>}
+    </main>
   );
 }
+
+export default ApplicationDetails;

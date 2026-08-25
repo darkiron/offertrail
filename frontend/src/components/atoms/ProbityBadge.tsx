@@ -1,4 +1,3 @@
-import { Badge } from '@mantine/core';
 import type { ProbityLevel } from '../../types';
 import classes from './ProbityBadge.module.css';
 
@@ -28,20 +27,12 @@ export function ProbityBadge({ score, level, showScore = true, size = 'sm' }: Pr
   const label = LEVEL_LABEL_MAP[level] ?? 'Signal faible';
   const title = score !== null ? `Score: ${score.toFixed(1)}/100` : 'Signal faible';
 
-  return (
-    <Badge
-      size={size === 'sm' ? 'sm' : 'md'}
-      radius="xl"
-      className={`${classes.badge} ${colorClass}`}
-      variant="light"
-      title={title}
-    >
+  return <span className={`${classes.badge} ${colorClass}`} data-size={size} title={title}>
       {label}
       {showScore && score !== null && (
         <span className={classes.score}>({score.toFixed(0)})</span>
       )}
-    </Badge>
-  );
+  </span>;
 }
 
 export default ProbityBadge;

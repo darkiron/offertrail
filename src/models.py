@@ -3,9 +3,7 @@ OfferTrail — Modèles SQLAlchemy
 Auth gérée par Supabase — table profiles liée à auth.users.
 """
 import uuid
-import datetime as dt
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey,
@@ -125,6 +123,12 @@ TYPES_EVENT = [
 
 class Candidature(Base):
     __tablename__ = "candidatures"
+    __table_args__ = (
+        CheckConstraint(
+            "type_contrat IS NULL OR type_contrat IN ('cdi','cdd','freelance','stage','alternance','autre')",
+            name="candidature_type_contrat_check",
+        ),
+    )
 
     id               = Column(String, primary_key=True, default=gen_uuid)
     user_id          = Column(String, ForeignKey("profiles.id"), nullable=False)
@@ -134,10 +138,12 @@ class Candidature(Base):
     poste            = Column(String, nullable=False)
     url_offre        = Column(String)
     description      = Column(Text)
+    type_contrat     = Column(String)
     statut           = Column(String, default=CandidatureStatut.EN_ATTENTE.value)
     date_candidature = Column(DateTime)
     date_reponse     = Column(DateTime)
     salaire_vise     = Column(Integer)
+    tjm_vise         = Column(Integer)
     source           = Column(String)
     notes            = Column(Text)
     created_at       = Column(DateTime, default=now)

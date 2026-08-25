@@ -1,17 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    // Proxy les appels API vers le backend FastAPI — élimine le CORS en local.
-    // VITE_API_URL doit être vide dans .env.dev pour que les requêtes passent par ce proxy.
-    proxy: {
-      '^/(auth|candidatures|relances|candidature-events|contact-interactions|contacts|etablissements|me|subscription|admin|health)': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000'
+
+  return {
+    plugins: [react()],
+    server: {
+      // Une base URL vide conserve la même origine dans le navigateur ; Vite
+      // transmet ensuite les appels au backend choisi sans déclencher de CORS.
+      proxy: {
+        '^/(auth|candidatures|relances|candidature-events|contact-interactions|contacts|etablissements|me|subscription|admin|health)': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
-  },
+  }
 })

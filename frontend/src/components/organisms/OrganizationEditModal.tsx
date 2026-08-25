@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
-  Modal, TextInput, Textarea, Select, SimpleGrid, Stack, Group, Text,
-  Autocomplete, Badge, Paper, Center, Loader,
-} from '@mantine/core';
+  UiModal as Modal, UiTextInput as TextInput, UiTextarea as Textarea,
+  UiSelect as Select, UiGrid as SimpleGrid, UiStack as Stack, UiGroup as Group,
+  UiText as Text, UiAutocomplete as Autocomplete, UiBadge as Badge,
+  UiPaper as Paper, UiCenter as Center, UiLoader as Loader,
+} from '../atoms/UiPrimitives';
 import type { Contact, Organization, OrganizationType } from '../../types';
 import { contactService, organizationService } from '../../services/api';
 import { Button } from '../atoms/Button';

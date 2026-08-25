@@ -1,166 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import axios from 'axios';
-import {
-  Modal, TextInput, Textarea, Checkbox, SimpleGrid, Stack, Group, Text, Autocomplete,
-} from '@mantine/core';
-import type { Contact, Organization } from '../../types';
+import type { Contact } from '../../types';
 import { contactService, organizationService } from '../../services/api';
-import { OrganizationTypeBadge } from '../atoms/OrganizationTypeBadge';
-import { Button } from '../atoms/Button';
-import OrganizationEditModal from './OrganizationEditModal';
+import { Dialog } from '../molecules/Dialog';
+import { ActionButton } from '../atoms/Action';
+import { TextAreaField, TextField } from '../atoms/FormField';
+import { EntitySearchField, type EntitySearchOption } from '../molecules/EntitySearchField';
+import classes from './ContactFormModal.module.css';
 
-interface ContactEditModalProps {
-  contact: Contact;
-  onClose: () => void;
-  onSaved: () => void;
+export default function ContactEditModal({contact,organizationName,onClose,onSaved}:{contact:Contact;organizationName?:string|null;onClose:()=>void;onSaved:()=>void}){
+  const [form,setForm]=useState<Partial<Contact>>({...contact});
+  const [organization,setOrganization]=useState<EntitySearchOption|null>(contact.organization_id&&organizationName?{id:contact.organization_id,label:organizationName}:null);
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState<string|null>(null);
+  const searchOrganizations=useCallback(async(query:string)=>(await organizationService.getAll({search:query})).map(item=>({id:item.id,label:item.name,detail:item.type})),[]);
+  const set=(key:keyof Contact,value:unknown)=>setForm(current=>({...current,[key]:value}));
+  const submit=async(event:React.FormEvent)=>{event.preventDefault();setLoading(true);setError(null);try{await contactService.update(contact.id,form);onSaved();}catch(caught){setError(axios.isAxiosError(caught)?caught.response?.data?.detail||'Impossible d’enregistrer le contact.':'Impossible d’enregistrer le contact.');}finally{setLoading(false)}};
+  return <Dialog eyebrow="Fiche contact" title="Modifier l’interlocuteur" onClose={onClose}><form className={classes.form} onSubmit={submit}>{error&&<p className={classes.error}>{error}</p>}<div className={classes.grid}><TextField label="Prénom" required value={form.first_name||''} onChange={event=>set('first_name',event.target.value)}/><TextField label="Nom" required value={form.last_name||''} onChange={event=>set('last_name',event.target.value)}/><TextField label="Rôle / poste" value={form.role||''} onChange={event=>set('role',event.target.value)}/><TextField label="Email" type="email" value={form.email||''} onChange={event=>set('email',event.target.value)}/><TextField label="Téléphone" value={form.phone||''} onChange={event=>set('phone',event.target.value)}/><TextField label="LinkedIn" type="url" value={form.linkedin_url||''} onChange={event=>set('linkedin_url',event.target.value)}/></div><EntitySearchField label="Entreprise" value={organization} onSearch={searchOrganizations} onSelect={option=>{setOrganization(option);set('organization_id',option.id)}} onClear={()=>{setOrganization(null);set('organization_id',null)}} placeholder="Saisir au moins 2 caractères…"/><label className={classes.checkbox}><input type="checkbox" checked={Boolean(form.is_recruiter)} onChange={event=>set('is_recruiter',event.target.checked?1:0)}/> Ce contact intervient comme recruteur</label><TextAreaField label="Notes privées" rows={4} value={form.notes||''} onChange={event=>set('notes',event.target.value)}/><footer className={classes.footer}><ActionButton onClick={onClose}>Annuler</ActionButton><ActionButton variant="primary" type="submit" disabled={loading}>{loading?'Enregistrement…':'Enregistrer'}</ActionButton></footer></form></Dialog>;
 }
-
-export function ContactEditModal({ contact, onClose, onSaved }: ContactEditModalProps) {
-  const [form, setForm] = useState<Partial<Contact>>({ ...contact });
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [query, setQuery] = useState('');
-  const [showCreateOrg, setShowCreateOrg] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    organizationService.getAll().then(setOrganizations).catch(() => {});
-  }, []);
-
-  const filtered = useMemo(() => {
-    if (!query) return [];
-    const q = query.toLowerCase();
-    return organizations.filter((o) => o.name.toLowerCase().includes(q)).slice(0, 6);
-  }, [organizations, query]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      await contactService.update(contact.id, form);
-      onSaved();
-    } catch (err: unknown) {
-      setError((axios.isAxiosError(err) && err.response?.data?.detail) || 'Échec de la sauvegarde du contact');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const linkedOrg = organizations.find((o) => o.id === form.organization_id);
-
-  return (
-    <>
-      <Modal opened onClose={onClose} size="lg" title="Modifier le contact">
-        {error && <Text c="red" size="sm" mb="md">{error}</Text>}
-
-        <form onSubmit={handleSave}>
-          <Stack gap="md">
-            <SimpleGrid cols={2} spacing="sm">
-              <TextInput
-                label="Prénom"
-                value={form.first_name || ''}
-                onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
-              />
-              <TextInput
-                label="Nom"
-                value={form.last_name || ''}
-                onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
-              />
-              <TextInput
-                label="Rôle / Poste"
-                value={form.role || ''}
-                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-              />
-              <TextInput
-                label="Email"
-                value={form.email || ''}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              />
-              <TextInput
-                label="Téléphone"
-                value={form.phone || ''}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              />
-              <TextInput
-                label="LinkedIn"
-                value={form.linkedin_url || ''}
-                onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
-              />
-            </SimpleGrid>
-
-            <Textarea
-              label="Notes"
-              rows={3}
-              value={form.notes || ''}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-
-            <Checkbox
-              label="Recruteur"
-              checked={!!form.is_recruiter}
-              onChange={(e) => setForm((f) => ({ ...f, is_recruiter: e.target.checked ? 1 : 0 }))}
-            />
-
-            <div>
-              <Autocomplete
-                label="Établissement"
-                placeholder="Rechercher un ETS…"
-                value={query}
-                onChange={(val) => {
-                  setQuery(val);
-                  const match = organizations.find((o) => o.name === val);
-                  if (match) setForm((f) => ({ ...f, organization_id: match.id }));
-                }}
-                data={filtered.map((o) => o.name)}
-              />
-              {linkedOrg && (
-                <Group gap="xs" mt="xs">
-                  <OrganizationTypeBadge type={linkedOrg.type} size="xs" />
-                  <Text size="xs">{linkedOrg.name}</Text>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    onClick={() => { setForm((f) => ({ ...f, organization_id: null })); setQuery(''); }}
-                  >
-                    Retirer
-                  </Button>
-                </Group>
-              )}
-              {!linkedOrg && query.trim() && filtered.length === 0 && (
-                <Button variant="ghost" size="small" type="button" mt="xs" onClick={() => setShowCreateOrg(true)}>
-                  + Créer l'ETS
-                </Button>
-              )}
-            </div>
-
-            <Group justify="space-between">
-              <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
-              <Button type="submit" variant="primary" disabled={loading}>
-                {loading ? 'Sauvegarde…' : 'Enregistrer'}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
-
-      {showCreateOrg && (
-        <OrganizationEditModal
-          initialName={query}
-          onClose={() => setShowCreateOrg(false)}
-          onSaved={(org) => {
-            setShowCreateOrg(false);
-            if (org) {
-              setOrganizations((current) => [org, ...current]);
-              setForm((f) => ({ ...f, organization_id: org.id }));
-              setQuery(org.name);
-            }
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-export default ContactEditModal;

@@ -1,43 +1,71 @@
-import React, { useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 
-import { Dashboard } from './pages/Dashboard';
-import { ApplicationsPage } from './pages/ApplicationsPage';
-import { ApplicationDetails } from './pages/ApplicationDetails';
-import { CompanyDetailsPage } from './pages/CompanyDetailsPage';
-import { ContactDetailsPage } from './pages/ContactDetailsPage';
-import { Import } from './pages/Import';
-import { OrganizationsPage } from './pages/OrganizationsPage';
-import { OrganizationMaintenancePage } from './pages/OrganizationMaintenancePage';
-import { ContactsPage } from './pages/ContactsPage';
 import { I18nProvider } from './i18n';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { LoginPage } from './pages/Login';
-import { RegisterPage } from './pages/Register';
-import { ForgotPasswordPage } from './pages/ForgotPassword';
-import { ResetPasswordPage } from './pages/ResetPassword';
-import { LandingPage } from './pages/LandingPage';
-import { LegalNoticePage } from './pages/LegalNoticePage';
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
-import { TermsPage } from './pages/TermsPage';
-import { ContactPage } from './pages/ContactPage';
-import { MonCompte } from './pages/MonCompte';
-import Pricing from './pages/Pricing';
-import { Admin } from './pages/Admin';
-import { Checkout } from './pages/Checkout';
-import { HomePage } from './pages/HomePage';
-import { CGU } from './pages/legal/CGU';
-import { Confidentialite } from './pages/legal/Confidentialite';
+import appClasses from './App.module.css';
 
 import { AppLayout } from './templates/AppLayout';
 import { LandingLayout } from './templates/LandingLayout';
+import { LoadingStatus } from './components/atoms/LoadingStatus';
+import { PublicBrand } from './components/atoms/PublicBrand';
+
+const named = <T extends Record<string, React.ComponentType>>(loader: () => Promise<T>, name: keyof T) => lazy(async () => ({ default: (await loader())[name] }));
+const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard');
+const ApplicationsPage = named(() => import('./pages/ApplicationsPage'), 'ApplicationsPage');
+const ApplicationDetails = named(() => import('./pages/ApplicationDetails'), 'ApplicationDetails');
+const CompanyDetailsPage = named(() => import('./pages/CompanyDetailsPage'), 'CompanyDetailsPage');
+const ContactDetailsPage = named(() => import('./pages/ContactDetailsPage'), 'ContactDetailsPage');
+const Import = named(() => import('./pages/Import'), 'Import');
+const OrganizationsPage = named(() => import('./pages/OrganizationsPage'), 'OrganizationsPage');
+const OrganizationMaintenancePage = named(() => import('./pages/OrganizationMaintenancePage'), 'OrganizationMaintenancePage');
+const ContactsPage = named(() => import('./pages/ContactsPage'), 'ContactsPage');
+const LoginPage = named(() => import('./pages/Login'), 'LoginPage');
+const RegisterPage = named(() => import('./pages/Register'), 'RegisterPage');
+const ForgotPasswordPage = named(() => import('./pages/ForgotPassword'), 'ForgotPasswordPage');
+const ResetPasswordPage = named(() => import('./pages/ResetPassword'), 'ResetPasswordPage');
+const LandingPage = named(() => import('./pages/LandingPage'), 'LandingPage');
+const LegalNoticePage = named(() => import('./pages/LegalNoticePage'), 'LegalNoticePage');
+const PrivacyPolicyPage = named(() => import('./pages/PrivacyPolicyPage'), 'PrivacyPolicyPage');
+const TermsPage = named(() => import('./pages/TermsPage'), 'TermsPage');
+const ContactPage = named(() => import('./pages/ContactPage'), 'ContactPage');
+const MonCompte = named(() => import('./pages/MonCompte'), 'MonCompte');
+const Admin = named(() => import('./pages/Admin'), 'Admin');
+const Checkout = named(() => import('./pages/Checkout'), 'Checkout');
+const CGU = named(() => import('./pages/legal/CGU'), 'CGU');
+const Confidentialite = named(() => import('./pages/legal/Confidentialite'), 'Confidentialite');
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => { if (!pathname.startsWith('/app')) window.scrollTo(0, 0); }, [pathname]);
   return null;
+}
+
+function NotFoundPage() {
+  useEffect(() => {
+    document.title = 'Page introuvable — OfferTrail';
+    const robots = document.querySelector('meta[name="robots"]');
+    robots?.setAttribute('content', 'noindex,follow');
+    return () => robots?.setAttribute('content', 'index,follow,max-image-preview:large');
+  }, []);
+
+  return (
+    <main className={appClasses.notFound}>
+      <p className={appClasses.notFoundEyebrow}>ERREUR 404</p>
+      <h1>Cette piste ne mène nulle part.</h1>
+      <p>La page demandée n’existe pas ou a été déplacée.</p>
+      <a href="/">Revenir à l’accueil OfferTrail</a>
+    </main>
+  );
+}
+
+function RouteLoading() {
+  return <main className={appClasses.routeLoading} role="status">
+    <PublicBrand />
+    <LoadingStatus>Chargement de l’espace…</LoadingStatus>
+  </main>;
 }
 
 function AppRoutes() {
@@ -55,7 +83,7 @@ function AppRoutes() {
   return (
     <>
       <ScrollToTop />
-    <Routes>
+    <Suspense fallback={<RouteLoading />}><Routes>
       {/* ── Pages publiques (LandingLayout) ── */}
       <Route element={<LandingLayout />}>
         <Route index element={<LandingPage />} />
@@ -96,12 +124,13 @@ function AppRoutes() {
         <Route path="import" element={<Import />} />
         <Route path="mon-compte" element={<MonCompte />} />
         <Route path="admin" element={<Admin />} />
-        <Route path="pricing" element={<Pricing />} />
+        {/* Legacy URL kept as a redirect: subscription actions live in account/checkout. */}
+        <Route path="pricing" element={<Navigate to="/app/mon-compte" replace />} />
       </Route>
 
       {/* ── Redirects de compatibilité ── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes></Suspense>
     </>
   );
 }

@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent, Etablissement, Profile
+from src.models import Profile
+from src.repositories import candidatures as candidatures_repo
 from src.schemas.candidature_events import CandidatureEventSchema
 from src.schemas.candidatures import CandidatureCreate, CandidatureSchema, CandidatureUpdate
 from src.services.subscription import check_can_create_candidature
@@ -16,12 +17,7 @@ def list_candidatures(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureSchema]:
-    candidatures = (
-        db.query(Candidature)
-        .filter(Candidature.user_id == user_id)
-        .order_by(Candidature.updated_at.desc())
-        .all()
-    )
+    candidatures = candidatures_repo.list_for_user(db, user_id)
     return [CandidatureSchema.model_validate(item) for item in candidatures]
 
 
@@ -38,33 +34,17 @@ def create_candidature(
         raise HTTPException(status_code=422, detail="etablissement_id requis")
 
     try:
-        etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
+        etablissement = candidatures_repo.get_etablissement_by_id(db, body.etablissement_id)
     except Exception:
         raise HTTPException(status_code=422, detail="etablissement_id invalide")
     if not etablissement:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
     if body.client_final_id:
-        client_final = db.query(Etablissement).filter(Etablissement.id == body.client_final_id).first()
+        client_final = candidatures_repo.get_etablissement_by_id(db, body.client_final_id)
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
-    cand = Candidature(
-        **body.model_dump(exclude={"user_id"}),
-        user_id=user_id,
-    )
-    db.add(cand)
-    db.flush()
-    db.add(
-        CandidatureEvent(
-            candidature_id=cand.id,
-            user_id=user_id,
-            type="creation",
-            nouveau_statut=cand.statut,
-            contenu="Candidature creee",
-        )
-    )
-    db.commit()
-    cand = db.query(Candidature).filter(Candidature.id == cand.id).first()
+    cand = candidatures_repo.create(db, body.model_dump(exclude={"user_id"}), user_id)
     return CandidatureSchema.model_validate(cand)
 
 
@@ -74,11 +54,7 @@ def get_candidature(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
-    cand = (
-        db.query(Candidature)
-        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    cand = candidatures_repo.get_by_id_for_user(db, candidature_id, user_id)
     if not cand:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
     return CandidatureSchema.model_validate(cand)
@@ -91,20 +67,16 @@ def update_candidature(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> CandidatureSchema:
-    cand = (
-        db.query(Candidature)
-        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    cand = candidatures_repo.get_by_id_for_user(db, candidature_id, user_id)
     if not cand:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
 
     if body.etablissement_id:
-        etablissement = db.query(Etablissement).filter(Etablissement.id == body.etablissement_id).first()
+        etablissement = candidatures_repo.get_etablissement_by_id(db, body.etablissement_id)
         if not etablissement:
             raise HTTPException(status_code=404, detail="Etablissement introuvable")
     if body.client_final_id:
-        client_final = db.query(Etablissement).filter(Etablissement.id == body.client_final_id).first()
+        client_final = candidatures_repo.get_etablissement_by_id(db, body.client_final_id)
         if not client_final:
             raise HTTPException(status_code=404, detail="Client final introuvable")
 
@@ -116,28 +88,7 @@ def update_candidature(
         if field != "user_id" and not (field in _not_nullable and value is None)
     }
     old_status = cand.statut
-    if updates:
-        db.query(Candidature).filter(
-            Candidature.id == candidature_id,
-            Candidature.user_id == user_id,
-        ).update(updates)
-        new_status = updates.get("statut")
-        if new_status and new_status != old_status:
-            db.add(
-                CandidatureEvent(
-                    candidature_id=candidature_id,
-                    user_id=user_id,
-                    type="statut_change",
-                    ancien_statut=old_status,
-                    nouveau_statut=new_status,
-                )
-            )
-    db.commit()
-    cand = (
-        db.query(Candidature)
-        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    cand = candidatures_repo.update(db, candidature_id, user_id, updates, old_status)
     return CandidatureSchema.model_validate(cand)
 
 
@@ -147,23 +98,11 @@ def get_candidature_events(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureEventSchema]:
-    cand = (
-        db.query(Candidature)
-        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    cand = candidatures_repo.get_by_id_for_user(db, candidature_id, user_id)
     if not cand:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
 
-    events = (
-        db.query(CandidatureEvent)
-        .filter(
-            CandidatureEvent.candidature_id == candidature_id,
-            CandidatureEvent.user_id == user_id,
-        )
-        .order_by(CandidatureEvent.created_at.desc())
-        .all()
-    )
+    events = candidatures_repo.list_events_for_candidature(db, candidature_id, user_id)
     return [CandidatureEventSchema.model_validate(event) for event in events]
 
 
@@ -173,13 +112,8 @@ def delete_candidature(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> Response:
-    cand = (
-        db.query(Candidature)
-        .filter(Candidature.id == candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    cand = candidatures_repo.get_by_id_for_user(db, candidature_id, user_id)
     if not cand:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
-    db.delete(cand)
-    db.commit()
+    candidatures_repo.delete(db, cand)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

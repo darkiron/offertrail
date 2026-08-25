@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
-from src.models import Candidature, Profile, Relance
+from src.models import Profile
+from src.repositories import relances as relances_repo
 from src.schemas.relances import RelanceCreate, RelanceSchema, RelanceUpdate
 from src.services.subscription import check_can_create_relance
 
@@ -15,7 +16,7 @@ def list_relances(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[RelanceSchema]:
-    relances = db.query(Relance).filter(Relance.user_id == user_id).order_by(Relance.date_prevue.asc()).all()
+    relances = relances_repo.list_for_user(db, user_id)
     return [RelanceSchema.model_validate(item) for item in relances]
 
 
@@ -28,21 +29,11 @@ def create_relance(
     user_id = profile.id
     check_can_create_relance(db, profile)
 
-    candidature = (
-        db.query(Candidature)
-        .filter(Candidature.id == body.candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    candidature = relances_repo.get_candidature_by_id_for_user(db, body.candidature_id, user_id)
     if not candidature:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
 
-    relance = Relance(
-        **body.model_dump(exclude={"user_id"}),
-        user_id=user_id,
-    )
-    db.add(relance)
-    db.commit()
-    db.refresh(relance)
+    relance = relances_repo.create(db, body.model_dump(exclude={"user_id"}), user_id)
     return RelanceSchema.model_validate(relance)
 
 
@@ -52,7 +43,7 @@ def get_relance(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> RelanceSchema:
-    relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
+    relance = relances_repo.get_by_id_for_user(db, relance_id, user_id)
     if not relance:
         raise HTTPException(status_code=404, detail="Relance introuvable")
     return RelanceSchema.model_validate(relance)
@@ -65,17 +56,16 @@ def update_relance(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> RelanceSchema:
-    relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
+    relance = relances_repo.get_by_id_for_user(db, relance_id, user_id)
     if not relance:
         raise HTTPException(status_code=404, detail="Relance introuvable")
 
-    for field, value in body.model_dump(exclude_unset=True).items():
-        if field == "user_id":
-            continue
-        setattr(relance, field, value)
-
-    db.commit()
-    db.refresh(relance)
+    updates = {
+        field: value
+        for field, value in body.model_dump(exclude_unset=True).items()
+        if field != "user_id"
+    }
+    relance = relances_repo.update(db, relance, updates)
     return RelanceSchema.model_validate(relance)
 
 
@@ -85,9 +75,8 @@ def delete_relance(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> Response:
-    relance = db.query(Relance).filter(Relance.id == relance_id, Relance.user_id == user_id).first()
+    relance = relances_repo.get_by_id_for_user(db, relance_id, user_id)
     if not relance:
         raise HTTPException(status_code=404, detail="Relance introuvable")
-    db.delete(relance)
-    db.commit()
+    relances_repo.delete(db, relance)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

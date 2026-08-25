@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_user_id
 from src.database import get_db
-from src.models import Candidature, CandidatureEvent
+from src.repositories import candidature_events as candidature_events_repo
 from src.schemas.candidature_events import (
     CandidatureEventCreate,
     CandidatureEventSchema,
@@ -18,12 +18,7 @@ def list_candidature_events(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[CandidatureEventSchema]:
-    events = (
-        db.query(CandidatureEvent)
-        .filter(CandidatureEvent.user_id == user_id)
-        .order_by(CandidatureEvent.created_at.desc())
-        .all()
-    )
+    events = candidature_events_repo.list_for_user(db, user_id)
     return [CandidatureEventSchema.model_validate(item) for item in events]
 
 
@@ -33,21 +28,11 @@ def create_candidature_event(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
-    candidature = (
-        db.query(Candidature)
-        .filter(Candidature.id == body.candidature_id, Candidature.user_id == user_id)
-        .first()
-    )
+    candidature = candidature_events_repo.get_candidature_by_id_for_user(db, body.candidature_id, user_id)
     if not candidature:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
 
-    event = CandidatureEvent(
-        **body.model_dump(exclude={"user_id"}),
-        user_id=user_id,
-    )
-    db.add(event)
-    db.commit()
-    db.refresh(event)
+    event = candidature_events_repo.create(db, body.model_dump(exclude={"user_id"}), user_id)
     return CandidatureEventSchema.model_validate(event)
 
 
@@ -57,7 +42,7 @@ def get_candidature_event(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
-    event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
+    event = candidature_events_repo.get_by_id_for_user(db, event_id, user_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event introuvable")
     return CandidatureEventSchema.model_validate(event)
@@ -70,17 +55,16 @@ def update_candidature_event(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> CandidatureEventSchema:
-    event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
+    event = candidature_events_repo.get_by_id_for_user(db, event_id, user_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event introuvable")
 
-    for field, value in body.model_dump(exclude_unset=True).items():
-        if field == "user_id":
-            continue
-        setattr(event, field, value)
-
-    db.commit()
-    db.refresh(event)
+    updates = {
+        field: value
+        for field, value in body.model_dump(exclude_unset=True).items()
+        if field != "user_id"
+    }
+    event = candidature_events_repo.update(db, event, updates)
     return CandidatureEventSchema.model_validate(event)
 
 
@@ -90,9 +74,8 @@ def delete_candidature_event(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> Response:
-    event = db.query(CandidatureEvent).filter(CandidatureEvent.id == event_id, CandidatureEvent.user_id == user_id).first()
+    event = candidature_events_repo.get_by_id_for_user(db, event_id, user_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event introuvable")
-    db.delete(event)
-    db.commit()
+    candidature_events_repo.delete(db, event)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

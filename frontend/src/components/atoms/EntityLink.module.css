@@ -1,0 +1,4 @@
+.link{display:inline-flex;align-items:center;gap:.4rem;color:#18201d;font:inherit;font-weight:700;text-decoration-thickness:1px;text-underline-offset:.2em}
+.link span{color:#a73e29;transition:transform .18s ease}
+.link:hover span,.link:focus-visible span{transform:translateX(.18rem)}
+.link:focus-visible{border-radius:2px;outline:2px solid #a73e29;outline-offset:3px}

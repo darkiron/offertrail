@@ -14,7 +14,6 @@ TEST_DB_PATH = Path("test_runtime_offertrail.db").resolve()
 TEST_JWT_SECRET = "test-jwt-secret-for-testing-only"
 
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH.as_posix()}"
-os.environ["OFFERTAIL_DB_PATH"] = TEST_DB_PATH.as_posix()
 os.environ["SUPABASE_JWT_SECRET"] = TEST_JWT_SECRET
 
 import sqlite3
@@ -25,14 +24,12 @@ import fastapi.routing
 import fastapi.testclient
 import starlette.concurrency
 import anyio.to_thread
-import src.legacy_database as legacy_database
 import src.main as main_module
 from src.database import init_db as init_saas_db, engine, SessionLocal
 from src.main import app
 from src.models import Candidature, Etablissement, Profile
 from contextlib import asynccontextmanager
 
-legacy_database.DB_PATH = TEST_DB_PATH
 main_module.start_scheduler = lambda: None
 
 
@@ -225,7 +222,6 @@ class PatchedTestClient:
 fastapi.testclient.TestClient = PatchedTestClient
 
 init_saas_db()
-legacy_database.init_db()
 
 
 def make_token(user_id: str, email: str = "test@example.com") -> str:
@@ -246,7 +242,13 @@ def reset_databases():
         conn.execute("PRAGMA foreign_keys = OFF")
         for table_name in tables:
             conn.execute(f"DELETE FROM {table_name}")
-        conn.execute("DELETE FROM sqlite_sequence")
+        # sqlite only creates sqlite_sequence when some table uses
+        # AUTOINCREMENT; none of the current models do (all string/UUID
+        # primary keys), so it may simply not exist.
+        if conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = 'sqlite_sequence'"
+        ).fetchone():
+            conn.execute("DELETE FROM sqlite_sequence")
         conn.execute("PRAGMA foreign_keys = ON")
         conn.commit()
     yield

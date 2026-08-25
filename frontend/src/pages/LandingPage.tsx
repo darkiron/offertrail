@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { SegmentedControl } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { PlanCard } from '../components/PlanCard';
@@ -15,16 +14,6 @@ export const LandingPage: React.FC = () => {
   const plans = usePricingPlans();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'ultimate' | null>(null);
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
-  const [breakdownPeriod, setBreakdownPeriod] = useState<BillingPeriod>('monthly');
-
-  // Répartition transparente du prix Pro (charges URSSAF 33%, Stripe 2,2% + 0,25€).
-  const proPlan = plans.find((p) => p.id === 'pro');
-  const proPrice = (breakdownPeriod === 'yearly' && proPlan?.prices.yearly) || proPlan?.prices.monthly;
-  const priceValue = proPrice ? Number(proPrice.amount.replace('€', '').replace(',', '.')) : 0;
-  const eur = (n: number) => `~${n.toFixed(2).replace('.', ',')}€`;
-  const stripeFee = priceValue * 0.022 + 0.25;
-  const urssafFee = priceValue * 0.33;
-  const devPay = priceValue - stripeFee - urssafFee;
 
   const features = [
     { icon: '📊', title: t('landing.features.kpi_title'),      desc: t('landing.features.kpi_desc') },
@@ -37,10 +26,13 @@ export const LandingPage: React.FC = () => {
 
   useEffect(() => {
     document.title = t('landing.hero.pageTitle');
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (description) description.content = t('landing.hero.sub');
   }, [t]);
 
-  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate') => {
-    navigate(id === 'free' ? '/register' : `/register?plan=${id}`);
+  const handlePricingCta = (id: 'free' | 'pro' | 'ultimate', selectedPeriod: BillingPeriod) => {
+    const params = new URLSearchParams({ plan: id, period: selectedPeriod });
+    navigate(`/register?${params.toString()}`);
   };
 
   if (isAuthenticated) {
@@ -51,9 +43,9 @@ export const LandingPage: React.FC = () => {
     <div className="lp-root">
 
       {/* ─── Hero ─── */}
-      <section className="lp-hero">
+      <header className="lp-hero" aria-labelledby="landing-title">
         <div className="lp-badge">{t('landing.hero.badge')}</div>
-        <h1 className="lp-h1">
+        <h1 id="landing-title" className="lp-h1">
           {t('landing.hero.titleLine1')}<br />
           <span>{t('landing.hero.titleLine2')}</span>
         </h1>
@@ -62,7 +54,7 @@ export const LandingPage: React.FC = () => {
           <Link to="/register" className="lp-btn-primary">{t('landing.hero.ctaPrimary')}</Link>
           <a href="#features" className="lp-btn-outline">{t('landing.hero.ctaSecondary')}</a>
         </div>
-      </section>
+      </header>
 
       {/* ─── Dashboard mockup ─── */}
       <div className="lp-mockup-wrap">
@@ -74,10 +66,10 @@ export const LandingPage: React.FC = () => {
             <div className="lp-url-bar">app.offertrail.fr/app</div>
           </div>
           <div className="lp-stats-row">
-            <div className="lp-stat"><div className="lp-stat-num">43</div><div className="lp-stat-label">{t('landing.mock.applications')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">69%</div><div className="lp-stat-label">{t('landing.mock.rejectionRate')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">20.9%</div><div className="lp-stat-label">{t('landing.mock.responseRate')}</div></div>
-            <div className="lp-stat"><div className="lp-stat-num">7 {t('landing.mock.days')}</div><div className="lp-stat-label">{t('landing.mock.avgDelay')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.trackedValue')}</div><div className="lp-stat-label">{t('landing.mock.trackedLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.followupsValue')}</div><div className="lp-stat-label">{t('landing.mock.followupsLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.historyValue')}</div><div className="lp-stat-label">{t('landing.mock.historyLabel')}</div></div>
+            <div className="lp-stat"><div className="lp-stat-num">{t('landing.mock.networkValue')}</div><div className="lp-stat-label">{t('landing.mock.networkLabel')}</div></div>
           </div>
           <div className="lp-mock-body">
             <div className="lp-mock-grid">
@@ -109,19 +101,10 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="lp-panel">
                 <p className="lp-panel-title">{t('landing.mock.keySignals')}</p>
-                <div className="lp-chart">
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.rejectionRate')}</span><span>69%</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '69%' }} /></div>
-                  </div>
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.responseRate')}</span><span>20.9%</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '20.9%' }} /></div>
-                  </div>
-                  <div className="lp-bar-row">
-                    <div className="lp-bar-meta"><span>{t('landing.mock.activeDossiers')}</span><span>11</span></div>
-                    <div className="lp-bar-track"><div className="lp-bar-fill" style={{ width: '26%' }} /></div>
-                  </div>
+                <div className="lp-signal-list">
+                  <p>{t('landing.mock.signal1')}</p>
+                  <p>{t('landing.mock.signal2')}</p>
+                  <p>{t('landing.mock.signal3')}</p>
                 </div>
                 <div className="lp-signal">
                   <strong>{t('landing.mock.frictionPoint')}</strong>
@@ -150,6 +133,23 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      <section className="lp-section-wrap" id="workflow" aria-labelledby="workflow-title">
+        <div className="lp-section-inner lp-workflow">
+          <div className="lp-section-kicker">{t('landing.workflow.kicker')}</div>
+          <h2 id="workflow-title" className="lp-section-title">{t('landing.workflow.title')}</h2>
+          <p className="lp-section-sub">{t('landing.workflow.sub')}</p>
+          <ol className="lp-workflow-grid">
+            {(['1', '2', '3'] as const).map((number) => (
+              <li className="lp-workflow-step" key={number}>
+                <span className="lp-workflow-number" aria-hidden="true">{number}</span>
+                <div><h3>{t(`landing.workflow.step${number}Title`)}</h3><p>{t(`landing.workflow.step${number}Desc`)}</p></div>
+              </li>
+            ))}
+          </ol>
+          <div className="lp-proof-line"><span>✓</span>{t('landing.workflow.proof')}</div>
+        </div>
+      </section>
+
       {/* ─── Pricing ─── */}
       <section className="lp-section-wrap" id="tarifs">
         <div className="lp-section-inner">
@@ -158,14 +158,9 @@ export const LandingPage: React.FC = () => {
           <p className="lp-section-sub">{t('landing.pricing.landingSub')}</p>
           <div className="lp-pricing-controls">
             <span>{t('landing.pricing.periodLabel')}</span>
-            <SegmentedControl
-              data={[
-                { label: t('landing.pricing.monthly'), value: 'monthly' },
-                { label: t('landing.pricing.yearly'), value: 'yearly' },
-              ]}
-              value={period}
-              onChange={(value) => setPeriod(value as BillingPeriod)}
-            />
+            <div className="lp-segmented" role="group" aria-label={t('landing.pricing.periodLabel')}>
+              {(['monthly', 'yearly'] as BillingPeriod[]).map((value) => <button type="button" key={value} className={period === value ? 'is-active' : ''} onClick={() => setPeriod(value)}>{t(`landing.pricing.${value}`)}</button>)}
+            </div>
             {period === 'yearly' && <strong>{t('landing.pricing.savingsBadge')}</strong>}
           </div>
           <div className="lp-pricing-grid lp-pricing-grid-three lp-plan-card-grid">
@@ -176,7 +171,7 @@ export const LandingPage: React.FC = () => {
                 isSelected={selectedPlan === plan.id}
                 period={period}
                 onSelect={setSelectedPlan}
-                onCta={(id) => handlePricingCta(id)}
+                onCta={handlePricingCta}
                 mode="public"
               />
             ))}
@@ -184,49 +179,18 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── CraftCodes section ─── */}
-      <section className="lp-section-wrap" id="craftcodes">
-        <div className="lp-section-inner" style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto' }}>
-          <div className="lp-section-kicker">{t('landing.craftcodes.kicker')}</div>
-          <h2 className="lp-section-title">{t('landing.craftcodes.title')}</h2>
-          <p style={{ fontSize: '16px', lineHeight: 1.7, marginBottom: '2rem', opacity: 0.75 }}>
-            {t('landing.craftcodes.descPrefix')}{' '}
-            <a href="https://craftcodes.fr" target="_blank" rel="noopener noreferrer" className="lp-link">
-              CraftCodes
-            </a>
-            {t('landing.craftcodes.descSuffix')}
-          </p>
-
-          <div className="lp-plan-card" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-            <div className="lp-pricing-controls" style={{ justifyContent: 'center', marginBottom: '16px' }}>
-              <SegmentedControl
-                size="xs"
-                data={[
-                  { label: t('landing.pricing.monthly'), value: 'monthly' },
-                  { label: t('landing.pricing.yearly'), value: 'yearly' },
-                ]}
-                value={breakdownPeriod}
-                onChange={(value) => setBreakdownPeriod(value as BillingPeriod)}
-              />
-            </div>
-            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, opacity: 0.5, margin: '0 0 16px' }}>
-              Prix transparent · Pro à {proPrice?.amount}{proPrice?.suffix}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.stripe')}</span>
-              <span style={{ opacity: 0.6 }}>{eur(stripeFee)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(128,128,128,0.2)', fontSize: '14px' }}>
-              <span style={{ opacity: 0.6 }}>{t('landing.craftcodes.urssaf')}</span>
-              <span style={{ opacity: 0.6 }}>{eur(urssafFee)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px', fontWeight: 600 }}>
-              <span>{t('landing.craftcodes.devPay')}</span>
-              <span className="lp-link">{eur(devPay)}</span>
-            </div>
-            <p style={{ fontSize: '12px', opacity: 0.4, margin: '12px 0 0', lineHeight: 1.6 }}>
-              {t('landing.craftcodes.noInvestors')}
-            </p>
+      {/* ─── FAQ ─── */}
+      <section className="lp-section-wrap lp-alt" id="faq">
+        <div className="lp-section-inner lp-faq">
+          <div className="lp-section-kicker">{t('landing.faq.kicker')}</div>
+          <h2 className="lp-section-title">{t('landing.faq.title')}</h2>
+          <div className="lp-faq-list">
+            {(['1', '2', '3', '4', '5'] as const).map((number) => (
+              <details className="lp-faq-item" key={number}>
+                <summary>{t(`landing.faq.q${number}`)}</summary>
+                <p>{t(`landing.faq.a${number}`)}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

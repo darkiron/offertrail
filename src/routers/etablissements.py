@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import and_, or_
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.auth import get_active_user_id
+from src.auth import get_active_profile, get_active_user_id
 from src.database import get_db
 from src.enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE
-from src.models import Candidature, Etablissement
+from src.models import Candidature, Etablissement, Profile
+from src.repositories import etablissements as etablissements_repo
 from src.schemas.etablissements import (
     EtablissementCreate,
     EtablissementSchema,
@@ -77,11 +77,13 @@ def build_schema(etablissement: Etablissement, candidatures: list[Candidature]) 
 
 @router.get("", response_model=list[EtablissementSchema])
 def list_etablissements(
+    q: str | None = None,
+    limit: int | None = Query(default=None, ge=1, le=50),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[EtablissementSchema]:
-    etablissements = db.query(Etablissement).order_by(Etablissement.nom.asc()).all()
-    candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
+    etablissements = etablissements_repo.search(db, q, limit)
+    candidatures = etablissements_repo.list_candidatures_for_user(db, user_id)
     candidatures_by_ets: dict[str, list[Candidature]] = {}
     for candidature in candidatures:
         effective_id = candidature.client_final_id or candidature.etablissement_id
@@ -95,16 +97,10 @@ def get_etablissement(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> EtablissementSchema:
-    etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
+    etablissement = etablissements_repo.get_by_id(db, etablissement_id)
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
-    candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        or_(
-            Candidature.client_final_id == etablissement_id,
-            and_(Candidature.client_final_id.is_(None), Candidature.etablissement_id == etablissement_id),
-        ),
-    ).all()
+    candidatures = etablissements_repo.list_candidatures_for_etablissement(db, user_id, etablissement_id)
     return build_schema(etablissement, candidatures)
 
 
@@ -114,18 +110,14 @@ def create_etablissement(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> EtablissementSchema:
-    etablissement = Etablissement(
+    etablissement = etablissements_repo.create(
+        db,
         nom=payload.nom,
-        type=to_model_type(payload.type),
+        type_value=to_model_type(payload.type),
         site_web=payload.site_web,
         description=payload.description,
         created_by=user_id,
     )
-    db.add(etablissement)
-    db.flush()
-    etablissement_id = etablissement.id
-    db.commit()
-    etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
     return build_schema(etablissement, [])
 
 
@@ -134,30 +126,27 @@ def update_etablissement(
     etablissement_id: str,
     payload: EtablissementUpdate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> EtablissementSchema:
-    etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
+    etablissement = etablissements_repo.get_by_id(db, etablissement_id)
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    is_in_portfolio = etablissements_repo.is_in_user_portfolio(db, profile.id, etablissement_id)
+    if etablissement.created_by != profile.id and profile.role != "admin" and not is_in_portfolio:
+        raise HTTPException(status_code=403, detail="Modification non autorisee")
 
+    updates: dict = {}
     if payload.nom is not None:
-        etablissement.nom = payload.nom
+        updates["nom"] = payload.nom
     if payload.type is not None:
-        etablissement.type = to_model_type(payload.type)
+        updates["type"] = to_model_type(payload.type)
     if payload.site_web is not None:
-        etablissement.site_web = payload.site_web
+        updates["site_web"] = payload.site_web
     if payload.description is not None:
-        etablissement.description = payload.description
+        updates["description"] = payload.description
 
-    db.commit()
-    db.refresh(etablissement)
-    candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        or_(
-            Candidature.client_final_id == etablissement_id,
-            and_(Candidature.client_final_id.is_(None), Candidature.etablissement_id == etablissement_id),
-        ),
-    ).all()
+    etablissement = etablissements_repo.update(db, etablissement, updates)
+    candidatures = etablissements_repo.list_candidatures_for_etablissement(db, profile.id, etablissement_id)
     return build_schema(etablissement, candidatures)
 
 
@@ -165,16 +154,16 @@ def update_etablissement(
 def delete_etablissement(
     etablissement_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_active_user_id),
+    profile: Profile = Depends(get_active_profile),
 ) -> dict[str, bool]:
-    etablissement = db.query(Etablissement).filter(Etablissement.id == etablissement_id).first()
+    etablissement = etablissements_repo.get_by_id(db, etablissement_id)
     if etablissement is None:
         raise HTTPException(status_code=404, detail="Etablissement introuvable")
+    if etablissement.created_by != profile.id and profile.role != "admin":
+        raise HTTPException(status_code=403, detail="Suppression non autorisee")
 
-    has_candidatures = db.query(Candidature).filter(Candidature.etablissement_id == etablissement_id).first()
-    if has_candidatures:
+    if etablissements_repo.has_candidatures(db, etablissement_id):
         raise HTTPException(status_code=400, detail="Cannot delete organization with applications")
 
-    db.delete(etablissement)
-    db.commit()
+    etablissements_repo.delete(db, etablissement)
     return {"success": True}
