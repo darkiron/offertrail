@@ -1,6 +1,5 @@
 import logging
-from datetime import UTC, datetime
-from typing import Optional
+from typing import Callable, Optional
 
 import stripe
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
@@ -10,7 +9,7 @@ from sqlalchemy.orm import Session
 from src.auth import get_current_profile, get_jwt_payload
 from src.database import get_db
 from src.models import Profile
-from src.services.subscription import _set_cancelled, get_usage
+from src.services.subscription import SubscriptionService, get_usage
 from src.services.stripe_service import (
     APP_BASE_URL,
     create_checkout_session,
@@ -22,11 +21,17 @@ router = APIRouter(prefix="/subscription", tags=["subscription"])
 logger = logging.getLogger(__name__)
 verify_webhook_signature = verify_webhook
 
-
-def _stripe_datetime(timestamp: int | None) -> datetime | None:
-    if timestamp is None:
-        return None
-    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
+# Event type -> SubscriptionService method. Mirrors exactly the event types
+# previously handled by the router's if/elif chain; any event type not in
+# this map is ignored, same as before (falls through to the 200 response).
+_WEBHOOK_HANDLERS: dict[str, Callable[[Session, dict], None]] = {
+    "checkout.session.completed": SubscriptionService.handle_checkout_session_completed,
+    "customer.subscription.created": SubscriptionService.handle_subscription_created,
+    "customer.subscription.updated": SubscriptionService.handle_subscription_updated,
+    "customer.subscription.deleted": SubscriptionService.handle_subscription_deleted,
+    "customer.subscription.trial_will_end": SubscriptionService.handle_trial_will_end,
+    "invoice.payment_failed": SubscriptionService.handle_invoice_payment_failed,
+}
 
 
 class CheckoutRequest(BaseModel):
@@ -130,51 +135,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(400, "Signature invalide")
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        meta = session.get("metadata", {})
-        user_id = meta.get("user_id")
-        plan = meta.get("plan", "pro")
-        period = meta.get("period", "monthly")
-        if user_id:
-            profile = db.query(Profile).filter(Profile.id == user_id).first()
-            if profile:
-                profile.plan = plan
-                profile.billing_period = period
-                profile.subscription_status = "active"
-                profile.plan_started_at = datetime.now(UTC).replace(tzinfo=None)
-                profile.stripe_customer_id = session.get("customer")
-                profile.stripe_subscription_id = session.get("subscription")
-                db.commit()
-
-    elif event["type"] in ("customer.subscription.created", "customer.subscription.updated"):
-        subscription = event["data"]["object"]
-        meta = subscription.get("metadata", {})
-        customer_id = subscription.get("customer")
-        user_id = meta.get("user_id")
-        profile = None
-        if user_id:
-            profile = db.query(Profile).filter(Profile.id == user_id).first()
-        if profile is None and customer_id:
-            profile = db.query(Profile).filter(Profile.stripe_customer_id == customer_id).first()
-        if profile:
-            profile.plan = meta.get("plan", profile.plan or "pro")
-            profile.billing_period = meta.get("period", profile.billing_period or "monthly")
-            profile.subscription_status = subscription.get("status", "active")
-            profile.plan_started_at = _stripe_datetime(subscription.get("start_date"))
-            profile.stripe_customer_id = customer_id
-            profile.stripe_subscription_id = subscription.get("id")
-            db.commit()
-
-    elif event["type"] == "customer.subscription.deleted":
-        subscription = event["data"]["object"]
-        customer_id = subscription.get("customer")
-        if customer_id:
-            profile = db.query(Profile).filter(Profile.stripe_customer_id == customer_id).first()
-            if profile:
-                _set_cancelled(db, profile)
-
-    elif event["type"] == "customer.subscription.trial_will_end":
-        pass
+    handler = _WEBHOOK_HANDLERS.get(event["type"])
+    if handler is not None:
+        handler(db, event)
 
     return {"status": "ok"}

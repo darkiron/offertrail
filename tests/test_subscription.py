@@ -250,6 +250,108 @@ def test_webhook_subscription_created_syncs_start_date(client, user_a, monkeypat
         db.close()
 
 
+def test_webhook_subscription_updated_syncs_status(client, user_a, monkeypatch):
+    """`customer.subscription.updated` (without deletion) must sync status,
+    plan and billing fields the same way `.created` does — both event types
+    share SubscriptionService._sync_subscription_from_stripe."""
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.plan = "pro"
+        profile.billing_period = "monthly"
+        profile.subscription_status = "active"
+        profile.stripe_customer_id = "cus_test_123"
+        profile.stripe_subscription_id = "sub_test_123"
+        db.commit()
+    finally:
+        db.close()
+
+    monkeypatch.setattr(
+        "src.routers.subscription.verify_webhook_signature",
+        lambda body, sig_header: {
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "id": "sub_test_123",
+                    "customer": "cus_test_123",
+                    "status": "past_due",
+                    "start_date": 1785782764,
+                    "metadata": {
+                        "user_id": user_a["user_id"],
+                        "plan": "ultimate",
+                        "period": "yearly",
+                    },
+                },
+            },
+        },
+    )
+
+    response = client.post(
+        "/subscription/webhook",
+        content=b"{}",
+        headers={"stripe-signature": "sig_test"},
+    )
+
+    assert response.status_code == 200
+
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).one()
+        assert profile.plan == "ultimate"
+        assert profile.billing_period == "yearly"
+        assert profile.subscription_status == "past_due"
+        assert profile.stripe_subscription_id == "sub_test_123"
+        assert profile.plan_started_at.isoformat() == "2026-08-03T18:46:04"
+    finally:
+        db.close()
+
+
+def test_webhook_invoice_payment_failed_is_deliberate_noop(client, user_a, monkeypatch):
+    """invoice.payment_failed is subscribed to in production (see
+    docs/render-deployment.md) but intentionally writes nothing to Profile:
+    see SubscriptionService.handle_invoice_payment_failed for the reasoning.
+    The webhook must still answer 200 and must not touch the profile."""
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).first()
+        profile.subscription_status = "active"
+        profile.stripe_customer_id = "cus_test_123"
+        profile.stripe_subscription_id = "sub_test_123"
+        db.commit()
+    finally:
+        db.close()
+
+    monkeypatch.setattr(
+        "src.routers.subscription.verify_webhook_signature",
+        lambda body, sig_header: {
+            "type": "invoice.payment_failed",
+            "data": {
+                "object": {
+                    "customer": "cus_test_123",
+                    "subscription": "sub_test_123",
+                },
+            },
+        },
+    )
+
+    response = client.post(
+        "/subscription/webhook",
+        content=b"{}",
+        headers={"stripe-signature": "sig_test"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+    db = SessionLocal()
+    try:
+        profile = db.query(Profile).filter(Profile.id == user_a["user_id"]).one()
+        assert profile.subscription_status == "active"
+        assert profile.stripe_subscription_id == "sub_test_123"
+    finally:
+        db.close()
+
+
 def test_subscription_requires_auth(client):
     response = client.get("/subscription/me")
 
