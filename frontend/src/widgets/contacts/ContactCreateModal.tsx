@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import type { Contact, Organization } from '../../types';
-import { contactService, organizationService } from '../../services/api';
+import { contactService } from '../../services/api/contacts';
+import { organizationService } from '../../services/api/organizations';
 import { Dialog } from '@shared/ui/Dialog';
 import { ActionButton } from '@shared/ui/Action';
 import { TextAreaField, TextField } from '@shared/ui/FormField';

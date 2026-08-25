@@ -24,7 +24,7 @@ test('the primary product destinations stay mounted and navigable', async () => 
 test('landing navigation hashes target sections rendered by the landing page', async () => {
   const [layout, ...landingParts] = await Promise.all([
     readSource('../src/templates/LandingLayout.tsx'),
-    readSource('../src/pages/LandingPage.tsx'),
+    readSource('../src/routes/LandingPage.tsx'),
     readSource('../src/widgets/landing/LandingWorkflow.tsx'),
     readSource('../src/widgets/landing/LandingPricing.tsx'),
     readSource('../src/widgets/landing/LandingFaq.tsx'),

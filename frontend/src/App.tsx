@@ -23,61 +23,61 @@ const named = <T extends Record<string, React.ComponentType>>(
   loader: () => Promise<T>,
   name: keyof T,
 ) => lazy(async () => ({ default: (await loader())[name] }));
-const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard');
+const Dashboard = named(() => import('./routes/Dashboard'), 'Dashboard');
 const ApplicationsPage = named(
-  () => import('./pages/ApplicationsPage'),
+  () => import('./routes/ApplicationsPage'),
   'ApplicationsPage',
 );
 const ApplicationDetails = named(
-  () => import('./pages/ApplicationDetails'),
+  () => import('./routes/ApplicationDetails'),
   'ApplicationDetails',
 );
 const CompanyDetailsPage = named(
-  () => import('./pages/CompanyDetailsPage'),
+  () => import('./routes/CompanyDetailsPage'),
   'CompanyDetailsPage',
 );
 const ContactDetailsPage = named(
-  () => import('./pages/ContactDetailsPage'),
+  () => import('./routes/ContactDetailsPage'),
   'ContactDetailsPage',
 );
-const Import = named(() => import('./pages/Import'), 'Import');
+const Import = named(() => import('./routes/Import'), 'Import');
 const OrganizationsPage = named(
-  () => import('./pages/OrganizationsPage'),
+  () => import('./routes/OrganizationsPage'),
   'OrganizationsPage',
 );
 const OrganizationMaintenancePage = named(
-  () => import('./pages/OrganizationMaintenancePage'),
+  () => import('./routes/OrganizationMaintenancePage'),
   'OrganizationMaintenancePage',
 );
 const ContactsPage = named(
-  () => import('./pages/ContactsPage'),
+  () => import('./routes/ContactsPage'),
   'ContactsPage',
 );
-const LoginPage = named(() => import('./pages/Login'), 'LoginPage');
-const RegisterPage = named(() => import('./pages/Register'), 'RegisterPage');
+const LoginPage = named(() => import('./routes/Login'), 'LoginPage');
+const RegisterPage = named(() => import('./routes/Register'), 'RegisterPage');
 const ForgotPasswordPage = named(
-  () => import('./pages/ForgotPassword'),
+  () => import('./routes/ForgotPassword'),
   'ForgotPasswordPage',
 );
 const ResetPasswordPage = named(
-  () => import('./pages/ResetPassword'),
+  () => import('./routes/ResetPassword'),
   'ResetPasswordPage',
 );
-const LandingPage = named(() => import('./pages/LandingPage'), 'LandingPage');
+const LandingPage = named(() => import('./routes/LandingPage'), 'LandingPage');
 const LegalNoticePage = named(
-  () => import('./pages/LegalNoticePage'),
+  () => import('./routes/LegalNoticePage'),
   'LegalNoticePage',
 );
 const PrivacyPolicyPage = named(
-  () => import('./pages/PrivacyPolicyPage'),
+  () => import('./routes/PrivacyPolicyPage'),
   'PrivacyPolicyPage',
 );
-const TermsPage = named(() => import('./pages/TermsPage'), 'TermsPage');
-const ContactPage = named(() => import('./pages/ContactPage'), 'ContactPage');
-const MonCompte = named(() => import('./pages/MonCompte'), 'MonCompte');
-const Admin = named(() => import('./pages/Admin'), 'Admin');
-const Checkout = named(() => import('./pages/Pricing'), 'Pricing');
-const CGU = named(() => import('./pages/legal/CGU'), 'CGU');
+const TermsPage = named(() => import('./routes/TermsPage'), 'TermsPage');
+const ContactPage = named(() => import('./routes/ContactPage'), 'ContactPage');
+const MonCompte = named(() => import('./routes/MonCompte'), 'MonCompte');
+const Admin = named(() => import('./routes/Admin'), 'Admin');
+const Checkout = named(() => import('./routes/Pricing'), 'Pricing');
+const CGU = named(() => import('./routes/legal/CGU'), 'CGU');
 
 function CompanyAliasRedirect() {
   const { id } = useParams();

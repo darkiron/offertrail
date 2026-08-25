@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
   applicationService,
-  organizationService,
   type ApplicationWorkspace,
-} from '../../services/api';
+} from '../../services/api/applications';
+import { organizationService } from '../../services/api/organizations';
 import { ActionButton } from '@shared/ui/Action';
 import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
 import { Dialog } from '@shared/ui/Dialog';
