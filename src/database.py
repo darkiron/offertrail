@@ -1,12 +1,9 @@
-import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
+from src.config import settings
 from src.models import Base
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./offertrail.db")
+DATABASE_URL = settings.DATABASE_URL
 
 # check_same_thread est SQLite uniquement
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}

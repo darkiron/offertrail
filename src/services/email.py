@@ -1,9 +1,10 @@
 import logging
-import os
 
 import resend
 
-resend.api_key = os.getenv("RESEND_API_KEY", "")
+from src.config import settings
+
+resend.api_key = settings.RESEND_API_KEY
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,6 @@ Supabase émet des JWTs signés en ES256 (clé EC asymétrique).
 La clé publique est récupérée depuis le endpoint JWKS de Supabase au démarrage.
 """
 import logging
-import os
 from typing import List, Optional
 
 import httpx
@@ -17,12 +16,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
+from src.config import settings
 from src.database import get_db, SessionLocal
 from src.models import Candidature, Contact, Etablissement, Profile
 
 logger = logging.getLogger(__name__)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_URL = settings.SUPABASE_URL
 
 
 def _load_supabase_jwks() -> list[dict]:
@@ -48,7 +48,7 @@ def _load_supabase_jwks() -> list[dict]:
 # Clés publiques Supabase chargées une fois au démarrage.
 # Fallback : vérification HS256 si SUPABASE_JWT_SECRET est défini (projets legacy).
 _SUPABASE_JWKS: list[dict] = _load_supabase_jwks()
-_SUPABASE_HS256_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
+_SUPABASE_HS256_SECRET: str = settings.SUPABASE_JWT_SECRET
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

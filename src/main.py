@@ -1,6 +1,5 @@
 import ctypes
 import logging
-import os
 import subprocess
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,10 +9,10 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
-from . import legacy_database as database
 from sqlalchemy.orm import Session
 
 from .auth import _user_can_see_contact, get_active_profile, get_active_user_id, get_current_user_id, get_visible_contacts, start_scheduler
+from .config import settings
 from .database import get_db as get_saas_db, init_db as init_saas_db
 from .enums import CandidatureStatut, STATUTS_REPONSE_POSITIVE, STATUTS_CLOS, STATUTS_ACTIFS
 from .models import Candidature, CandidatureEvent, Contact, ContactInteraction, Etablissement, Profile, Relance
@@ -63,16 +62,15 @@ def _parse_allowed_origin_regex(raw_value: str | None) -> str | None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.getenv("STRIPE_SECRET_KEY", "").strip():
+    if not settings.STRIPE_SECRET_KEY.strip():
         logger.warning("STRIPE_SECRET_KEY manquante — paiement Stripe désactivé")
-    database.init_db()
     init_saas_db()
     start_scheduler()
     yield
 
 app = FastAPI(title="OfferTrail", lifespan=lifespan)
-origins = _parse_allowed_origins(os.getenv("ALLOWED_ORIGINS"))
-origin_regex = _parse_allowed_origin_regex(os.getenv("ALLOWED_ORIGIN_REGEX"))
+origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)
+origin_regex = _parse_allowed_origin_regex(settings.ALLOWED_ORIGIN_REGEX)
 app.state.limiter = Limiter(key_func=get_remote_address)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -132,22 +130,6 @@ def split_legacy_contact_name(name: str):
     if len(parts) == 1:
         return parts[0], ""
     return parts[0], " ".join(parts[1:])
-
-def format_contact_for_legacy_views(contact: dict):
-    formatted = dict(contact)
-    first_name = (formatted.get("first_name") or "").strip()
-    last_name = (formatted.get("last_name") or "").strip()
-    full_name = f"{first_name} {last_name}".strip()
-    formatted["name"] = full_name or formatted.get("name") or "Contact"
-
-    if formatted.get("organization_id"):
-        organization = database.get_organization(formatted["organization_id"])
-        formatted["company"] = organization["name"] if organization else formatted.get("company")
-    else:
-        formatted["company"] = formatted.get("company")
-
-    return formatted
-
 
 HIDDEN_SAAS_STATUSES = STATUTS_CLOS | {CandidatureStatut.OFFRE_RECUE}
 LEGACY_TO_SAAS_STATUS = {
@@ -339,196 +321,6 @@ def _map_event_to_legacy(event: CandidatureEvent, candidature: Candidature | Non
         "payload": payload,
     }
 
-
-async def api_dashboard(
-    status: str = None,
-    type: str = None,
-    source: str = None,
-):
-    filters = {
-        "status": status,
-        "type": type,
-        "source": source,
-    }
-    filters = {k: v for k, v in filters.items() if v is not None and v != ""}
-    
-    kpis = database.get_kpis(filters)
-    monthly_kpis = database.get_monthly_kpis()
-    sources = database.get_distinct_sources()
-    followups = database.list_followups()
-    
-    return {
-        "kpis": kpis,
-        "monthly_kpis": monthly_kpis,
-        "sources": sources,
-        "followups": followups
-    }
-
-async def api_monthly_applications(year: int = None):
-    if year is None:
-        year = datetime.now().year
-    
-    stats = database.get_annual_monthly_stats(year)
-    return {
-        "year": year,
-        "months": stats
-    }
-
-async def api_applications(
-    status: str = None,
-    type: str = None,
-    source: str = None,
-    search: str = None,
-    show_hidden: bool = False,
-    page: int = 1,
-    limit: int = 50,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    candidatures = (
-        db.query(Candidature)
-        .filter(Candidature.user_id == user_id)
-        .order_by(Candidature.updated_at.desc())
-        .all()
-    )
-    if status:
-        saas_status = LEGACY_TO_SAAS_STATUS.get(status.upper(), status.lower())
-        candidatures = [item for item in candidatures if item.statut == saas_status]
-    elif not show_hidden:
-        candidatures = [item for item in candidatures if item.statut not in HIDDEN_SAAS_STATUSES]
-    if type:
-        candidatures = [item for item in candidatures if (item.description or "").lower() == type.lower()]
-    if source:
-        candidatures = [item for item in candidatures if (item.source or "").lower() == source.lower()]
-    if search:
-        needle = search.strip().lower()
-        candidatures = [
-            item
-            for item in candidatures
-            if needle in (item.poste or "").lower()
-            or needle in (item.notes or "").lower()
-            or needle in ((item.etablissement.nom if item.etablissement else "")).lower()
-        ]
-
-    relances_by_candidature = _map_relance_by_candidature(
-        db.query(Relance).filter(Relance.user_id == user_id, Relance.statut == "a_faire").all()
-    )
-    total = len(candidatures)
-    offset = (page - 1) * limit
-    items = candidatures[offset : offset + limit]
-
-    return {
-        "items": [
-            _map_candidature_to_legacy(
-                item,
-                item.etablissement,
-                relances_by_candidature.get(item.id),
-            )
-            for item in items
-        ],
-        "total": total,
-        "page": page,
-        "limit": limit
-    }
-
-
-async def api_list_organizations(
-    type: str = None,
-    search: str = None,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    etablissements = db.query(Etablissement).order_by(Etablissement.nom.asc()).all()
-    candidatures = db.query(Candidature).filter(Candidature.user_id == user_id).all()
-    candidatures_by_ets: dict[str, list[Candidature]] = {}
-    for candidature in candidatures:
-        candidatures_by_ets.setdefault(candidature.etablissement_id, []).append(candidature)
-
-    results = []
-    for etablissement in etablissements:
-        mapped = _map_etablissement_to_legacy(etablissement, candidatures_by_ets.get(etablissement.id, []))
-        if type and mapped["type"] != type:
-            continue
-        if search and search.strip().lower() not in mapped["name"].lower():
-            continue
-        results.append(mapped)
-    return results
-
-async def api_get_organization(
-    org_id: str,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    resolved_id = _resolve_hashed_uuid(db, Etablissement, org_id, prefix="org:")
-    if not resolved_id:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    org = db.query(Etablissement).filter(Etablissement.id == resolved_id).first()
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        Candidature.etablissement_id == org.id,
-    ).all()
-    return _map_etablissement_to_legacy(org, candidatures)
-
-async def api_create_organization(
-    data: dict,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    etablissement = Etablissement(
-        nom=data.get("name") or "Sans nom",
-        type=(data.get("type") or "AUTRE").lower(),
-        site_web=data.get("website"),
-        description=data.get("notes"),
-        created_by=user_id,
-    )
-    db.add(etablissement)
-    db.commit()
-    db.refresh(etablissement)
-    return {"id": _legacy_hash(etablissement.id, prefix="org:")}
-
-async def api_update_organization(
-    org_id: str,
-    data: dict,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    resolved_id = _resolve_hashed_uuid(db, Etablissement, org_id, prefix="org:")
-    organization = db.query(Etablissement).filter(Etablissement.id == resolved_id).first()
-    if not organization:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    if "name" in data:
-        organization.nom = data["name"]
-    if "type" in data and data["type"] is not None:
-        organization.type = str(data["type"]).lower()
-    if "website" in data:
-        organization.site_web = data["website"]
-    if "notes" in data:
-        organization.description = data["notes"]
-    db.commit()
-    db.refresh(organization)
-    candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        Candidature.etablissement_id == organization.id,
-    ).all()
-    return _map_etablissement_to_legacy(organization, candidatures)
-
-async def api_delete_organization(
-    org_id: str,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    resolved_id = _resolve_hashed_uuid(db, Etablissement, org_id, prefix="org:")
-    organization = db.query(Etablissement).filter(Etablissement.id == resolved_id).first()
-    if not organization:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    has_candidatures = db.query(Candidature).filter(Candidature.etablissement_id == organization.id).first()
-    if has_candidatures:
-        raise HTTPException(status_code=400, detail="Cannot delete organization with applications")
-    db.delete(organization)
-    db.commit()
-    return {"success": True}
 
 async def api_merge_organization(
     org_id: str,
@@ -775,167 +567,6 @@ async def api_delete_contact(
     db.delete(contact)
     db.commit()
     return {"success": True}
-
-async def api_list_companies(type: str = None, search: str = None):
-    # Compatibility route
-    return api_list_organizations(type, search)
-
-async def api_get_company(
-    company_id: str,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    resolved_id = _resolve_hashed_uuid(db, Etablissement, company_id, prefix="org:")
-    organization = db.query(Etablissement).filter(Etablissement.id == resolved_id).first()
-    if not organization:
-        raise HTTPException(status_code=404, detail="Organization not found")
-
-    candidatures = db.query(Candidature).filter(
-        Candidature.user_id == user_id,
-        Candidature.etablissement_id == organization.id,
-    ).order_by(Candidature.updated_at.desc()).all()
-    relances_by_candidature = _map_relance_by_candidature(
-        db.query(Relance).filter(Relance.user_id == user_id).all()
-    )
-    interactions = {
-        interaction.contact_id: interaction
-        for interaction in db.query(ContactInteraction).filter(ContactInteraction.user_id == user_id).all()
-    }
-    contacts = [
-        _map_contact_to_legacy(contact, interactions.get(contact.id))
-        for contact in get_visible_contacts(db, user_id, etablissement_id=organization.id)
-    ]
-
-    events = []
-    for candidature in candidatures:
-        for event in candidature.events:
-            mapped = _map_event_to_legacy(event, candidature)
-            mapped["application"] = {
-                "id": _legacy_hash(candidature.id),
-                "title": candidature.poste,
-                "status": SAAS_TO_LEGACY_STATUS.get(candidature.statut, "APPLIED"),
-            }
-            events.append(mapped)
-    events.sort(key=lambda item: item["ts"] or "", reverse=True)
-
-    detail = _map_etablissement_to_legacy(organization, candidatures)
-    detail.update(
-        {
-            "applications": [
-                _map_candidature_to_legacy(item, organization, relances_by_candidature.get(item.id))
-                for item in candidatures
-            ],
-            "contacts": contacts,
-            "events": events,
-        }
-    )
-    return detail
-
-async def api_application_details(
-    app_id: str,
-    db: Session = Depends(get_saas_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    resolved_id = _resolve_hashed_uuid(db, Candidature, app_id)
-    candidature = db.query(Candidature).filter(
-        Candidature.id == resolved_id,
-        Candidature.user_id == user_id,
-    ).first()
-    if not candidature:
-        raise HTTPException(status_code=404, detail="Application not found")
-
-    relance = (
-        db.query(Relance)
-        .filter(Relance.candidature_id == candidature.id, Relance.user_id == user_id, Relance.statut == "a_faire")
-        .order_by(Relance.date_prevue.asc())
-        .first()
-    )
-    contacts = [
-        _map_contact_to_legacy(
-            contact,
-            next((interaction for interaction in contact.interactions if interaction.user_id == user_id), None),
-        )
-        for contact in get_visible_contacts(db, user_id, etablissement_id=candidature.etablissement_id)
-    ]
-    events = [_map_event_to_legacy(event, candidature) for event in candidature.events]
-    events.sort(key=lambda item: item["ts"] or "", reverse=True)
-    organization_info = _map_etablissement_to_legacy(candidature.etablissement, [candidature]) if candidature.etablissement else None
-
-    return {
-        "application": _map_candidature_to_legacy(candidature, candidature.etablissement, relance),
-        "organization": organization_info,
-        "final_customer_organization": (
-            _map_etablissement_to_legacy(candidature.client_final, [candidature])
-            if candidature.client_final
-            else None
-        ),
-        "events": events,
-        "contacts": contacts,
-        "all_contacts": contacts,
-    }
-
-async def api_create_application(data: dict):
-    app_id = database.create_application(
-        company_name=data.get("company"),
-        title=data.get("title"),
-        app_type=data.get("type"),
-        status=data.get("status"),
-        applied_at=data.get("applied_at"),
-        next_followup_at=data.get("next_followup_at"),
-        source=data.get("source"),
-        job_url=data.get("job_url"),
-        org_type=data.get("org_type", "AUTRE"),
-        organization_id=data.get("organization_id"),
-        final_customer_organization_id=data.get("final_customer_organization_id"),
-    )
-    return {"id": app_id}
-
-async def api_update_application(app_id: int, data: dict):
-    if set(data.keys()) == {"status"}:
-        success = database.update_application_status(app_id, data["status"])
-    else:
-        success = database.update_application(app_id, data)
-    if not success:
-        raise HTTPException(status_code=400, detail="Update failed")
-    return {"success": True}
-
-async def api_add_note(app_id: int, data: dict):
-    database.add_note(app_id, data.get("text", ""))
-    return {"success": True}
-
-async def api_mark_followup(app_id: int):
-    database.mark_as_followed_up(app_id)
-    return {"success": True}
-
-async def api_create_app_event(app_id: int, data: dict):
-    with database.get_db() as conn:
-        database.log_event(conn, "application", app_id, data.get("event_type"), {"source": "api"})
-        conn.commit()
-    return {"success": True}
-
-async def api_link_contact(app_id: int, data: dict):
-    database.link_contact_to_application(app_id, data.get("contact_id"))
-    return {"success": True}
-
-async def api_create_contact(app_id: int, data: dict):
-    contact_id = database.create_contact(
-        first_name=data.get("first_name"),
-        last_name=data.get("last_name"),
-        email=data.get("email"),
-        phone=data.get("phone"),
-        organization_id=data.get("organization_id"),
-        role=data.get("role"),
-        is_recruiter=data.get("is_recruiter", 0)
-    )
-    database.link_contact_to_application(app_id, contact_id)
-    return {"id": contact_id}
-
-
-
-
-
-
-
 
 
 

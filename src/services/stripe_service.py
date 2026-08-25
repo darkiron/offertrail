@@ -1,17 +1,17 @@
-import os
-
 import stripe
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
-WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
-LAUNCH_TRIAL_DAYS = int(os.getenv("STRIPE_LAUNCH_TRIAL_DAYS", "0"))
+from src.config import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+WEBHOOK_SECRET = settings.STRIPE_WEBHOOK_SECRET
+APP_BASE_URL = settings.APP_BASE_URL
+LAUNCH_TRIAL_DAYS = settings.STRIPE_LAUNCH_TRIAL_DAYS
 
 PRICE_MAP = {
-    "pro_monthly": os.getenv("STRIPE_PRICE_PRO_MONTHLY", ""),
-    "pro_yearly": os.getenv("STRIPE_PRICE_PRO_YEARLY", ""),
-    "ultimate_monthly": os.getenv("STRIPE_PRICE_ULTIMATE_MONTHLY", ""),
-    "ultimate_yearly": os.getenv("STRIPE_PRICE_ULTIMATE_YEARLY", ""),
+    "pro_monthly": settings.STRIPE_PRICE_PRO_MONTHLY,
+    "pro_yearly": settings.STRIPE_PRICE_PRO_YEARLY,
+    "ultimate_monthly": settings.STRIPE_PRICE_ULTIMATE_MONTHLY,
+    "ultimate_yearly": settings.STRIPE_PRICE_ULTIMATE_YEARLY,
 }
 
 
@@ -60,4 +60,4 @@ def verify_webhook(payload: bytes, sig: str) -> stripe.Event:
 
 
 def is_configured() -> bool:
-    return bool(os.getenv("STRIPE_SECRET_KEY")) and all(PRICE_MAP.values())
+    return bool(settings.STRIPE_SECRET_KEY) and all(PRICE_MAP.values())
