@@ -242,7 +242,10 @@ def reset_databases():
         conn.execute("PRAGMA foreign_keys = OFF")
         for table_name in tables:
             conn.execute(f"DELETE FROM {table_name}")
-        conn.execute("DELETE FROM sqlite_sequence")
+        if conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = 'sqlite_sequence'"
+        ).fetchone():
+            conn.execute("DELETE FROM sqlite_sequence")
         conn.execute("PRAGMA foreign_keys = ON")
         conn.commit()
     yield
