@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { applicationService } from '../services/api';
+import { applicationService } from '../services/api/applications';
 import classes from './ApplicationDetails.module.scss';
 import { ActionButton, ExternalAction } from '@shared/ui/Action';
 import { SelectField, TextAreaField, TextField } from '@shared/ui/FormField';
