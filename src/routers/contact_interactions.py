@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import get_active_user_id
 from src.database import get_db
-from src.models import Contact, ContactInteraction
+from src.repositories import contact_interactions as contact_interactions_repo
 from src.schemas.contact_interactions import (
     ContactInteractionCreate,
     ContactInteractionSchema,
@@ -18,12 +18,7 @@ def list_contact_interactions(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> list[ContactInteractionSchema]:
-    interactions = (
-        db.query(ContactInteraction)
-        .filter(ContactInteraction.user_id == user_id)
-        .order_by(ContactInteraction.updated_at.desc())
-        .all()
-    )
+    interactions = contact_interactions_repo.list_for_user(db, user_id)
     return [ContactInteractionSchema.model_validate(item) for item in interactions]
 
 
@@ -33,17 +28,13 @@ def create_contact_interaction(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
-    contact = db.query(Contact).filter(Contact.id == body.contact_id).first()
+    contact = contact_interactions_repo.get_contact_by_id(db, body.contact_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact introuvable")
 
-    interaction = ContactInteraction(
-        **body.model_dump(exclude={"user_id"}),
-        user_id=user_id,
+    interaction = contact_interactions_repo.create(
+        db, body.model_dump(exclude={"user_id"}), user_id
     )
-    db.add(interaction)
-    db.commit()
-    db.refresh(interaction)
     return ContactInteractionSchema.model_validate(interaction)
 
 
@@ -53,11 +44,7 @@ def get_contact_interaction(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
-    interaction = (
-        db.query(ContactInteraction)
-        .filter(ContactInteraction.id == interaction_id, ContactInteraction.user_id == user_id)
-        .first()
-    )
+    interaction = contact_interactions_repo.get_by_id_for_user(db, interaction_id, user_id)
     if not interaction:
         raise HTTPException(status_code=404, detail="Interaction introuvable")
     return ContactInteractionSchema.model_validate(interaction)
@@ -70,21 +57,16 @@ def update_contact_interaction(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> ContactInteractionSchema:
-    interaction = (
-        db.query(ContactInteraction)
-        .filter(ContactInteraction.id == interaction_id, ContactInteraction.user_id == user_id)
-        .first()
-    )
+    interaction = contact_interactions_repo.get_by_id_for_user(db, interaction_id, user_id)
     if not interaction:
         raise HTTPException(status_code=404, detail="Interaction introuvable")
 
-    for field, value in body.model_dump(exclude_unset=True).items():
-        if field == "user_id":
-            continue
-        setattr(interaction, field, value)
-
-    db.commit()
-    db.refresh(interaction)
+    updates = {
+        field: value
+        for field, value in body.model_dump(exclude_unset=True).items()
+        if field != "user_id"
+    }
+    interaction = contact_interactions_repo.update(db, interaction, updates)
     return ContactInteractionSchema.model_validate(interaction)
 
 
@@ -94,13 +76,8 @@ def delete_contact_interaction(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_active_user_id),
 ) -> Response:
-    interaction = (
-        db.query(ContactInteraction)
-        .filter(ContactInteraction.id == interaction_id, ContactInteraction.user_id == user_id)
-        .first()
-    )
+    interaction = contact_interactions_repo.get_by_id_for_user(db, interaction_id, user_id)
     if not interaction:
         raise HTTPException(status_code=404, detail="Interaction introuvable")
-    db.delete(interaction)
-    db.commit()
+    contact_interactions_repo.delete(db, interaction)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
